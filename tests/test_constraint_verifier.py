@@ -1,14 +1,14 @@
 import pytest
 
-import optapy
-import optapy.types
-import optapy.score
-import optapy.config
-import optapy.constraint
-import optapy.test
+import timefold.solver
+import timefold.solver.types
+import timefold.solver.score
+import timefold.solver.config
+import timefold.solver.constraint
+import timefold.solver.test
 
 
-def verifier_suite(verifier: optapy.test.ConstraintVerifier, same_value, is_value_one,
+def verifier_suite(verifier: timefold.solver.test.ConstraintVerifier, same_value, is_value_one,
                    solution, e1, e2, e3, v1, v2, v3):
     verifier.verify_that(same_value) \
         .given(e1, e2) \
@@ -132,66 +132,66 @@ def verifier_suite(verifier: optapy.test.ConstraintVerifier, same_value, is_valu
 
     verifier.verify_that() \
         .given(e1, e2, e3) \
-        .scores(optapy.score.SimpleScore.of(0))
+        .scores(timefold.solver.score.SimpleScore.of(0))
 
     with pytest.raises(AssertionError):
         verifier.verify_that() \
             .given(e1, e2, e3) \
-            .scores(optapy.score.SimpleScore.of(1))
+            .scores(timefold.solver.score.SimpleScore.of(1))
 
     with pytest.raises(AssertionError):
         verifier.verify_that() \
             .given(e1, e2, e3) \
-            .scores(optapy.score.SimpleScore.of(-1))
+            .scores(timefold.solver.score.SimpleScore.of(-1))
 
     verifier.verify_that() \
         .given_solution(solution) \
-        .scores(optapy.score.SimpleScore.of(0))
+        .scores(timefold.solver.score.SimpleScore.of(0))
 
     with pytest.raises(AssertionError):
         verifier.verify_that() \
             .given_solution(solution) \
-            .scores(optapy.score.SimpleScore.of(1))
+            .scores(timefold.solver.score.SimpleScore.of(1))
 
     with pytest.raises(AssertionError):
         verifier.verify_that() \
             .given_solution(solution) \
-            .scores(optapy.score.SimpleScore.of(-1))
+            .scores(timefold.solver.score.SimpleScore.of(-1))
 
     e1.value = v1
     e2.value = v2
     e3.value = v3
     verifier.verify_that() \
             .given(e1, e2, e3) \
-            .scores(optapy.score.SimpleScore.of(1))
+            .scores(timefold.solver.score.SimpleScore.of(1))
 
     with pytest.raises(AssertionError):
         verifier.verify_that() \
             .given(e1, e2, e3) \
-            .scores(optapy.score.SimpleScore.of(2))
+            .scores(timefold.solver.score.SimpleScore.of(2))
 
     with pytest.raises(AssertionError):
         verifier.verify_that() \
             .given(e1, e2, e3) \
-            .scores(optapy.score.SimpleScore.of(0))
+            .scores(timefold.solver.score.SimpleScore.of(0))
 
     verifier.verify_that() \
         .given_solution(solution) \
-        .scores(optapy.score.SimpleScore.of(1))
+        .scores(timefold.solver.score.SimpleScore.of(1))
 
     with pytest.raises(AssertionError):
         verifier.verify_that() \
             .given_solution(solution) \
-            .scores(optapy.score.SimpleScore.of(2))
+            .scores(timefold.solver.score.SimpleScore.of(2))
 
     with pytest.raises(AssertionError):
         verifier.verify_that() \
             .given_solution(solution) \
-            .scores(optapy.score.SimpleScore.of(0))
+            .scores(timefold.solver.score.SimpleScore.of(0))
 
 
 def test_constraint_verifier_create():
-    @optapy.problem_fact
+    @timefold.solver.problem_fact
     class Value:
         def __init__(self, code):
             self.code = code
@@ -200,13 +200,13 @@ def test_constraint_verifier_create():
             return f'Value(code={self.code})'
 
 
-    @optapy.planning_entity
+    @timefold.solver.planning_entity
     class Entity:
         def __init__(self, code, value=None):
             self.code = code
             self.value = value
 
-        @optapy.planning_variable(Value, value_range_provider_refs=['value_range'])
+        @timefold.solver.planning_variable(Value, value_range_provider_refs=['value_range'])
         def get_value(self):
             return self.value
 
@@ -214,55 +214,55 @@ def test_constraint_verifier_create():
             self.value = value
 
 
-    def same_value(constraint_factory: optapy.constraint.ConstraintFactory):
+    def same_value(constraint_factory: timefold.solver.constraint.ConstraintFactory):
         return (constraint_factory.for_each(Entity)
-                    .join(Entity, optapy.constraint.Joiners.less_than(lambda e: e.code),
-                                  optapy.constraint.Joiners.equal(lambda e: e.value))
-                    .penalize('Same value', optapy.score.SimpleScore.ONE)
+                    .join(Entity, timefold.solver.constraint.Joiners.less_than(lambda e: e.code),
+                                  timefold.solver.constraint.Joiners.equal(lambda e: e.value))
+                    .penalize('Same value', timefold.solver.score.SimpleScore.ONE)
                 )
 
-    def is_value_one(constraint_factory: optapy.constraint.ConstraintFactory):
+    def is_value_one(constraint_factory: timefold.solver.constraint.ConstraintFactory):
         return (constraint_factory.for_each(Entity)
                     .filter(lambda e: e.value.code == 'v1')
-                    .reward('Value 1', optapy.score.SimpleScore.ONE)
+                    .reward('Value 1', timefold.solver.score.SimpleScore.ONE)
                 )
 
-    @optapy.constraint_provider
-    def my_constraints(constraint_factory: optapy.constraint.ConstraintFactory):
+    @timefold.solver.constraint_provider
+    def my_constraints(constraint_factory: timefold.solver.constraint.ConstraintFactory):
         return [
             same_value(constraint_factory),
             is_value_one(constraint_factory)
         ]
 
-    @optapy.planning_solution
+    @timefold.solver.planning_solution
     class Solution:
         def __init__(self, entities, values, score=None):
             self.entities = entities
             self.values = values
             self.score = score
 
-        @optapy.planning_entity_collection_property(Entity)
+        @timefold.solver.planning_entity_collection_property(Entity)
         def get_entities(self):
             return self.entities
 
-        @optapy.problem_fact_collection_property(Value)
-        @optapy.value_range_provider(range_id='value_range')
+        @timefold.solver.problem_fact_collection_property(Value)
+        @timefold.solver.value_range_provider(range_id='value_range')
         def get_values(self):
             return self.values
 
-        @optapy.planning_score(optapy.score.SimpleScore)
-        def get_score(self) -> optapy.score.SimpleScore:
+        @timefold.solver.planning_score(timefold.solver.score.SimpleScore)
+        def get_score(self) -> timefold.solver.score.SimpleScore:
             return self.score
 
         def set_score(self, score):
             self.score = score
 
-    solver_config = optapy.config.solver.SolverConfig()
+    solver_config = timefold.solver.config.solver.SolverConfig()
     solver_config.withSolutionClass(Solution) \
         .withEntityClasses(Entity) \
         .withConstraintProviderClass(my_constraints)
 
-    verifier = optapy.test.constraint_verifier_create(solver_config)
+    verifier = timefold.solver.test.constraint_verifier_create(solver_config)
 
     e1 = Entity('e1')
     e2 = Entity('e2')
@@ -277,7 +277,7 @@ def test_constraint_verifier_create():
     verifier_suite(verifier, same_value, is_value_one,
                    solution, e1, e2, e3, v1, v2, v3)
 
-    verifier = optapy.test.constraint_verifier_build(my_constraints, Solution, Entity)
+    verifier = timefold.solver.test.constraint_verifier_build(my_constraints, Solution, Entity)
 
     e1 = Entity('e1')
     e2 = Entity('e2')

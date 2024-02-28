@@ -35,10 +35,10 @@ def fix_package_name(name: str) -> str:
 
 
 def fix_file_name(file_name: str) -> str:
-    if 'optapy' in file_name:
-        optapy_index = file_name.index('optapy')
-        offset = optapy_index + len('optapy')
-        return str(pathlib.Path('optapy-core', 'src', 'main', 'python')) + file_name[offset:]
+    if 'timefold' in file_name:
+        timefold_index = file_name.index('timefold')
+        offset = timefold_index + len('timefold')
+        return str(pathlib.Path('timefold-solver-python-core', 'src', 'main', 'python')) + file_name[offset:]
     elif 'jpyinterpreter' in file_name:
         jpyinterpreter_index = file_name.index('jpyinterpreter')
         offset = jpyinterpreter_index + len('jpyinterpreter')
@@ -119,9 +119,9 @@ def is_test_package(package_name: str) -> bool:
 
 
 def is_ignored(package_name: str, ignore_jpyinterpreter: bool = False):
-    # optapy packages start with 'optapy.' (or just plain 'optapy'), not 'optapy-core'
+    # timefold packages start with 'timefold.solver.' (or just plain 'timefold.solver'), not 'timefold-solver-python-core'
     return is_test_package(package_name) or (ignore_jpyinterpreter and package_name.startswith('jpyinterpreter')) or \
-           package_name.startswith('optapy-core') or package_name.endswith('.jars')
+           package_name.startswith('timefold-solver-python-core') or package_name.endswith('.jars')
 
 
 def update_coverage_xml(coverage_xml: ET.ElementTree, *, ignore_jpyinterpreter: bool = False):
@@ -211,10 +211,10 @@ def merge_coverage_xml(*coverage_xmls: ET.ElementTree):
     return ET.ElementTree(root_element)
 
 if __name__ == '__main__':
-    optapy_coverage_xml = ET.parse('target/coverage.xml')
+    timefold_coverage_xml = ET.parse('target/coverage.xml')
     jpyinterpreter_coverage_xml = ET.parse('jpyinterpreter/target/coverage.xml')
 
-    update_coverage_xml(optapy_coverage_xml, ignore_jpyinterpreter=True)
+    update_coverage_xml(timefold_coverage_xml, ignore_jpyinterpreter=True)
     update_coverage_xml(jpyinterpreter_coverage_xml)
 
-    merge_coverage_xml(optapy_coverage_xml, jpyinterpreter_coverage_xml).write('target/coverage.xml')
+    merge_coverage_xml(timefold_coverage_xml, jpyinterpreter_coverage_xml).write('target/coverage.xml')

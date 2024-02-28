@@ -1,19 +1,19 @@
-import optapy
-import optapy.score
-import optapy.config
-import optapy.constraint
+import timefold.solver
+import timefold.solver.score
+import timefold.solver.config
+import timefold.solver.constraint
 import pytest
 import re
 
 
-@optapy.planning_entity
+@timefold.solver.planning_entity
 class Queen:
     def __init__(self, code, column, row=None):
         self.code = code
         self.row = row
         self.column = column
 
-    @optapy.planning_variable(int, value_range_provider_refs=['row_range'])
+    @timefold.solver.planning_variable(int, value_range_provider_refs=['row_range'])
     def get_row(self):
         return self.row
 
@@ -41,7 +41,7 @@ class Queen:
         return hash(self.code)
 
 
-@optapy.planning_solution
+@timefold.solver.planning_solution
 class Solution:
     def __init__(self, n, queen_list, column_list, row_list, score=None):
         self.n = n
@@ -50,17 +50,17 @@ class Solution:
         self.row_list = row_list
         self.score = score
 
-    @optapy.planning_entity_collection_property(Queen)
+    @timefold.solver.planning_entity_collection_property(Queen)
     def get_queen_list(self):
         return self.queen_list
 
-    @optapy.problem_fact_collection_property(int)
-    @optapy.value_range_provider(range_id='row_range')
+    @timefold.solver.problem_fact_collection_property(int)
+    @timefold.solver.value_range_provider(range_id='row_range')
     def get_row_range(self):
         return self.row_list
 
-    @optapy.planning_score(optapy.score.SimpleScore)
-    def get_score(self) -> optapy.score.SimpleScore:
+    @timefold.solver.planning_score(timefold.solver.score.SimpleScore)
+    def get_score(self) -> timefold.solver.score.SimpleScore:
         return self.score
 
     def set_score(self, score):
@@ -68,7 +68,7 @@ class Solution:
 
 
 def test_constraint_match_disabled_incremental_score_calculator():
-    @optapy.incremental_score_calculator
+    @timefold.solver.incremental_score_calculator
     class IncrementalScoreCalculator:
         score: int
         row_index_map: dict
@@ -137,22 +137,22 @@ def test_constraint_match_disabled_incremental_score_calculator():
                 descending_diagonal_index_list.remove(queen)
                 self.score += len(descending_diagonal_index_list)
 
-        def calculateScore(self) -> optapy.score.SimpleScore:
-            return optapy.score.SimpleScore.of(self.score)
+        def calculateScore(self) -> timefold.solver.score.SimpleScore:
+            return timefold.solver.score.SimpleScore.of(self.score)
 
-    solver_config = optapy.config.solver.SolverConfig()
-    termination_config = optapy.config.solver.termination.TerminationConfig()
+    solver_config = timefold.solver.config.solver.SolverConfig()
+    termination_config = timefold.solver.config.solver.termination.TerminationConfig()
     termination_config.setBestScoreLimit('0')
     solver_config.withSolutionClass(Solution) \
         .withEntityClasses(Queen) \
-        .withScoreDirectorFactory(optapy.config.score.director.ScoreDirectorFactoryConfig() \
+        .withScoreDirectorFactory(timefold.solver.config.score.director.ScoreDirectorFactoryConfig() \
                                   .withIncrementalScoreCalculatorClass(IncrementalScoreCalculator)) \
         .withTerminationConfig(termination_config)
     problem: Solution = Solution(4,
                                  [Queen('A', 0), Queen('B', 1), Queen('C', 2), Queen('D', 3)],
                                  [0, 1, 2, 3],
                                  [0, 1, 2, 3])
-    solver = optapy.solver_factory_create(solver_config).buildSolver()
+    solver = timefold.solver.solver_factory_create(solver_config).buildSolver()
     solution = solver.solve(problem)
     assert solution.get_score().getScore() == 0
     for i in range(4):
@@ -166,7 +166,7 @@ def test_constraint_match_disabled_incremental_score_calculator():
 
 
 def test_constraint_match_enabled_incremental_score_calculator():
-    @optapy.incremental_score_calculator
+    @timefold.solver.incremental_score_calculator
     class IncrementalScoreCalculator:
         score: int
         row_index_map: dict
@@ -235,36 +235,36 @@ def test_constraint_match_enabled_incremental_score_calculator():
                 descending_diagonal_index_list.remove(queen)
                 self.score += len(descending_diagonal_index_list)
 
-        def calculateScore(self) -> optapy.score.SimpleScore:
-            return optapy.score.SimpleScore.of(self.score)
+        def calculateScore(self) -> timefold.solver.score.SimpleScore:
+            return timefold.solver.score.SimpleScore.of(self.score)
 
         def getConstraintMatchTotals(self):
-            row_conflict_constraint_match_total = optapy.constraint.DefaultConstraintMatchTotal(
+            row_conflict_constraint_match_total = timefold.solver.constraint.DefaultConstraintMatchTotal(
                 'NQueens',
                 'Row Conflict',
-                optapy.score.SimpleScore.ONE)
-            ascending_diagonal_constraint_match_total = optapy.constraint.DefaultConstraintMatchTotal(
+                timefold.solver.score.SimpleScore.ONE)
+            ascending_diagonal_constraint_match_total = timefold.solver.constraint.DefaultConstraintMatchTotal(
                 'NQueens',
                 'Ascending Diagonal Conflict',
-                optapy.score.SimpleScore.ONE)
-            descending_diagonal_constraint_match_total = optapy.constraint.DefaultConstraintMatchTotal(
+                timefold.solver.score.SimpleScore.ONE)
+            descending_diagonal_constraint_match_total = timefold.solver.constraint.DefaultConstraintMatchTotal(
                 'NQueens',
                 'Descending Diagonal Conflict',
-                optapy.score.SimpleScore.ONE)
+                timefold.solver.score.SimpleScore.ONE)
             for row, queens in self.row_index_map.items():
                 if len(queens) > 1:
                     row_conflict_constraint_match_total.addConstraintMatch(queens,
-                                                                           optapy.score.SimpleScore.of(
+                                                                           timefold.solver.score.SimpleScore.of(
                                                                                -len(queens) + 1))
             for row, queens in self.ascending_diagonal_index_map.items():
                 if len(queens) > 1:
                     ascending_diagonal_constraint_match_total.addConstraintMatch(queens,
-                                                                                 optapy.score.SimpleScore.of(
+                                                                                 timefold.solver.score.SimpleScore.of(
                                                                                      -len(queens) + 1))
             for row, queens in self.descending_diagonal_index_map.items():
                 if len(queens) > 1:
                     descending_diagonal_constraint_match_total.addConstraintMatch(queens,
-                                                                                  optapy.score.SimpleScore.of(
+                                                                                  timefold.solver.score.SimpleScore.of(
                                                                                       -len(queens) + 1))
             return [
                 row_conflict_constraint_match_total,
@@ -275,19 +275,19 @@ def test_constraint_match_enabled_incremental_score_calculator():
         def getIndictmentMap(self):
             return None
 
-    solver_config = optapy.config.solver.SolverConfig()
-    termination_config = optapy.config.solver.termination.TerminationConfig()
+    solver_config = timefold.solver.config.solver.SolverConfig()
+    termination_config = timefold.solver.config.solver.termination.TerminationConfig()
     termination_config.setBestScoreLimit('0')
-    solver_config.withSolutionClass(optapy.get_class(Solution)) \
+    solver_config.withSolutionClass(timefold.solver.get_class(Solution)) \
         .withEntityClasses(Queen) \
-        .withScoreDirectorFactory(optapy.config.score.director.ScoreDirectorFactoryConfig() \
+        .withScoreDirectorFactory(timefold.solver.config.score.director.ScoreDirectorFactoryConfig() \
                                   .withIncrementalScoreCalculatorClass(IncrementalScoreCalculator)) \
         .withTerminationConfig(termination_config)
     problem: Solution = Solution(4,
                                  [Queen('A', 0), Queen('B', 1), Queen('C', 2), Queen('D', 3)],
                                  [0, 1, 2, 3],
                                  [0, 1, 2, 3])
-    solver_factory = optapy.solver_factory_create(solver_config)
+    solver_factory = timefold.solver.solver_factory_create(solver_config)
     solver = solver_factory.buildSolver()
     solution = solver.solve(problem)
     assert solution.get_score().getScore() == 0
@@ -300,7 +300,7 @@ def test_constraint_match_enabled_incremental_score_calculator():
             assert left_queen.getAscendingDiagonalIndex() != right_queen.getAscendingDiagonalIndex()
             assert left_queen.getDescendingDiagonalIndex() != right_queen.getDescendingDiagonalIndex()
 
-    score_manager = optapy.score_manager_create(solver_factory)
+    score_manager = timefold.solver.score_manager_create(solver_factory)
     constraint_match_total_map = score_manager.explainScore(solution).getConstraintMatchTotalMap()
     row_conflict = constraint_match_total_map.get('NQueens/Row Conflict')
     ascending_diagonal_conflict = constraint_match_total_map.get('NQueens/Ascending Diagonal Conflict')
@@ -335,7 +335,7 @@ def test_error_message_for_missing_methods():
             f".*IncrementalScoreCalculatorMissingMethods.*: "
             f"\\['resetWorkingSolution', 'beforeEntityRemoved', 'afterEntityRemoved', 'calculateScore'\\]"
     )):
-        @optapy.incremental_score_calculator
+        @timefold.solver.incremental_score_calculator
         class IncrementalScoreCalculatorMissingMethods:
             def beforeEntityAdded(self, entity: any):
                 pass

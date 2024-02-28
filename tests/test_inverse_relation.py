@@ -1,16 +1,16 @@
-import optapy
-import optapy.score
-import optapy.config
-import optapy.constraint
+import timefold.solver
+import timefold.solver.score
+import timefold.solver.config
+import timefold.solver.constraint
 
 
-@optapy.planning_entity
+@timefold.solver.planning_entity
 class InverseRelationEntity:
     def __init__(self, code, value=None):
         self.code = code
         self.value = value
 
-    @optapy.planning_variable(object, ['value_range'])
+    @timefold.solver.planning_variable(object, ['value_range'])
     def get_value(self):
         return self.value
 
@@ -18,7 +18,7 @@ class InverseRelationEntity:
         self.value = value
 
 
-@optapy.planning_entity
+@timefold.solver.planning_entity
 class InverseRelationValue:
     def __init__(self, code, entities=None):
         self.code = code
@@ -27,7 +27,7 @@ class InverseRelationValue:
         else:
             self.entities = entities
 
-    @optapy.inverse_relation_shadow_variable(InverseRelationEntity, source_variable_name='value')
+    @timefold.solver.inverse_relation_shadow_variable(InverseRelationEntity, source_variable_name='value')
     def get_entities(self):
         return self.entities
 
@@ -35,23 +35,23 @@ class InverseRelationValue:
         self.entities = entities
 
 
-@optapy.planning_solution
+@timefold.solver.planning_solution
 class InverseRelationSolution:
     def __init__(self, values, entities, score=None):
         self.values = values
         self.entities = entities
         self.score = score
 
-    @optapy.planning_entity_collection_property(InverseRelationEntity)
+    @timefold.solver.planning_entity_collection_property(InverseRelationEntity)
     def get_entities(self):
         return self.entities
 
-    @optapy.planning_entity_collection_property(InverseRelationValue)
-    @optapy.value_range_provider('value_range')
+    @timefold.solver.planning_entity_collection_property(InverseRelationValue)
+    @timefold.solver.value_range_provider('value_range')
     def get_values(self):
         return self.values
 
-    @optapy.planning_score(optapy.score.SimpleScore)
+    @timefold.solver.planning_score(timefold.solver.score.SimpleScore)
     def get_score(self):
         return self.score
 
@@ -59,24 +59,24 @@ class InverseRelationSolution:
         self.score = score
 
 
-@optapy.constraint_provider
-def inverse_relation_constraints(constraint_factory: optapy.constraint.ConstraintFactory):
+@timefold.solver.constraint_provider
+def inverse_relation_constraints(constraint_factory: timefold.solver.constraint.ConstraintFactory):
     return [
         constraint_factory.for_each(InverseRelationValue)
                           .filter(lambda value: len(value.entities) > 1)
-                          .penalize('Only one entity per value', optapy.score.SimpleScore.ONE)
+                          .penalize('Only one entity per value', timefold.solver.score.SimpleScore.ONE)
     ]
 
 
 def test_inverse_relation():
-    termination = optapy.config.solver.termination.TerminationConfig()
+    termination = timefold.solver.config.solver.termination.TerminationConfig()
     termination.setBestScoreLimit('0')
-    solver_config = optapy.config.solver.SolverConfig() \
+    solver_config = timefold.solver.config.solver.SolverConfig() \
         .withSolutionClass(InverseRelationSolution) \
         .withEntityClasses(InverseRelationEntity, InverseRelationValue) \
         .withConstraintProviderClass(inverse_relation_constraints) \
         .withTerminationConfig(termination)
-    solver = optapy.solver_factory_create(solver_config).buildSolver()
+    solver = timefold.solver.solver_factory_create(solver_config).buildSolver()
     solution = solver.solve(InverseRelationSolution(
         [
             InverseRelationValue('A'),

@@ -1,4 +1,4 @@
-import optapy
+import timefold.solver
 
 
 def pytest_addoption(parser):
@@ -30,12 +30,12 @@ def pytest_sessionstart(session):
     jacoco_agent = session.config.getoption('--jacoco-agent')
     if jacoco_agent != '':
         jacoco_output = session.config.getoption('--jacoco-output')
-        optapy.init(f'-javaagent:{jacoco_agent}=destfile={jacoco_output}')
+        timefold.solver.init(f'-javaagent:{jacoco_agent}=destfile={jacoco_output}')
     else:
-        optapy.init()
+        timefold.solver.init()
 
     if session.config.getoption('--output-generated-classes') != 'false':
-        optapy.set_class_output_directory(pathlib.Path('target', 'tox-generated-classes', 'python', f'{sys.version_info[0]}.{sys.version_info[1]}'))
+        timefold.solver.set_class_output_directory(pathlib.Path('target', 'tox-generated-classes', 'python', f'{sys.version_info[0]}.{sys.version_info[1]}'))
 
 
 

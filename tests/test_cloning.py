@@ -1,24 +1,24 @@
-import optapy
-import optapy.score
+import timefold.solver
+import timefold.solver.score
 from abc import ABC, abstractmethod
 
 
 # Using Testdata as prefix to name causes PyTest warnings because it think it is a test class
 
 
-@optapy.problem_fact
+@timefold.solver.problem_fact
 class ExampleValue:
     def __init__(self, code):
         self.code = code
 
 
-@optapy.planning_entity
+@timefold.solver.planning_entity
 class ExampleEntity:
     def __init__(self, code, value):
         self.code = code
         self.value = value
 
-    @optapy.planning_variable(ExampleValue, value_range_provider_refs=['value_range'])
+    @timefold.solver.planning_variable(ExampleValue, value_range_provider_refs=['value_range'])
     def get_value(self):
         return self.value
 
@@ -44,13 +44,13 @@ class ThirdpartyEntity:
         self.value = value
 
 
-@optapy.planning_entity
+@timefold.solver.planning_entity
 class ExampleExtendedThirdpartyEntity(ThirdpartyEntity):
     def __init__(self, extra_object, code, value):
         super().__init__(code, value)
         self.extra_object = extra_object
 
-    @optapy.planning_variable(ExampleValue, value_range_provider_refs=['value_range'])
+    @timefold.solver.planning_variable(ExampleValue, value_range_provider_refs=['value_range'])
     def get_value(self):
         return super().get_value()
 
@@ -58,7 +58,7 @@ class ExampleExtendedThirdpartyEntity(ThirdpartyEntity):
         super().set_value(value)
 
 
-@optapy.planning_solution
+@timefold.solver.planning_solution
 class ExampleSolution:
     def __init__(self, code, value_list, entity_list, score=None):
         self.code = code
@@ -66,16 +66,16 @@ class ExampleSolution:
         self.entity_list = entity_list
         self.score = score
 
-    @optapy.problem_fact_collection_property(ExampleValue)
-    @optapy.value_range_provider('value_range')
+    @timefold.solver.problem_fact_collection_property(ExampleValue)
+    @timefold.solver.value_range_provider('value_range')
     def get_value_list(self):
         return self.value_list
 
-    @optapy.planning_entity_collection_property(ExampleEntity)
+    @timefold.solver.planning_entity_collection_property(ExampleEntity)
     def get_entity_list(self):
         return self.entity_list
 
-    @optapy.planning_score(optapy.score.SimpleScore)
+    @timefold.solver.planning_score(timefold.solver.score.SimpleScore)
     def get_score(self):
         return self.score
 
@@ -83,7 +83,7 @@ class ExampleSolution:
         self.score = score
 
 
-@optapy.planning_solution
+@timefold.solver.planning_solution
 class ExampleExtendedSolution(ExampleSolution):
     def __init__(self, extra_object, code, value_list, entity_list, score=None):
         super().__init__(code, value_list, entity_list, score)
@@ -103,23 +103,23 @@ class ThirdPartySolution:
         return self.entity_list
 
 
-@optapy.planning_solution
+@timefold.solver.planning_solution
 class ExampleExtendedThirdPartySolution(ThirdPartySolution):
     def __init__(self, extra_object, code, value_list, entity_list, score=None):
         super().__init__(code, value_list, entity_list)
         self.extra_object = extra_object
         self.score = score
 
-    @optapy.problem_fact_collection_property(ExampleValue)
-    @optapy.value_range_provider('value_range')
+    @timefold.solver.problem_fact_collection_property(ExampleValue)
+    @timefold.solver.value_range_provider('value_range')
     def get_value_list(self):
         return super().get_value_List()
 
-    @optapy.planning_entity_collection_property(ExampleEntity)
+    @timefold.solver.planning_entity_collection_property(ExampleEntity)
     def get_entity_list(self):
         return super().get_entity_list()
 
-    @optapy.planning_score(optapy.score.SimpleScore)
+    @timefold.solver.planning_score(timefold.solver.score.SimpleScore)
     def get_score(self):
         return self.score
 
@@ -138,11 +138,11 @@ def test_clone_solution():
 
     original_value_list = [val1, val2, val3]
     original_entity_list = [a, b, c, d]
-    original_score = optapy.score.SimpleScore.ONE
+    original_score = timefold.solver.score.SimpleScore.ONE
 
     original_solution = ExampleSolution("solution", original_value_list, original_entity_list, original_score)
 
-    clone_solution = optapy._planning_clone(original_solution, dict())
+    clone_solution = timefold.solver._planning_clone(original_solution, dict())
     assert original_solution is not clone_solution
     assert original_solution.code == clone_solution.code
     assert clone_solution.value_list is original_value_list
@@ -172,11 +172,11 @@ def test_clone_solution_with_immutable_collections():
 
     original_value_list = (val1, val2, val3)
     original_entity_list = (a, b, c, d)
-    original_score = optapy.score.SimpleScore.ONE
+    original_score = timefold.solver.score.SimpleScore.ONE
 
     original_solution = ExampleSolution("solution", original_value_list, original_entity_list, original_score)
 
-    clone_solution = optapy._planning_clone(original_solution, dict())
+    clone_solution = timefold.solver._planning_clone(original_solution, dict())
     assert original_solution is not clone_solution
     assert original_solution.code == clone_solution.code
     assert clone_solution.value_list is original_value_list
@@ -206,11 +206,11 @@ def test_clone_solution_with_sets():
 
     original_value_list = (val1, val2, val3)
     original_entity_list = {a, b, c, d}
-    original_score = optapy.score.SimpleScore.ONE
+    original_score = timefold.solver.score.SimpleScore.ONE
 
     original_solution = ExampleSolution("solution", original_value_list, original_entity_list, original_score)
 
-    clone_solution = optapy._planning_clone(original_solution, dict())
+    clone_solution = timefold.solver._planning_clone(original_solution, dict())
     assert original_solution is not clone_solution
     assert original_solution.code == clone_solution.code
     assert clone_solution.value_list is original_value_list
@@ -234,13 +234,13 @@ def test_clone_extended_solution():
 
     original_value_list = [val1, val2, val3]
     original_entity_list = [a, b, c, d]
-    original_score = optapy.score.SimpleScore.ONE
+    original_score = timefold.solver.score.SimpleScore.ONE
     original_extra_object = "extra"
 
     original_solution = ExampleExtendedSolution(original_extra_object, "solution", original_value_list,
                                                 original_entity_list, original_score)
 
-    clone_solution = optapy._planning_clone(original_solution, dict())
+    clone_solution = timefold.solver._planning_clone(original_solution, dict())
     assert original_solution is not clone_solution
     assert original_solution.extra_object is clone_solution.extra_object
     assert original_solution.code == clone_solution.code
@@ -271,13 +271,13 @@ def test_clone_extended_thirdparty_solution():
 
     original_value_list = [val1, val2, val3]
     original_entity_list = [a, b, c, d]
-    original_score = optapy.score.SimpleScore.ONE
+    original_score = timefold.solver.score.SimpleScore.ONE
     original_extra_object = "extra"
 
     original_solution = ExampleExtendedThirdPartySolution(original_extra_object, "solution", original_value_list,
                                                           original_entity_list, original_score)
 
-    clone_solution = optapy._planning_clone(original_solution, dict())
+    clone_solution = timefold.solver._planning_clone(original_solution, dict())
     assert original_solution is not clone_solution
     assert original_solution.extra_object is clone_solution.extra_object
     assert original_solution.code == clone_solution.code
@@ -297,25 +297,25 @@ def test_clone_extended_thirdparty_solution():
     assert b.get_value() is val1
 
 
-@optapy.problem_fact
+@timefold.solver.problem_fact
 class ExampleChainedObject:
     pass
 
 
-@optapy.problem_fact
+@timefold.solver.problem_fact
 class ExampleChainedAnchor:
     def __init__(self, code):
         self.code = code
 
 
-@optapy.planning_entity
+@timefold.solver.planning_entity
 class ExampleChainedEntity:
     def __init__(self, code, chained_object, unchained_value=None):
         self.code = code
         self.chained_object = chained_object
         self.unchained_value = unchained_value
 
-    @optapy.planning_variable(ExampleChainedObject, value_range_provider_refs=['chained_anchor_range',
+    @timefold.solver.planning_variable(ExampleChainedObject, value_range_provider_refs=['chained_anchor_range',
                                                                                'chained_entity_range'])
     def get_chained_object(self):
         return self.chained_object
@@ -323,7 +323,7 @@ class ExampleChainedEntity:
     def set_chained_object(self, chained_object):
         self.chained_object = chained_object
 
-    @optapy.planning_variable(ExampleValue, value_range_provider_refs=['unchained_range'])
+    @timefold.solver.planning_variable(ExampleValue, value_range_provider_refs=['unchained_range'])
     def get_unchained_value(self):
         return self.unchained_value
 
@@ -331,7 +331,7 @@ class ExampleChainedEntity:
         self.unchained_value = unchained_value
 
 
-@optapy.planning_solution
+@timefold.solver.planning_solution
 class ExampleChainedSolution:
     def __init__(self, code, chained_anchor_list, chained_entity_list, unchained_value_list, score=None):
         self.code = code
@@ -340,21 +340,21 @@ class ExampleChainedSolution:
         self.unchained_value_list = unchained_value_list
         self.score = score
 
-    @optapy.value_range_provider('chained_anchor_range')
-    @optapy.problem_fact_collection_property(ExampleChainedAnchor)
+    @timefold.solver.value_range_provider('chained_anchor_range')
+    @timefold.solver.problem_fact_collection_property(ExampleChainedAnchor)
     def get_chained_anchor_list(self):
         return self.chained_anchor_list
 
-    @optapy.value_range_provider('chained_entity_range')
-    @optapy.planning_entity_collection_property(ExampleChainedEntity)
+    @timefold.solver.value_range_provider('chained_entity_range')
+    @timefold.solver.planning_entity_collection_property(ExampleChainedEntity)
     def get_chained_entity_list(self):
         return self.chained_entity_list
 
-    @optapy.value_range_provider('unchained_range')
+    @timefold.solver.value_range_provider('unchained_range')
     def get_unchained_value_list(self):
         return self.unchained_value_list
 
-    @optapy.planning_score(optapy.score.SimpleScore)
+    @timefold.solver.planning_score(timefold.solver.score.SimpleScore)
     def get_score(self):
         return self.score
 
@@ -378,12 +378,12 @@ def test_clone_chained_solution():
     b0 = ExampleChainedAnchor('b0')
     b1 = ExampleChainedEntity('b1', b0)
 
-    original_score = optapy.score.SimpleScore.ONE
+    original_score = timefold.solver.score.SimpleScore.ONE
     anchor_list = [a0, b0]
     entity_list = [a1, a2, a3, b1]
 
     original_solution = ExampleChainedSolution('solution', anchor_list, entity_list, [], original_score)
-    clone_solution = optapy._planning_clone(original_solution, dict())
+    clone_solution = timefold.solver._planning_clone(original_solution, dict())
     assert clone_solution is not original_solution
     assert clone_solution.code is original_solution.code
     assert clone_solution.chained_anchor_list is anchor_list
@@ -407,11 +407,11 @@ def test_clone_chained_solution():
     assert clone_a3.chained_object.code == 'a2'
 
 
-@optapy.planning_entity
+@timefold.solver.planning_entity
 class ExampleShadowingChainedObject(ABC):
     # TODO: Find out how to refer to self
     @abstractmethod
-    @optapy.inverse_relation_shadow_variable(None, source_variable_name='chained_object', is_singleton=True)
+    @timefold.solver.inverse_relation_shadow_variable(None, source_variable_name='chained_object', is_singleton=True)
     def get_next_entity(self):
         pass
 
@@ -420,7 +420,7 @@ class ExampleShadowingChainedObject(ABC):
         pass
 
 
-@optapy.planning_entity
+@timefold.solver.planning_entity
 class ExampleShadowingChainedAnchor(ExampleShadowingChainedObject):
     def __init__(self, code, next_entity=None):
         self.code = code
@@ -436,7 +436,7 @@ class ExampleShadowingChainedAnchor(ExampleShadowingChainedObject):
         return self.code
 
 
-@optapy.planning_entity
+@timefold.solver.planning_entity
 class ExampleShadowingChainedEntity(ExampleShadowingChainedObject):
     def __init__(self, code, chained_object, unchained_value=None, anchor=None, next_entity=None):
         self.code = code
@@ -445,7 +445,7 @@ class ExampleShadowingChainedEntity(ExampleShadowingChainedObject):
         self.anchor = anchor
         self.next_entity = next_entity
 
-    @optapy.planning_variable(ExampleChainedObject, value_range_provider_refs=['chained_anchor_range',
+    @timefold.solver.planning_variable(ExampleChainedObject, value_range_provider_refs=['chained_anchor_range',
                                                                                'chained_entity_range'])
     def get_chained_object(self):
         return self.chained_object
@@ -453,7 +453,7 @@ class ExampleShadowingChainedEntity(ExampleShadowingChainedObject):
     def set_chained_object(self, chained_object):
         self.chained_object = chained_object
 
-    @optapy.planning_variable(ExampleValue, value_range_provider_refs=['unchained_range'])
+    @timefold.solver.planning_variable(ExampleValue, value_range_provider_refs=['unchained_range'])
     def get_unchained_value(self):
         return self.unchained_value
 
@@ -466,7 +466,7 @@ class ExampleShadowingChainedEntity(ExampleShadowingChainedObject):
     def set_next_entity(self, next_entity):
         self.next_entity = next_entity
 
-    @optapy.anchor_shadow_variable(ExampleShadowingChainedAnchor, source_variable_name='chained_object')
+    @timefold.solver.anchor_shadow_variable(ExampleShadowingChainedAnchor, source_variable_name='chained_object')
     def get_anchor(self):
         return self.anchor
 
@@ -477,7 +477,7 @@ class ExampleShadowingChainedEntity(ExampleShadowingChainedObject):
         return self.code
 
 
-@optapy.planning_solution
+@timefold.solver.planning_solution
 class ExampleShadowingChainedSolution:
     def __init__(self, code, chained_anchor_list, chained_entity_list, unchained_value_list, score=None):
         self.code = code
@@ -486,21 +486,21 @@ class ExampleShadowingChainedSolution:
         self.unchained_value_list = unchained_value_list
         self.score = score
 
-    @optapy.value_range_provider('chained_anchor_range')
-    @optapy.planning_entity_collection_property(ExampleShadowingChainedAnchor)
+    @timefold.solver.value_range_provider('chained_anchor_range')
+    @timefold.solver.planning_entity_collection_property(ExampleShadowingChainedAnchor)
     def get_chained_anchor_list(self):
         return self.chained_anchor_list
 
-    @optapy.value_range_provider('chained_entity_range')
-    @optapy.planning_entity_collection_property(ExampleShadowingChainedEntity)
+    @timefold.solver.value_range_provider('chained_entity_range')
+    @timefold.solver.planning_entity_collection_property(ExampleShadowingChainedEntity)
     def get_chained_entity_list(self):
         return self.chained_entity_list
 
-    @optapy.value_range_provider('unchained_range')
+    @timefold.solver.value_range_provider('unchained_range')
     def get_unchained_value_list(self):
         return self.unchained_value_list
 
-    @optapy.planning_score(optapy.score.SimpleScore)
+    @timefold.solver.planning_score(timefold.solver.score.SimpleScore)
     def get_score(self):
         return self.score
 
@@ -540,12 +540,12 @@ def test_clone_chained_shadowing_solution():
     b0.set_next_entity(b1)
     b1.set_next_entity(None)
 
-    original_score = optapy.score.SimpleScore.ONE
+    original_score = timefold.solver.score.SimpleScore.ONE
     anchor_list = [a0, b0]
     entity_list = [a1, a2, a3, b1]
 
     original_solution = ExampleShadowingChainedSolution('solution', anchor_list, entity_list, [], original_score)
-    clone_solution = optapy._planning_clone(original_solution, dict())
+    clone_solution = timefold.solver._planning_clone(original_solution, dict())
     assert clone_solution is not original_solution
     assert clone_solution.code is original_solution.code
     assert clone_solution.score is original_score
@@ -575,7 +575,7 @@ def test_clone_chained_shadowing_solution():
     assert clone_a3.chained_object.code == 'a2'
 
 
-@optapy.planning_entity
+@timefold.solver.planning_entity
 class ExampleDeepCloningEntity:
     def __init__(self, code, value, shadow_variable_list, shadow_variable_map):
         self.code = code
@@ -583,21 +583,21 @@ class ExampleDeepCloningEntity:
         self.shadow_variable_list = shadow_variable_list
         self.shadow_variable_map = shadow_variable_map
 
-    @optapy.planning_variable(ExampleValue, value_range_provider_refs=['value_range'])
+    @timefold.solver.planning_variable(ExampleValue, value_range_provider_refs=['value_range'])
     def get_value(self):
         return self.value
 
     def set_value(self, value):
         self.value = value
 
-    @optapy.deep_planning_clone
+    @timefold.solver.deep_planning_clone
     def get_shadow_variable_list(self):
         return self.shadow_variable_list
 
     def set_shadow_variable_list(self, shadow_variable_list):
         self.shadow_variable_list = shadow_variable_list
 
-    @optapy.deep_planning_clone
+    @timefold.solver.deep_planning_clone
     def get_shadow_variable_map(self):
         return self.shadow_variable_map
 
@@ -605,7 +605,7 @@ class ExampleDeepCloningEntity:
         self.shadow_variable_map = shadow_variable_map
 
 
-@optapy.planning_solution
+@timefold.solver.planning_solution
 class ExampleDeepCloningSolution:
     def __init__(self, code, value_list, entity_list, general_shadow_variable_list, score=None):
         self.code = code
@@ -614,23 +614,23 @@ class ExampleDeepCloningSolution:
         self.general_shadow_variable_list = general_shadow_variable_list
         self.score = score
 
-    @optapy.value_range_provider('value_range')
-    @optapy.problem_fact_collection_property
+    @timefold.solver.value_range_provider('value_range')
+    @timefold.solver.problem_fact_collection_property
     def get_value_list(self):
         return self.value_list
 
-    @optapy.planning_entity_collection_property(ExampleDeepCloningEntity)
+    @timefold.solver.planning_entity_collection_property(ExampleDeepCloningEntity)
     def get_entity_list(self):
         return self.entity_list
 
-    @optapy.deep_planning_clone
+    @timefold.solver.deep_planning_clone
     def get_general_shadow_variable_list(self):
         return self.general_shadow_variable_list
 
     def set_general_shadow_variable_list(self, general_shadow_variable_list):
         self.general_shadow_variable_list = general_shadow_variable_list
 
-    @optapy.planning_score(optapy.score.SimpleScore)
+    @timefold.solver.planning_score(timefold.solver.score.SimpleScore)
     def get_score(self):
         return self.score
 
@@ -690,7 +690,7 @@ def test_deep_planning_clone():
                                           general_shadow_variable_list, None)
     # ...somehow passing it to the constructor changes it?
     value_list = original.value_list
-    clone = optapy._planning_clone(original, dict())
+    clone = timefold.solver._planning_clone(original, dict())
 
     assert clone is not original
     assert clone.code == 'solution'
@@ -724,20 +724,20 @@ def test_deep_planning_clone():
     assert clone_b.shadow_variable_map['shadow key b1'] == 'shadow value b1'
 
 
-@optapy.problem_fact
-@optapy.deep_planning_clone
+@timefold.solver.problem_fact
+@timefold.solver.deep_planning_clone
 class ExampleDeepPlanningCloneValue:
     def __init__(self, code):
         self.code = code
 
 
-@optapy.planning_entity
+@timefold.solver.planning_entity
 class ExampleDeepPlanningCloneEntity:
     def __init__(self, code, value):
         self.code = code
         self.value = value
 
-    @optapy.planning_variable(ExampleDeepPlanningCloneValue, value_range_provider_refs=['value_range'])
+    @timefold.solver.planning_variable(ExampleDeepPlanningCloneValue, value_range_provider_refs=['value_range'])
     def get_value(self):
         return self.value
 
@@ -745,7 +745,7 @@ class ExampleDeepPlanningCloneEntity:
         self.value = value
 
 
-@optapy.planning_solution
+@timefold.solver.planning_solution
 class ExampleDeepPlanningCloneSolution:
     def __init__(self, code, value_list, entity_list, score=None):
         self.code = code
@@ -753,16 +753,16 @@ class ExampleDeepPlanningCloneSolution:
         self.entity_list = entity_list
         self.score = score
 
-    @optapy.problem_fact_collection_property(ExampleDeepPlanningCloneValue)
-    @optapy.value_range_provider('value_range')
+    @timefold.solver.problem_fact_collection_property(ExampleDeepPlanningCloneValue)
+    @timefold.solver.value_range_provider('value_range')
     def get_value_list(self):
         return self.value_list
 
-    @optapy.planning_entity_collection_property(ExampleDeepPlanningCloneEntity)
+    @timefold.solver.planning_entity_collection_property(ExampleDeepPlanningCloneEntity)
     def get_entity_list(self):
         return self.entity_list
 
-    @optapy.planning_score(optapy.score.SimpleScore)
+    @timefold.solver.planning_score(timefold.solver.score.SimpleScore)
     def get_score(self):
         return self.score
 
@@ -781,12 +781,12 @@ def test_clone_custom_deep_clone_class():
 
     original_value_list = [val1, val2, val3]
     original_entity_list = [a, b, c, d]
-    original_score = optapy.score.SimpleScore.ONE
+    original_score = timefold.solver.score.SimpleScore.ONE
 
     original_solution = ExampleDeepPlanningCloneSolution("solution", original_value_list, original_entity_list,
                                                          original_score)
 
-    clone_solution = optapy._planning_clone(original_solution, dict())
+    clone_solution = timefold.solver._planning_clone(original_solution, dict())
     assert original_solution is not clone_solution
     assert original_solution.code == clone_solution.code
     assert clone_solution.value_list is not original_value_list
@@ -820,14 +820,14 @@ def test_clone_custom_deep_clone_class():
     assert b.get_value() is val1
 
 
-@optapy.planning_entity
+@timefold.solver.planning_entity
 class ExampleSolutionBacklinkingEntity:
     def __init__(self, code, value, solution):
         self.code = code
         self.value = value
         self.solution = solution
 
-    @optapy.planning_variable(ExampleValue, value_range_provider_refs=['value_range'])
+    @timefold.solver.planning_variable(ExampleValue, value_range_provider_refs=['value_range'])
     def get_value(self):
         return self.value
 
@@ -835,7 +835,7 @@ class ExampleSolutionBacklinkingEntity:
         self.value = value
 
 
-@optapy.planning_solution
+@timefold.solver.planning_solution
 class ExampleBacklinkingSolution:
     def __init__(self, code, value_list, entity_list, score=None):
         self.code = code
@@ -843,16 +843,16 @@ class ExampleBacklinkingSolution:
         self.entity_list = entity_list
         self.score = score
 
-    @optapy.problem_fact_collection_property(ExampleValue)
-    @optapy.value_range_provider('value_range')
+    @timefold.solver.problem_fact_collection_property(ExampleValue)
+    @timefold.solver.value_range_provider('value_range')
     def get_value_list(self):
         return self.value_list
 
-    @optapy.planning_entity_collection_property(ExampleSolutionBacklinkingEntity)
+    @timefold.solver.planning_entity_collection_property(ExampleSolutionBacklinkingEntity)
     def get_entity_list(self):
         return self.entity_list
 
-    @optapy.planning_score(optapy.score.SimpleScore)
+    @timefold.solver.planning_score(timefold.solver.score.SimpleScore)
     def get_score(self):
         return self.score
 
@@ -865,11 +865,11 @@ def test_supports_entity_to_solution_backlinking():
     val2 = ExampleValue("2")
     original_value_list = [val1, val2]
     original_entity_list = []
-    original_score = optapy.score.SimpleScore.ONE
+    original_score = timefold.solver.score.SimpleScore.ONE
     original_solution = ExampleSolution("solution", original_value_list, original_entity_list, original_score)
     a = ExampleSolutionBacklinkingEntity('A', None, original_solution)
     original_entity_list.append(a)
-    clone_solution = optapy._planning_clone(original_solution, dict())
+    clone_solution = timefold.solver._planning_clone(original_solution, dict())
     assert a.solution is original_solution
     assert original_solution is not clone_solution
     assert original_solution.code == clone_solution.code

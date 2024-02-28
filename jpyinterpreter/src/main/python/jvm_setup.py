@@ -1,21 +1,18 @@
 import pathlib
 import jpype
 import jpype.imports
-import importlib.metadata
+import importlib.resources
 from typing import List
+
+from jpype import JClass
 
 
 def extract_python_translator_jars() -> list[str]:
     """Extracts and return a list of the Python Translator Java dependencies
-
-    Invoking this function extracts Python Translator Dependencies from the jpyinterpreter.jars module
-    into a temporary directory and returns a list contains classpath entries for
-    those dependencies. The temporary directory exists for the entire execution of the
-    program.
-
-    :return: None
     """
-    return [str(p.locate()) for p in importlib.metadata.files('jpyinterpreter') if p.name.endswith('.jar')]
+    return [str(importlib.resources.path('jpyinterpreter.jars', p.name).__enter__())
+            for p in importlib.resources.files('jpyinterpreter.jars').iterdir()
+            if p.name.endswith(".jar")]
 
 
 def init(*args, path: List[str] = None, include_translator_jars: bool = True,
@@ -39,10 +36,10 @@ def init(*args, path: List[str] = None, include_translator_jars: bool = True,
     jpype.startJVM(*args, classpath=path, convertStrings=True)  # noqa
 
     if class_output_path is not None:
-        from org.optaplanner.jpyinterpreter import InterpreterStartupOptions # noqa
+        from ai.timefold.jpyinterpreter import InterpreterStartupOptions # noqa
         InterpreterStartupOptions.classOutputRootPath = class_output_path
 
-    from org.optaplanner.jpyinterpreter import CPythonBackedPythonInterpreter
+    import ai.timefold.jpyinterpreter.CPythonBackedPythonInterpreter as CPythonBackedPythonInterpreter
     CPythonBackedPythonInterpreter.lookupPythonReferenceIdPythonFunction = GetPythonObjectId()
     CPythonBackedPythonInterpreter.lookupPythonReferenceTypePythonFunction = GetPythonObjectType()
     CPythonBackedPythonInterpreter.lookupAttributeOnPythonReferencePythonFunction = GetAttributeOnPythonObject()
@@ -71,7 +68,7 @@ class GetPythonObjectId:
 class GetPythonObjectType:
     @jpype.JOverride()
     def apply(self, python_object):
-        from org.optaplanner.jpyinterpreter.types.wrappers import OpaquePythonReference
+        from ai.timefold.jpyinterpreter.types.wrappers import OpaquePythonReference
         return jpype.JProxy(OpaquePythonReference, inst=type(python_object), convert=True)
 
 
@@ -90,7 +87,7 @@ class GetAttributeOnPythonObject:
 class GetAttributePointerOnPythonObject:
     @jpype.JOverride()
     def apply(self, python_object, attribute_name):
-        from org.optaplanner.jpyinterpreter.types.wrappers import OpaquePythonReference
+        from ai.timefold.jpyinterpreter.types.wrappers import OpaquePythonReference
         if not hasattr(python_object, attribute_name):
             return None
         out = getattr(python_object, attribute_name)
@@ -101,7 +98,7 @@ class GetAttributePointerOnPythonObject:
 class GetAttributePointerArrayOnPythonObject:
     @jpype.JOverride()
     def apply(self, python_object, attribute_name):
-        from org.optaplanner.jpyinterpreter.types.wrappers import OpaquePythonReference
+        from ai.timefold.jpyinterpreter.types.wrappers import OpaquePythonReference
         if not hasattr(python_object, attribute_name):
             return None
         out = getattr(python_object, attribute_name)()
@@ -113,7 +110,7 @@ class GetAttributePointerArrayOnPythonObject:
         return out_array
 
 
-@jpype.JImplements('org.optaplanner.jpyinterpreter.util.function.TriFunction', deferred=True)
+@jpype.JImplements('ai.timefold.jpyinterpreter.util.function.TriFunction', deferred=True)
 class GetAttributeOnPythonObjectWithMap:
     @jpype.JOverride()
     def apply(self, python_object, attribute_name, instance_map):
@@ -129,7 +126,7 @@ class GetAttributeOnPythonObjectWithMap:
             raise e
 
 
-@jpype.JImplements('org.optaplanner.jpyinterpreter.util.function.TriConsumer', deferred=True)
+@jpype.JImplements('ai.timefold.jpyinterpreter.util.function.TriConsumer', deferred=True)
 class SetAttributeOnPythonObject:
     @jpype.JOverride()
     def accept(self, python_object, attribute_name, value):
@@ -158,7 +155,7 @@ class GetDictOnPythonObject:
         return out
 
 
-@jpype.JImplements('org.optaplanner.jpyinterpreter.util.function.TriFunction', deferred=True)
+@jpype.JImplements('ai.timefold.jpyinterpreter.util.function.TriFunction', deferred=True)
 class CallPythonFunction:
     @jpype.JOverride()
     def apply(self, python_object, var_args_list, keyword_args_map):
@@ -171,19 +168,19 @@ class CallPythonFunction:
             out = python_object(*actual_vargs, **actual_keyword_args)
             return convert_to_java_python_like_object(out)
         except Exception as e:
-            from org.optaplanner.jpyinterpreter.types.errors import CPythonException
+            from ai.timefold.jpyinterpreter.types.errors import CPythonException
             print(e)
             raise CPythonException(str(e))
 
 
-@jpype.JImplements('org.optaplanner.jpyinterpreter.util.function.QuadFunction', deferred=True)
+@jpype.JImplements('ai.timefold.jpyinterpreter.util.function.QuadFunction', deferred=True)
 class CreateFunctionFromCode:
     @jpype.JOverride()
     def apply(self, code_object, function_globals, closure, name):
         from types import FunctionType
         from .python_to_java_bytecode_translator import unwrap_python_like_object, find_globals_dict_for_java_map
-        from org.optaplanner.jpyinterpreter import CPythonBackedPythonInterpreter  # noqa
-        from org.optaplanner.jpyinterpreter.types.wrappers import OpaquePythonReference, PythonObjectWrapper  # noqa
+        from ai.timefold.jpyinterpreter import CPythonBackedPythonInterpreter  # noqa
+        from ai.timefold.jpyinterpreter.types.wrappers import OpaquePythonReference, PythonObjectWrapper  # noqa
         from java.util import HashMap
         from jpype import JProxy
 
@@ -207,12 +204,12 @@ class CreateFunctionFromCode:
 
 
 
-@jpype.JImplements('org.optaplanner.jpyinterpreter.util.function.PentaFunction', deferred=True)
+@jpype.JImplements('ai.timefold.jpyinterpreter.util.function.PentaFunction', deferred=True)
 class ImportModule:
     @jpype.JOverride()
     def apply(self, module_name, globals_map, locals_map, from_list, level):
         from .python_to_java_bytecode_translator import unwrap_python_like_object, convert_to_java_python_like_object
-        from org.optaplanner.jpyinterpreter import CPythonBackedPythonInterpreter  # noqa
+        from ai.timefold.jpyinterpreter import CPythonBackedPythonInterpreter  # noqa
         python_globals = unwrap_python_like_object(globals_map, None)
         python_locals = unwrap_python_like_object(locals_map, None)
         python_from_list = unwrap_python_like_object(from_list, None)
@@ -239,5 +236,5 @@ def ensure_init():
 def set_class_output_directory(path: pathlib.Path):
     ensure_init()
 
-    from org.optaplanner.jpyinterpreter import PythonBytecodeToJavaBytecodeTranslator # noqa
+    from ai.timefold.jpyinterpreter import PythonBytecodeToJavaBytecodeTranslator # noqa
     PythonBytecodeToJavaBytecodeTranslator.classOutputRootPath = path

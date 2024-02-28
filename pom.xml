@@ -2,13 +2,13 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <parent>
-    <groupId>org.optaplanner</groupId>
-    <artifactId>optaplanner-build-parent</artifactId>
-    <version>9.37.0.Final</version>
+    <groupId>ai.timefold.solver</groupId>
+    <artifactId>timefold-solver-build-parent</artifactId>
+    <version>1.7.0</version>
   </parent>
 
   <modelVersion>4.0.0</modelVersion>
-  <artifactId>optapy-parent</artifactId>
+  <artifactId>timefold-solver-python-parent</artifactId>
   <packaging>pom</packaging>
 
   <properties>
@@ -16,14 +16,11 @@
     <maven.compiler.target>11</maven.compiler.target>
     <maven.compiler.release>11</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <project.python.version>9.37.0b0</project.python.version>
-
-    <version.compiler.plugin>3.8.1</version.compiler.plugin>
-    <version.surefire.plugin>2.22.2</version.surefire.plugin>
+    <project.python.version>1.7.0a0</project.python.version>
     <version.apache.collections4>4.4</version.apache.collections4>
 
     <sonar.moduleKey>${project.artifactId}</sonar.moduleKey>
-    <sonar.organization>optapy</sonar.organization>
+    <sonar.organization>timefold</sonar.organization>
     <sonar.sources>src/main/java,src/main/python</sonar.sources>
     <sonar.tests>src/test/java,tests</sonar.tests>
     <sonar.python.version>3.9,3.10,3.11</sonar.python.version>
@@ -33,7 +30,7 @@
   <dependencyManagement>
     <dependencies>
       <dependency>
-        <groupId>org.optaplanner</groupId>
+        <groupId>ai.timefold.solver</groupId>
         <artifactId>jpyinterpreter</artifactId>
         <version>${project.version}</version>
       </dependency>
@@ -47,21 +44,7 @@
 
   <modules>
     <module>jpyinterpreter</module>
-    <module>optapy-core</module>
-    <module>optapy-docs</module>
+    <module>timefold-solver-python-core</module>
   </modules>
 
-  <repositories>
-    <repository>
-      <id>jboss-public-repository-group</id>
-      <url>https://repository.jboss.org/nexus/content/groups/public/</url>
-      <releases>
-        <!-- Get releases only from Maven Central which is faster. -->
-        <enabled>false</enabled>
-      </releases>
-      <snapshots>
-        <enabled>true</enabled>
-      </snapshots>
-    </repository>
-  </repositories>
 </project>

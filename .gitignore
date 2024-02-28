@@ -2,7 +2,7 @@ __pycache__
 /target
 /build
 /local
-venv
+/venv*
 graalvenv
 /dist
 /*.egg-info

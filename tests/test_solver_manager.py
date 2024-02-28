@@ -1,15 +1,15 @@
 import pytest
-import optapy
-import optapy.types
-import optapy.score
-import optapy.config
-import optapy.constraint
+import timefold.solver
+import timefold.solver.types
+import timefold.solver.score
+import timefold.solver.config
+import timefold.solver.constraint
 
 
 def test_solve():
     from threading import Lock
     import time
-    from org.optaplanner.core.api.solver import SolverStatus
+    from ai.timefold.solver.core.api.solver import SolverStatus
     lock = Lock()
 
     def get_lock(entity):
@@ -17,12 +17,12 @@ def test_solve():
         lock.release()
         return False
 
-    @optapy.problem_fact
+    @timefold.solver.problem_fact
     class Value:
         def __init__(self, value):
             self.value = value
 
-        @optapy.planning_id
+        @timefold.solver.planning_id
         def get_id(self):
             return self.value
 
@@ -32,20 +32,20 @@ def test_solve():
         def __repr__(self):
             return str(self)
 
-    @optapy.planning_entity
+    @timefold.solver.planning_entity
     class Entity:
         def __init__(self, code, value=None):
             self.code = code
             self.value = value
 
-        @optapy.planning_variable(Value, value_range_provider_refs=['value_range'])
+        @timefold.solver.planning_variable(Value, value_range_provider_refs=['value_range'])
         def get_value(self):
             return self.value
 
         def set_value(self, value):
             self.value = value
 
-        @optapy.planning_id
+        @timefold.solver.planning_id
         def get_id(self):
             return self.code
 
@@ -55,41 +55,41 @@ def test_solve():
         def __repr__(self):
             return str(self)
 
-    @optapy.constraint_provider
-    def my_constraints(constraint_factory: optapy.constraint.ConstraintFactory):
+    @timefold.solver.constraint_provider
+    def my_constraints(constraint_factory: timefold.solver.constraint.ConstraintFactory):
         return [
             constraint_factory.for_each(Entity)
                 .filter(get_lock)
-                .reward('Wait for lock', optapy.score.SimpleScore.ONE),
+                .reward('Wait for lock', timefold.solver.score.SimpleScore.ONE),
             constraint_factory.for_each(Entity)
-                .reward('Maximize Value', optapy.score.SimpleScore.ONE, lambda entity: entity.value.value),
+                .reward('Maximize Value', timefold.solver.score.SimpleScore.ONE, lambda entity: entity.value.value),
             constraint_factory.for_each_unique_pair(Entity,
-                                                    optapy.constraint.Joiners.equal(lambda entity: entity.value.value))
-                .penalize('Same Value', optapy.score.SimpleScore.of(12)),
+                                                    timefold.solver.constraint.Joiners.equal(lambda entity: entity.value.value))
+                .penalize('Same Value', timefold.solver.score.SimpleScore.of(12)),
         ]
 
-    @optapy.planning_solution
+    @timefold.solver.planning_solution
     class Solution:
         def __init__(self, entity_list, value_range, score=None):
             self.entity_list = entity_list
             self.value_range = value_range
             self.score = score
 
-        @optapy.planning_entity_collection_property(Entity)
+        @timefold.solver.planning_entity_collection_property(Entity)
         def get_entity_list(self):
             return self.entity_list
 
-        @optapy.deep_planning_clone
-        @optapy.problem_fact_collection_property(Value)
-        @optapy.value_range_provider(range_id='value_range')
+        @timefold.solver.deep_planning_clone
+        @timefold.solver.problem_fact_collection_property(Value)
+        @timefold.solver.value_range_provider(range_id='value_range')
         def get_value_range(self):
             return self.value_range
 
         def set_value_range(self, value_range):
             self.value_range = value_range
 
-        @optapy.planning_score(optapy.score.SimpleScore)
-        def get_score(self) -> optapy.score.SimpleScore:
+        @timefold.solver.planning_score(timefold.solver.score.SimpleScore)
+        def get_score(self) -> timefold.solver.score.SimpleScore:
             return self.score
 
         def set_score(self, score):
@@ -98,13 +98,13 @@ def test_solve():
         def __str__(self):
             return f'Solution(entity_list={self.entity_list[0]}, value_list={self.value_range[0]}, score={self.score})'
 
-    @optapy.problem_change
+    @timefold.solver.problem_change
     class UseOnlyEntityAndValueProblemChange:
         def __init__(self, entity, value):
             self.entity = entity
             self.value = value
 
-        def doChange(self, solution: Solution, problem_change_director: optapy.types.ProblemChangeDirector):
+        def doChange(self, solution: Solution, problem_change_director: timefold.solver.types.ProblemChangeDirector):
             problem_facts_to_remove = solution.value_range.copy()
             entities_to_remove = solution.entity_list.copy()
             for problem_fact in problem_facts_to_remove:
@@ -116,15 +116,15 @@ def test_solve():
             problem_change_director.addEntity(self.entity, lambda entity: solution.entity_list.append(entity))
             problem_change_director.addProblemFact(self.value, lambda value: solution.value_range.append(value))
 
-    solver_config = optapy.config.solver.SolverConfig()
-    termination_config = optapy.config.solver.termination.TerminationConfig()
+    solver_config = timefold.solver.config.solver.SolverConfig()
+    termination_config = timefold.solver.config.solver.termination.TerminationConfig()
     termination_config.setBestScoreLimit('6')
     solver_config.withSolutionClass(Solution) \
         .withEntityClasses(Entity) \
         .withConstraintProviderClass(my_constraints) \
         .withTerminationConfig(termination_config)
     problem: Solution = Solution([Entity('A'), Entity('B'), Entity('C')], [Value(1), Value(2), Value(3)],
-                                 optapy.score.SimpleScore.ONE)
+                                 timefold.solver.score.SimpleScore.ONE)
 
     def assert_solver_run(solver_manager, solver_job):
         assert solver_manager.getSolverStatus(1) != SolverStatus.NOT_SOLVING
@@ -156,7 +156,7 @@ def test_solve():
         solver_run_dicts = solver_manager._optapy_debug_get_solver_runs_dicts()
         assert len(solver_run_dicts['solver_run_id_to_refs']) == 0
 
-    with optapy.solver_manager_create(solver_config) as solver_manager:
+    with timefold.solver.solver_manager_create(solver_config) as solver_manager:
         lock.acquire()
         solver_job = solver_manager.solve(1, problem)
         assert_solver_run(solver_manager, solver_job)
@@ -209,12 +209,12 @@ def test_solve():
 
 @pytest.mark.filterwarnings("ignore:.*Exception in thread.*:pytest.PytestUnhandledThreadExceptionWarning")
 def test_error():
-    @optapy.problem_fact
+    @timefold.solver.problem_fact
     class Value:
         def __init__(self, value):
             self.value = value
 
-        @optapy.planning_id
+        @timefold.solver.planning_id
         def get_id(self):
             return self.value
 
@@ -224,20 +224,20 @@ def test_error():
         def __repr__(self):
             return str(self)
 
-    @optapy.planning_entity
+    @timefold.solver.planning_entity
     class Entity:
         def __init__(self, code, value=None):
             self.code = code
             self.value = value
 
-        @optapy.planning_variable(Value, value_range_provider_refs=['value_range'])
+        @timefold.solver.planning_variable(Value, value_range_provider_refs=['value_range'])
         def get_value(self):
             return self.value
 
         def set_value(self, value):
             self.value = value
 
-        @optapy.planning_id
+        @timefold.solver.planning_id
         def get_id(self):
             return self.code
 
@@ -247,36 +247,36 @@ def test_error():
         def __repr__(self):
             return str(self)
 
-    @optapy.constraint_provider
-    def my_constraints(constraint_factory: optapy.constraint.ConstraintFactory):
+    @timefold.solver.constraint_provider
+    def my_constraints(constraint_factory: timefold.solver.constraint.ConstraintFactory):
         return [
             constraint_factory.for_each(Entity)
                               .filter(lambda e: e.missing_attribute == 1)
-                              .reward('Maximize Value', optapy.score.SimpleScore.ONE, lambda entity: entity.value.value)
+                              .reward('Maximize Value', timefold.solver.score.SimpleScore.ONE, lambda entity: entity.value.value)
         ]
 
-    @optapy.planning_solution
+    @timefold.solver.planning_solution
     class Solution:
         def __init__(self, entity_list, value_range, score=None):
             self.entity_list = entity_list
             self.value_range = value_range
             self.score = score
 
-        @optapy.planning_entity_collection_property(Entity)
+        @timefold.solver.planning_entity_collection_property(Entity)
         def get_entity_list(self):
             return self.entity_list
 
-        @optapy.deep_planning_clone
-        @optapy.problem_fact_collection_property(Value)
-        @optapy.value_range_provider(range_id='value_range')
+        @timefold.solver.deep_planning_clone
+        @timefold.solver.problem_fact_collection_property(Value)
+        @timefold.solver.value_range_provider(range_id='value_range')
         def get_value_range(self):
             return self.value_range
 
         def set_value_range(self, value_range):
             self.value_range = value_range
 
-        @optapy.planning_score(optapy.score.SimpleScore)
-        def get_score(self) -> optapy.score.SimpleScore:
+        @timefold.solver.planning_score(timefold.solver.score.SimpleScore)
+        def get_score(self) -> timefold.solver.score.SimpleScore:
             return self.score
 
         def set_score(self, score):
@@ -285,16 +285,16 @@ def test_error():
         def __str__(self):
             return f'Solution(entity_list={self.entity_list[0]}, value_list={self.value_range[0]}, score={self.score})'
 
-    solver_config = optapy.config.solver.SolverConfig()
-    termination_config = optapy.config.solver.termination.TerminationConfig()
+    solver_config = timefold.solver.config.solver.SolverConfig()
+    termination_config = timefold.solver.config.solver.termination.TerminationConfig()
     termination_config.setBestScoreLimit('6')
     solver_config.withSolutionClass(Solution) \
         .withEntityClasses(Entity) \
         .withConstraintProviderClass(my_constraints) \
         .withTerminationConfig(termination_config)
     problem: Solution = Solution([Entity('A'), Entity('B'), Entity('C')], [Value(1), Value(2), Value(3)],
-                                 optapy.score.SimpleScore.ONE)
-    with optapy.solver_manager_create(solver_config) as solver_manager:
+                                 timefold.solver.score.SimpleScore.ONE)
+    with timefold.solver.solver_manager_create(solver_config) as solver_manager:
         import time
         the_problem_id = None
         the_exception = None
