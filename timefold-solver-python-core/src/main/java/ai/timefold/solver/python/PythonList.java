@@ -111,12 +111,12 @@ public class PythonList<T> extends PythonLikeList<T> implements PythonObject, Li
     }
 
     @Override
-    public OpaquePythonReference get__optapy_Id() {
+    public OpaquePythonReference get__timefold_id() {
         return pythonListOpaqueReference;
     }
 
     @Override
-    public Map<Number, Object> get__optapy_reference_map() {
+    public Map<Number, Object> get__timefold_reference_map() {
         return idMap;
     }
 
@@ -127,7 +127,7 @@ public class PythonList<T> extends PythonLikeList<T> implements PythonObject, Li
             if (o instanceof OpaquePythonReference) {
                 addItemToPythonList.apply(pythonListOpaqueReference, o);
             } else if (o instanceof PythonObject) {
-                addItemToPythonList.apply(pythonListOpaqueReference, ((PythonObject) o).get__optapy_Id());
+                addItemToPythonList.apply(pythonListOpaqueReference, ((PythonObject) o).get__timefold_id());
             } else {
                 addItemToPythonList.apply(pythonListOpaqueReference, o);
             }
@@ -216,7 +216,7 @@ public class PythonList<T> extends PythonLikeList<T> implements PythonObject, Li
             if (t instanceof OpaquePythonReference) {
                 addItemToPythonList.apply(pythonListOpaqueReference, t);
             } else if (t instanceof PythonObject) {
-                addItemToPythonList.apply(pythonListOpaqueReference, ((PythonObject) t).get__optapy_Id());
+                addItemToPythonList.apply(pythonListOpaqueReference, ((PythonObject) t).get__timefold_id());
             } else {
                 addItemToPythonList.apply(pythonListOpaqueReference, t);
             }
@@ -233,7 +233,7 @@ public class PythonList<T> extends PythonLikeList<T> implements PythonObject, Li
             if (t instanceof OpaquePythonReference) {
                 return removeItemFromPythonList.apply(pythonListOpaqueReference, t);
             } else if (t instanceof PythonObject) {
-                return removeItemFromPythonList.apply(pythonListOpaqueReference, ((PythonObject) t).get__optapy_Id());
+                return removeItemFromPythonList.apply(pythonListOpaqueReference, ((PythonObject) t).get__timefold_id());
             } else {
                 return removeItemFromPythonList.apply(pythonListOpaqueReference, t);
             }
@@ -348,7 +348,7 @@ public class PythonList<T> extends PythonLikeList<T> implements PythonObject, Li
             if (t instanceof OpaquePythonReference) {
                 setItemAtIndexInPythonList.apply(pythonListOpaqueReference, i, t);
             } else if (t instanceof PythonObject) {
-                setItemAtIndexInPythonList.apply(pythonListOpaqueReference, i, ((PythonObject) t).get__optapy_Id());
+                setItemAtIndexInPythonList.apply(pythonListOpaqueReference, i, ((PythonObject) t).get__timefold_id());
             } else {
                 setItemAtIndexInPythonList.apply(pythonListOpaqueReference, i, t);
             }
@@ -365,7 +365,7 @@ public class PythonList<T> extends PythonLikeList<T> implements PythonObject, Li
             if (t instanceof OpaquePythonReference) {
                 addItemAtIndexInPythonList.apply(pythonListOpaqueReference, i, t);
             } else if (t instanceof PythonObject) {
-                addItemAtIndexInPythonList.apply(pythonListOpaqueReference, i, ((PythonObject) t).get__optapy_Id());
+                addItemAtIndexInPythonList.apply(pythonListOpaqueReference, i, ((PythonObject) t).get__timefold_id());
             } else {
                 addItemAtIndexInPythonList.apply(pythonListOpaqueReference, i, t);
             }

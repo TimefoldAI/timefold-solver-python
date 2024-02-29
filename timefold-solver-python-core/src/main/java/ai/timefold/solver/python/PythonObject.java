@@ -20,7 +20,7 @@ public interface PythonObject extends PythonLikeObject {
      * @return An opaque pointer to the Python Object represented by
      *         this PythonObject.
      */
-    OpaquePythonReference get__optapy_Id();
+    OpaquePythonReference get__timefold_id();
 
     /**
      * The Map of references that the planning solution that contains this
@@ -28,7 +28,7 @@ public interface PythonObject extends PythonLikeObject {
      *
      * @return The map used to store references.
      */
-    Map<Number, Object> get__optapy_reference_map();
+    Map<Number, Object> get__timefold_reference_map();
 
     void forceUpdate();
 

@@ -30,7 +30,7 @@ public class PythonSolver {
                     getNewReferenceMap(),
                     onlyUseJavaSettersForThisInstance ? PythonWrapperGenerator.NONE_PYTHON_SETTER
                             : PythonWrapperGenerator.pythonObjectIdAndAttributeSetter);
-            out.visitIds(out.get__optapy_reference_map());
+            out.visitIds(out.get__timefold_reference_map());
 
             // Mirror the reference map (not pass a reference to it)
             // so Score + list variables can be safely garbage collected in Python
@@ -39,10 +39,10 @@ public class PythonSolver {
             //  Python Object can have the same id, leading to the old value in the map being returned,
             //  causing an exception (or worse, a subtle bug))
             out.readFromPythonObject(Collections.newSetFromMap(new IdentityHashMap<>()),
-                    new MirrorWithExtrasMap<>(out.get__optapy_reference_map()));
+                    new MirrorWithExtrasMap<>(out.get__timefold_reference_map()));
             return out;
         } catch (Throwable t) {
-            throw new OptaPyException("A problem occurred when wrapping the python problem (" +
+            throw new TimefoldException("A problem occurred when wrapping the python problem (" +
                     PythonWrapperGenerator.getPythonObjectString(problem) +
                     "). Maybe an annotation was passed an incorrect type " +
                     "(for example, @problem_fact_collection_property(str) " +
@@ -56,7 +56,7 @@ public class PythonSolver {
             PythonObject out = (PythonObject) PythonWrapperGenerator.wrap(factClass, fact,
                     referenceMap,
                     PythonWrapperGenerator.NONE_PYTHON_SETTER);
-            out.visitIds(out.get__optapy_reference_map());
+            out.visitIds(out.get__timefold_reference_map());
 
             // Mirror the reference map (not pass a reference to it)
             // so Score + list variables can be safely garbage collected in Python
@@ -65,10 +65,10 @@ public class PythonSolver {
             //  Python Object can have the same id, leading to the old value in the map being returned,
             //  causing an exception (or worse, a subtle bug))
             out.readFromPythonObject(Collections.newSetFromMap(new IdentityHashMap<>()),
-                    new MirrorWithExtrasMap<>(out.get__optapy_reference_map()));
+                    new MirrorWithExtrasMap<>(out.get__timefold_reference_map()));
             return out;
         } catch (Throwable t) {
-            throw new OptaPyException("A problem occurred when wrapping the python fact (" +
+            throw new TimefoldException("A problem occurred when wrapping the python fact (" +
                     PythonWrapperGenerator.getPythonObjectString(fact) + ").\n"
                     + "Maybe an annotation was passed an incorrect type " +
                     "(for example, @problem_fact_collection_property(str) " +

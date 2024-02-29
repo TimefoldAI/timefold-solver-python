@@ -5,10 +5,10 @@ import java.util.Objects;
 import ai.timefold.jpyinterpreter.PythonLikeObject;
 import ai.timefold.jpyinterpreter.types.PythonLikeType;
 
-public class OptaPyObjectReference implements PythonLikeObject {
+public class TimefoldObjectReference implements PythonLikeObject {
     final long id;
 
-    public OptaPyObjectReference(long id) {
+    public TimefoldObjectReference(long id) {
         this.id = id;
     }
 
@@ -44,7 +44,7 @@ public class OptaPyObjectReference implements PythonLikeObject {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        OptaPyObjectReference that = (OptaPyObjectReference) o;
+        TimefoldObjectReference that = (TimefoldObjectReference) o;
         return id == that.id;
     }
 
@@ -55,7 +55,7 @@ public class OptaPyObjectReference implements PythonLikeObject {
 
     @Override
     public String toString() {
-        return "OptaPyObjectReference{" +
+        return "TimefoldObjectReference{" +
                 "id=" + id +
                 '}';
     }

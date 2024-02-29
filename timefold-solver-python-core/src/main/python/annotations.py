@@ -18,11 +18,11 @@ if TYPE_CHECKING:
         VariableListener as _VariableListener, PlanningVariableReference as _PlanningVariableReference
 
 """
-All OptaPlanner Python annotations work like this:
+All Timefold Python annotations work like this:
 
-1. Ensure OptaPy is init using ensure_init
+1. Ensure Timefold Python module is initialized using ensure_init
 2. Import the corresponding Java annotation
-3. Set __optaplanner<annotation_name> (ex: __optaplannerPlanningId) on the given function/class
+3. Set __timefold_annotation_<annotation_name> (ex: __timefold_annotation_PlanningId) on the given function/class
    to a dict containing the following:
        - 'annotationType' -> the imported Java annotation
        - annotation parameter -> parameter value or None if unset
@@ -47,7 +47,7 @@ def planning_id(getter_function: Callable[[], Union[int, str]]) -> Callable[[], 
     """
     ensure_init()
     from ai.timefold.solver.core.api.domain.lookup import PlanningId as JavaPlanningId
-    getter_function.__optaplannerPlanningId = {
+    getter_function.__timefold_annotation_PlanningId = {
         'annotationType': JavaPlanningId
     }
     return getter_function
@@ -71,10 +71,10 @@ def planning_pin(getter_function: Callable[[], bool]) -> Callable[[], bool]:
     """
     ensure_init()
     from ai.timefold.solver.core.api.domain.entity import PlanningPin as JavaPlanningPin
-    getter_function.__optaplannerPlanningId = {
+    getter_function.__timefold_annotation_PlanningPin = {
         'annotationType': JavaPlanningPin
     }
-    getter_function.__optapy_return = get_class(bool)
+    getter_function.__timefold_return = get_class(bool)
     return getter_function
 
 
@@ -101,7 +101,7 @@ def planning_variable(variable_type: Type, value_range_provider_refs: List[str],
     def planning_variable_function_wrapper(variable_getter_function: Callable[[], Any]):
         ensure_init()
         from ai.timefold.solver.core.api.domain.variable import PlanningVariable as JavaPlanningVariable
-        variable_getter_function.__optaplannerPlanningVariable = {
+        variable_getter_function.__timefold_annotation_PlanningVariable = {
             'annotationType': JavaPlanningVariable,
             'valueRangeProviderRefs': value_range_provider_refs,
             'nullable': nullable,
@@ -109,7 +109,7 @@ def planning_variable(variable_type: Type, value_range_provider_refs: List[str],
             'strengthComparatorClass': strength_comparator_class,
             'strengthWeightFactoryClass': strength_weight_factory_class
         }
-        variable_getter_function.__optapy_return = get_class(variable_type)
+        variable_getter_function.__timefold_return = get_class(variable_type)
         return variable_getter_function
 
     return planning_variable_function_wrapper
@@ -150,13 +150,13 @@ def planning_list_variable(variable_type: Type, value_range_provider_refs: List[
         from java.util import List as JavaList
         from ai.timefold.solver.python import PythonWrapperGenerator  # noqa
         from ai.timefold.solver.core.api.domain.variable import PlanningListVariable as JavaPlanningListVariable
-        variable_getter_function.__optaplannerPlanningListVariable = {
+        variable_getter_function.__timefold_annotation_PlanningListVariable = {
             'annotationType': JavaPlanningListVariable,
             'valueRangeProviderRefs': value_range_provider_refs,
         }
-        variable_getter_function.__optapy_is_planning_clone = True
-        variable_getter_function.__optapy_return = JavaList
-        variable_getter_function.__optapy_signature = PythonWrapperGenerator.getCollectionSignature(
+        variable_getter_function.__timefold_is_planning_clone = True
+        variable_getter_function.__timefold_return = JavaList
+        variable_getter_function.__timefold_signature = PythonWrapperGenerator.getCollectionSignature(
             JavaList, get_class(variable_type))
         return variable_getter_function
 
@@ -197,17 +197,17 @@ def custom_shadow_variable(shadow_variable_type: Type, *,
         ensure_init()
         from ai.timefold.solver.core.api.domain.variable import CustomShadowVariable as JavaCustomShadowVariable
 
-        custom_variable_getter_function.__optaplannerCustomShadowVariable = {
+        custom_variable_getter_function.__timefold_annotation_CustomShadowVariable = {
             'annotationType': JavaCustomShadowVariable,
             'sources': sources,
             'variableListenerRef': variable_listener_ref,
         }
 
         if variable_listener_class is not None:
-            custom_variable_getter_function.__optaplannerCustomShadowVariable['variableListenerClass'] = \
+            custom_variable_getter_function.__timefold_annotation_CustomShadowVariable['variableListenerClass'] = \
                 get_class(variable_listener_class)
 
-        custom_variable_getter_function.__optapy_return = get_class(shadow_variable_type)
+        custom_variable_getter_function.__timefold_return = get_class(shadow_variable_type)
         return custom_variable_getter_function
 
     return custom_shadow_variable_function_mapper
@@ -230,11 +230,11 @@ def index_shadow_variable(anchor_type: Type, source_variable_name: str) -> Calla
         ensure_init()
         from ai.timefold.solver.core.api.domain.variable import IndexShadowVariable as JavaIndexShadowVariable
         planning_variable_name = source_variable_name
-        index_getter_function.__optaplannerIndexShadowVariable = {
+        index_getter_function.__timefold_annotation_IndexShadowVariable = {
             'annotationType': JavaIndexShadowVariable,
             'sourceVariableName': planning_variable_name,
         }
-        index_getter_function.__optapy_return = get_class(anchor_type)
+        index_getter_function.__timefold_return = get_class(anchor_type)
         return index_getter_function
 
     return index_shadow_variable_function_mapper
@@ -261,11 +261,11 @@ def anchor_shadow_variable(anchor_type: Type, source_variable_name: str) -> Call
         ensure_init()
         from ai.timefold.solver.core.api.domain.variable import AnchorShadowVariable as JavaAnchorShadowVariable
         planning_variable_name = source_variable_name
-        anchor_getter_function.__optaplannerAnchorShadowVariable = {
+        anchor_getter_function.__timefold_annotation_AnchorShadowVariable = {
             'annotationType': JavaAnchorShadowVariable,
             'sourceVariableName': planning_variable_name,
         }
-        anchor_getter_function.__optapy_return = get_class(anchor_type)
+        anchor_getter_function.__timefold_return = get_class(anchor_type)
         return anchor_getter_function
 
     return anchor_shadow_variable_function_mapper
@@ -305,15 +305,15 @@ def inverse_relation_shadow_variable(source_type: Type, source_variable_name: st
         if the_source_type is None:
             the_source_type = SelfType
         planning_variable_name = source_variable_name
-        inverse_relation_getter_function.__optaplannerInverseRelationVariable = {
+        inverse_relation_getter_function.__timefold_annotation_InverseRelationVariable = {
             'annotationType': JavaInverseRelationShadowVariable,
             'sourceVariableName': planning_variable_name,
         }
         if is_singleton:
-            inverse_relation_getter_function.__optapy_return = the_source_type
+            inverse_relation_getter_function.__timefold_return = the_source_type
         else:
-            inverse_relation_getter_function.__optapy_return = Collection
-            inverse_relation_getter_function.__optapy_signature = PythonWrapperGenerator.getCollectionSignature(
+            inverse_relation_getter_function.__timefold_return = Collection
+            inverse_relation_getter_function.__timefold_signature = PythonWrapperGenerator.getCollectionSignature(
                 Collection, get_class(the_source_type))
         return inverse_relation_getter_function
 
@@ -325,7 +325,7 @@ def __verify_is_problem_fact(type, problem_fact_type):
         # These built-in python types have direct java equivalents
         # and thus can be used in Lists without an illegal item on the stack
         return
-    if not hasattr(type, '__optapy_java_class'):
+    if not hasattr(type, '__timefold_java_class'):
         raise ValueError(f'{type} is not a @{problem_fact_type}. Maybe decorate {type} with '
                          f'@{problem_fact_type}?')
 
@@ -347,8 +347,8 @@ def problem_fact_property(fact_type: Type) -> Callable[[Callable[[], List]],
         from ai.timefold.solver.core.api.domain.solution import \
             ProblemFactProperty as JavaProblemFactProperty
         __verify_is_problem_fact(fact_type, 'problem_fact')
-        getter_function.__optapy_return = get_class(fact_type)
-        getter_function.__optaplannerPlanningEntityCollectionProperty = {
+        getter_function.__timefold_return = get_class(fact_type)
+        getter_function.__timefold_annotation_PlanningEntityCollectionProperty = {
             'annotationType': JavaProblemFactProperty
         }
         return getter_function
@@ -373,10 +373,10 @@ def problem_fact_collection_property(fact_type: Type) -> Callable[[Callable[[], 
         from ai.timefold.solver.core.api.domain.solution import \
             ProblemFactCollectionProperty as JavaProblemFactCollectionProperty
         __verify_is_problem_fact(fact_type, 'problem_fact')
-        getter_function.__optapy_return = JavaList
-        getter_function.__optapy_signature = PythonWrapperGenerator.getCollectionSignature(
+        getter_function.__timefold_return = JavaList
+        getter_function.__timefold_signature = PythonWrapperGenerator.getCollectionSignature(
             JavaList, get_class(fact_type))
-        getter_function.__optaplannerPlanningEntityCollectionProperty = {
+        getter_function.__timefold_annotation_PlanningEntityCollectionProperty = {
             'annotationType': JavaProblemFactCollectionProperty
         }
         return getter_function
@@ -398,10 +398,10 @@ def planning_entity_property(entity_type: Type) -> Callable[[Callable[[], List]]
         from ai.timefold.solver.core.api.domain.solution import \
             PlanningEntityProperty as JavaPlanningEntityProperty
         __verify_is_problem_fact(entity_type, 'planning_entity')
-        getter_function.__optaplannerPlanningEntityCollectionProperty = {
+        getter_function.__timefold_annotation_PlanningEntityCollectionProperty = {
             'annotationType': JavaPlanningEntityProperty
         }
-        getter_function.__optapy_return = get_class(entity_type)
+        getter_function.__timefold_return = get_class(entity_type)
         return getter_function
 
     return planning_entity_property_function_mapper
@@ -422,11 +422,11 @@ def planning_entity_collection_property(entity_type: Type) -> Callable[[Callable
         from ai.timefold.solver.core.api.domain.solution import \
             PlanningEntityCollectionProperty as JavaPlanningEntityCollectionProperty
         __verify_is_problem_fact(entity_type, 'planning_entity')
-        getter_function.__optaplannerPlanningEntityCollectionProperty = {
+        getter_function.__timefold_annotation_PlanningEntityCollectionProperty = {
             'annotationType': JavaPlanningEntityCollectionProperty
         }
-        getter_function.__optapy_return = JavaList
-        getter_function.__optapy_signature = PythonWrapperGenerator.getCollectionSignature(
+        getter_function.__timefold_return = JavaList
+        getter_function.__timefold_signature = PythonWrapperGenerator.getCollectionSignature(
             JavaList, get_class(entity_type))
         return getter_function
 
@@ -461,20 +461,20 @@ def value_range_provider(range_id: str, value_range_type: type = object) -> Call
         from java.util import List as JavaList
         from java.lang import Object as JavaObject
 
-        getter_function.__optaplannerValueRangeProvider = {
+        getter_function.__timefold_annotation_ValueRangeProvider = {
             'annotationType': JavaValueRangeProvider,
             'id': range_id
         }
-        if not hasattr(getter_function, '__optapy_return'):
+        if not hasattr(getter_function, '__timefold_return'):
             actual_value_range_type = get_class(value_range_type)
             if JavaValueRange.class_.isAssignableFrom(actual_value_range_type):
-                getter_function.__optapy_return = get_class(value_range_type)
+                getter_function.__timefold_return = get_class(value_range_type)
             else:
                 if actual_value_range_type == JavaObject:
-                    getter_function.__optapy_return = PythonWrapperGenerator.getArrayClass(OpaquePythonReference)
+                    getter_function.__timefold_return = PythonWrapperGenerator.getArrayClass(OpaquePythonReference)
                 else:
-                    getter_function.__optapy_return = JavaList
-                    getter_function.__optapy_signature = PythonWrapperGenerator.getCollectionSignature(
+                    getter_function.__timefold_return = JavaList
+                    getter_function.__timefold_signature = PythonWrapperGenerator.getCollectionSignature(
                         JavaList, actual_value_range_type)
         return getter_function
 
@@ -504,13 +504,13 @@ def planning_score(score_type: Type['_Score'],
     def planning_score_function_wrapper(getter_function):
         ensure_init()
         from ai.timefold.solver.core.api.domain.solution import PlanningScore as JavaPlanningScore
-        getter_function.__optaplannerPlanningScore = {
+        getter_function.__timefold_annotation_PlanningScore = {
             'annotationType': JavaPlanningScore,
             'bendableHardLevelsSize': bendable_hard_levels_size,
             'bendableSoftLevelsSize': bendable_soft_levels_size,
             'scoreDefinitionClass': score_definition_class
         }
-        getter_function.__optapy_return = get_class(score_type)
+        getter_function.__timefold_return = get_class(score_type)
         return getter_function
 
     return planning_score_function_wrapper
@@ -559,10 +559,10 @@ def planning_entity(entity_class: Type = None, /, *, pinning_filter: Callable = 
     def planning_entity_wrapper(entity_class_argument):
         from jpyinterpreter import force_update_type
         out = JImplements('ai.timefold.jpyinterpreter.types.wrappers.OpaquePythonReference')(entity_class_argument)
-        out.__optapy_java_class = _generate_planning_entity_class(entity_class_argument, annotation_data)
-        out.__optapy_is_planning_clone = True
+        out.__timefold_java_class = _generate_planning_entity_class(entity_class_argument, annotation_data)
+        out.__timefold_is_planning_clone = True
         _add_shallow_copy_to_class(out)
-        force_update_type(out, out.__optapy_java_class.getField('$TYPE').get(None))
+        force_update_type(out, out.__timefold_java_class.getField('$TYPE').get(None))
         return out
 
     if entity_class:  # Called as @planning_entity
@@ -582,8 +582,8 @@ def problem_fact(fact_class: Type) -> Type:
     ensure_init()
     from jpyinterpreter import force_update_type
     out = JImplements('ai.timefold.jpyinterpreter.types.wrappers.OpaquePythonReference')(fact_class)
-    out.__optapy_java_class = _generate_problem_fact_class(fact_class)
-    force_update_type(out, out.__optapy_java_class.getField('$TYPE').get(None))
+    out.__timefold_java_class = _generate_problem_fact_class(fact_class)
+    force_update_type(out, out.__timefold_java_class.getField('$TYPE').get(None))
     return out
 
 
@@ -616,11 +616,11 @@ def planning_solution(planning_solution_class: Type) -> Type:
     ensure_init()
     from jpyinterpreter import force_update_type
     out = JImplements('ai.timefold.jpyinterpreter.types.wrappers.OpaquePythonReference')(planning_solution_class)
-    out.__optapy_java_class = _generate_planning_solution_class(planning_solution_class)
-    out.__optapy_is_planning_solution = True
-    out.__optapy_is_planning_clone = True
+    out.__timefold_java_class = _generate_planning_solution_class(planning_solution_class)
+    out.__timefold_is_planning_solution = True
+    out.__timefold_is_planning_clone = True
     _add_shallow_copy_to_class(out)
-    force_update_type(out, out.__optapy_java_class.getField('$TYPE').get(None))
+    force_update_type(out, out.__timefold_java_class.getField('$TYPE').get(None))
     return out
 
 
@@ -638,7 +638,7 @@ def deep_planning_clone(planning_clone_object: Union[Type, Callable]):
     :param planning_clone_object: The class or property that should be deep planning cloned.
     :return: planning_clone_object marked as being required for deep planning clone.
     """
-    planning_clone_object.__optapy_is_planning_clone = True
+    planning_clone_object.__timefold_is_planning_clone = True
     if isinstance(planning_clone_object, type):
         _add_shallow_copy_to_class(planning_clone_object)
     return planning_clone_object
@@ -676,7 +676,7 @@ def constraint_provider(constraint_provider_function: Callable[['_ConstraintFact
             finally:
                 constraint_stream.convert_to_java = BytecodeTranslation.IF_POSSIBLE
                 constraint_stream.all_translated_successfully = True
-        wrapped_constraint_provider.__optapy_java_class = _generate_constraint_provider_class(function,
+        wrapped_constraint_provider.__timefold_java_class = _generate_constraint_provider_class(function,
                                                                                               wrapped_constraint_provider)
         return wrapped_constraint_provider
 
@@ -698,7 +698,7 @@ def easy_score_calculator(easy_score_calculator_function: Callable[[Solution_], 
     :rtype: Callable[[Solution_], '_Score']
     """
     ensure_init()
-    easy_score_calculator_function.__optapy_java_class = \
+    easy_score_calculator_function.__timefold_java_class = \
         _generate_easy_score_calculator_class(easy_score_calculator_function)
     return easy_score_calculator_function
 
@@ -770,7 +770,7 @@ def incremental_score_calculator(incremental_score_calculator: Type['_Incrementa
         setattr(incremental_score_calculator, method, JOverride()(method_on_class))
 
     out = jpype.JImplements(base_interface)(incremental_score_calculator)
-    out.__optapy_java_class = _generate_incremental_score_calculator_class(out, constraint_match_aware)
+    out.__timefold_java_class = _generate_incremental_score_calculator_class(out, constraint_match_aware)
     return out
 
 
@@ -886,7 +886,7 @@ def variable_listener(variable_listener_class: Type['_VariableListener'] = None,
                     JOverride()(method_on_class))
 
         out = jpype.JImplements(base_interface)(the_variable_listener_class)
-        out.__optapy_java_class = _generate_variable_listener_class(out)
+        out.__timefold_java_class = _generate_variable_listener_class(out)
         return out
 
     if variable_listener_class:  # Called as @variable_listener
@@ -922,11 +922,11 @@ def problem_change(problem_change_class: Type['_ProblemChange']) -> \
         run_id = id(problem_change_director)
         solution.forceUpdate()
 
-        reference_map = solution.get__optapy_reference_map()
-        python_setter = solution._optaplannerPythonSetter
+        reference_map = solution.get__timefold_reference_map()
+        python_setter = solution._timefoldPythonSetter
 
-        problem_change_director._set_instance_map(run_id, solution.get__optapy_reference_map())
-        problem_change_director._set_update_function(run_id, solution._optaplannerPythonSetter)
+        problem_change_director._set_instance_map(run_id, solution.get__timefold_reference_map())
+        problem_change_director._set_update_function(run_id, solution._timefoldPythonSetter)
 
         class_doChange(self, solution, problem_change_director)
 
@@ -934,7 +934,7 @@ def problem_change(problem_change_class: Type['_ProblemChange']) -> \
         problem_change_director._unset_update_function(run_id)
 
         reference_map.clear()
-        getattr(solution, "$setFields")(solution.get__optapy_Id(), id(solution.get__optapy_Id()), reference_map,
+        getattr(solution, "$setFields")(solution.get__timefold_id(), id(solution.get__timefold_id()), reference_map,
                                         python_setter)
 
     setattr(problem_change_class, 'doChange', JOverride()(wrapper_doChange))

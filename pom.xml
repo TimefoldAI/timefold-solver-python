@@ -12,11 +12,7 @@
   <packaging>pom</packaging>
 
   <properties>
-    <maven.compiler.source>11</maven.compiler.source>
-    <maven.compiler.target>11</maven.compiler.target>
-    <maven.compiler.release>11</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <project.python.version>1.7.0a0</project.python.version>
     <version.apache.collections4>4.4</version.apache.collections4>
 
     <sonar.moduleKey>${project.artifactId}</sonar.moduleKey>

@@ -1,33 +1,28 @@
-# OptaPy
+# Timefold Solver
 
-[![PyPI](https://img.shields.io/pypi/v/optapy "PyPI")](https://pypi.org/project/optapy/)
-[![Binder](https://mybinder.org/badge_logo.svg "Launch on Binder")](https://mybinder.org/v2/gh/optapy/optapy-quickstarts/stable?filepath=school-timetabling/school-timetabling-quickstart.ipynb)
+[![PyPI](https://img.shields.io/pypi/v/timefold "PyPI")](https://pypi.org/project/timefold-solver/)
 
-[![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=optapy_optapy&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=optapy_optapy)
-[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=optapy_optapy&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=optapy_optapy)
-[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=optapy_optapy&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=optapy_optapy)
-[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=optapy_optapy&metric=coverage)](https://sonarcloud.io/summary/new_code?id=optapy_optapy)
+[![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=timefold_solver_python&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=timefold_solver_python)
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=timefold_solver_python&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=timefold_solver_python)
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=timefold_solver_python&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=timefold_solver_python)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=timefold_solver_python&metric=coverage)](https://sonarcloud.io/summary/new_code?id=timefold_solver_python)
 
-OptaPy is *an AI constraint solver for Python* to optimize
+Timefold Solver is *an AI constraint solver for Python* to optimize
 the Vehicle Routing Problem, Employee Rostering, Maintenance Scheduling, Task Assignment, School Timetabling,
 Cloud Optimization, Conference Scheduling, Job Shop Scheduling, Bin Packing and many more planning problems.
 
-OptaPy wraps the [OptaPlanner](https://www.optaplanner.org/) engine internally,
-but using OptaPy in Python is significantly slower than using OptaPlanner in Java or Kotlin.
-
-[Try the OptaPy Jupyter notebook.](https://mybinder.org/v2/gh/optapy/optapy-quickstarts/stable?filepath=school-timetabling/school-timetabling-quickstart.ipynb)
-
+Using Timefold in Python is significantly slower than using Timefold in Java or Kotlin.
 
 ## Requirements
 
 - [Install Python 3.9 or later.](https://www.python.org)
-- [Install JDK 11 or later](https://adoptium.net) with the environment variable `JAVA_HOME` configured to the JDK installation directory.
+- [Install JDK 17 or later](https://adoptium.net) with the environment variable `JAVA_HOME` configured to the JDK installation directory.
 
 ## Source code overview
 
 ### Domain
 
-In OptaPy, the domain has three parts:
+In Timefold, the domain has three parts:
 
 - Problem Facts, which do not change
 - Planning Entities, which have one or more planning variables
@@ -38,7 +33,7 @@ In OptaPy, the domain has three parts:
 To declare Problem Facts, use the `@problem_fact` decorator
 
 ```python
-from optapy import problem_fact
+from timefold.solver import problem_fact
 
 
 @problem_fact
@@ -55,7 +50,7 @@ class Timeslot:
 To declare Planning Entities, use the `@planning_entity` decorator
 
 ```python
-from optapy import planning_entity, planning_id, planning_variable
+from timefold.solver import planning_entity, planning_id, planning_variable
 
 @planning_entity
 class Lesson:
@@ -86,7 +81,7 @@ class Lesson:
         self.room = new_room
 ```
 
-- `@planning_variable` method decorators are used to indicate what fields can change. MUST begin with get and have a corresponding set method (i.e. `get_room(self)`, `set_room(self, newRoom)`). The first parameter of the decorator is the type of the Planning Variable (required). The `value_range_provider_refs` parameter tells OptaPlanner what value range providers on the Planning Solution this Planning Variable can take values from.
+- `@planning_variable` method decorators are used to indicate what fields can change. MUST begin with get and have a corresponding set method (i.e. `get_room(self)`, `set_room(self, newRoom)`). The first parameter of the decorator is the type of the Planning Variable (required). The `value_range_provider_refs` parameter tells Timefold what value range providers on the Planning Solution this Planning Variable can take values from.
 
 - `@planning_id` is used to uniquely identify an entity object of a particular class. The same Planning Id can be used on entities of different classes, but the ids of all entities in the same class must be different.
 
@@ -95,7 +90,7 @@ class Lesson:
 To declare the Planning Solution, use the `@planning_solution` decorator
 
 ```python
-from optapy import planning_solution, problem_fact_collection_property, value_range_provider, planning_entity_collection_property, planning_score
+from timefold.solver import planning_solution, problem_fact_collection_property, value_range_provider, planning_entity_collection_property, planning_score
 
 @planning_solution
 class TimeTable:
@@ -133,15 +128,15 @@ class TimeTable:
 
 - `@planning_entity_collection_property(type)` is used to indicate a method returns Planning Entities. The first parameter of the decorator is the type of the Planning Entity Collection (required). It should be a list.
 
-- `@planning_score(scoreType)` is used to tell OptaPlanner what field holds the score. The method MUST begin with get and have a corresponding set method (i.e. `get_score(self)`, `set_score(self, score)`). The first parameter of the decorator is the score type (required).
+- `@planning_score(scoreType)` is used to tell Timefold what field holds the score. The method MUST begin with get and have a corresponding set method (i.e. `get_score(self)`, `set_score(self, score)`). The first parameter of the decorator is the score type (required).
 
 ### Constraints
 
 You define your constraints by using the ConstraintFactory
 ```python
 from domain import Lesson
-from optapy import constraint_provider
-from optapy.types import Joiners, HardSoftScore
+from timefold.solver import constraint_provider
+from timefold.solver.types import Joiners, HardSoftScore
 
 
 @constraint_provider
@@ -161,13 +156,14 @@ def room_conflict(constraint_factory):
                 Joiners.equal(lambda lesson: lesson.room)) \
         .penalize("Room conflict", HardSoftScore.ONE_HARD)
 ```
-for more details on Constraint Streams, see https://www.optaplanner.org/docs/optaplanner/latest/constraint-streams/constraint-streams.html
+for more details on Constraint Streams,
+see https://timefold.ai/docs/timefold-solver/latest/constraints-and-score/score-calculation.
 
 ### Solve
 
 ```python
-from optapy import solver_factory_create
-from optapy.types import SolverConfig, Duration
+from timefold.solver import solver_factory_create
+from timefold.solver.types import SolverConfig, Duration
 from constraints import define_constraints
 from domain import TimeTable, Lesson, generate_problem
 
@@ -185,5 +181,4 @@ variables set to the final best solution found.
 
 ## More information
 
-For quickstarts, visit the [optapy quickstart repository](https://github.com/optapy/optapy-quickstarts).
-For a full API spec, visit [the OptaPy Documentation](https://www.optapy.org).
+For a full API spec, visit [the Timefold Documentation](https://timefold.ai/docs/timefold-solver/latest).

@@ -1,4 +1,4 @@
-# Runs the SonarCloud analysis of the optapy main branch after a PR is merged.
+# Runs the SonarCloud analysis of the Timefold Solver Python main branch after a PR is merged.
 name: SonarCloud Analysis
 
 on:
@@ -23,23 +23,31 @@ jobs:
       matrix:
         os: [ ubuntu-latest ]
         java-version: [ 17 ]  # JaCoCo segfaults Java 11 JVM but not Java 17 JVM when Python tests finish
-        maven-version: [ '3.8.6' ]
       fail-fast: false
     runs-on: ${{ matrix.os }}
 
     steps:
-      - name: Check out repository code
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
-          fetch-depth: 0
-
-      - name: Java and Maven Setup
-        uses: kiegroup/kogito-pipelines/.ci/actions/maven@main
+          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
+          ref: ${{ github.event.pull_request.head.sha }} # The GHA event will pull the main branch by default, and we must specify the PR reference version
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
         with:
           java-version: ${{ matrix.java-version }}
-          maven-version: ${{ matrix.maven-version }}
-          cache-key-prefix: ${{ runner.os }}-${{ matrix.java-version }}-maven${{ matrix.maven-version }}
-
+          distribution: 'temurin'
+      - name: Cache SonarCloud packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
       # Need to install both Python 3.9, Python 3.10 and Python 3.11 for tox (has to be in the same run)
       # Feature Request for setup action: https://github.com/actions/setup-python/issues/98
       - name: Python 3.9 Setup
@@ -49,7 +57,6 @@ jobs:
           cache: 'pip'
           cache-dependency-path: |
             **/setup.py
-
       - name: Python 3.10 Setup
         uses: actions/setup-python@v4
         with:
@@ -57,7 +64,6 @@ jobs:
           cache: 'pip'
           cache-dependency-path: |
             **/setup.py
-
       - name: Python 3.11 Setup
         uses: actions/setup-python@v4
         with:
@@ -65,27 +71,21 @@ jobs:
           cache: 'pip'
           cache-dependency-path: |
             **/setup.py
-
       - name: Install tox
         run:
           python -m pip install --upgrade pip
           pip install tox coverage pytest pytest-cov
-
       - name: Build with Maven to measure code coverage
         run: mvn -B --fail-at-end clean install -Prun-code-coverage
-
       - name: Get JaCoCo Agent
-        run: mvn org.apache.maven.plugins:maven-dependency-plugin:2.8:get -Dartifact=org.jacoco:org.jacoco.agent:0.8.8:jar:runtime -Ddest=target/jacocoagent.jar
-
-      - name: Run tox to measure optapy code coverage from Python tests
+        run: mvn org.apache.maven.plugins:maven-dependency-plugin:2.8:get -Dartifact=org.jacoco:org.jacoco.agent:0.8.11:jar:runtime -Ddest=target/jacocoagent.jar
+      - name: Run tox to measure timefold solver python code coverage from Python tests
         continue-on-error: true # Sometimes the JVM segfaults on SUCCESSFUL tests with Java 17 (and always with Java 11)
-        run: python -m tox -- --cov=optapy --cov-report=xml:target/coverage.xml --cov-config=tox.ini --cov-branch --cov-append --jacoco-agent=./target/jacocoagent.jar
-
+        run: python -m tox -- --cov=timefold-solver --cov-report=xml:target/coverage.xml --cov-config=tox.ini --cov-branch --cov-append --jacoco-agent=./target/jacocoagent.jar
       - name: Run tox to measure jpyinterpreter code coverage from Python tests
         continue-on-error: true # Sometimes the JVM segfaults on SUCCESSFUL tests with Java 17 (and always with Java 11)
         working-directory: ./jpyinterpreter
         run: python -m tox -- --cov=jpyinterpreter --cov-report=xml:target/coverage.xml --cov-config=tox.ini --cov-branch --cov-append --jacoco-agent=../target/jacocoagent.jar --jacoco-output=../target/jacoco.exec
-
       # Because we are using JPype, and JPype add it own import hook, we need to use --import-mode=importlib in pytest
       # This seems to create an issue in test coverage, where it reports coverage inside the tox virtual environment,
       # instead of coverage inside sources. For instance, for a package, it will report:
@@ -99,9 +99,8 @@ jobs:
       # separate coverage files into one.
       - name: Fix Python test coverage paths
         run: python fix-coverage-paths.py
-
       - name: Run SonarCloud analysis
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONARCLOUD_TOKEN: ${{ secrets.SONARCLOUD_TOKEN }}
-        run: mvn -B --fail-at-end validate -Psonarcloud-analysis -Dsonar.projectKey=optapy_optapy -Dsonar.login=${{ env.SONARCLOUD_TOKEN }}
+        run: mvn -B --fail-at-end validate -Psonarcloud-analysis -Dsonar.projectKey=timefold_solver_python -Dsonar.login=${{ env.SONARCLOUD_TOKEN }}

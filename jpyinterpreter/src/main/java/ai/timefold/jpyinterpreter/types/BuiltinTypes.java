@@ -93,7 +93,7 @@ public class BuiltinTypes {
     public static ClassLoader asmClassLoader = new ClassLoader() {
         // getName() is an abstract method in Java 11 but not in Java 8
         public String getName() {
-            return "OptaPlanner Gizmo Python Bytecode ClassLoader";
+            return "JPyInterpreter Python Bytecode ClassLoader";
         }
 
         @Override

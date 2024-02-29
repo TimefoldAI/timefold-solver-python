@@ -1,7 +1,7 @@
 import jpype.imports
 import jpyinterpreter
 
-jpyinterpreter.init(path=['target/example-8.19.0.Final.jar'])
+jpyinterpreter.init(path=['target/example-1.0.0.jar'])
 
 from java.util.function import Function
 

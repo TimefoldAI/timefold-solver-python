@@ -9,7 +9,7 @@ from inspect import signature, Parameter
 from typing import cast, List, Tuple, Type, TypeVar, Callable, Dict, Any, Union, TYPE_CHECKING
 import copy
 from collections.abc import Sequence, MutableSequence, Mapping, Set
-from .timefold_python_logger import optapy_logger
+from .timefold_python_logger import timefold_logger
 from .jpype_type_conversions import PythonSupplier, PythonFunction, PythonBiFunction, PythonTriFunction, \
     ConstraintProviderFunction
 
@@ -25,9 +25,9 @@ Score_ = TypeVar('Score_')
 
 
 def extract_timefold_jars() -> list[str]:
-    """Extracts and return a list of OptaPy Java dependencies
+    """Extracts and return a list of timefold Java dependencies
 
-    Invoking this function extracts OptaPy Dependencies from the timefold.solver.jars module
+    Invoking this function extracts timefold Dependencies from the timefold.solver.jars module
     into a temporary directory and returns a list contains classpath entries for
     those dependencies. The temporary directory exists for the entire execution of the
     program.
@@ -66,10 +66,10 @@ def _get_python_object_attribute(object_id, name):
     the_object = object_id
     python_object_getter = getattr(the_object, str(name))
     if not callable(python_object_getter):
-        from ai.timefold.solver.python import OptaPyException  # noqa
+        from ai.timefold.solver.python import TimefoldException  # noqa
         error = (f'The attribute {name} on {object_id}is not callable (got {python_object_getter}, '
                  f'expecting a function). You might have overridden the function {name} with a value.')
-        raise OptaPyException(error)
+        raise TimefoldException(error)
     try:
         python_object = python_object_getter()
         if python_object is None:
@@ -78,7 +78,7 @@ def _get_python_object_attribute(object_id, name):
                                         ai.timefold.solver.core.api.score.Score)):
             out = JObject(python_object, java.lang.Object)
             return out
-        elif hasattr(python_object_getter, '__optaplannerPlanningId'):
+        elif hasattr(python_object_getter, '__timefold_annotation_PlanningId'):
             return PythonComparable(
                 JProxy(ai.timefold.jpyinterpreter.types.wrappers.OpaquePythonReference, inst=python_object,
                        convert=True))
@@ -86,9 +86,9 @@ def _get_python_object_attribute(object_id, name):
             return JProxy(ai.timefold.jpyinterpreter.types.wrappers.OpaquePythonReference, inst=python_object,
                           convert=True)
     except Exception as e:
-        from ai.timefold.solver.python import OptaPyException  # noqa
+        from ai.timefold.solver.python import TimefoldException  # noqa
         error = f'An exception occur when calling {str(name)} on {str(the_object)}: {str(e)}. Check the code.'
-        raise OptaPyException(error)
+        raise TimefoldException(error)
 
 
 def _get_python_array_to_id_array(the_object: List):
@@ -118,7 +118,7 @@ def _set_python_object_attribute(object_id: int, name: str, value: Any) -> None:
     the_object = object_id
     the_value = value
     if isinstance(the_value, PythonObject):
-        the_value = value.get__optapy_Id()
+        the_value = value.get__timefold_id()
     elif isinstance(the_value, PythonObjectWrapper):
         the_value = value.getWrappedObject()
     getattr(the_object, str(name))(the_value)
@@ -137,7 +137,7 @@ def _deep_clone_python_object(the_object: Any):
     import ai.timefold.jpyinterpreter.types.wrappers.OpaquePythonReference
     from ai.timefold.solver.python import PythonWrapperGenerator  # noqa
     item = PythonWrapperGenerator.getPythonObject(the_object)
-    run_id = item._optapy_solver_run_id  # noqa ; cannot use __ since then we cannot access it here
+    run_id = item._timefold_solver_run_id  # noqa ; cannot use __ since then we cannot access it here
     the_clone = _planning_clone(item, dict())
 
     # Only need to keep two references: the best solution, and the working solution
@@ -152,7 +152,7 @@ def _is_deep_planning_clone(object):
     :param object: The object to check if it should be deep planning cloned.
     :return: True iff object should be deep planning cloned, False otherwise.
     """
-    return hasattr(type(object), '__optapy_is_planning_clone')
+    return hasattr(type(object), '__timefold_is_planning_clone')
 
 
 def _planning_clone(item, memo):
@@ -230,24 +230,24 @@ def _planning_clone(item, memo):
     for planning_clone_attribute_name in dir(planning_clone_type):
         planning_clone_attribute = getattr(planning_clone_type, planning_clone_attribute_name)
         if inspect.isfunction(planning_clone_attribute) and \
-                hasattr(planning_clone_attribute, '__optapy_is_planning_clone'):
+                hasattr(planning_clone_attribute, '__timefold_is_planning_clone'):
             setter = f'set{planning_clone_attribute_name[3:]}'
             try:
                 attribute_value = getattr(planning_clone, planning_clone_attribute_name)()
             except Exception as e:
-                from ai.timefold.solver.python import OptaPyException  # noqa
+                from ai.timefold.solver.python import TimefoldException  # noqa
                 error = (f'An exception occur when getting the @deep_planning_clone property'
                          f'{planning_clone_attribute_name} on object {str(item)}: {str(e)}')
-                raise OptaPyException(error)
+                raise TimefoldException(error)
             attribute_value_clone = _planning_clone(attribute_value, memo)
             try:
                 getattr(planning_clone, setter)(attribute_value_clone)
             except AttributeError as e:
-                from ai.timefold.solver.python import OptaPyException  # noqa
+                from ai.timefold.solver.python import TimefoldException  # noqa
                 error = (f'There is no corresponding setter {setter} for deep cloned property '
                          f'{planning_clone_attribute_name} on object {str(item)}. Maybe add a setter? '
                          f'Original exception: {str(e)}')
-                raise OptaPyException(error)
+                raise TimefoldException(error)
     return planning_clone
 
 
@@ -398,7 +398,7 @@ def init(*args, path: List[str] = None, include_timefold_jars: bool = True, log_
 def ensure_init():
     """Start the JVM if it isn't started; does nothing otherwise
 
-    Used by OptaPy to start the JVM when needed by a method, so
+    Used by timefold to start the JVM when needed by a method, so
     users don't need to start the JVM themselves.
 
     :return: None
@@ -420,7 +420,7 @@ solver_run_id_to_refs = dict()
 """Maps solver run id to solution clones it references"""
 
 
-def _optapy_error(item):
+def _timefold_error(item):
     raise AttributeError
 
 
@@ -453,12 +453,12 @@ class _PythonObject:
         pass
 
 
-    def _optapy_change_variable(self, variable_name):
+    def _timefold_change_variable(self, variable_name):
         from ai.timefold.solver.python import PythonWrapperGenerator  # noqa
         PythonWrapperGenerator.updateVariableFromPythonObject(self, variable_name)
 
 
-    def __optapy_lookup(self, attribute, default_fun, *args, **kwargs):
+    def __timefold_lookup(self, attribute, default_fun, *args, **kwargs):
         from ai.timefold.solver.python import PythonWrapperGenerator  # noqa
         item = PythonWrapperGenerator.getPythonObject(self)
         args = _convert_args(args)
@@ -471,199 +471,199 @@ class _PythonObject:
 
     # These are needed for Python bytecodes, which look directly at the type and ignore attribute shenanigans
     def __getattr__(self, name):
-        return self.__optapy_lookup('__getattr__', lambda item: getattr(item, name), name)
+        return self.__timefold_lookup('__getattr__', lambda item: getattr(item, name), name)
 
     def __setattr__(self, name, value):
-        return self.__optapy_lookup('__setattr__', lambda item: setattr(item, name, value), name, value)
+        return self.__timefold_lookup('__setattr__', lambda item: setattr(item, name, value), name, value)
 
     def __delattr__(self, name):
-        return self.__optapy_lookup('__delattr__', lambda item: delattr(item, name), name)
+        return self.__timefold_lookup('__delattr__', lambda item: delattr(item, name), name)
 
     def __lt__(self, other):
-        return self.__optapy_lookup('__lt__', lambda item: item < other, other)
+        return self.__timefold_lookup('__lt__', lambda item: item < other, other)
 
     def __le__(self, other):
-        return self.__optapy_lookup('__le__', lambda item: item <= other, other)
+        return self.__timefold_lookup('__le__', lambda item: item <= other, other)
 
     def __eq__(self, other):
-        return self.__optapy_lookup('__eq__', lambda item: item == other, other)
+        return self.__timefold_lookup('__eq__', lambda item: item == other, other)
 
     def __gt__(self, other):
-        return self.__optapy_lookup('__gt__', lambda item: item > other, other)
+        return self.__timefold_lookup('__gt__', lambda item: item > other, other)
 
     def __ge__(self, other):
-        return self.__optapy_lookup('__ge__', lambda item: item >= other, other)
+        return self.__timefold_lookup('__ge__', lambda item: item >= other, other)
 
     def __ne__(self, other):
-        return self.__optapy_lookup('__ne__', lambda item: item != other, other)
+        return self.__timefold_lookup('__ne__', lambda item: item != other, other)
 
     def __bool__(self):
-        return self.__optapy_lookup('__bool__', lambda item: bool(item))
+        return self.__timefold_lookup('__bool__', lambda item: bool(item))
 
     def __hash__(self):
-        return self.__optapy_lookup('__hash__', lambda item: hash(item))
+        return self.__timefold_lookup('__hash__', lambda item: hash(item))
 
     def __str__(self):
-        return self.__optapy_lookup('__str__', lambda item: str(item))
+        return self.__timefold_lookup('__str__', lambda item: str(item))
 
     def __repr__(self):
-        return self.__optapy_lookup('__repr__', lambda item: repr(item))
+        return self.__timefold_lookup('__repr__', lambda item: repr(item))
 
     def __len__(self):
-        return self.__optapy_lookup('__len__', lambda item: len(item))
+        return self.__timefold_lookup('__len__', lambda item: len(item))
 
     def __iter__(self):
-        return self.__optapy_lookup('__iter__', lambda item: iter(item))
+        return self.__timefold_lookup('__iter__', lambda item: iter(item))
 
     def __contains__(self, item):
-        return self.__optapy_lookup('__contains__', lambda container: item in container, item)
+        return self.__timefold_lookup('__contains__', lambda container: item in container, item)
 
     def __getitem__(self, key):
-        return self.__optapy_lookup('__getitem__', lambda container: container[key], key)
+        return self.__timefold_lookup('__getitem__', lambda container: container[key], key)
 
     def __setitem__(self, key, value):
-        return self.__optapy_lookup('__setitem__', _optapy_error, key, value)
+        return self.__timefold_lookup('__setitem__', _timefold_error, key, value)
 
     def __delitem__(self, key):
-        return self.__optapy_lookup('__delitem__', _optapy_error, key)
+        return self.__timefold_lookup('__delitem__', _timefold_error, key)
 
     def __add__(self, other):
-        return self.__optapy_lookup('__add__', lambda item: item + other, other)
+        return self.__timefold_lookup('__add__', lambda item: item + other, other)
 
     def __sub__(self, other):
-        return self.__optapy_lookup('__sub__', lambda item: item - other, other)
+        return self.__timefold_lookup('__sub__', lambda item: item - other, other)
 
     def __mul__(self, other):
-        return self.__optapy_lookup('__mul__', lambda item: item * other, other)
+        return self.__timefold_lookup('__mul__', lambda item: item * other, other)
 
     def __matmul__(self, other):
-        return self.__optapy_lookup('__matmul__', lambda item: item @ other, other)
+        return self.__timefold_lookup('__matmul__', lambda item: item @ other, other)
 
     def __truediv__(self, other):
-        return self.__optapy_lookup('__truediv__', lambda item: item / other, other)
+        return self.__timefold_lookup('__truediv__', lambda item: item / other, other)
 
     def __floordiv__(self, other):
-        return self.__optapy_lookup('__floordiv__', lambda item: item // other, other)
+        return self.__timefold_lookup('__floordiv__', lambda item: item // other, other)
 
     def __mod__(self, other):
-        return self.__optapy_lookup('__mod__', lambda item: item % other, other)
+        return self.__timefold_lookup('__mod__', lambda item: item % other, other)
 
     def __divmod__(self, other):
-        return self.__optapy_lookup('__divmod__', lambda item: divmod(item, other), other)
+        return self.__timefold_lookup('__divmod__', lambda item: divmod(item, other), other)
 
     def __pow__(self, other, *extra_args):
-        return self.__optapy_lookup('__pow__', lambda item: item ** other, other, *extra_args)
+        return self.__timefold_lookup('__pow__', lambda item: item ** other, other, *extra_args)
 
     def __lshift__(self, other):
-        return self.__optapy_lookup('__lshift__', lambda item: item << other, other)
+        return self.__timefold_lookup('__lshift__', lambda item: item << other, other)
 
     def __rshift__(self, other):
-        return self.__optapy_lookup('__rshift__', lambda item: item >> other, other)
+        return self.__timefold_lookup('__rshift__', lambda item: item >> other, other)
 
     def __and__(self, other):
-        return self.__optapy_lookup('__and__', lambda item: item and other, other)
+        return self.__timefold_lookup('__and__', lambda item: item and other, other)
 
     def __xor__(self, other):
-        return self.__optapy_lookup('__xor__', lambda item: item ^ other, other)
+        return self.__timefold_lookup('__xor__', lambda item: item ^ other, other)
 
     def __or__(self, other):
-        return self.__optapy_lookup('__or__', lambda item: item or other, other)
+        return self.__timefold_lookup('__or__', lambda item: item or other, other)
 
     def __radd__(self, other):
-        return self.__optapy_lookup('__radd__', lambda item: other + item, other)
+        return self.__timefold_lookup('__radd__', lambda item: other + item, other)
 
     def __rsub__(self, other):
-        return self.__optapy_lookup('__rsub__', lambda item: other - item, other)
+        return self.__timefold_lookup('__rsub__', lambda item: other - item, other)
 
     def __rmul__(self, other):
-        return self.__optapy_lookup('__rmul__', lambda item: other * item, other)
+        return self.__timefold_lookup('__rmul__', lambda item: other * item, other)
 
     def __rmatmul__(self, other):
-        return self.__optapy_lookup('__rmatmul__', lambda item: other @ item, other)
+        return self.__timefold_lookup('__rmatmul__', lambda item: other @ item, other)
 
     def __rtruediv__(self, other):
-        return self.__optapy_lookup('__rtruediv__', lambda item: other / item, other)
+        return self.__timefold_lookup('__rtruediv__', lambda item: other / item, other)
 
     def __rfloordiv__(self, other):
-        return self.__optapy_lookup('__rfloordiv__', lambda item: other // item, other)
+        return self.__timefold_lookup('__rfloordiv__', lambda item: other // item, other)
 
     def __rmod__(self, other):
-        return self.__optapy_lookup('__rmod__', lambda item: other % item, other)
+        return self.__timefold_lookup('__rmod__', lambda item: other % item, other)
 
     def __rdivmod__(self, other):
-        return self.__optapy_lookup('__rdivmod__', lambda item: divmod(other, item), other)
+        return self.__timefold_lookup('__rdivmod__', lambda item: divmod(other, item), other)
 
     def __rpow__(self, other, *extra_args):
-        return self.__optapy_lookup('__rpow__', lambda item: other ** item, other, *extra_args)
+        return self.__timefold_lookup('__rpow__', lambda item: other ** item, other, *extra_args)
 
     def __rlshift__(self, other):
-        return self.__optapy_lookup('__rlshift__', lambda item: other << item, other)
+        return self.__timefold_lookup('__rlshift__', lambda item: other << item, other)
 
     def __rrshift__(self, other):
-        return self.__optapy_lookup('__rrshift__', lambda item: other >> item, other)
+        return self.__timefold_lookup('__rrshift__', lambda item: other >> item, other)
 
     def __rand__(self, other):
-        return self.__optapy_lookup('__rand__', lambda item: other and item, other)
+        return self.__timefold_lookup('__rand__', lambda item: other and item, other)
 
     def __rxor__(self, other):
-        return self.__optapy_lookup('__rxor__', lambda item: other ^ item, other)
+        return self.__timefold_lookup('__rxor__', lambda item: other ^ item, other)
 
     def __ror__(self, other):
-        return self.__optapy_lookup('__ror__', lambda item: other or item, other)
+        return self.__timefold_lookup('__ror__', lambda item: other or item, other)
 
     def __iadd__(self, other):
-        return self.__optapy_lookup('__iadd__', _optapy_error, other)
+        return self.__timefold_lookup('__iadd__', _timefold_error, other)
 
     def __isub__(self, other):
-        return self.__optapy_lookup('__isub__', _optapy_error, other)
+        return self.__timefold_lookup('__isub__', _timefold_error, other)
 
     def __imul__(self, other):
-        return self.__optapy_lookup('__imul__', _optapy_error, other)
+        return self.__timefold_lookup('__imul__', _timefold_error, other)
 
     def __imatmul__(self, other):
-        return self.__optapy_lookup('__imatmul__', _optapy_error, other)
+        return self.__timefold_lookup('__imatmul__', _timefold_error, other)
 
     def __itruediv__(self, other):
-        return self.__optapy_lookup('__itruediv__', _optapy_error, other)
+        return self.__timefold_lookup('__itruediv__', _timefold_error, other)
 
     def __ifloordiv__(self, other):
-        return self.__optapy_lookup('__ifloordiv__', _optapy_error, other)
+        return self.__timefold_lookup('__ifloordiv__', _timefold_error, other)
 
     def __imod__(self, other):
-        return self.__optapy_lookup('__imod__', _optapy_error, other)
+        return self.__timefold_lookup('__imod__', _timefold_error, other)
 
     def __ipow__(self, other, *extra_args):
-        return self.__optapy_lookup('__ipow__', _optapy_error, other, *extra_args)
+        return self.__timefold_lookup('__ipow__', _timefold_error, other, *extra_args)
 
     def __ilshift__(self, other):
-        return self.__optapy_lookup('__ilshift__', _optapy_error, other)
+        return self.__timefold_lookup('__ilshift__', _timefold_error, other)
 
     def __irshift__(self, other):
-        return self.__optapy_lookup('__irshift__', _optapy_error, other)
+        return self.__timefold_lookup('__irshift__', _timefold_error, other)
 
     def __iand__(self, other):
-        return self.__optapy_lookup('__iand__', _optapy_error, other)
+        return self.__timefold_lookup('__iand__', _timefold_error, other)
 
     def __ixor__(self, other):
-        return self.__optapy_lookup('__ixor__', _optapy_error, other)
+        return self.__timefold_lookup('__ixor__', _timefold_error, other)
 
     def __ior__(self, other):
-        return self.__optapy_lookup('__ior__', _optapy_error, other)
+        return self.__timefold_lookup('__ior__', _timefold_error, other)
 
     def __neg__(self):
-        return self.__optapy_lookup('__neg__', lambda item: -item)
+        return self.__timefold_lookup('__neg__', lambda item: -item)
 
     def __pos__(self):
-        return self.__optapy_lookup('__pos__', lambda item: +item)
+        return self.__timefold_lookup('__pos__', lambda item: +item)
 
     def __abs__(self):
-        return self.__optapy_lookup('__neg__', lambda item: abs(item))
+        return self.__timefold_lookup('__neg__', lambda item: abs(item))
 
     def __invert__(self):
-        return self.__optapy_lookup('__invert__', lambda item: ~item)
+        return self.__timefold_lookup('__invert__', lambda item: ~item)
 
     def __call__(self, *args, **kwargs):
-        return self.__optapy_lookup('__call__', lambda item: item(*args, **kwargs), *args, **kwargs)
+        return self.__timefold_lookup('__call__', lambda item: item(*args, **kwargs), *args, **kwargs)
 
 
 # Class duplication, since JImplementationFor does not seem to follow/allow class inheritance
@@ -682,7 +682,7 @@ class _PythonComparable:
     def __jclass_init__(self):
         pass
 
-    def __optapy_lookup(self, attribute, default_fun, *args, **kwargs):
+    def __timefold_lookup(self, attribute, default_fun, *args, **kwargs):
         from ai.timefold.solver.python import PythonWrapperGenerator  # noqa
         item = PythonWrapperGenerator.getPythonObject(self)
         args = _convert_args(args)
@@ -695,199 +695,199 @@ class _PythonComparable:
 
     # These are needed for Python bytecodes, which look directly at the type and ignore attribute shenanigans
     def __getattr__(self, name):
-        return self.__optapy_lookup('__getattr__', lambda item: getattr(item, name), name)
+        return self.__timefold_lookup('__getattr__', lambda item: getattr(item, name), name)
 
     def __setattr__(self, name, value):
-        return self.__optapy_lookup('__setattr__', lambda item: setattr(item, name, value), name, value)
+        return self.__timefold_lookup('__setattr__', lambda item: setattr(item, name, value), name, value)
 
     def __delattr__(self, name):
-        return self.__optapy_lookup('__delattr__', lambda item: delattr(item, name), name)
+        return self.__timefold_lookup('__delattr__', lambda item: delattr(item, name), name)
 
     def __lt__(self, other):
-        return self.__optapy_lookup('__lt__', lambda item: item < other, other)
+        return self.__timefold_lookup('__lt__', lambda item: item < other, other)
 
     def __le__(self, other):
-        return self.__optapy_lookup('__le__', lambda item: item <= other, other)
+        return self.__timefold_lookup('__le__', lambda item: item <= other, other)
 
     def __eq__(self, other):
-        return self.__optapy_lookup('__eq__', lambda item: item == other, other)
+        return self.__timefold_lookup('__eq__', lambda item: item == other, other)
 
     def __gt__(self, other):
-        return self.__optapy_lookup('__gt__', lambda item: item > other, other)
+        return self.__timefold_lookup('__gt__', lambda item: item > other, other)
 
     def __ge__(self, other):
-        return self.__optapy_lookup('__ge__', lambda item: item >= other, other)
+        return self.__timefold_lookup('__ge__', lambda item: item >= other, other)
 
     def __ne__(self, other):
-        return self.__optapy_lookup('__ne__', lambda item: item != other, other)
+        return self.__timefold_lookup('__ne__', lambda item: item != other, other)
 
     def __bool__(self):
-        return self.__optapy_lookup('__bool__', lambda item: bool(item))
+        return self.__timefold_lookup('__bool__', lambda item: bool(item))
 
     def __hash__(self):
-        return self.__optapy_lookup('__hash__', lambda item: hash(item))
+        return self.__timefold_lookup('__hash__', lambda item: hash(item))
 
     def __str__(self):
-        return self.__optapy_lookup('__str__', lambda item: str(item))
+        return self.__timefold_lookup('__str__', lambda item: str(item))
 
     def __repr__(self):
-        return self.__optapy_lookup('__repr__', lambda item: repr(item))
+        return self.__timefold_lookup('__repr__', lambda item: repr(item))
 
     def __len__(self):
-        return self.__optapy_lookup('__len__', lambda item: len(item))
+        return self.__timefold_lookup('__len__', lambda item: len(item))
 
     def __iter__(self):
-        return self.__optapy_lookup('__iter__', lambda item: iter(item))
+        return self.__timefold_lookup('__iter__', lambda item: iter(item))
 
     def __contains__(self, item):
-        return self.__optapy_lookup('__contains__', lambda container: item in container, item)
+        return self.__timefold_lookup('__contains__', lambda container: item in container, item)
 
     def __getitem__(self, key):
-        return self.__optapy_lookup('__getitem__', lambda container: container[key], key)
+        return self.__timefold_lookup('__getitem__', lambda container: container[key], key)
 
     def __setitem__(self, key, value):
-        return self.__optapy_lookup('__setitem__', _optapy_error, key, value)
+        return self.__timefold_lookup('__setitem__', _timefold_error, key, value)
 
     def __delitem__(self, key):
-        return self.__optapy_lookup('__delitem__', _optapy_error, key)
+        return self.__timefold_lookup('__delitem__', _timefold_error, key)
 
     def __add__(self, other):
-        return self.__optapy_lookup('__add__', lambda item: item + other, other)
+        return self.__timefold_lookup('__add__', lambda item: item + other, other)
 
     def __sub__(self, other):
-        return self.__optapy_lookup('__sub__', lambda item: item - other, other)
+        return self.__timefold_lookup('__sub__', lambda item: item - other, other)
 
     def __mul__(self, other):
-        return self.__optapy_lookup('__mul__', lambda item: item * other, other)
+        return self.__timefold_lookup('__mul__', lambda item: item * other, other)
 
     def __matmul__(self, other):
-        return self.__optapy_lookup('__matmul__', lambda item: item @ other, other)
+        return self.__timefold_lookup('__matmul__', lambda item: item @ other, other)
 
     def __truediv__(self, other):
-        return self.__optapy_lookup('__truediv__', lambda item: item / other, other)
+        return self.__timefold_lookup('__truediv__', lambda item: item / other, other)
 
     def __floordiv__(self, other):
-        return self.__optapy_lookup('__floordiv__', lambda item: item // other, other)
+        return self.__timefold_lookup('__floordiv__', lambda item: item // other, other)
 
     def __mod__(self, other):
-        return self.__optapy_lookup('__mod__', lambda item: item % other, other)
+        return self.__timefold_lookup('__mod__', lambda item: item % other, other)
 
     def __divmod__(self, other):
-        return self.__optapy_lookup('__divmod__', lambda item: divmod(item, other), other)
+        return self.__timefold_lookup('__divmod__', lambda item: divmod(item, other), other)
 
     def __pow__(self, other, *extra_args):
-        return self.__optapy_lookup('__pow__', lambda item: item ** other, other, *extra_args)
+        return self.__timefold_lookup('__pow__', lambda item: item ** other, other, *extra_args)
 
     def __lshift__(self, other):
-        return self.__optapy_lookup('__lshift__', lambda item: item << other, other)
+        return self.__timefold_lookup('__lshift__', lambda item: item << other, other)
 
     def __rshift__(self, other):
-        return self.__optapy_lookup('__rshift__', lambda item: item >> other, other)
+        return self.__timefold_lookup('__rshift__', lambda item: item >> other, other)
 
     def __and__(self, other):
-        return self.__optapy_lookup('__and__', lambda item: item and other, other)
+        return self.__timefold_lookup('__and__', lambda item: item and other, other)
 
     def __xor__(self, other):
-        return self.__optapy_lookup('__xor__', lambda item: item ^ other, other)
+        return self.__timefold_lookup('__xor__', lambda item: item ^ other, other)
 
     def __or__(self, other):
-        return self.__optapy_lookup('__or__', lambda item: item or other, other)
+        return self.__timefold_lookup('__or__', lambda item: item or other, other)
 
     def __radd__(self, other):
-        return self.__optapy_lookup('__radd__', lambda item: other + item, other)
+        return self.__timefold_lookup('__radd__', lambda item: other + item, other)
 
     def __rsub__(self, other):
-        return self.__optapy_lookup('__rsub__', lambda item: other - item, other)
+        return self.__timefold_lookup('__rsub__', lambda item: other - item, other)
 
     def __rmul__(self, other):
-        return self.__optapy_lookup('__rmul__', lambda item: other * item, other)
+        return self.__timefold_lookup('__rmul__', lambda item: other * item, other)
 
     def __rmatmul__(self, other):
-        return self.__optapy_lookup('__rmatmul__', lambda item: other @ item, other)
+        return self.__timefold_lookup('__rmatmul__', lambda item: other @ item, other)
 
     def __rtruediv__(self, other):
-        return self.__optapy_lookup('__rtruediv__', lambda item: other / item, other)
+        return self.__timefold_lookup('__rtruediv__', lambda item: other / item, other)
 
     def __rfloordiv__(self, other):
-        return self.__optapy_lookup('__rfloordiv__', lambda item: other // item, other)
+        return self.__timefold_lookup('__rfloordiv__', lambda item: other // item, other)
 
     def __rmod__(self, other):
-        return self.__optapy_lookup('__rmod__', lambda item: other % item, other)
+        return self.__timefold_lookup('__rmod__', lambda item: other % item, other)
 
     def __rdivmod__(self, other):
-        return self.__optapy_lookup('__rdivmod__', lambda item: divmod(other, item), other)
+        return self.__timefold_lookup('__rdivmod__', lambda item: divmod(other, item), other)
 
     def __rpow__(self, other, *extra_args):
-        return self.__optapy_lookup('__rpow__', lambda item: other ** item, other, *extra_args)
+        return self.__timefold_lookup('__rpow__', lambda item: other ** item, other, *extra_args)
 
     def __rlshift__(self, other):
-        return self.__optapy_lookup('__rlshift__', lambda item: other << item, other)
+        return self.__timefold_lookup('__rlshift__', lambda item: other << item, other)
 
     def __rrshift__(self, other):
-        return self.__optapy_lookup('__rrshift__', lambda item: other >> item, other)
+        return self.__timefold_lookup('__rrshift__', lambda item: other >> item, other)
 
     def __rand__(self, other):
-        return self.__optapy_lookup('__rand__', lambda item: other and item, other)
+        return self.__timefold_lookup('__rand__', lambda item: other and item, other)
 
     def __rxor__(self, other):
-        return self.__optapy_lookup('__rxor__', lambda item: other ^ item, other)
+        return self.__timefold_lookup('__rxor__', lambda item: other ^ item, other)
 
     def __ror__(self, other):
-        return self.__optapy_lookup('__ror__', lambda item: other or item, other)
+        return self.__timefold_lookup('__ror__', lambda item: other or item, other)
 
     def __iadd__(self, other):
-        return self.__optapy_lookup('__iadd__', _optapy_error, other)
+        return self.__timefold_lookup('__iadd__', _timefold_error, other)
 
     def __isub__(self, other):
-        return self.__optapy_lookup('__isub__', _optapy_error, other)
+        return self.__timefold_lookup('__isub__', _timefold_error, other)
 
     def __imul__(self, other):
-        return self.__optapy_lookup('__imul__', _optapy_error, other)
+        return self.__timefold_lookup('__imul__', _timefold_error, other)
 
     def __imatmul__(self, other):
-        return self.__optapy_lookup('__imatmul__', _optapy_error, other)
+        return self.__timefold_lookup('__imatmul__', _timefold_error, other)
 
     def __itruediv__(self, other):
-        return self.__optapy_lookup('__itruediv__', _optapy_error, other)
+        return self.__timefold_lookup('__itruediv__', _timefold_error, other)
 
     def __ifloordiv__(self, other):
-        return self.__optapy_lookup('__ifloordiv__', _optapy_error, other)
+        return self.__timefold_lookup('__ifloordiv__', _timefold_error, other)
 
     def __imod__(self, other):
-        return self.__optapy_lookup('__imod__', _optapy_error, other)
+        return self.__timefold_lookup('__imod__', _timefold_error, other)
 
     def __ipow__(self, other, *extra_args):
-        return self.__optapy_lookup('__ipow__', _optapy_error, other, *extra_args)
+        return self.__timefold_lookup('__ipow__', _timefold_error, other, *extra_args)
 
     def __ilshift__(self, other):
-        return self.__optapy_lookup('__ilshift__', _optapy_error, other)
+        return self.__timefold_lookup('__ilshift__', _timefold_error, other)
 
     def __irshift__(self, other):
-        return self.__optapy_lookup('__irshift__', _optapy_error, other)
+        return self.__timefold_lookup('__irshift__', _timefold_error, other)
 
     def __iand__(self, other):
-        return self.__optapy_lookup('__iand__', _optapy_error, other)
+        return self.__timefold_lookup('__iand__', _timefold_error, other)
 
     def __ixor__(self, other):
-        return self.__optapy_lookup('__ixor__', _optapy_error, other)
+        return self.__timefold_lookup('__ixor__', _timefold_error, other)
 
     def __ior__(self, other):
-        return self.__optapy_lookup('__ior__', _optapy_error, other)
+        return self.__timefold_lookup('__ior__', _timefold_error, other)
 
     def __neg__(self):
-        return self.__optapy_lookup('__neg__', lambda item: -item)
+        return self.__timefold_lookup('__neg__', lambda item: -item)
 
     def __pos__(self):
-        return self.__optapy_lookup('__pos__', lambda item: +item)
+        return self.__timefold_lookup('__pos__', lambda item: +item)
 
     def __abs__(self):
-        return self.__optapy_lookup('__neg__', lambda item: abs(item))
+        return self.__timefold_lookup('__neg__', lambda item: abs(item))
 
     def __invert__(self):
-        return self.__optapy_lookup('__invert__', lambda item: ~item)
+        return self.__timefold_lookup('__invert__', lambda item: ~item)
 
     def __call__(self, *args, **kwargs):
-        return self.__optapy_lookup('__call__', lambda item: item(*args, **kwargs), *args, **kwargs)
+        return self.__timefold_lookup('__call__', lambda item: item(*args, **kwargs), *args, **kwargs)
 
 
 def _add_shallow_copy_to_class(the_class: Type):
@@ -936,7 +936,7 @@ def _cleanup_solver_run(solver_run_id):
 
 def _unwrap_java_object(java_object):
     """Gets the Python Python Object for the given Java Python Object"""
-    return java_object.get__optapy_Id()
+    return java_object.get__timefold_id()
 
 
 def _to_java_map(python_dict: Dict):
@@ -969,21 +969,21 @@ def _to_java_list(python_list: List):
     return out
 
 
-def _get_optaplanner_annotations(python_class: Type) -> List[Tuple[str, JClass, str, List[dict]]]:
-    """Gets the methods with OptaPlanner annotations in the given class"""
+def _get_timefold_annotations(python_class: Type) -> List[Tuple[str, JClass, str, List[dict]]]:
+    """Gets the methods with timefold annotations in the given class"""
     method_list = [attribute for attribute in dir(python_class) if callable(getattr(python_class, attribute)) and
                    attribute.startswith('__') is False]
     annotated_methods = []
     for method in method_list:
-        optaplanner_annotations = [attribute for attribute in dir(getattr(python_class, method)) if
-                                   attribute.startswith('__optaplanner')]
-        if optaplanner_annotations:
-            return_type = getattr(getattr(python_class, method), "__optapy_return", None)
-            method_signature = getattr(getattr(python_class, method), "__optapy_signature", None)
+        timefold_annotations = [attribute for attribute in dir(getattr(python_class, method)) if
+                                   attribute.startswith('__timefold_annotation_')]
+        if timefold_annotations:
+            return_type = getattr(getattr(python_class, method), "__timefold_return", None)
+            method_signature = getattr(getattr(python_class, method), "__timefold_signature", None)
             annotated_methods.append(
                 _to_java_list([method, return_type, method_signature,
                                _to_java_list(list(map(lambda annotation: getattr(getattr(python_class, method),
-                                                                                 annotation), optaplanner_annotations)))
+                                                                                 annotation), timefold_annotations)))
                                ]))
     return _to_java_list(annotated_methods)
 
@@ -998,8 +998,8 @@ def get_class(python_class: Union[Type, Callable]) -> JClass:
         return cast(JClass, python_class)
     if isinstance(python_class, Class):
         return cast(JClass, python_class)
-    if hasattr(python_class, '__optapy_java_class'):
-        return python_class.__optapy_java_class
+    if hasattr(python_class, '__timefold_java_class'):
+        return python_class.__timefold_java_class
     if python_class == int:
         from java.lang import Integer
         return cast(JClass, Integer)
@@ -1061,14 +1061,14 @@ def _generate_problem_fact_class(python_class):
     from ai.timefold.solver.python import PythonWrapperGenerator  # noqa
     from jpyinterpreter import force_update_type
     class_identifier = _get_class_identifier_for_object(python_class)
-    optaplanner_annotations = _get_optaplanner_annotations(python_class)
+    timefold_annotations = _get_timefold_annotations(python_class)
     parent_class = compile_and_get_class(python_class)
     has_eq_and_hashcode = _does_class_define_eq_or_hashcode(python_class)
 
     out = PythonWrapperGenerator.defineProblemFactClass(_compose_unique_class_name(class_identifier),
                                                         parent_class,
                                                         has_eq_and_hashcode,
-                                                        optaplanner_annotations)
+                                                        timefold_annotations)
     class_identifier_to_java_class_map[class_identifier] = out
     force_update_type(python_class, out.getField('$TYPE').get(None))
     return out
@@ -1079,13 +1079,13 @@ def _generate_planning_entity_class(python_class: Type, annotation_data: Dict[st
     from ai.timefold.solver.python import PythonWrapperGenerator  # noqa
     from jpyinterpreter import translate_python_class_to_java_class, force_update_type
     class_identifier = _get_class_identifier_for_object(python_class)
-    optaplanner_annotations = _get_optaplanner_annotations(python_class)
+    timefold_annotations = _get_timefold_annotations(python_class)
     parent_class = compile_and_get_class(python_class)
     has_eq_and_hashcode = _does_class_define_eq_or_hashcode(python_class)
     out = PythonWrapperGenerator.definePlanningEntityClass(_compose_unique_class_name(class_identifier),
                                                            parent_class,
                                                            has_eq_and_hashcode,
-                                                           optaplanner_annotations,
+                                                           timefold_annotations,
                                                            _to_java_map(annotation_data))
     class_identifier_to_java_class_map[class_identifier] = out
     force_update_type(python_class, out.getField('$TYPE').get(None))
@@ -1097,13 +1097,13 @@ def _generate_planning_solution_class(python_class: Type) -> JClass:
     from ai.timefold.solver.python import PythonWrapperGenerator  # noqa
     from jpyinterpreter import translate_python_class_to_java_class, force_update_type
     class_identifier = _get_class_identifier_for_object(python_class)
-    optaplanner_annotations = _get_optaplanner_annotations(python_class)
+    timefold_annotations = _get_timefold_annotations(python_class)
     parent_class = compile_and_get_class(python_class)
     has_eq_and_hashcode = _does_class_define_eq_or_hashcode(python_class)
     out = PythonWrapperGenerator.definePlanningSolutionClass(_compose_unique_class_name(class_identifier),
                                                              parent_class,
                                                              has_eq_and_hashcode,
-                                                             optaplanner_annotations)
+                                                             timefold_annotations)
     class_identifier_to_java_class_map[class_identifier] = out
     force_update_type(python_class, out.getField('$TYPE').get(None))
     return out

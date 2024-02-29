@@ -163,7 +163,7 @@ public class PythonWrapperGenerator {
 
     @SuppressWarnings("unused")
     public static OpaquePythonReference getPythonObject(PythonObject pythonObject) {
-        return pythonObject.get__optapy_Id();
+        return pythonObject.get__timefold_id();
     }
 
     public static OpaquePythonReference getPythonObject(PythonComparable pythonObject) {
@@ -175,7 +175,7 @@ public class PythonWrapperGenerator {
         return new ClassLoader() {
             // getName() is an abstract method in Java 11 but not in Java 8
             public String getName() {
-                return "OptaPy Alias Map ClassLoader";
+                return "Timefold Alias Map ClassLoader";
             }
 
             @Override
@@ -192,7 +192,7 @@ public class PythonWrapperGenerator {
     }
 
     public static Number getPythonObjectId(PythonObject pythonObject) {
-        return pythonObjectToId.apply(pythonObject.get__optapy_Id());
+        return pythonObjectToId.apply(pythonObject.get__timefold_id());
     }
 
     @SuppressWarnings("unused") // used by variable listener/custom shadow variable on Python side
@@ -200,12 +200,12 @@ public class PythonWrapperGenerator {
             throws IllegalAccessException, InvocationTargetException {
         Object newValue;
         try {
-            newValue = getValueFromPythonObject(object.get__optapy_Id(), "get_" + variableName);
-        } catch (OptaPyException e1) {
+            newValue = getValueFromPythonObject(object.get__timefold_id(), "get_" + variableName);
+        } catch (TimefoldException e1) {
             try {
-                newValue = getValueFromPythonObject(object.get__optapy_Id(),
+                newValue = getValueFromPythonObject(object.get__timefold_id(),
                         "get" + Character.toUpperCase(variableName.charAt(0)) + variableName.substring(1));
-            } catch (OptaPyException e2) {
+            } catch (TimefoldException e2) {
                 throw new IllegalArgumentException(
                         "Unable to find variable (" + variableName + ") on entity (" + object + ").");
             }
@@ -277,12 +277,12 @@ public class PythonWrapperGenerator {
     }
 
     // Holds the OpaquePythonReference
-    static final String PYTHON_BINDING_FIELD_NAME = "__optaplannerPythonValue";
-    static final String REFERENCE_MAP_FIELD_NAME = "__optaplannerReferenceMap";
+    static final String PYTHON_BINDING_FIELD_NAME = "__timefoldPythonValue";
+    static final String REFERENCE_MAP_FIELD_NAME = "__timefoldReferenceMap";
 
-    static final String PYTHON_SETTER_FIELD_NAME = "_optaplannerPythonSetter";
+    static final String PYTHON_SETTER_FIELD_NAME = "_timefoldPythonSetter";
 
-    static final String PYTHON_LIKE_VALUE_MAP_FIELD_NAME = "__optaplannerPythonLikeValueCacheMap";
+    static final String PYTHON_LIKE_VALUE_MAP_FIELD_NAME = "__timefoldPythonLikeValueCacheMap";
     static final String PYTHON_LIKE_TYPE_FIELD_NAME = "$TYPE";
 
     static final TriFunction<OpaquePythonReference, String, Object, Object> NONE_PYTHON_SETTER = (a, b, c) -> null;
@@ -669,21 +669,21 @@ public class PythonWrapperGenerator {
      *
      * (none or @PlanningEntity or @PlanningSolution)
      * public class PojoForPythonObject implements PythonObject {
-     * OpaquePythonReference __optaplannerPythonValue;
+     * OpaquePythonReference __timefoldPythonValue;
      * String string$field;
      * AnotherPojoForPythonObject otherObject$field;
      *
      * public PojoForPythonObject(OpaquePythonReference reference, Number id, Map<Number, PythonObject>
      * pythonIdToPythonObjectMap) {
-     * this.__optaplannerPythonValue = reference;
+     * this.__timefoldPythonValue = reference;
      * pythonIdToPythonObjectMap.put(id, this);
      * string$field = PythonWrapperGenerator.getValueFromPythonObject(reference, "string");
      * OpaquePythonReference otherObjectReference = PythonWrapperGenerator.getValueFromPythonObject(reference, "otherObject");
      * otherObject$field = PythonWrapperGenerator.wrap(otherObjectReference, id, pythonIdToPythonObjectMap);
      * }
      *
-     * public OpaquePythonReference get__optapy_Id() {
-     * return __optaplannerPythonValue;
+     * public OpaquePythonReference get__timefold_id() {
+     * return __timefoldPythonValue;
      * }
      *
      * public String getStringField() {
@@ -691,7 +691,7 @@ public class PythonWrapperGenerator {
      * }
      *
      * public void setStringField(String val) {
-     * PythonWrapperGenerator.setValueOnPythonObject(__optaplannerPythonValue, "string", val);
+     * PythonWrapperGenerator.setValueOnPythonObject(__timefoldPythonValue, "string", val);
      * this.string$field = val;
      * }
      * // Repeat for otherObject
@@ -700,7 +700,7 @@ public class PythonWrapperGenerator {
     @SuppressWarnings("unused")
     public static Class<?> definePlanningEntityClass(String className, Class<?> parentClass,
             boolean defineEqualsAndHashcode,
-            List<List<Object>> optaplannerMethodAnnotations,
+            List<List<Object>> timefoldMethodAnnotations,
             Map<String, Object> planningEntityAnnotations) {
         if (classNameToBytecode.containsKey(className)) {
             try {
@@ -743,7 +743,7 @@ public class PythonWrapperGenerator {
                     pythonLikeValueMapField,
                     pythonSetterField,
                     pythonLikeTypeField,
-                    optaplannerMethodAnnotations);
+                    timefoldMethodAnnotations);
         }
         writeClassOutput(classNameToBytecode, className, classBytecodeHolder.get());
         return createAndInitializeClass(className);
@@ -752,7 +752,7 @@ public class PythonWrapperGenerator {
     @SuppressWarnings("unused")
     public static Class<?> defineProblemFactClass(String className, Class<?> parentClass,
             boolean defineEqualsAndHashcode,
-            List<List<Object>> optaplannerMethodAnnotations) {
+            List<List<Object>> timefoldMethodAnnotations) {
         if (classNameToBytecode.containsKey(className)) {
             try {
                 return asmClassLoader.loadClass(className);
@@ -784,7 +784,7 @@ public class PythonWrapperGenerator {
             generateWrapperMethods(classCreator, parentClass, GeneratedClassType.PROBLEM_FACT, defineEqualsAndHashcode,
                     valueField, referenceMapField,
                     pythonLikeValueMapField, pythonSetterField, pythonLikeTypeField,
-                    optaplannerMethodAnnotations);
+                    timefoldMethodAnnotations);
         }
         writeClassOutput(classNameToBytecode, className, classBytecodeHolder.get());
         return createAndInitializeClass(className);
@@ -793,7 +793,7 @@ public class PythonWrapperGenerator {
     @SuppressWarnings("unused")
     public static Class<?> definePlanningSolutionClass(String className, Class<?> parentClass,
             boolean defineEqualsAndHashcode,
-            List<List<Object>> optaplannerMethodAnnotations) {
+            List<List<Object>> timefoldMethodAnnotations) {
         if (classNameToBytecode.containsKey(className)) {
             try {
                 return asmClassLoader.loadClass(className);
@@ -826,7 +826,7 @@ public class PythonWrapperGenerator {
             generateWrapperMethods(classCreator, parentClass, GeneratedClassType.PLANNING_SOLUTION,
                     defineEqualsAndHashcode, valueField, referenceMapField,
                     pythonLikeValueMapField, pythonSetterField, pythonLikeTypeField,
-                    optaplannerMethodAnnotations);
+                    timefoldMethodAnnotations);
         }
         writeClassOutput(classNameToBytecode, className, classBytecodeHolder.get());
         return createAndInitializeClass(className);
@@ -843,11 +843,11 @@ public class PythonWrapperGenerator {
     private static void generateAsPointer(ClassCreator classCreator, FieldDescriptor valueField,
             FieldDescriptor referenceMapField, FieldDescriptor pythonLikeObjectValueField,
             FieldDescriptor typeField) {
-        MethodCreator methodCreator = classCreator.getMethodCreator("get__optapy_Id", OpaquePythonReference.class);
+        MethodCreator methodCreator = classCreator.getMethodCreator("get__timefold_id", OpaquePythonReference.class);
         ResultHandle valueResultHandle = methodCreator.readInstanceField(valueField, methodCreator.getThis());
         methodCreator.returnValue(valueResultHandle);
 
-        methodCreator = classCreator.getMethodCreator("get__optapy_reference_map", Map.class);
+        methodCreator = classCreator.getMethodCreator("get__timefold_reference_map", Map.class);
         ResultHandle referenceMapResultHandle = methodCreator.readInstanceField(referenceMapField, methodCreator.getThis());
         methodCreator.returnValue(referenceMapResultHandle);
     }
@@ -907,7 +907,7 @@ public class PythonWrapperGenerator {
                             methodCreator.load(setterName),
                             methodCreator.readInstanceField(planningListVariableField, thisObj),
                             methodCreator.invokeInterfaceMethod(
-                                    MethodDescriptor.ofMethod(PythonObject.class, "get__optapy_reference_map", Map.class),
+                                    MethodDescriptor.ofMethod(PythonObject.class, "get__timefold_reference_map", Map.class),
                                     thisObj),
                             methodCreator.readInstanceField(pythonSetterField, thisObj));
                 }
@@ -1338,24 +1338,24 @@ public class PythonWrapperGenerator {
             FieldDescriptor pythonLikeValueMapField,
             FieldDescriptor pythonSetterField,
             FieldDescriptor typeField,
-            List<List<Object>> optaplannerMethodAnnotations) {
-        boolean hasOptaPyParentClass = false;
+            List<List<Object>> timefoldMethodAnnotations) {
+        boolean hasTimefoldParentClass = false;
         try {
-            parentClass.getMethod("get__optapy_Id", OpaquePythonReference.class);
-            hasOptaPyParentClass = true;
+            parentClass.getMethod("get__timefold_id", OpaquePythonReference.class);
+            hasTimefoldParentClass = true;
         } catch (NoSuchMethodException e) {
             // Do nothing
         }
 
-        if (!hasOptaPyParentClass) {
+        if (!hasTimefoldParentClass) {
             generateAsPointer(classCreator, valueField, referenceMapField, pythonLikeValueMapField, typeField);
         }
 
-        // We only need to create methods/fields for methods with OptaPlanner annotations
-        // optaplannerMethodAnnotations: list of tuples (methodName, returnType, annotationList)
+        // We only need to create methods/fields for methods with Timefold annotations
+        // timefoldMethodAnnotations: list of tuples (methodName, returnType, annotationList)
         // (Each annotation is represented by a Map)
-        List<FieldDescriptor> fieldDescriptorList = new ArrayList<>(optaplannerMethodAnnotations.size());
-        List<Object> returnTypeList = new ArrayList<>(optaplannerMethodAnnotations.size());
+        List<FieldDescriptor> fieldDescriptorList = new ArrayList<>(timefoldMethodAnnotations.size());
+        List<Object> returnTypeList = new ArrayList<>(timefoldMethodAnnotations.size());
         List<FieldDescriptor> planningEntityFieldList = new ArrayList<>();
         List<FieldDescriptor> planningEntityCollectionFieldList = new ArrayList<>();
         List<String> planningEntityCollectionGetterList = new ArrayList<>();
@@ -1369,14 +1369,14 @@ public class PythonWrapperGenerator {
         List<FieldDescriptor> planningScoreFieldList = new ArrayList<>();
         List<String> planningScoreSetterNameList = new ArrayList<>();
 
-        for (List<Object> optaplannerMethodAnnotation : optaplannerMethodAnnotations) {
-            String methodName = (String) (optaplannerMethodAnnotation.get(0));
-            Class<?> returnType = (Class<?>) (optaplannerMethodAnnotation.get(1));
-            String signature = (String) (optaplannerMethodAnnotation.get(2));
+        for (List<Object> timefoldMethodAnnotation : timefoldMethodAnnotations) {
+            String methodName = (String) (timefoldMethodAnnotation.get(0));
+            Class<?> returnType = (Class<?>) (timefoldMethodAnnotation.get(1));
+            String signature = (String) (timefoldMethodAnnotation.get(2));
             if (returnType == null) {
                 returnType = Object.class;
             }
-            List<Map<String, Object>> annotations = (List<Map<String, Object>>) optaplannerMethodAnnotation.get(3);
+            List<Map<String, Object>> annotations = (List<Map<String, Object>>) timefoldMethodAnnotation.get(3);
             fieldDescriptorList
                     .add(generateWrapperMethod(classCreator, parentClass, valueField, pythonLikeValueMapField,
                             pythonSetterField,
@@ -1412,7 +1412,7 @@ public class PythonWrapperGenerator {
                 planningVariableFieldList, planningVariableSetterNameList,
                 planningListVariableFieldList, planningListVariableSetterNameList);
 
-        if (!hasOptaPyParentClass) {
+        if (!hasTimefoldParentClass) {
             createToString(classCreator, valueField);
         }
 

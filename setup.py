@@ -60,10 +60,6 @@ class FetchDependencies(build_py):
             for file in classpath_jars:
                 copyfile(file, os.path.join(self.build_lib, 'timefold', 'solver', 'jars', os.path.basename(file)))
 
-            # Make timefold a Python module
-            fp = open(os.path.join(self.build_lib, 'timefold', '__init__.py'), 'w')
-            fp.close()
-
             # Make timefold.solver.jars a Python module
             fp = open(os.path.join(self.build_lib, 'timefold', 'solver', 'jars', '__init__.py'), 'w')
             fp.close()
@@ -103,7 +99,6 @@ setup(
     ],
     packages=['timefold.solver', 'timefold.solver.config', 'timefold.solver.constraint', 'timefold.solver.score', 'timefold.solver.types', 'timefold.solver.test',
               'jpyinterpreter',
-              'timefold.solver.jars',
               'java-stubs', 'jpype-stubs', 'ai-stubs'],
     package_dir={
         'timefold.solver': 'timefold-solver-python-core/src/main/python',

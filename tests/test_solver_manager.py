@@ -137,7 +137,7 @@ def test_solve():
         assert 3 in value_list
         assert solver_manager.getSolverStatus(1) == SolverStatus.NOT_SOLVING
         time.sleep(0.1)  # Sleep so cleanup is guaranteed to be executed
-        solver_run_dicts = solver_manager._optapy_debug_get_solver_runs_dicts()
+        solver_run_dicts = solver_manager._timefold_debug_get_solver_runs_dicts()
         assert len(solver_run_dicts['solver_run_id_to_refs']) == 0
 
     def assert_problem_change_solver_run(solver_manager, solver_job):
@@ -153,7 +153,7 @@ def test_solve():
         assert solution.value_range[0].value == 6
         assert solver_manager.getSolverStatus(1) == SolverStatus.NOT_SOLVING
         time.sleep(0.1)  # Sleep so cleanup is guaranteed to be executed
-        solver_run_dicts = solver_manager._optapy_debug_get_solver_runs_dicts()
+        solver_run_dicts = solver_manager._timefold_debug_get_solver_runs_dicts()
         assert len(solver_run_dicts['solver_run_id_to_refs']) == 0
 
     with timefold.solver.solver_manager_create(solver_config) as solver_manager:

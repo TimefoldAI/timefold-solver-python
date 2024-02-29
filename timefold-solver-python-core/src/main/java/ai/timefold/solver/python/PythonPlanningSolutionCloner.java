@@ -41,7 +41,7 @@ public class PythonPlanningSolutionCloner implements SolutionCloner<Object> {
 
         // Wrap the deep cloned OpaquePythonReference into a new PythonObject
         PythonObject out =
-                (PythonObject) PythonWrapperGenerator.wrap(o.getClass(), planningClone, toClone.get__optapy_reference_map(),
+                (PythonObject) PythonWrapperGenerator.wrap(o.getClass(), planningClone, toClone.get__timefold_reference_map(),
                         pythonSetter);
 
         Map<Number, Object> oldIdMap = new HashMap<>();
@@ -51,13 +51,13 @@ public class PythonPlanningSolutionCloner implements SolutionCloner<Object> {
 
         for (Number id : oldIdMap.keySet()) {
             if (!newIdMap.containsKey(id)) {
-                toClone.get__optapy_reference_map().remove(id);
+                toClone.get__timefold_reference_map().remove(id);
             } else {
                 newIdMap.remove(id);
             }
         }
 
-        toClone.get__optapy_reference_map().putAll(newIdMap);
+        toClone.get__timefold_reference_map().putAll(newIdMap);
 
         // Mirror the reference map (not pass a reference to it)
         // so Score + list variables can be safely garbage collected in Python
@@ -65,7 +65,7 @@ public class PythonPlanningSolutionCloner implements SolutionCloner<Object> {
         //  which is used when cloning. If score/list variable was garbage collected by Python, another
         //  Python Object can have the same id, leading to the old value in the map being returned,
         //  causing an exception (or worse, a subtle bug))
-        Map<Number, Object> newReferenceMap = new MirrorWithExtrasMap<>(out.get__optapy_reference_map());
+        Map<Number, Object> newReferenceMap = new MirrorWithExtrasMap<>(out.get__timefold_reference_map());
         out.readFromPythonObject(Collections.newSetFromMap(new IdentityHashMap<>()),
                 newReferenceMap);
 

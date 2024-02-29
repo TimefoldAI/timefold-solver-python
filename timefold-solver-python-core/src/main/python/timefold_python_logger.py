@@ -3,7 +3,7 @@ import logging
 __original_logging_class = logging.getLoggerClass()
 
 
-class OptaPyLogger(__original_logging_class):
+class TimefoldLogger(__original_logging_class):
     def __init__(self, name):
         super().__init__(name)
         subpackage = name[len('timefold.solver'):]
@@ -22,7 +22,7 @@ class OptaPyLogger(__original_logging_class):
         PythonLoggingToLogbackAdapter.getEffectiveLevel(self.java_logger_name)
 
     def getChild(self, suffix):
-        return OptaPyLogger(f'{self.name}.{suffix}')
+        return TimefoldLogger(f'{self.name}.{suffix}')
 
     def addFilter(self, filter):
         raise NotImplementedError(f'Cannot add filter to {self.java_logger_name} logger')
@@ -37,6 +37,6 @@ class OptaPyLogger(__original_logging_class):
         raise NotImplementedError(f'Cannot remove handler from {self.java_logger_name} logger')
 
 
-logging.setLoggerClass(OptaPyLogger)
-optapy_logger = logging.getLogger('timefold.solver')
+logging.setLoggerClass(TimefoldLogger)
+timefold_logger = logging.getLogger('timefold.solver')
 logging.setLoggerClass(__original_logging_class)

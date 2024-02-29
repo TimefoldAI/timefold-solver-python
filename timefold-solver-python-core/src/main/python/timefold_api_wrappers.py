@@ -42,7 +42,7 @@ class _PythonSolverManager(Generic[Solution_, ProblemId_]):
         self.problem_id_to_solver_run_ref_list = dict()
         self.only_use_java_setters = PythonSolver.onlyUseJavaSetters
 
-    def _optapy_debug_get_solver_runs_dicts(self):
+    def _timefold_debug_get_solver_runs_dicts(self):
         """
         Internal method used for testing; do not use
         """
@@ -63,7 +63,7 @@ class _PythonSolverManager(Generic[Solution_, ProblemId_]):
             from copy import copy
             problem = copy(problem_function(the_problem_id))
             solver_run_id = (id(self), the_problem_id)
-            problem._optapy_solver_run_id = solver_run_id
+            problem._timefold_solver_run_id = solver_run_id
             self.problem_id_to_solver_run_ref_list[the_problem_id] = [problem, problem]
             _setup_solver_run(solver_run_id, self.problem_id_to_solver_run_ref_list[the_problem_id])
             PythonSolver.onlyUseJavaSetters = self.only_use_java_setters
@@ -189,7 +189,7 @@ class _PythonScoreManager:
     def updateScore(self, solution):
         score = self._wrap_call(lambda wrapped_solution: self._java_updateScore(wrapped_solution), solution)
         for attr in dir(solution):
-            if hasattr(getattr(solution, attr), '__optaplannerPlanningScore'):
+            if hasattr(getattr(solution, attr), '__timefold_annotation_PlanningScore'):
                 setter = f'set{attr[3:]}'
                 getattr(solution, setter)(score)
                 break
@@ -308,7 +308,7 @@ class _PythonProblemChangeDirector:
 class _PythonScoreDirector:
     @JOverride(sticky=True, rename='_java_afterVariableChanged')
     def afterVariableChanged(self, entity, variable_name):
-        entity._optapy_change_variable(variable_name)
+        entity._timefold_change_variable(variable_name)
         self._java_afterVariableChanged(entity, variable_name)
 
 
@@ -390,7 +390,7 @@ class _PythonSolver:
         pass
 
     @staticmethod
-    def _optapy_debug_get_solver_runs_dicts():
+    def _timefold_debug_get_solver_runs_dicts():
         """
         Internal method used for testing; do not use
         """
@@ -408,7 +408,7 @@ class _PythonSolver:
             raise ValueError(f'A problem was not passed to solve (parameter problem was ({problem})). Maybe '
                              f'pass an instance of a class annotated with @planning_solution to solve?')
 
-        if not hasattr(type(problem), '__optapy_is_planning_solution'):
+        if not hasattr(type(problem), '__timefold_is_planning_solution'):
             raise ValueError(f'The problem ({problem}) is not an instance of a @planning_solution class. Maybe '
                              f'decorate the problem class ({type(problem)}) with @planning_solution?')
 
@@ -416,7 +416,7 @@ class _PythonSolver:
         solver_run_id = (id(self), id(problem), _uuid1())
         solver_run_ref_list = [problem, problem]
         object_class = get_class(type(problem))
-        problem._optapy_solver_run_id = solver_run_id
+        problem._timefold_solver_run_id = solver_run_id
 
         wrapped_problem = PythonSolver.wrapProblem(object_class, problem)
         _setup_solver_run(solver_run_id, solver_run_ref_list)
