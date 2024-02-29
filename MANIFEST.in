@@ -1,0 +1,12 @@
+graft .mvn
+include mvnw mvnw.cmd pom.xml create-stubs.py
+
+include timefold-solver-python-core/pom.xml
+graft timefold-solver-python-core/src/main/java
+graft timefold-solver-python-core/src/main/resources
+graft timefold-solver-python-core/src/test/java
+
+include jpyinterpreter/pom.xml
+graft jpyinterpreter/src/main/java
+graft jpyinterpreter/src/main/resources
+graft jpyinterpreter/src/test/java
