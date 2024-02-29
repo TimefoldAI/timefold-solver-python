@@ -433,6 +433,11 @@ class GroupIntMappingSingleArgConstraintCollector:
     collector_creator: Callable
     group_mapping: Callable
 
+@dataclasses.dataclass
+class GroupMappingIntMappingTwoArgConstraintCollector:
+    collector_creator: Callable
+    group_mapping: Callable
+    index_mapping: Callable
 
 @dataclasses.dataclass
 class ComposeConstraintCollector:
@@ -447,6 +452,12 @@ class ConditionalConstraintCollector:
     predicate: Callable
     delegate: Any
 
+@dataclasses.dataclass
+class CollectAndThenCollector:
+    collector_creator: Callable
+    delegate_collector: Any
+    mapping_function: Callable
+
 
 def extract_collector(collector_info, *type_arguments):
     if isinstance(collector_info, NoArgsConstraintCollector):
@@ -458,6 +469,9 @@ def extract_collector(collector_info, *type_arguments):
                                                 function_cast(collector_info.value_mapping, *type_arguments))
     elif isinstance(collector_info, GroupIntMappingSingleArgConstraintCollector):
         return collector_info.collector_creator(to_int_function_cast(collector_info.group_mapping, *type_arguments))
+    elif isinstance(collector_info, GroupMappingIntMappingTwoArgConstraintCollector):
+        return collector_info.collector_creator(function_cast(collector_info.group_mapping, *type_arguments),
+                                                to_int_function_cast(collector_info.index_mapping, JClass('java.lang.Object')))
     elif isinstance(collector_info, ComposeConstraintCollector):
         subcollectors = tuple(map(lambda subcollector_info: extract_collector(subcollector_info, *type_arguments),
                                   collector_info.subcollectors))
@@ -468,6 +482,10 @@ def extract_collector(collector_info, *type_arguments):
         delegate_collector = extract_collector(collector_info.delegate, *type_arguments)
         predicate = predicate_cast(collector_info.predicate, *type_arguments)
         return collector_info.collector_creator(predicate, delegate_collector)
+    elif isinstance(collector_info, CollectAndThenCollector):
+        delegate_collector = extract_collector(collector_info.delegate_collector, *type_arguments)
+        mapping_function = function_cast(collector_info.mapping_function, *type_arguments)
+        return collector_info.collector_creator(delegate_collector, mapping_function)
     else:
         raise ValueError(f'Invalid Collector: {collector_info}. '
                          f'Create Collectors via timefold.solver.constraint.ConstraintCollectors.')
@@ -934,17 +952,89 @@ class PythonUniConstraintStream(Generic[A]):
 
     groupBy = group_by
 
-
+    @overload
     def map(self, mapping_function: Callable[[A], A_]) -> 'PythonUniConstraintStream[A_]':
+        ...
+
+    @overload
+    def map(self, mapping_function: Callable[[A], A_], mapping_function2: Callable[[A], B_]) -> 'PythonBiConstraintStream[A_, B_]':
+        ...
+
+    @overload
+    def map(self, mapping_function: Callable[[A], A_], mapping_function2: Callable[[A], B_],
+            mapping_function3: Callable[[A], C_]) -> 'PythonTriConstraintStream[A_, B_, C_]':
+        ...
+
+    @overload
+    def map(self, mapping_function: Callable[[A], A_], mapping_function2: Callable[[A], B_],
+            mapping_function3: Callable[[A], C_], mapping_function4: Callable[[A], D_]) -> 'PythonQuadConstraintStream[A_, B_, C_, D_]':
+        ...
+
+    def map(self, *mapping_functions):
         """Transforms the stream in such a way that tuples are remapped using the given function.
 
         :param mapping_function:
 
         :return:
         """
-        translated_function = function_cast(mapping_function, self.a_type)
-        return PythonUniConstraintStream(self.delegate.map(translated_function), self.package,
-                                         JClass('java.lang.Object'))
+        if len(mapping_functions) == 0:
+            raise ValueError(f'At least one mapping function is required for map.')
+        if len(mapping_functions) > 4:
+            raise ValueError(f'At most four mapping functions can be passed to map (got {len(mapping_functions)}).')
+        translated_functions = tuple(map(lambda mapping_function: function_cast(mapping_function, self.a_type),
+                                         mapping_functions))
+        if len(mapping_functions) == 1:
+            return PythonUniConstraintStream(self.delegate.map(*translated_functions), self.package,
+                                             JClass('java.lang.Object'))
+        if len(mapping_functions) == 2:
+            return PythonBiConstraintStream(self.delegate.map(*translated_functions), self.package,
+                                             JClass('java.lang.Object'), JClass('java.lang.Object'))
+        if len(mapping_functions) == 3:
+            return PythonTriConstraintStream(self.delegate.map(*translated_functions), self.package,
+                                         JClass('java.lang.Object'), JClass('java.lang.Object'), JClass('java.lang.Object'))
+        if len(mapping_functions) == 4:
+            return PythonQuadConstraintStream(self.delegate.map(*translated_functions), self.package,
+                                             JClass('java.lang.Object'), JClass('java.lang.Object'), JClass('java.lang.Object'), JClass('java.lang.Object'))
+        raise RuntimeError(f'Impossible state: missing case for {len(mapping_functions)}.')
+
+    @overload
+    def expand(self, mapping_function: Callable[[A], B_]) -> 'PythonBiConstraintStream[A, B_]':
+        ...
+
+    @overload
+    def expand(self, mapping_function: Callable[[A], B_], mapping_function2: Callable[[A], C_]) -> 'PythonTriConstraintStream[A, B_, C_]':
+        ...
+
+    @overload
+    def expand(self, mapping_function: Callable[[A], B_], mapping_function2: Callable[[A], C_],
+               mapping_function3: Callable[[A], D_]) -> 'PythonTriConstraintStream[A, B_, C_, D_]':
+        ...
+
+    def expand(self, *mapping_functions):
+        """
+        Tuple expansion is a special case of tuple mapping
+        which only increases stream cardinality and can not introduce duplicate tuples.
+        It enables you to add extra facts to each tuple in a constraint stream by applying a mapping function to it.
+        This is useful in situations where an expensive computations needs to be cached for use later in the stream.
+        :param mapping_functions:
+        :return:
+        """
+        if len(mapping_functions) == 0:
+            raise ValueError(f'At least one mapping function is required for expand.')
+        if len(mapping_functions) > 3:
+            raise ValueError(f'At most three mapping functions can be passed to expand on a UniStream (got {len(mapping_functions)}).')
+        translated_functions = tuple(map(lambda mapping_function: function_cast(mapping_function, self.a_type),
+                                         mapping_functions))
+        if len(mapping_functions) == 1:
+            return PythonBiConstraintStream(self.delegate.expand(*translated_functions), self.package,
+                                            self.a_type, JClass('java.lang.Object'))
+        if len(mapping_functions) == 2:
+            return PythonTriConstraintStream(self.delegate.expand(*translated_functions), self.package,
+                                             self.a_type, JClass('java.lang.Object'), JClass('java.lang.Object'))
+        if len(mapping_functions) == 3:
+            return PythonQuadConstraintStream(self.delegate.expand(*translated_functions), self.package,
+                                              self.a_type, JClass('java.lang.Object'), JClass('java.lang.Object'), JClass('java.lang.Object'))
+        raise RuntimeError(f'Impossible state: missing case for {len(mapping_functions)}.')
 
     def flatten_last(self, flattening_function: Callable[[A], A_]) -> 'PythonUniConstraintStream[A_]':
         """Takes each tuple and applies a mapping on it, which turns the tuple into an Iterable.
@@ -965,6 +1055,48 @@ class PythonUniConstraintStream(Generic[A]):
         :return:
         """
         return PythonUniConstraintStream(self.delegate.distinct(), self.package, self.a_type)
+
+    @overload
+    def concat(self, other: 'PythonUniConstraintStream[A]') -> 'PythonUniConstraintStream[A]':
+        ...
+
+    @overload
+    def concat(self, other: 'PythonBiConstraintStream[A, B_]') -> 'PythonBiConstraintStream[A, B_]':
+        ...
+
+    @overload
+    def concat(self, other: 'PythonTriConstraintStream[A, B_, C_]') -> 'PythonTriConstraintStream[A, B_, C_]':
+        ...
+
+    @overload
+    def concat(self, other: 'PythonQuadConstraintStream[A, B_, C_, D_]') -> 'PythonQuadConstraintStream[A, B_, C_, D_]':
+        ...
+
+    def concat(self, other):
+        """
+        The concat building block allows you
+        to create a constraint stream containing tuples of two other constraint streams.
+        If join acts like a cartesian product of two lists, concat acts like a concatenation of two lists.
+        Unlike union of sets, concatenation of lists repeats duplicated elements.
+        If the two constraint concatenating streams share tuples, which happens e.g.
+        when they come from the same source of data, the tuples will be repeated downstream.
+        If this is undesired, use the distinct building block.
+        :param other:
+        :return:
+        """
+        if isinstance(other, PythonUniConstraintStream):
+            return PythonUniConstraintStream(self.delegate.concat(other.delegate), self.package, self.a_type)
+        elif isinstance(other, PythonBiConstraintStream):
+            return PythonBiConstraintStream(self.delegate.concat(other.delegate), self.package, self.a_type,
+                                            other.b_type)
+        elif isinstance(other, PythonTriConstraintStream):
+            return PythonTriConstraintStream(self.delegate.concat(other.delegate), self.package, self.a_type,
+                                             other.b_type, other.c_type)
+        elif isinstance(other, PythonQuadConstraintStream):
+            return PythonQuadConstraintStream(self.delegate.concat(other.delegate), self.package, self.a_type,
+                                              other.b_type, other.c_type, other.d_type)
+        else:
+            raise RuntimeError(f'Unhandled constraint stream type {type(other)}.')
 
     @overload
     def penalize(self, constraint_name: str, constraint_weight: 'Score') -> \
@@ -1448,15 +1580,83 @@ class PythonBiConstraintStream(Generic[A, B]):
 
     groupBy = group_by
 
-    def map(self, mapping_function: Callable[[A,B],A_]) -> 'PythonUniConstraintStream[A_]':
+    @overload
+    def map(self, mapping_function: Callable[[A, B], A_]) -> 'PythonUniConstraintStream[A_]':
+        ...
+
+    @overload
+    def map(self, mapping_function: Callable[[A, B], A_], mapping_function2: Callable[[A, B], B_]) -> 'PythonBiConstraintStream[A_, B_]':
+        ...
+
+    @overload
+    def map(self, mapping_function: Callable[[A, B], A_], mapping_function2: Callable[[A, B], B_],
+            mapping_function3: Callable[[A, B], C_]) -> 'PythonTriConstraintStream[A_, B_, C_]':
+        ...
+
+    @overload
+    def map(self, mapping_function: Callable[[A, B], A_], mapping_function2: Callable[[A, B], B_],
+            mapping_function3: Callable[[A, B], C_], mapping_function4: Callable[[A, B], D_]) -> 'PythonQuadConstraintStream[A_, B_, C_, D_]':
+        ...
+
+    def map(self, *mapping_functions):
         """Transforms the stream in such a way that tuples are remapped using the given function.
 
-        :param mapping_function:
+        :param mapping_functions:
 
         :return:
         """
-        translated_function = function_cast(mapping_function, self.a_type, self.b_type)
-        return PythonUniConstraintStream(self.delegate.map(translated_function), self.package, JClass('java.lang.Object'))
+        if len(mapping_functions) == 0:
+            raise ValueError(f'At least one mapping function is required for map.')
+        if len(mapping_functions) > 4:
+            raise ValueError(f'At most four mapping functions can be passed to map (got {len(mapping_functions)}).')
+        translated_functions = tuple(map(lambda mapping_function: function_cast(mapping_function, self.a_type,
+                                                                                self.b_type),
+                                         mapping_functions))
+        if len(mapping_functions) == 1:
+            return PythonUniConstraintStream(self.delegate.map(*translated_functions), self.package,
+                                             JClass('java.lang.Object'))
+        if len(mapping_functions) == 2:
+            return PythonBiConstraintStream(self.delegate.map(*translated_functions), self.package,
+                                            JClass('java.lang.Object'), JClass('java.lang.Object'))
+        if len(mapping_functions) == 3:
+            return PythonTriConstraintStream(self.delegate.map(*translated_functions), self.package,
+                                             JClass('java.lang.Object'), JClass('java.lang.Object'), JClass('java.lang.Object'))
+        if len(mapping_functions) == 4:
+            return PythonQuadConstraintStream(self.delegate.map(*translated_functions), self.package,
+                                              JClass('java.lang.Object'), JClass('java.lang.Object'),
+                                              JClass('java.lang.Object'), JClass('java.lang.Object'))
+        raise RuntimeError(f'Impossible state: missing case for {len(mapping_functions)}.')
+
+    @overload
+    def expand(self, mapping_function: Callable[[A, B], C_]) -> 'PythonTriConstraintStream[A, B, C_]':
+        ...
+
+    @overload
+    def expand(self, mapping_function: Callable[[A, B], C_], mapping_function2: Callable[[A, B], D_]) -> 'PythonQuadConstraintStream[A, B, C_, D_]':
+        ...
+
+    def expand(self, *mapping_functions):
+        """
+        Tuple expansion is a special case of tuple mapping
+        which only increases stream cardinality and can not introduce duplicate tuples.
+        It enables you to add extra facts to each tuple in a constraint stream by applying a mapping function to it.
+        This is useful in situations where an expensive computations needs to be cached for use later in the stream.
+        :param mapping_functions:
+        :return:
+        """
+        if len(mapping_functions) == 0:
+            raise ValueError(f'At least one mapping function is required for expand.')
+        if len(mapping_functions) > 2:
+            raise ValueError(f'At most two mapping functions can be passed to expand on a BiStream (got {len(mapping_functions)}).')
+        translated_functions = tuple(map(lambda mapping_function: function_cast(mapping_function, self.a_type, self.b_type),
+                                         mapping_functions))
+        if len(mapping_functions) == 1:
+            return PythonTriConstraintStream(self.delegate.expand(*translated_functions), self.package,
+                                             self.a_type, self.b_type, JClass('java.lang.Object'))
+        if len(mapping_functions) == 2:
+            return PythonQuadConstraintStream(self.delegate.expand(*translated_functions), self.package,
+                                              self.a_type, self.b_type, JClass('java.lang.Object'), JClass('java.lang.Object'))
+        raise RuntimeError(f'Impossible state: missing case for {len(mapping_functions)}.')
 
     def flatten_last(self, flattening_function: Callable[[B], B_]) -> 'PythonBiConstraintStream[A,B_]':
         """Takes each tuple and applies a mapping on it, which turns the tuple into an Iterable.
@@ -1477,6 +1677,48 @@ class PythonBiConstraintStream(Generic[A, B]):
         :return:
         """
         return PythonBiConstraintStream(self.delegate.distinct(), self.package, self.a_type, self.b_type)
+
+    @overload
+    def concat(self, other: 'PythonUniConstraintStream[A]') -> 'PythonBiConstraintStream[A, B]':
+        ...
+
+    @overload
+    def concat(self, other: 'PythonBiConstraintStream[A, B]') -> 'PythonBiConstraintStream[A, B]':
+        ...
+
+    @overload
+    def concat(self, other: 'PythonTriConstraintStream[A, B, C_]') -> 'PythonTriConstraintStream[A, B, C_]':
+        ...
+
+    @overload
+    def concat(self, other: 'PythonQuadConstraintStream[A, B, C_, D_]') -> 'PythonQuadConstraintStream[A, B, C_, D_]':
+        ...
+
+    def concat(self, other):
+        """
+        The concat building block allows you
+        to create a constraint stream containing tuples of two other constraint streams.
+        If join acts like a cartesian product of two lists, concat acts like a concatenation of two lists.
+        Unlike union of sets, concatenation of lists repeats duplicated elements.
+        If the two constraint concatenating streams share tuples, which happens e.g.
+        when they come from the same source of data, the tuples will be repeated downstream.
+        If this is undesired, use the distinct building block.
+        :param other:
+        :return:
+        """
+        if isinstance(other, PythonUniConstraintStream):
+            return PythonBiConstraintStream(self.delegate.concat(other.delegate), self.package, self.a_type, self.b_type)
+        elif isinstance(other, PythonBiConstraintStream):
+            return PythonBiConstraintStream(self.delegate.concat(other.delegate), self.package, self.a_type,
+                                            self.b_type)
+        elif isinstance(other, PythonTriConstraintStream):
+            return PythonTriConstraintStream(self.delegate.concat(other.delegate), self.package, self.a_type,
+                                             self.b_type, other.c_type)
+        elif isinstance(other, PythonQuadConstraintStream):
+            return PythonQuadConstraintStream(self.delegate.concat(other.delegate), self.package, self.a_type,
+                                              self.b_type, other.c_type, other.d_type)
+        else:
+            raise RuntimeError(f'Unhandled constraint stream type {type(other)}.')
 
     @overload
     def penalize(self, constraint_name: str, constraint_weight: 'Score') -> \
@@ -1975,16 +2217,66 @@ class PythonTriConstraintStream(Generic[A, B, C]):
 
     groupBy = group_by
 
-    def map(self, mapping_function: Callable[[A,B,C], A_]) -> 'PythonUniConstraintStream[A_]':
+    @overload
+    def map(self, mapping_function: Callable[[A, B, C], A_]) -> 'PythonUniConstraintStream[A_]':
+        ...
+
+    @overload
+    def map(self, mapping_function: Callable[[A, B, C], A_], mapping_function2: Callable[[A, B, C], B_]) -> 'PythonBiConstraintStream[A_, B_]':
+        ...
+
+    @overload
+    def map(self, mapping_function: Callable[[A, B, C], A_], mapping_function2: Callable[[A, B, C], B_],
+            mapping_function3: Callable[[A, B, C], C_]) -> 'PythonTriConstraintStream[A_, B_, C_]':
+        ...
+
+    @overload
+    def map(self, mapping_function: Callable[[A, B, C], A_], mapping_function2: Callable[[A, B, C], B_],
+            mapping_function3: Callable[[A, B, C], C_], mapping_function4: Callable[[A, B, C], D_]) -> 'PythonQuadConstraintStream[A_, B_, C_, D_]':
+        ...
+
+    def map(self, *mapping_functions):
         """Transforms the stream in such a way that tuples are remapped using the given function.
 
-        :param mapping_function:
+        :param mapping_functions:
 
         :return:
         """
+        if len(mapping_functions) == 0:
+            raise ValueError(f'At least one mapping function is required for map.')
+        if len(mapping_functions) > 4:
+            raise ValueError(f'At most four mapping functions can be passed to map (got {len(mapping_functions)}).')
+        translated_functions = tuple(map(lambda mapping_function: function_cast(mapping_function, self.a_type,
+                                                                                self.b_type, self.c_type),
+                                         mapping_functions))
+        if len(mapping_functions) == 1:
+            return PythonUniConstraintStream(self.delegate.map(*translated_functions), self.package,
+                                             JClass('java.lang.Object'))
+        if len(mapping_functions) == 2:
+            return PythonBiConstraintStream(self.delegate.map(*translated_functions), self.package,
+                                            JClass('java.lang.Object'), JClass('java.lang.Object'))
+        if len(mapping_functions) == 3:
+            return PythonTriConstraintStream(self.delegate.map(*translated_functions), self.package,
+                                             JClass('java.lang.Object'), JClass('java.lang.Object'),
+                                             JClass('java.lang.Object'))
+        if len(mapping_functions) == 4:
+            return PythonQuadConstraintStream(self.delegate.map(*translated_functions), self.package,
+                                              JClass('java.lang.Object'), JClass('java.lang.Object'),
+                                              JClass('java.lang.Object'), JClass('java.lang.Object'))
+        raise RuntimeError(f'Impossible state: missing case for {len(mapping_functions)}.')
+
+    def expand(self, mapping_function: Callable[[A, B, C], D_]) -> 'QuadConstraintStream[A, B, C, D_]':
+        """
+        Tuple expansion is a special case of tuple mapping
+        which only increases stream cardinality and can not introduce duplicate tuples.
+        It enables you to add extra facts to each tuple in a constraint stream by applying a mapping function to it.
+        This is useful in situations where an expensive computations needs to be cached for use later in the stream.
+        :param mapping_function:
+        :return:
+        """
         translated_function = function_cast(mapping_function, self.a_type, self.b_type, self.c_type)
-        return PythonUniConstraintStream(self.delegate.map(translated_function), self.package,
-                                         JClass('java.lang.Object'))
+        return PythonTriConstraintStream(self.delegate.expand(translated_function), self.package,
+                                         self.a_type, self.b_type, self.c_type, JClass('java.lang.Object'))
 
     def flatten_last(self, flattening_function: Callable[[C], C_]) -> 'PythonTriConstraintStream[A,B,C_]':
         """Takes each tuple and applies a mapping on it, which turns the tuple into an Iterable.
@@ -2006,6 +2298,49 @@ class PythonTriConstraintStream(Generic[A, B, C]):
         """
         return PythonTriConstraintStream(self.delegate.distinct(), self.package, self.a_type,
                                          self.b_type, self.c_type)
+
+    @overload
+    def concat(self, other: 'PythonUniConstraintStream[A]') -> 'PythonTriConstraintStream[A, B, C]':
+        ...
+
+    @overload
+    def concat(self, other: 'PythonBiConstraintStream[A, B]') -> 'PythonTriConstraintStream[A, B, C]':
+        ...
+
+    @overload
+    def concat(self, other: 'PythonTriConstraintStream[A, B, C]') -> 'PythonTriConstraintStream[A, B, C]':
+        ...
+
+    @overload
+    def concat(self, other: 'PythonQuadConstraintStream[A, B, C, D_]') -> 'PythonQuadConstraintStream[A, B, C, D_]':
+        ...
+
+    def concat(self, other):
+        """
+        The concat building block allows you
+        to create a constraint stream containing tuples of two other constraint streams.
+        If join acts like a cartesian product of two lists, concat acts like a concatenation of two lists.
+        Unlike union of sets, concatenation of lists repeats duplicated elements.
+        If the two constraint concatenating streams share tuples, which happens e.g.
+        when they come from the same source of data, the tuples will be repeated downstream.
+        If this is undesired, use the distinct building block.
+        :param other:
+        :return:
+        """
+        if isinstance(other, PythonUniConstraintStream):
+            return PythonTriConstraintStream(self.delegate.concat(other.delegate), self.package, self.a_type,
+                                             self.b_type, self.c_type)
+        elif isinstance(other, PythonBiConstraintStream):
+            return PythonTriConstraintStream(self.delegate.concat(other.delegate), self.package, self.a_type,
+                                             self.b_type, self.c_type)
+        elif isinstance(other, PythonTriConstraintStream):
+            return PythonTriConstraintStream(self.delegate.concat(other.delegate), self.package, self.a_type,
+                                             self.b_type, self.c_type)
+        elif isinstance(other, PythonQuadConstraintStream):
+            return PythonQuadConstraintStream(self.delegate.concat(other.delegate), self.package, self.a_type,
+                                              self.b_type, self.c_type, other.d_type)
+        else:
+            raise RuntimeError(f'Unhandled constraint stream type {type(other)}.')
 
     @overload
     def penalize(self, constraint_name: str, constraint_weight: 'Score') -> \
@@ -2494,15 +2829,53 @@ class PythonQuadConstraintStream(Generic[A, B, C, D]):
 
     groupBy = group_by
 
-    def map(self, mapping_function: Callable[[A,B,C,D], A_]) -> 'PythonUniConstraintStream[A_]':
+    @overload
+    def map(self, mapping_function: Callable[[A, B, C, D], A_]) -> 'PythonUniConstraintStream[A_]':
+        ...
+
+    @overload
+    def map(self, mapping_function: Callable[[A, B, C, D], A_], mapping_function2: Callable[[A, B, C, D], B_]) -> 'PythonBiConstraintStream[A_, B_]':
+        ...
+
+    @overload
+    def map(self, mapping_function: Callable[[A, B, C, D], A_], mapping_function2: Callable[[A, B, C, D], B_],
+            mapping_function3: Callable[[A, B, C, D], C_]) -> 'PythonTriConstraintStream[A_, B_, C_]':
+        ...
+
+    @overload
+    def map(self, mapping_function: Callable[[A, B, C, D], A_], mapping_function2: Callable[[A, B, C, D], B_],
+            mapping_function3: Callable[[A, B, C, D], C_], mapping_function4: Callable[[A, B, C, D], D_]) -> 'PythonQuadConstraintStream[A_, B_, C_, D_]':
+        ...
+
+    def map(self, *mapping_functions):
         """Transforms the stream in such a way that tuples are remapped using the given function.
-        :param mapping_function:
+
+        :param mapping_functions:
 
         :return:
         """
-        translated_function = function_cast(mapping_function, self.a_type, self.b_type, self.c_type, self.d_type)
-        return PythonUniConstraintStream(self.delegate.map(translated_function), self.package,
-                                         JClass('java.lang.Object'))
+        if len(mapping_functions) == 0:
+            raise ValueError(f'At least one mapping function is required for map.')
+        if len(mapping_functions) > 4:
+            raise ValueError(f'At most four mapping functions can be passed to map (got {len(mapping_functions)}).')
+        translated_functions = tuple(map(lambda mapping_function: function_cast(mapping_function, self.a_type,
+                                                                                self.b_type, self.c_type, self.d_type),
+                                         mapping_functions))
+        if len(mapping_functions) == 1:
+            return PythonUniConstraintStream(self.delegate.map(*translated_functions), self.package,
+                                             JClass('java.lang.Object'))
+        if len(mapping_functions) == 2:
+            return PythonBiConstraintStream(self.delegate.map(*translated_functions), self.package,
+                                            JClass('java.lang.Object'), JClass('java.lang.Object'))
+        if len(mapping_functions) == 3:
+            return PythonTriConstraintStream(self.delegate.map(*translated_functions), self.package,
+                                             JClass('java.lang.Object'), JClass('java.lang.Object'),
+                                             JClass('java.lang.Object'))
+        if len(mapping_functions) == 4:
+            return PythonQuadConstraintStream(self.delegate.map(*translated_functions), self.package,
+                                              JClass('java.lang.Object'), JClass('java.lang.Object'),
+                                              JClass('java.lang.Object'), JClass('java.lang.Object'))
+        raise RuntimeError(f'Impossible state: missing case for {len(mapping_functions)}.')
 
     def flatten_last(self, flattening_function) -> 'PythonQuadConstraintStream[A,B,C,D]':
         """Takes each tuple and applies a mapping on it, which turns the tuple into an Iterable.
@@ -2524,6 +2897,49 @@ class PythonQuadConstraintStream(Generic[A, B, C, D]):
         """
         return PythonQuadConstraintStream(self.delegate.distinct(), self.package, self.a_type,
                                           self.b_type, self.c_type, self.d_type)
+
+    @overload
+    def concat(self, other: 'PythonUniConstraintStream[A]') -> 'PythonQuadConstraintStream[A, B, C, D]':
+        ...
+
+    @overload
+    def concat(self, other: 'PythonBiConstraintStream[A, B]') -> 'PythonQuadConstraintStream[A, B, C, D]':
+        ...
+
+    @overload
+    def concat(self, other: 'PythonTriConstraintStream[A, B, C]') -> 'PythonQuadConstraintStream[A, B, C, D]':
+        ...
+
+    @overload
+    def concat(self, other: 'PythonQuadConstraintStream[A, B, C, D]') -> 'PythonQuadConstraintStream[A, B, C, D]':
+        ...
+
+    def concat(self, other):
+        """
+        The concat building block allows you
+        to create a constraint stream containing tuples of two other constraint streams.
+        If join acts like a cartesian product of two lists, concat acts like a concatenation of two lists.
+        Unlike union of sets, concatenation of lists repeats duplicated elements.
+        If the two constraint concatenating streams share tuples, which happens e.g.
+        when they come from the same source of data, the tuples will be repeated downstream.
+        If this is undesired, use the distinct building block.
+        :param other:
+        :return:
+        """
+        if isinstance(other, PythonUniConstraintStream):
+            return PythonQuadConstraintStream(self.delegate.concat(other.delegate), self.package, self.a_type,
+                                              self.b_type, self.c_type, self.d_type)
+        elif isinstance(other, PythonBiConstraintStream):
+            return PythonQuadConstraintStream(self.delegate.concat(other.delegate), self.package, self.a_type,
+                                              self.b_type, self.c_type, self.d_type)
+        elif isinstance(other, PythonTriConstraintStream):
+            return PythonQuadConstraintStream(self.delegate.concat(other.delegate), self.package, self.a_type,
+                                              self.b_type, self.c_type, self.d_type)
+        elif isinstance(other, PythonQuadConstraintStream):
+            return PythonQuadConstraintStream(self.delegate.concat(other.delegate), self.package, self.a_type,
+                                              self.b_type, self.c_type, self.d_type)
+        else:
+            raise RuntimeError(f'Unhandled constraint stream type {type(other)}.')
 
     @overload
     def penalize(self, constraint_name: str, constraint_weight: 'Score') -> \

@@ -12,6 +12,7 @@ from ai.timefold.solver.core.api.score import Score as _Score
 from ..constraint_stream import PythonConstraintFactory as ConstraintFactory, \
     PythonUniConstraintStream as UniConstraintStream, PythonBiConstraintStream as BiConstraintStream, \
     PythonTriConstraintStream as TriConstraintStream, PythonQuadConstraintStream as QuadConstraintStream
+from ai.timefold.solver.core.api.score.stream.common import SequenceChain
 from ai.timefold.solver.core.api.score.stream.uni import UniConstraintCollector
 from ai.timefold.solver.core.api.score.stream.bi import BiJoiner, BiConstraintCollector
 from ai.timefold.solver.core.api.score.stream.tri import TriJoiner, TriConstraintCollector
@@ -659,6 +660,49 @@ class ConstraintCollectors:
                                               predicate,
                                               delegate)
 
+    @overload  # noqa
+    @staticmethod
+    def collect_and_then(delegate: 'UniConstraintCollector[A, Any, A_]',
+                         mapping_function: Callable[[A_], B_]) -> \
+            'UniConstraintCollector[A, Any, B_]':
+        ...
+
+    @overload  # noqa
+    @staticmethod
+    def collect_and_then(delegate: 'BiConstraintCollector[A, B, Any, A_]',
+                         mapping_function: Callable[[A_], B_]) -> 'BiConstraintCollector[A, B, Any, B_]':
+        ...
+
+    @overload  # noqa
+    @staticmethod
+    def collect_and_then(delegate: 'TriConstraintCollector[A, B, C, Any, A_]',
+                         mapping_function: Callable[[A_], B_]) -> \
+            'TriConstraintCollector[A, B, C, Any, B_]':
+        ...
+
+    @overload  # noqa
+    @staticmethod
+    def collect_and_then(delegate: 'QuadConstraintCollector[A, B, C, D, Any, A_]',
+                         mapping_function: Callable[[A_], B_]) -> \
+            'QuadConstraintCollector[A, B, C, D, Any, B_]':
+        ...
+
+    @staticmethod
+    def collect_and_then(delegate, mapping_function):
+        """Returns a collector that delegates to the underlying collector and maps its result to another value.
+
+        :param delegate:
+        :param mapping_function:
+
+        :return:
+        """
+        from ..constraint_stream import CollectAndThenCollector
+        return CollectAndThenCollector(JavaConstraintCollectors.collectAndThen,
+                                       delegate,
+                                       mapping_function)
+
+    collectAndThen = collect_and_then
+
     @staticmethod
     def count() -> 'UniConstraintCollector[A, Any, int]':
         """Returns a collector that counts the number of elements that are being grouped.
@@ -943,6 +987,42 @@ class ConstraintCollectors:
             raise NotImplementedError  # TODO
         else:
             raise ValueError
+
+    @overload  # noqa
+    @staticmethod
+    def to_consecutive_sequences(index_map: Callable[[A], int]) -> 'UniConstraintCollector[A, Any, SequenceChain[A, int]]':
+        ...
+
+    @overload  # noqa
+    @staticmethod
+    def to_consecutive_sequences(result_map: Callable[[A, B], A_], index_map: Callable[[A_], int]) -> \
+            'BiConstraintCollector[A, B, Any, SequenceChain[A_, int]]':
+        ...
+
+    @overload  # noqa
+    @staticmethod
+    def to_consecutive_sequences(result_map: Callable[[A, B, C], A_], index_map: Callable[[A_], int]) -> \
+            'TriConstraintCollector[A, B, C, Any, SequenceChain[A_, int]]':
+        ...
+
+    @overload  # noqa
+    @staticmethod
+    def to_consecutive_sequences(result_map: Callable[[A, B, C, D], A_], index_map: Callable[[A_], int]) -> \
+            'QuadConstraintCollector[A, B, C, D, Any, SequenceChain[A_, int]]':
+        ...
+
+    @staticmethod
+    def to_consecutive_sequences(result_or_index_map, index_map=None):
+        from ..constraint_stream import (GroupIntMappingSingleArgConstraintCollector,
+                                         GroupMappingIntMappingTwoArgConstraintCollector)
+        if index_map is None:
+            return GroupIntMappingSingleArgConstraintCollector(JavaConstraintCollectors.toConsecutiveSequences,
+                                                               result_or_index_map)
+        else:
+            return GroupMappingIntMappingTwoArgConstraintCollector(JavaConstraintCollectors.toConsecutiveSequences,
+                                                                   result_or_index_map, index_map)
+
+    toConsecutiveSequences = to_consecutive_sequences
 
     @overload  # noqa
     @staticmethod

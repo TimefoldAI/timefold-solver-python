@@ -95,5 +95,4 @@ def test_has_all_methods():
             if not hasattr(python_type, function_name):
                 missing.append(function_name)
 
-        # TODO: Implement expand and concat
-        assert len(missing) <= 2
+        assert len(missing) == 0
