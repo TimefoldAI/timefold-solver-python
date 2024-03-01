@@ -88,9 +88,9 @@ public interface PythonLikeObject {
         PythonLikeType type = __getType();
         PythonLikeObject typeResult = type.__getAttributeOrNull(name);
         if (typeResult != null) {
-            PythonLikeObject maybeDescriptor = typeResult.__getAttributeOrNull(PythonTernaryOperators.GET.dunderMethod);
+            PythonLikeObject maybeDescriptor = typeResult.__getAttributeOrNull(PythonTernaryOperator.GET.dunderMethod);
             if (maybeDescriptor == null) {
-                maybeDescriptor = typeResult.__getType().__getAttributeOrNull(PythonTernaryOperators.GET.dunderMethod);
+                maybeDescriptor = typeResult.__getType().__getAttributeOrNull(PythonTernaryOperator.GET.dunderMethod);
             }
 
             if (maybeDescriptor != null) {

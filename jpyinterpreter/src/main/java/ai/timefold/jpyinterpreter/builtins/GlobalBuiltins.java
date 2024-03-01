@@ -37,7 +37,7 @@ import java.util.function.Function;
 import java.util.stream.IntStream;
 import java.util.stream.StreamSupport;
 
-import ai.timefold.jpyinterpreter.PythonBinaryOperators;
+import ai.timefold.jpyinterpreter.PythonBinaryOperator;
 import ai.timefold.jpyinterpreter.PythonBytecodeToJavaBytecodeTranslator;
 import ai.timefold.jpyinterpreter.PythonInterpreter;
 import ai.timefold.jpyinterpreter.PythonLikeObject;
@@ -1377,7 +1377,7 @@ public class GlobalBuiltins {
         }
 
         if (sequenceType.__getAttributeOrNull(PythonUnaryOperator.LENGTH.getDunderMethod()) != null &&
-                sequenceType.__getAttributeOrNull(PythonBinaryOperators.GET_ITEM.getDunderMethod()) != null) {
+                sequenceType.__getAttributeOrNull(PythonBinaryOperator.GET_ITEM.getDunderMethod()) != null) {
             PythonInteger length = (PythonInteger) UnaryDunderBuiltin.LENGTH.invoke(sequence);
             Iterator<PythonLikeObject> reversedIterator = new Iterator<>() {
                 PythonInteger current = length.subtract(PythonInteger.ONE);

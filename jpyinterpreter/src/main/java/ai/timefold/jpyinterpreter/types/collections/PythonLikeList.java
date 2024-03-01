@@ -10,10 +10,10 @@ import java.util.ListIterator;
 import java.util.Objects;
 import java.util.RandomAccess;
 
-import ai.timefold.jpyinterpreter.PythonBinaryOperators;
+import ai.timefold.jpyinterpreter.PythonBinaryOperator;
 import ai.timefold.jpyinterpreter.PythonLikeObject;
 import ai.timefold.jpyinterpreter.PythonOverloadImplementor;
-import ai.timefold.jpyinterpreter.PythonTernaryOperators;
+import ai.timefold.jpyinterpreter.PythonTernaryOperator;
 import ai.timefold.jpyinterpreter.PythonUnaryOperator;
 import ai.timefold.jpyinterpreter.builtins.UnaryDunderBuiltin;
 import ai.timefold.jpyinterpreter.types.AbstractPythonLikeObject;
@@ -56,29 +56,29 @@ public class PythonLikeList<T> extends AbstractPythonLikeObject implements List<
                 PythonLikeList.class.getMethod("getRepresentation"));
 
         // Binary methods
-        BuiltinTypes.LIST_TYPE.addBinaryMethod(PythonBinaryOperators.ADD,
+        BuiltinTypes.LIST_TYPE.addBinaryMethod(PythonBinaryOperator.ADD,
                 PythonLikeList.class.getMethod("concatToNew", PythonLikeList.class));
-        BuiltinTypes.LIST_TYPE.addBinaryMethod(PythonBinaryOperators.INPLACE_ADD,
+        BuiltinTypes.LIST_TYPE.addBinaryMethod(PythonBinaryOperator.INPLACE_ADD,
                 PythonLikeList.class.getMethod("concatToSelf", PythonLikeList.class));
-        BuiltinTypes.LIST_TYPE.addBinaryMethod(PythonBinaryOperators.MULTIPLY,
+        BuiltinTypes.LIST_TYPE.addBinaryMethod(PythonBinaryOperator.MULTIPLY,
                 PythonLikeList.class.getMethod("multiplyToNew", PythonInteger.class));
-        BuiltinTypes.LIST_TYPE.addBinaryMethod(PythonBinaryOperators.INPLACE_MULTIPLY,
+        BuiltinTypes.LIST_TYPE.addBinaryMethod(PythonBinaryOperator.INPLACE_MULTIPLY,
                 PythonLikeList.class.getMethod("multiplyToSelf", PythonInteger.class));
-        BuiltinTypes.LIST_TYPE.addBinaryMethod(PythonBinaryOperators.GET_ITEM,
+        BuiltinTypes.LIST_TYPE.addBinaryMethod(PythonBinaryOperator.GET_ITEM,
                 PythonLikeList.class.getMethod("getItem", PythonInteger.class));
-        BuiltinTypes.LIST_TYPE.addBinaryMethod(PythonBinaryOperators.GET_ITEM,
+        BuiltinTypes.LIST_TYPE.addBinaryMethod(PythonBinaryOperator.GET_ITEM,
                 PythonLikeList.class.getMethod("getSlice", PythonSlice.class));
-        BuiltinTypes.LIST_TYPE.addBinaryMethod(PythonBinaryOperators.DELETE_ITEM,
+        BuiltinTypes.LIST_TYPE.addBinaryMethod(PythonBinaryOperator.DELETE_ITEM,
                 PythonLikeList.class.getMethod("deleteItem", PythonInteger.class));
-        BuiltinTypes.LIST_TYPE.addBinaryMethod(PythonBinaryOperators.DELETE_ITEM,
+        BuiltinTypes.LIST_TYPE.addBinaryMethod(PythonBinaryOperator.DELETE_ITEM,
                 PythonLikeList.class.getMethod("deleteSlice", PythonSlice.class));
-        BuiltinTypes.LIST_TYPE.addBinaryMethod(PythonBinaryOperators.CONTAINS,
+        BuiltinTypes.LIST_TYPE.addBinaryMethod(PythonBinaryOperator.CONTAINS,
                 PythonLikeList.class.getMethod("containsItem", PythonLikeObject.class));
 
         // Ternary methods
-        BuiltinTypes.LIST_TYPE.addTernaryMethod(PythonTernaryOperators.SET_ITEM,
+        BuiltinTypes.LIST_TYPE.addTernaryMethod(PythonTernaryOperator.SET_ITEM,
                 PythonLikeList.class.getMethod("setItem", PythonInteger.class, PythonLikeObject.class));
-        BuiltinTypes.LIST_TYPE.addTernaryMethod(PythonTernaryOperators.SET_ITEM,
+        BuiltinTypes.LIST_TYPE.addTernaryMethod(PythonTernaryOperator.SET_ITEM,
                 PythonLikeList.class.getMethod("setSlice", PythonSlice.class, PythonLikeObject.class));
 
         // Other

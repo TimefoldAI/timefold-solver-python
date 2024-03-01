@@ -17,7 +17,7 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import ai.timefold.jpyinterpreter.PythonBinaryOperators;
+import ai.timefold.jpyinterpreter.PythonBinaryOperator;
 import ai.timefold.jpyinterpreter.PythonLikeObject;
 import ai.timefold.jpyinterpreter.PythonOverloadImplementor;
 import ai.timefold.jpyinterpreter.PythonUnaryOperator;
@@ -143,11 +143,11 @@ public class PythonDateTime extends PythonDate<PythonDateTime> {
                 PythonDateTime.class.getMethod("toPythonString"));
 
         // Binary Operators
-        DATE_TIME_TYPE.addBinaryMethod(PythonBinaryOperators.ADD,
+        DATE_TIME_TYPE.addBinaryMethod(PythonBinaryOperator.ADD,
                 PythonDateTime.class.getMethod("add_time_delta", PythonTimeDelta.class));
-        DATE_TIME_TYPE.addBinaryMethod(PythonBinaryOperators.SUBTRACT,
+        DATE_TIME_TYPE.addBinaryMethod(PythonBinaryOperator.SUBTRACT,
                 PythonDateTime.class.getMethod("subtract_time_delta", PythonTimeDelta.class));
-        DATE_TIME_TYPE.addBinaryMethod(PythonBinaryOperators.SUBTRACT,
+        DATE_TIME_TYPE.addBinaryMethod(PythonBinaryOperator.SUBTRACT,
                 PythonDateTime.class.getMethod("subtract_date_time", PythonDateTime.class));
 
         // Instance methods

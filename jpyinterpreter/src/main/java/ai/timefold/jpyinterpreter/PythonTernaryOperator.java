@@ -6,7 +6,7 @@ package ai.timefold.jpyinterpreter;
  *
  * ex: a.__setitem__(key, value)
  */
-public enum PythonTernaryOperators {
+public enum PythonTernaryOperator {
     // Descriptor operations
     // https://docs.python.org/3/howto/descriptor.html
     GET("__get__"),
@@ -21,7 +21,7 @@ public enum PythonTernaryOperators {
 
     public final String dunderMethod;
 
-    PythonTernaryOperators(String dunderMethod) {
+    PythonTernaryOperator(String dunderMethod) {
         this.dunderMethod = dunderMethod;
     }
 

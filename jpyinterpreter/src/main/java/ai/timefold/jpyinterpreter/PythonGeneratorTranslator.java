@@ -633,7 +633,7 @@ public class PythonGeneratorTranslator {
                                                     "sentValue",
                                                     Type.getDescriptor(PythonLikeObject.class));
                                             FunctionImplementor.callBinaryMethod(methodVisitor,
-                                                    PythonBinaryOperators.SEND.dunderMethod);
+                                                    PythonBinaryOperator.SEND.dunderMethod);
                                             break;
                                         }
                                         case 2: { // throw
@@ -687,7 +687,7 @@ public class PythonGeneratorTranslator {
                                             // Swap so it Generator, Throwable instead of Throwable, Generator
                                             methodVisitor.visitInsn(Opcodes.SWAP);
                                             FunctionImplementor.callBinaryMethod(methodVisitor,
-                                                    PythonBinaryOperators.THROW.dunderMethod);
+                                                    PythonBinaryOperator.THROW.dunderMethod);
                                             break;
                                         }
                                     }

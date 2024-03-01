@@ -14,12 +14,12 @@ import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import ai.timefold.jpyinterpreter.FieldDescriptor;
-import ai.timefold.jpyinterpreter.PythonBinaryOperators;
+import ai.timefold.jpyinterpreter.PythonBinaryOperator;
 import ai.timefold.jpyinterpreter.PythonClassTranslator;
 import ai.timefold.jpyinterpreter.PythonFunctionSignature;
 import ai.timefold.jpyinterpreter.PythonLikeObject;
 import ai.timefold.jpyinterpreter.PythonOverloadImplementor;
-import ai.timefold.jpyinterpreter.PythonTernaryOperators;
+import ai.timefold.jpyinterpreter.PythonTernaryOperator;
 import ai.timefold.jpyinterpreter.PythonUnaryOperator;
 import ai.timefold.jpyinterpreter.builtins.TernaryDunderBuiltin;
 import ai.timefold.jpyinterpreter.types.collections.PythonLikeDict;
@@ -130,15 +130,15 @@ public class PythonLikeType implements PythonLikeObject,
 
     public static PythonLikeType registerBaseType() {
         try {
-            BuiltinTypes.BASE_TYPE.addBinaryMethod(PythonBinaryOperators.GET_ATTRIBUTE,
+            BuiltinTypes.BASE_TYPE.addBinaryMethod(PythonBinaryOperator.GET_ATTRIBUTE,
                     PythonLikeObject.class.getMethod("$method$__getattribute__", PythonString.class));
-            BuiltinTypes.BASE_TYPE.addTernaryMethod(PythonTernaryOperators.SET_ATTRIBUTE,
+            BuiltinTypes.BASE_TYPE.addTernaryMethod(PythonTernaryOperator.SET_ATTRIBUTE,
                     PythonLikeObject.class.getMethod("$method$__setattr__", PythonString.class, PythonLikeObject.class));
-            BuiltinTypes.BASE_TYPE.addBinaryMethod(PythonBinaryOperators.DELETE_ATTRIBUTE,
+            BuiltinTypes.BASE_TYPE.addBinaryMethod(PythonBinaryOperator.DELETE_ATTRIBUTE,
                     PythonLikeObject.class.getMethod("$method$__delattr__", PythonString.class));
-            BuiltinTypes.BASE_TYPE.addBinaryMethod(PythonBinaryOperators.EQUAL,
+            BuiltinTypes.BASE_TYPE.addBinaryMethod(PythonBinaryOperator.EQUAL,
                     PythonLikeObject.class.getMethod("$method$__eq__", PythonLikeObject.class));
-            BuiltinTypes.BASE_TYPE.addBinaryMethod(PythonBinaryOperators.NOT_EQUAL,
+            BuiltinTypes.BASE_TYPE.addBinaryMethod(PythonBinaryOperator.NOT_EQUAL,
                     PythonLikeObject.class.getMethod("$method$__ne__", PythonLikeObject.class));
             BuiltinTypes.BASE_TYPE.addUnaryMethod(PythonUnaryOperator.AS_STRING,
                     PythonLikeObject.class.getMethod("$method$__str__"));
@@ -146,7 +146,7 @@ public class PythonLikeType implements PythonLikeObject,
                     PythonLikeObject.class.getMethod("$method$__repr__"));
             BuiltinTypes.BASE_TYPE.addUnaryMethod(PythonUnaryOperator.HASH,
                     PythonLikeObject.class.getMethod("$method$__hash__"));
-            BuiltinTypes.BASE_TYPE.addBinaryMethod(PythonBinaryOperators.FORMAT,
+            BuiltinTypes.BASE_TYPE.addBinaryMethod(PythonBinaryOperator.FORMAT,
                     PythonLikeObject.class.getMethod("$method$__format__", PythonLikeObject.class));
             BuiltinTypes.BASE_TYPE
                     .setConstructor((vargs, kwargs, callerInstance) -> new AbstractPythonLikeObject(BuiltinTypes.BASE_TYPE) {
@@ -195,9 +195,9 @@ public class PythonLikeType implements PythonLikeObject,
         String name = pythonName.value;
         PythonLikeObject typeResult = __getAttributeOrNull(name);
         if (typeResult != null) {
-            PythonLikeObject maybeDescriptor = typeResult.__getAttributeOrNull(PythonTernaryOperators.GET.dunderMethod);
+            PythonLikeObject maybeDescriptor = typeResult.__getAttributeOrNull(PythonTernaryOperator.GET.dunderMethod);
             if (maybeDescriptor == null) {
-                maybeDescriptor = typeResult.__getType().__getAttributeOrNull(PythonTernaryOperators.GET.dunderMethod);
+                maybeDescriptor = typeResult.__getType().__getAttributeOrNull(PythonTernaryOperator.GET.dunderMethod);
             }
 
             if (maybeDescriptor != null) {
@@ -220,22 +220,22 @@ public class PythonLikeType implements PythonLikeObject,
         addMethod(operator.getDunderMethod(), PythonFunctionSignature.forMethod(method));
     }
 
-    public void addBinaryMethod(PythonBinaryOperators operator, Method method) {
+    public void addBinaryMethod(PythonBinaryOperator operator, Method method) {
         addMethod(operator.getDunderMethod(), PythonFunctionSignature.forMethod(method));
         if (operator.hasRightDunderMethod() && !operator.isComparisonMethod()) {
             addMethod(operator.getRightDunderMethod(), PythonFunctionSignature.forMethod(method));
         }
     }
 
-    public void addLeftBinaryMethod(PythonBinaryOperators operator, Method method) {
+    public void addLeftBinaryMethod(PythonBinaryOperator operator, Method method) {
         addMethod(operator.getDunderMethod(), PythonFunctionSignature.forMethod(method));
     }
 
-    public void addRightBinaryMethod(PythonBinaryOperators operator, Method method) {
+    public void addRightBinaryMethod(PythonBinaryOperator operator, Method method) {
         addMethod(operator.getRightDunderMethod(), PythonFunctionSignature.forMethod(method));
     }
 
-    public void addTernaryMethod(PythonTernaryOperators operator, Method method) {
+    public void addTernaryMethod(PythonTernaryOperator operator, Method method) {
         addMethod(operator.getDunderMethod(), PythonFunctionSignature.forMethod(method));
     }
 
@@ -243,22 +243,22 @@ public class PythonLikeType implements PythonLikeObject,
         addMethod(operator.getDunderMethod(), method);
     }
 
-    public void addBinaryMethod(PythonBinaryOperators operator, PythonFunctionSignature method) {
+    public void addBinaryMethod(PythonBinaryOperator operator, PythonFunctionSignature method) {
         addMethod(operator.getDunderMethod(), method);
         if (operator.hasRightDunderMethod() && !operator.isComparisonMethod()) {
             addMethod(operator.getRightDunderMethod(), method);
         }
     }
 
-    public void addLeftBinaryMethod(PythonBinaryOperators operator, PythonFunctionSignature method) {
+    public void addLeftBinaryMethod(PythonBinaryOperator operator, PythonFunctionSignature method) {
         addMethod(operator.getDunderMethod(), method);
     }
 
-    public void addRightBinaryMethod(PythonBinaryOperators operator, PythonFunctionSignature method) {
+    public void addRightBinaryMethod(PythonBinaryOperator operator, PythonFunctionSignature method) {
         addMethod(operator.getRightDunderMethod(), method);
     }
 
-    public void addTernaryMethod(PythonTernaryOperators operator, PythonFunctionSignature method) {
+    public void addTernaryMethod(PythonTernaryOperator operator, PythonFunctionSignature method) {
         addMethod(operator.getDunderMethod(), method);
     }
 

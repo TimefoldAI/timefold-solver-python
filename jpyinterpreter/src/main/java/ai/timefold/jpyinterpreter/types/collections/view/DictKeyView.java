@@ -4,7 +4,7 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.function.Predicate;
 
-import ai.timefold.jpyinterpreter.PythonBinaryOperators;
+import ai.timefold.jpyinterpreter.PythonBinaryOperator;
 import ai.timefold.jpyinterpreter.PythonLikeObject;
 import ai.timefold.jpyinterpreter.PythonOverloadImplementor;
 import ai.timefold.jpyinterpreter.PythonUnaryOperator;
@@ -42,26 +42,26 @@ public class DictKeyView extends AbstractPythonLikeObject {
                 DictKeyView.class.getMethod("toRepresentation"));
 
         // Binary
-        BuiltinTypes.DICT_KEY_VIEW_TYPE.addBinaryMethod(PythonBinaryOperators.CONTAINS,
+        BuiltinTypes.DICT_KEY_VIEW_TYPE.addBinaryMethod(PythonBinaryOperator.CONTAINS,
                 DictKeyView.class.getMethod("containsKey", PythonLikeObject.class));
 
         // Set methods
         BuiltinTypes.DICT_KEY_VIEW_TYPE.addMethod("isdisjoint", DictKeyView.class.getMethod("isDisjoint", DictKeyView.class));
-        BuiltinTypes.DICT_KEY_VIEW_TYPE.addBinaryMethod(PythonBinaryOperators.LESS_THAN_OR_EQUAL,
+        BuiltinTypes.DICT_KEY_VIEW_TYPE.addBinaryMethod(PythonBinaryOperator.LESS_THAN_OR_EQUAL,
                 DictKeyView.class.getMethod("isSubset", DictKeyView.class));
-        BuiltinTypes.DICT_KEY_VIEW_TYPE.addBinaryMethod(PythonBinaryOperators.LESS_THAN,
+        BuiltinTypes.DICT_KEY_VIEW_TYPE.addBinaryMethod(PythonBinaryOperator.LESS_THAN,
                 DictKeyView.class.getMethod("isStrictSubset", DictKeyView.class));
-        BuiltinTypes.DICT_KEY_VIEW_TYPE.addBinaryMethod(PythonBinaryOperators.GREATER_THAN_OR_EQUAL,
+        BuiltinTypes.DICT_KEY_VIEW_TYPE.addBinaryMethod(PythonBinaryOperator.GREATER_THAN_OR_EQUAL,
                 DictKeyView.class.getMethod("isSuperset", DictKeyView.class));
-        BuiltinTypes.DICT_KEY_VIEW_TYPE.addBinaryMethod(PythonBinaryOperators.GREATER_THAN,
+        BuiltinTypes.DICT_KEY_VIEW_TYPE.addBinaryMethod(PythonBinaryOperator.GREATER_THAN,
                 DictKeyView.class.getMethod("isStrictSuperset", DictKeyView.class));
-        BuiltinTypes.DICT_KEY_VIEW_TYPE.addBinaryMethod(PythonBinaryOperators.OR,
+        BuiltinTypes.DICT_KEY_VIEW_TYPE.addBinaryMethod(PythonBinaryOperator.OR,
                 DictKeyView.class.getMethod("union", DictKeyView.class));
-        BuiltinTypes.DICT_KEY_VIEW_TYPE.addBinaryMethod(PythonBinaryOperators.AND,
+        BuiltinTypes.DICT_KEY_VIEW_TYPE.addBinaryMethod(PythonBinaryOperator.AND,
                 DictKeyView.class.getMethod("intersection", DictKeyView.class));
-        BuiltinTypes.DICT_KEY_VIEW_TYPE.addBinaryMethod(PythonBinaryOperators.SUBTRACT,
+        BuiltinTypes.DICT_KEY_VIEW_TYPE.addBinaryMethod(PythonBinaryOperator.SUBTRACT,
                 DictKeyView.class.getMethod("difference", DictKeyView.class));
-        BuiltinTypes.DICT_KEY_VIEW_TYPE.addBinaryMethod(PythonBinaryOperators.XOR,
+        BuiltinTypes.DICT_KEY_VIEW_TYPE.addBinaryMethod(PythonBinaryOperator.XOR,
                 DictKeyView.class.getMethod("symmetricDifference", DictKeyView.class));
 
         return BuiltinTypes.DICT_KEY_VIEW_TYPE;

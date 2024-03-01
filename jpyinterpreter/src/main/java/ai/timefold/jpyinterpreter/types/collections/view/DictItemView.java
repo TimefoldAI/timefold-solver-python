@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
 
-import ai.timefold.jpyinterpreter.PythonBinaryOperators;
+import ai.timefold.jpyinterpreter.PythonBinaryOperator;
 import ai.timefold.jpyinterpreter.PythonLikeObject;
 import ai.timefold.jpyinterpreter.PythonOverloadImplementor;
 import ai.timefold.jpyinterpreter.PythonUnaryOperator;
@@ -49,27 +49,27 @@ public class DictItemView extends AbstractPythonLikeObject {
                 DictItemView.class.getMethod("toRepresentation"));
 
         // Binary
-        BuiltinTypes.DICT_ITEM_VIEW_TYPE.addBinaryMethod(PythonBinaryOperators.CONTAINS,
+        BuiltinTypes.DICT_ITEM_VIEW_TYPE.addBinaryMethod(PythonBinaryOperator.CONTAINS,
                 DictItemView.class.getMethod("containsItem", PythonLikeObject.class));
 
         // Set methods
         BuiltinTypes.DICT_ITEM_VIEW_TYPE.addMethod("isdisjoint",
                 DictItemView.class.getMethod("isDisjoint", DictItemView.class));
-        BuiltinTypes.DICT_ITEM_VIEW_TYPE.addBinaryMethod(PythonBinaryOperators.LESS_THAN_OR_EQUAL,
+        BuiltinTypes.DICT_ITEM_VIEW_TYPE.addBinaryMethod(PythonBinaryOperator.LESS_THAN_OR_EQUAL,
                 DictItemView.class.getMethod("isSubset", DictItemView.class));
-        BuiltinTypes.DICT_ITEM_VIEW_TYPE.addBinaryMethod(PythonBinaryOperators.LESS_THAN,
+        BuiltinTypes.DICT_ITEM_VIEW_TYPE.addBinaryMethod(PythonBinaryOperator.LESS_THAN,
                 DictItemView.class.getMethod("isStrictSubset", DictItemView.class));
-        BuiltinTypes.DICT_ITEM_VIEW_TYPE.addBinaryMethod(PythonBinaryOperators.GREATER_THAN_OR_EQUAL,
+        BuiltinTypes.DICT_ITEM_VIEW_TYPE.addBinaryMethod(PythonBinaryOperator.GREATER_THAN_OR_EQUAL,
                 DictItemView.class.getMethod("isSuperset", DictItemView.class));
-        BuiltinTypes.DICT_ITEM_VIEW_TYPE.addBinaryMethod(PythonBinaryOperators.GREATER_THAN,
+        BuiltinTypes.DICT_ITEM_VIEW_TYPE.addBinaryMethod(PythonBinaryOperator.GREATER_THAN,
                 DictItemView.class.getMethod("isStrictSuperset", DictItemView.class));
-        BuiltinTypes.DICT_ITEM_VIEW_TYPE.addBinaryMethod(PythonBinaryOperators.OR,
+        BuiltinTypes.DICT_ITEM_VIEW_TYPE.addBinaryMethod(PythonBinaryOperator.OR,
                 DictItemView.class.getMethod("union", DictItemView.class));
-        BuiltinTypes.DICT_ITEM_VIEW_TYPE.addBinaryMethod(PythonBinaryOperators.AND,
+        BuiltinTypes.DICT_ITEM_VIEW_TYPE.addBinaryMethod(PythonBinaryOperator.AND,
                 DictItemView.class.getMethod("intersection", DictItemView.class));
-        BuiltinTypes.DICT_ITEM_VIEW_TYPE.addBinaryMethod(PythonBinaryOperators.SUBTRACT,
+        BuiltinTypes.DICT_ITEM_VIEW_TYPE.addBinaryMethod(PythonBinaryOperator.SUBTRACT,
                 DictItemView.class.getMethod("difference", DictItemView.class));
-        BuiltinTypes.DICT_ITEM_VIEW_TYPE.addBinaryMethod(PythonBinaryOperators.XOR,
+        BuiltinTypes.DICT_ITEM_VIEW_TYPE.addBinaryMethod(PythonBinaryOperator.XOR,
                 DictItemView.class.getMethod("symmetricDifference", DictItemView.class));
 
         return BuiltinTypes.DICT_ITEM_VIEW_TYPE;

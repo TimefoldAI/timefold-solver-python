@@ -1,7 +1,7 @@
 package ai.timefold.jpyinterpreter.opcodes.collection;
 
 import ai.timefold.jpyinterpreter.FunctionMetadata;
-import ai.timefold.jpyinterpreter.PythonBinaryOperators;
+import ai.timefold.jpyinterpreter.PythonBinaryOperator;
 import ai.timefold.jpyinterpreter.PythonBytecodeInstruction;
 import ai.timefold.jpyinterpreter.StackMetadata;
 import ai.timefold.jpyinterpreter.implementors.DunderOperatorImplementor;
@@ -23,7 +23,7 @@ public class DeleteItemOpcode extends AbstractOpcode {
     @Override
     public void implement(FunctionMetadata functionMetadata, StackMetadata stackMetadata) {
         DunderOperatorImplementor.binaryOperator(functionMetadata.methodVisitor, stackMetadata,
-                PythonBinaryOperators.DELETE_ITEM);
+                PythonBinaryOperator.DELETE_ITEM);
         functionMetadata.methodVisitor.visitInsn(Opcodes.POP); // DELETE_ITEM ignore results of delete function
     }
 }

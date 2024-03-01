@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 import ai.timefold.jpyinterpreter.PythonLikeObject;
-import ai.timefold.jpyinterpreter.PythonTernaryOperators;
+import ai.timefold.jpyinterpreter.PythonTernaryOperator;
 import ai.timefold.jpyinterpreter.types.PythonLikeFunction;
 import ai.timefold.jpyinterpreter.types.PythonString;
 import ai.timefold.jpyinterpreter.types.errors.ValueError;
@@ -13,14 +13,14 @@ public class TernaryDunderBuiltin implements PythonLikeFunction {
     private final String DUNDER_METHOD_NAME;
 
     public static final TernaryDunderBuiltin POWER = new TernaryDunderBuiltin("__pow__");
-    public static final TernaryDunderBuiltin SETATTR = new TernaryDunderBuiltin(PythonTernaryOperators.SET_ATTRIBUTE);
-    public static final TernaryDunderBuiltin GET_DESCRIPTOR = new TernaryDunderBuiltin(PythonTernaryOperators.GET);
+    public static final TernaryDunderBuiltin SETATTR = new TernaryDunderBuiltin(PythonTernaryOperator.SET_ATTRIBUTE);
+    public static final TernaryDunderBuiltin GET_DESCRIPTOR = new TernaryDunderBuiltin(PythonTernaryOperator.GET);
 
     public TernaryDunderBuiltin(String dunderMethodName) {
         DUNDER_METHOD_NAME = dunderMethodName;
     }
 
-    public TernaryDunderBuiltin(PythonTernaryOperators operator) {
+    public TernaryDunderBuiltin(PythonTernaryOperator operator) {
         DUNDER_METHOD_NAME = operator.getDunderMethod();
     }
 

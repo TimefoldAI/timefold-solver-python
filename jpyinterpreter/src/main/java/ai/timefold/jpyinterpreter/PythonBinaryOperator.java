@@ -9,7 +9,7 @@ import java.util.Optional;
  *
  * ex: a.__add__(b)
  */
-public enum PythonBinaryOperators {
+public enum PythonBinaryOperator {
     // Comparable operations ( from https://docs.python.org/3/reference/datamodel.html#object.__lt__ )
     LESS_THAN("<", "__lt__", "__gt__", true),
     LESS_THAN_OR_EQUAL("<=", "__le__", "__ge__", true),
@@ -34,19 +34,19 @@ public enum PythonBinaryOperators {
     OR("|", "__or__", "__ror__"),
 
     // In-place numeric binary operations variations
-    INPLACE_POWER("**=", "__ipow__", PythonBinaryOperators.POWER),
-    INPLACE_MULTIPLY("*=", "__imul__", PythonBinaryOperators.MULTIPLY),
-    INPLACE_MATRIX_MULTIPLY("@=", "__imatmul__", PythonBinaryOperators.MATRIX_MULTIPLY),
-    INPLACE_FLOOR_DIVIDE("//=", "__ifloordiv__", PythonBinaryOperators.FLOOR_DIVIDE),
-    INPLACE_TRUE_DIVIDE("/=", "__itruediv__", PythonBinaryOperators.TRUE_DIVIDE),
-    INPLACE_MODULO("%=", "__imod__", PythonBinaryOperators.MODULO),
-    INPLACE_ADD("+=", "__iadd__", PythonBinaryOperators.ADD),
-    INPLACE_SUBTRACT("-=", "__isub__", PythonBinaryOperators.SUBTRACT),
-    INPLACE_LSHIFT("<<=", "__ilshift__", PythonBinaryOperators.LSHIFT),
-    INPLACE_RSHIFT(">>=", "__irshift__", PythonBinaryOperators.RSHIFT),
-    INPLACE_AND("&=", "__iand__", PythonBinaryOperators.AND),
-    INPLACE_XOR("^=", "__ixor__", PythonBinaryOperators.XOR),
-    INPLACE_OR("|=", "__ior__", PythonBinaryOperators.OR),
+    INPLACE_POWER("**=", "__ipow__", PythonBinaryOperator.POWER),
+    INPLACE_MULTIPLY("*=", "__imul__", PythonBinaryOperator.MULTIPLY),
+    INPLACE_MATRIX_MULTIPLY("@=", "__imatmul__", PythonBinaryOperator.MATRIX_MULTIPLY),
+    INPLACE_FLOOR_DIVIDE("//=", "__ifloordiv__", PythonBinaryOperator.FLOOR_DIVIDE),
+    INPLACE_TRUE_DIVIDE("/=", "__itruediv__", PythonBinaryOperator.TRUE_DIVIDE),
+    INPLACE_MODULO("%=", "__imod__", PythonBinaryOperator.MODULO),
+    INPLACE_ADD("+=", "__iadd__", PythonBinaryOperator.ADD),
+    INPLACE_SUBTRACT("-=", "__isub__", PythonBinaryOperator.SUBTRACT),
+    INPLACE_LSHIFT("<<=", "__ilshift__", PythonBinaryOperator.LSHIFT),
+    INPLACE_RSHIFT(">>=", "__irshift__", PythonBinaryOperator.RSHIFT),
+    INPLACE_AND("&=", "__iand__", PythonBinaryOperator.AND),
+    INPLACE_XOR("^=", "__ixor__", PythonBinaryOperator.XOR),
+    INPLACE_OR("|=", "__ior__", PythonBinaryOperator.OR),
 
     // List operations
     // https://docs.python.org/3/reference/datamodel.html#object.__getitem__
@@ -81,9 +81,9 @@ public enum PythonBinaryOperators {
     public final String dunderMethod;
     public final String rightDunderMethod;
     public final boolean isComparisonMethod;
-    public final PythonBinaryOperators fallbackOperation;
+    public final PythonBinaryOperator fallbackOperation;
 
-    PythonBinaryOperators(String operatorSymbol, String dunderMethod) {
+    PythonBinaryOperator(String operatorSymbol, String dunderMethod) {
         this.operatorSymbol = operatorSymbol;
         this.dunderMethod = dunderMethod;
         this.rightDunderMethod = null;
@@ -91,7 +91,7 @@ public enum PythonBinaryOperators {
         this.fallbackOperation = null;
     }
 
-    PythonBinaryOperators(String operatorSymbol, String dunderMethod, String rightDunderMethod) {
+    PythonBinaryOperator(String operatorSymbol, String dunderMethod, String rightDunderMethod) {
         this.operatorSymbol = operatorSymbol;
         this.dunderMethod = dunderMethod;
         this.rightDunderMethod = rightDunderMethod;
@@ -99,7 +99,7 @@ public enum PythonBinaryOperators {
         this.fallbackOperation = null;
     }
 
-    PythonBinaryOperators(String operatorSymbol, String dunderMethod, String rightDunderMethod, boolean isComparisonMethod) {
+    PythonBinaryOperator(String operatorSymbol, String dunderMethod, String rightDunderMethod, boolean isComparisonMethod) {
         this.operatorSymbol = operatorSymbol;
         this.dunderMethod = dunderMethod;
         this.rightDunderMethod = rightDunderMethod;
@@ -107,7 +107,7 @@ public enum PythonBinaryOperators {
         this.fallbackOperation = null;
     }
 
-    PythonBinaryOperators(String operatorSymbol, String dunderMethod, PythonBinaryOperators fallbackOperation) {
+    PythonBinaryOperator(String operatorSymbol, String dunderMethod, PythonBinaryOperator fallbackOperation) {
         this.operatorSymbol = operatorSymbol;
         this.dunderMethod = dunderMethod;
         this.rightDunderMethod = null;
@@ -135,69 +135,69 @@ public enum PythonBinaryOperators {
         return isComparisonMethod;
     }
 
-    public Optional<PythonBinaryOperators> getFallbackOperation() {
+    public Optional<PythonBinaryOperator> getFallbackOperation() {
         return Optional.ofNullable(fallbackOperation);
     }
 
-    public static PythonBinaryOperators lookup(int instructionArg) {
+    public static PythonBinaryOperator lookup(int instructionArg) {
         // As defined by https://github.com/python/cpython/blob/0faa0ba240e815614e5a2900e48007acac41b214/Python/ceval.c#L299
 
         // Binary operations are in alphabetical order (note: CPython refer to Modulo as Remainder),
         // and are followed by the inplace operations in the same order
         switch (instructionArg) {
             case 0:
-                return PythonBinaryOperators.ADD;
+                return PythonBinaryOperator.ADD;
             case 1:
-                return PythonBinaryOperators.AND;
+                return PythonBinaryOperator.AND;
             case 2:
-                return PythonBinaryOperators.FLOOR_DIVIDE;
+                return PythonBinaryOperator.FLOOR_DIVIDE;
             case 3:
-                return PythonBinaryOperators.LSHIFT;
+                return PythonBinaryOperator.LSHIFT;
             case 4:
-                return PythonBinaryOperators.MATRIX_MULTIPLY;
+                return PythonBinaryOperator.MATRIX_MULTIPLY;
             case 5:
-                return PythonBinaryOperators.MULTIPLY;
+                return PythonBinaryOperator.MULTIPLY;
             case 6:
-                return PythonBinaryOperators.MODULO;
+                return PythonBinaryOperator.MODULO;
             case 7:
-                return PythonBinaryOperators.OR;
+                return PythonBinaryOperator.OR;
             case 8:
-                return PythonBinaryOperators.POWER;
+                return PythonBinaryOperator.POWER;
             case 9:
-                return PythonBinaryOperators.RSHIFT;
+                return PythonBinaryOperator.RSHIFT;
             case 10:
-                return PythonBinaryOperators.SUBTRACT;
+                return PythonBinaryOperator.SUBTRACT;
             case 11:
-                return PythonBinaryOperators.TRUE_DIVIDE;
+                return PythonBinaryOperator.TRUE_DIVIDE;
             case 12:
-                return PythonBinaryOperators.XOR;
+                return PythonBinaryOperator.XOR;
 
             case 13:
-                return PythonBinaryOperators.INPLACE_ADD;
+                return PythonBinaryOperator.INPLACE_ADD;
             case 14:
-                return PythonBinaryOperators.INPLACE_AND;
+                return PythonBinaryOperator.INPLACE_AND;
             case 15:
-                return PythonBinaryOperators.INPLACE_FLOOR_DIVIDE;
+                return PythonBinaryOperator.INPLACE_FLOOR_DIVIDE;
             case 16:
-                return PythonBinaryOperators.INPLACE_LSHIFT;
+                return PythonBinaryOperator.INPLACE_LSHIFT;
             case 17:
-                return PythonBinaryOperators.INPLACE_MATRIX_MULTIPLY;
+                return PythonBinaryOperator.INPLACE_MATRIX_MULTIPLY;
             case 18:
-                return PythonBinaryOperators.INPLACE_MULTIPLY;
+                return PythonBinaryOperator.INPLACE_MULTIPLY;
             case 19:
-                return PythonBinaryOperators.INPLACE_MODULO;
+                return PythonBinaryOperator.INPLACE_MODULO;
             case 20:
-                return PythonBinaryOperators.INPLACE_OR;
+                return PythonBinaryOperator.INPLACE_OR;
             case 21:
-                return PythonBinaryOperators.INPLACE_POWER;
+                return PythonBinaryOperator.INPLACE_POWER;
             case 22:
-                return PythonBinaryOperators.INPLACE_RSHIFT;
+                return PythonBinaryOperator.INPLACE_RSHIFT;
             case 23:
-                return PythonBinaryOperators.INPLACE_SUBTRACT;
+                return PythonBinaryOperator.INPLACE_SUBTRACT;
             case 24:
-                return PythonBinaryOperators.INPLACE_TRUE_DIVIDE;
+                return PythonBinaryOperator.INPLACE_TRUE_DIVIDE;
             case 25:
-                return PythonBinaryOperators.INPLACE_XOR;
+                return PythonBinaryOperator.INPLACE_XOR;
 
             default:
                 throw new IllegalArgumentException("Unknown binary op id: " + instructionArg);

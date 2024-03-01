@@ -2,6 +2,7 @@ package ai.timefold.jpyinterpreter.implementors;
 
 import java.lang.reflect.Field;
 import java.math.BigInteger;
+import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -49,8 +50,16 @@ public class JavaPythonTypeConversionImplementor {
      * Wraps {@code object} to a PythonLikeObject.
      */
     public static PythonLikeObject wrapJavaObject(Object object) {
+        return wrapJavaObject(object, new IdentityHashMap<>());
+    }
+
+    public static PythonLikeObject wrapJavaObject(Object object, Map<Object, PythonLikeObject> createdObjectMap) {
         if (object == null) {
             return PythonNone.INSTANCE;
+        }
+
+        if (createdObjectMap.containsKey(object)) {
+            return createdObjectMap.get(object);
         }
 
         if (object instanceof OpaqueJavaReference) {
@@ -88,6 +97,7 @@ public class JavaPythonTypeConversionImplementor {
 
         if (object instanceof List) {
             PythonLikeList out = new PythonLikeList();
+            createdObjectMap.put(object, out);
             for (Object item : (List) object) {
                 out.add(wrapJavaObject(item));
             }
@@ -96,6 +106,7 @@ public class JavaPythonTypeConversionImplementor {
 
         if (object instanceof Set) {
             PythonLikeSet out = new PythonLikeSet();
+            createdObjectMap.put(object, out);
             for (Object item : (Set) object) {
                 out.add(wrapJavaObject(item));
             }
@@ -104,6 +115,7 @@ public class JavaPythonTypeConversionImplementor {
 
         if (object instanceof Map) {
             PythonLikeDict out = new PythonLikeDict();
+            createdObjectMap.put(object, out);
             Set<Map.Entry<?, ?>> entrySet = ((Map) object).entrySet();
             for (Map.Entry<?, ?> entry : entrySet) {
                 out.put(wrapJavaObject(entry.getKey()), wrapJavaObject(entry.getValue()));
@@ -123,7 +135,7 @@ public class JavaPythonTypeConversionImplementor {
         }
 
         // Default: return a JavaObjectWrapper
-        return new JavaObjectWrapper(object);
+        return new JavaObjectWrapper(object, createdObjectMap);
     }
 
     /**

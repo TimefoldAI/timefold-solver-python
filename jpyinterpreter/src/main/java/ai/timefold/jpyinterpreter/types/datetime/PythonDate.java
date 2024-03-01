@@ -13,7 +13,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.IsoFields;
 import java.util.List;
 
-import ai.timefold.jpyinterpreter.PythonBinaryOperators;
+import ai.timefold.jpyinterpreter.PythonBinaryOperator;
 import ai.timefold.jpyinterpreter.PythonLikeObject;
 import ai.timefold.jpyinterpreter.PythonOverloadImplementor;
 import ai.timefold.jpyinterpreter.PythonUnaryOperator;
@@ -72,11 +72,11 @@ public class PythonDate<T extends PythonDate<?>> extends AbstractPythonLikeObjec
                 PythonDate.class.getMethod("toPythonString"));
 
         // Binary Operators
-        DATE_TYPE.addBinaryMethod(PythonBinaryOperators.ADD,
+        DATE_TYPE.addBinaryMethod(PythonBinaryOperator.ADD,
                 PythonDate.class.getMethod("add_time_delta", PythonTimeDelta.class));
-        DATE_TYPE.addBinaryMethod(PythonBinaryOperators.SUBTRACT,
+        DATE_TYPE.addBinaryMethod(PythonBinaryOperator.SUBTRACT,
                 PythonDate.class.getMethod("subtract_time_delta", PythonTimeDelta.class));
-        DATE_TYPE.addBinaryMethod(PythonBinaryOperators.SUBTRACT,
+        DATE_TYPE.addBinaryMethod(PythonBinaryOperator.SUBTRACT,
                 PythonDate.class.getMethod("subtract_date", PythonDate.class));
 
         // Methods

@@ -1,6 +1,6 @@
 package ai.timefold.jpyinterpreter.types;
 
-import ai.timefold.jpyinterpreter.PythonBinaryOperators;
+import ai.timefold.jpyinterpreter.PythonBinaryOperator;
 import ai.timefold.jpyinterpreter.PythonLikeObject;
 import ai.timefold.jpyinterpreter.PythonOverloadImplementor;
 import ai.timefold.jpyinterpreter.PythonUnaryOperator;
@@ -17,9 +17,9 @@ public class PythonNone extends AbstractPythonLikeObject {
 
     private static PythonLikeType registerMethods() throws NoSuchMethodException {
         BuiltinTypes.NONE_TYPE.addUnaryMethod(PythonUnaryOperator.AS_BOOLEAN, PythonNone.class.getMethod("asBool"));
-        BuiltinTypes.NONE_TYPE.addBinaryMethod(PythonBinaryOperators.EQUAL,
+        BuiltinTypes.NONE_TYPE.addBinaryMethod(PythonBinaryOperator.EQUAL,
                 PythonNone.class.getMethod("equalsObject", PythonLikeObject.class));
-        BuiltinTypes.NONE_TYPE.addBinaryMethod(PythonBinaryOperators.NOT_EQUAL,
+        BuiltinTypes.NONE_TYPE.addBinaryMethod(PythonBinaryOperator.NOT_EQUAL,
                 PythonNone.class.getMethod("notEqualsObject", PythonLikeObject.class));
         GlobalBuiltins.addBuiltinConstant("None", INSTANCE);
         return BuiltinTypes.NONE_TYPE;

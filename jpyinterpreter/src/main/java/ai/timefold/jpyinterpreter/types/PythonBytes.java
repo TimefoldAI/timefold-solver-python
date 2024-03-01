@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import ai.timefold.jpyinterpreter.PythonBinaryOperators;
+import ai.timefold.jpyinterpreter.PythonBinaryOperator;
 import ai.timefold.jpyinterpreter.PythonLikeObject;
 import ai.timefold.jpyinterpreter.PythonOverloadImplementor;
 import ai.timefold.jpyinterpreter.PythonUnaryOperator;
@@ -159,21 +159,21 @@ public class PythonBytes extends AbstractPythonLikeObject implements PythonBytes
         BuiltinTypes.BYTES_TYPE.addUnaryMethod(PythonUnaryOperator.LENGTH, PythonBytes.class.getMethod("getLength"));
 
         // Binary
-        BuiltinTypes.BYTES_TYPE.addBinaryMethod(PythonBinaryOperators.GET_ITEM,
+        BuiltinTypes.BYTES_TYPE.addBinaryMethod(PythonBinaryOperator.GET_ITEM,
                 PythonBytes.class.getMethod("getCharAt", PythonInteger.class));
-        BuiltinTypes.BYTES_TYPE.addBinaryMethod(PythonBinaryOperators.GET_ITEM,
+        BuiltinTypes.BYTES_TYPE.addBinaryMethod(PythonBinaryOperator.GET_ITEM,
                 PythonBytes.class.getMethod("getSubsequence", PythonSlice.class));
-        BuiltinTypes.BYTES_TYPE.addBinaryMethod(PythonBinaryOperators.CONTAINS,
+        BuiltinTypes.BYTES_TYPE.addBinaryMethod(PythonBinaryOperator.CONTAINS,
                 PythonBytes.class.getMethod("containsSubsequence", PythonBytes.class));
-        BuiltinTypes.BYTES_TYPE.addBinaryMethod(PythonBinaryOperators.ADD,
+        BuiltinTypes.BYTES_TYPE.addBinaryMethod(PythonBinaryOperator.ADD,
                 PythonBytes.class.getMethod("concat", PythonBytes.class));
-        BuiltinTypes.BYTES_TYPE.addBinaryMethod(PythonBinaryOperators.MULTIPLY,
+        BuiltinTypes.BYTES_TYPE.addBinaryMethod(PythonBinaryOperator.MULTIPLY,
                 PythonBytes.class.getMethod("repeat", PythonInteger.class));
-        BuiltinTypes.BYTES_TYPE.addBinaryMethod(PythonBinaryOperators.MODULO,
+        BuiltinTypes.BYTES_TYPE.addBinaryMethod(PythonBinaryOperator.MODULO,
                 PythonBytes.class.getMethod("interpolate", PythonLikeObject.class));
-        BuiltinTypes.BYTES_TYPE.addBinaryMethod(PythonBinaryOperators.MODULO,
+        BuiltinTypes.BYTES_TYPE.addBinaryMethod(PythonBinaryOperator.MODULO,
                 PythonBytes.class.getMethod("interpolate", PythonLikeTuple.class));
-        BuiltinTypes.BYTES_TYPE.addBinaryMethod(PythonBinaryOperators.MODULO,
+        BuiltinTypes.BYTES_TYPE.addBinaryMethod(PythonBinaryOperator.MODULO,
                 PythonBytes.class.getMethod("interpolate", PythonLikeDict.class));
 
         // Other

@@ -484,7 +484,7 @@ def extract_collector(collector_info, *type_arguments):
         return collector_info.collector_creator(predicate, delegate_collector)
     elif isinstance(collector_info, CollectAndThenCollector):
         delegate_collector = extract_collector(collector_info.delegate_collector, *type_arguments)
-        mapping_function = function_cast(collector_info.mapping_function, *type_arguments)
+        mapping_function = function_cast(collector_info.mapping_function, JClass('java.lang.Object'))
         return collector_info.collector_creator(delegate_collector, mapping_function)
     else:
         raise ValueError(f'Invalid Collector: {collector_info}. '

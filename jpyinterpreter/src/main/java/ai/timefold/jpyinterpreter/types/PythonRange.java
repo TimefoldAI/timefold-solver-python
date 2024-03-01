@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 
-import ai.timefold.jpyinterpreter.PythonBinaryOperators;
+import ai.timefold.jpyinterpreter.PythonBinaryOperator;
 import ai.timefold.jpyinterpreter.PythonLikeObject;
 import ai.timefold.jpyinterpreter.PythonOverloadImplementor;
 import ai.timefold.jpyinterpreter.PythonUnaryOperator;
@@ -90,9 +90,9 @@ public class PythonRange extends AbstractPythonLikeObject implements List<Python
         BuiltinTypes.RANGE_TYPE.addUnaryMethod(PythonUnaryOperator.ITERATOR, PythonRange.class.getMethod("getPythonIterator"));
 
         // Binary methods
-        BuiltinTypes.RANGE_TYPE.addBinaryMethod(PythonBinaryOperators.GET_ITEM,
+        BuiltinTypes.RANGE_TYPE.addBinaryMethod(PythonBinaryOperator.GET_ITEM,
                 PythonRange.class.getMethod("getItem", PythonInteger.class));
-        BuiltinTypes.RANGE_TYPE.addBinaryMethod(PythonBinaryOperators.CONTAINS,
+        BuiltinTypes.RANGE_TYPE.addBinaryMethod(PythonBinaryOperator.CONTAINS,
                 PythonRange.class.getMethod("isObjectInRange", PythonLikeObject.class));
 
         return BuiltinTypes.RANGE_TYPE;

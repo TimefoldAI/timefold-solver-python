@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import ai.timefold.jpyinterpreter.PythonBinaryOperators;
+import ai.timefold.jpyinterpreter.PythonBinaryOperator;
 import ai.timefold.jpyinterpreter.PythonLikeObject;
 import ai.timefold.jpyinterpreter.PythonOverloadImplementor;
 import ai.timefold.jpyinterpreter.PythonUnaryOperator;
@@ -67,7 +67,7 @@ public class PythonSlice extends AbstractPythonLikeObject {
         SLICE_TYPE.addUnaryMethod(PythonUnaryOperator.HASH, PythonSlice.class.getMethod("pythonHash"));
 
         // Binary
-        SLICE_TYPE.addBinaryMethod(PythonBinaryOperators.EQUAL, PythonSlice.class.getMethod("pythonEquals", PythonSlice.class));
+        SLICE_TYPE.addBinaryMethod(PythonBinaryOperator.EQUAL, PythonSlice.class.getMethod("pythonEquals", PythonSlice.class));
 
         // Other methods
         SLICE_TYPE.addMethod("indices", PythonSlice.class.getMethod("indices", PythonInteger.class));

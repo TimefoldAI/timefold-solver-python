@@ -2,7 +2,7 @@ package ai.timefold.jpyinterpreter.types.collections.view;
 
 import java.util.Collection;
 
-import ai.timefold.jpyinterpreter.PythonBinaryOperators;
+import ai.timefold.jpyinterpreter.PythonBinaryOperator;
 import ai.timefold.jpyinterpreter.PythonLikeObject;
 import ai.timefold.jpyinterpreter.PythonOverloadImplementor;
 import ai.timefold.jpyinterpreter.PythonUnaryOperator;
@@ -41,7 +41,7 @@ public class DictValueView extends AbstractPythonLikeObject {
                 DictValueView.class.getMethod("toRepresentation"));
 
         // Binary
-        BuiltinTypes.DICT_VALUE_VIEW_TYPE.addBinaryMethod(PythonBinaryOperators.CONTAINS,
+        BuiltinTypes.DICT_VALUE_VIEW_TYPE.addBinaryMethod(PythonBinaryOperator.CONTAINS,
                 DictValueView.class.getMethod("containsValue", PythonLikeObject.class));
 
         return BuiltinTypes.DICT_VALUE_VIEW_TYPE;

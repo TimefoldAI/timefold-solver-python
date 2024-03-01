@@ -9,10 +9,10 @@ import ai.timefold.jpyinterpreter.CompareOp;
 import ai.timefold.jpyinterpreter.FunctionMetadata;
 import ai.timefold.jpyinterpreter.LocalVariableHelper;
 import ai.timefold.jpyinterpreter.MethodDescriptor;
-import ai.timefold.jpyinterpreter.PythonBinaryOperators;
+import ai.timefold.jpyinterpreter.PythonBinaryOperator;
 import ai.timefold.jpyinterpreter.PythonFunctionSignature;
 import ai.timefold.jpyinterpreter.PythonLikeObject;
-import ai.timefold.jpyinterpreter.PythonTernaryOperators;
+import ai.timefold.jpyinterpreter.PythonTernaryOperator;
 import ai.timefold.jpyinterpreter.PythonUnaryOperator;
 import ai.timefold.jpyinterpreter.StackMetadata;
 import ai.timefold.jpyinterpreter.types.BuiltinTypes;
@@ -109,19 +109,19 @@ public class DunderOperatorImplementor {
     }
 
     public static void binaryOperator(MethodVisitor methodVisitor, StackMetadata stackMetadata,
-            PythonBinaryOperators operator) {
+            PythonBinaryOperator operator) {
         binaryOperator(methodVisitor, stackMetadata, operator, true, true, false);
     }
 
     private static void binaryOperator(MethodVisitor methodVisitor, StackMetadata stackMetadata,
-            PythonBinaryOperators operator, boolean isLeft, boolean leftCheckSuccessful,
+            PythonBinaryOperator operator, boolean isLeft, boolean leftCheckSuccessful,
             boolean forceFallback) {
         PythonLikeType leftOperand =
                 Optional.ofNullable(stackMetadata.getTypeAtStackIndex(1)).orElse(BuiltinTypes.BASE_TYPE);
         PythonLikeType rightOperand =
                 Optional.ofNullable(stackMetadata.getTypeAtStackIndex(0)).orElse(BuiltinTypes.BASE_TYPE);
 
-        PythonBinaryOperators actualOperator = operator;
+        PythonBinaryOperator actualOperator = operator;
         if (forceFallback || (!isLeft && operator.getFallbackOperation().isPresent())) {
             actualOperator = operator.getFallbackOperation().get();
         }
@@ -236,7 +236,7 @@ public class DunderOperatorImplementor {
     }
 
     private static void raiseUnsupportedType(MethodVisitor methodVisitor, LocalVariableHelper localVariableHelper,
-            PythonBinaryOperators operator) {
+            PythonBinaryOperator operator) {
         int right = localVariableHelper.newLocal();
         int left = localVariableHelper.newLocal();
 
@@ -331,7 +331,7 @@ public class DunderOperatorImplementor {
      *
      */
     public static void binaryOperator(MethodVisitor methodVisitor, LocalVariableHelper localVariableHelper,
-            PythonBinaryOperators operator) {
+            PythonBinaryOperator operator) {
         Label noLeftMethod = new Label();
         methodVisitor.visitInsn(Opcodes.DUP2);
         if (operator.hasRightDunderMethod() || operator.getFallbackOperation().isPresent()) {
@@ -472,7 +472,7 @@ public class DunderOperatorImplementor {
     }
 
     public static void binaryOperatorOnlyRight(MethodVisitor methodVisitor, LocalVariableHelper localVariableHelper,
-            PythonBinaryOperators operator) {
+            PythonBinaryOperator operator) {
         Label done = new Label();
         Label raiseError = new Label();
         Label noRightMethod = new Label();
@@ -560,7 +560,7 @@ public class DunderOperatorImplementor {
      *
      */
     public static void ternaryOperator(FunctionMetadata functionMetadata, StackMetadata stackMetadata,
-            PythonTernaryOperators operator) {
+            PythonTernaryOperator operator) {
         MethodVisitor methodVisitor = functionMetadata.methodVisitor;
 
         StackManipulationImplementor.rotateThree(methodVisitor);
@@ -626,20 +626,20 @@ public class DunderOperatorImplementor {
     public static void compareValues(MethodVisitor methodVisitor, StackMetadata stackMetadata, CompareOp op) {
         switch (op) {
             case LESS_THAN:
-                binaryOperator(methodVisitor, stackMetadata, PythonBinaryOperators.LESS_THAN);
+                binaryOperator(methodVisitor, stackMetadata, PythonBinaryOperator.LESS_THAN);
                 break;
             case LESS_THAN_OR_EQUALS:
-                binaryOperator(methodVisitor, stackMetadata, PythonBinaryOperators.LESS_THAN_OR_EQUAL);
+                binaryOperator(methodVisitor, stackMetadata, PythonBinaryOperator.LESS_THAN_OR_EQUAL);
                 break;
             case EQUALS:
             case NOT_EQUALS:
                 binaryOpOverridingLeftIfSpecific(methodVisitor, stackMetadata, op);
                 break;
             case GREATER_THAN:
-                binaryOperator(methodVisitor, stackMetadata, PythonBinaryOperators.GREATER_THAN);
+                binaryOperator(methodVisitor, stackMetadata, PythonBinaryOperator.GREATER_THAN);
                 break;
             case GREATER_THAN_OR_EQUALS:
-                binaryOperator(methodVisitor, stackMetadata, PythonBinaryOperators.GREATER_THAN_OR_EQUAL);
+                binaryOperator(methodVisitor, stackMetadata, PythonBinaryOperator.GREATER_THAN_OR_EQUAL);
                 break;
             default:
                 throw new IllegalStateException("Unhandled branch: " + op);
@@ -656,8 +656,8 @@ public class DunderOperatorImplementor {
                 throw new IllegalArgumentException("Should only be called for equals and not equals");
         }
 
-        PythonBinaryOperators operator =
-                (op == CompareOp.EQUALS) ? PythonBinaryOperators.EQUAL : PythonBinaryOperators.NOT_EQUAL;
+        PythonBinaryOperator operator =
+                (op == CompareOp.EQUALS) ? PythonBinaryOperator.EQUAL : PythonBinaryOperator.NOT_EQUAL;
 
         // If we know TOS1 defines == or !=, we don't need to go here
         if (stackMetadata.getTypeAtStackIndex(1).getDefiningTypeOrNull(operator.getDunderMethod()) != BuiltinTypes.BASE_TYPE) {

@@ -5,10 +5,10 @@ import java.util.Optional;
 import ai.timefold.jpyinterpreter.FieldDescriptor;
 import ai.timefold.jpyinterpreter.FunctionMetadata;
 import ai.timefold.jpyinterpreter.LocalVariableHelper;
-import ai.timefold.jpyinterpreter.PythonBinaryOperators;
+import ai.timefold.jpyinterpreter.PythonBinaryOperator;
 import ai.timefold.jpyinterpreter.PythonBytecodeInstruction;
 import ai.timefold.jpyinterpreter.PythonLikeObject;
-import ai.timefold.jpyinterpreter.PythonTernaryOperators;
+import ai.timefold.jpyinterpreter.PythonTernaryOperator;
 import ai.timefold.jpyinterpreter.StackMetadata;
 import ai.timefold.jpyinterpreter.types.BuiltinTypes;
 import ai.timefold.jpyinterpreter.types.PythonLikeType;
@@ -88,7 +88,7 @@ public class ObjectImplementor {
             PythonConstantsImplementor.loadName(methodVisitor, className, instruction.arg);
             DunderOperatorImplementor.binaryOperator(methodVisitor,
                     stackMetadata.pushTemp(BuiltinTypes.STRING_TYPE),
-                    PythonBinaryOperators.GET_ATTRIBUTE);
+                    PythonBinaryOperator.GET_ATTRIBUTE);
         }
     }
 
@@ -112,7 +112,7 @@ public class ObjectImplementor {
             PythonConstantsImplementor.loadName(methodVisitor, className, instruction.arg);
             DunderOperatorImplementor.binaryOperator(methodVisitor,
                     stackMetadata.pushTemp(BuiltinTypes.STRING_TYPE),
-                    PythonBinaryOperators.DELETE_ATTRIBUTE);
+                    PythonBinaryOperator.DELETE_ATTRIBUTE);
         }
     }
 
@@ -141,7 +141,7 @@ public class ObjectImplementor {
                     .push(stackMetadata.getValueSourceForStackIndex(0))
                     .pushTemp(BuiltinTypes.STRING_TYPE)
                     .push(stackMetadata.getValueSourceForStackIndex(1)),
-                    PythonTernaryOperators.SET_ATTRIBUTE);
+                    PythonTernaryOperator.SET_ATTRIBUTE);
         }
     }
 }

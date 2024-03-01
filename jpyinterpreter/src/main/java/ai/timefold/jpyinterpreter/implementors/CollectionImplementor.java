@@ -9,10 +9,10 @@ import java.util.Set;
 
 import ai.timefold.jpyinterpreter.FunctionMetadata;
 import ai.timefold.jpyinterpreter.LocalVariableHelper;
-import ai.timefold.jpyinterpreter.PythonBinaryOperators;
+import ai.timefold.jpyinterpreter.PythonBinaryOperator;
 import ai.timefold.jpyinterpreter.PythonBytecodeInstruction;
 import ai.timefold.jpyinterpreter.PythonLikeObject;
-import ai.timefold.jpyinterpreter.PythonTernaryOperators;
+import ai.timefold.jpyinterpreter.PythonTernaryOperator;
 import ai.timefold.jpyinterpreter.PythonUnaryOperator;
 import ai.timefold.jpyinterpreter.StackMetadata;
 import ai.timefold.jpyinterpreter.types.PythonSlice;
@@ -481,7 +481,7 @@ public class CollectionImplementor {
         DunderOperatorImplementor.binaryOperator(methodVisitor, stackMetadata
                 .pop(2)
                 .push(stackMetadata.getTOSValueSource())
-                .push(stackMetadata.getValueSourceForStackIndex(1)), PythonBinaryOperators.CONTAINS);
+                .push(stackMetadata.getValueSourceForStackIndex(1)), PythonBinaryOperator.CONTAINS);
         // TODO: implement fallback on __iter__ if __contains__ does not exist
         if (instruction.arg == 1) {
             PythonBuiltinOperatorImplementor.performNotOnTOS(methodVisitor);
@@ -501,7 +501,7 @@ public class CollectionImplementor {
         DunderOperatorImplementor.ternaryOperator(functionMetadata, stackMetadata.pop(3)
                 .push(stackMetadata.getValueSourceForStackIndex(1))
                 .push(stackMetadata.getValueSourceForStackIndex(0))
-                .push(stackMetadata.getValueSourceForStackIndex(2)), PythonTernaryOperators.SET_ITEM);
+                .push(stackMetadata.getValueSourceForStackIndex(2)), PythonTernaryOperator.SET_ITEM);
         StackManipulationImplementor.popTOS(methodVisitor);
     }
 

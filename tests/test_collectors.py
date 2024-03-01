@@ -248,6 +248,65 @@ def test_count_distinct():
     assert score_manager.explainScore(problem).getScore() == timefold.solver.score.SimpleScore.of(1)
 
 
+def test_to_consecutive_sequences():
+    @timefold.solver.constraint_provider
+    def define_constraints(constraint_factory: timefold.solver.constraint.ConstraintFactory):
+        return [
+            constraint_factory.for_each(Entity)
+            .group_by(timefold.solver.constraint.ConstraintCollectors.to_consecutive_sequences(
+                lambda entity: entity.value.number))
+            .flatten_last(lambda sequences: sequences.getConsecutiveSequences())
+            .reward('squared sequence length', timefold.solver.score.SimpleScore.ONE,
+                    lambda sequence: sequence.getCount() ** 2)
+        ]
+
+    score_manager = create_score_manage(define_constraints)
+
+    entity_a: Entity = Entity('A')
+    entity_b: Entity = Entity('B')
+    entity_c: Entity = Entity('C')
+    entity_d: Entity = Entity('D')
+    entity_e: Entity = Entity('E')
+
+    value_1 = Value(1)
+    value_2 = Value(2)
+    value_3 = Value(3)
+    value_4 = Value(4)
+    value_5 = Value(5)
+    value_6 = Value(6)
+    value_7 = Value(7)
+    value_8 = Value(8)
+    value_9 = Value(9)
+
+    problem = Solution([entity_a, entity_b, entity_c, entity_d, entity_e],
+                       [value_1, value_2, value_3, value_4, value_5,
+                        value_6, value_7, value_8, value_9])
+
+    entity_a.set_value(value_1)
+    entity_b.set_value(value_3)
+    entity_c.set_value(value_5)
+    entity_d.set_value(value_7)
+    entity_e.set_value(value_9)
+
+    assert score_manager.explainScore(problem).getScore().score() == 5
+
+    entity_a.set_value(value_1)
+    entity_b.set_value(value_2)
+    entity_c.set_value(value_3)
+    entity_d.set_value(value_4)
+    entity_e.set_value(value_5)
+
+    assert score_manager.explainScore(problem).getScore().score() == 25
+
+    entity_a.set_value(value_1)
+    entity_b.set_value(value_2)
+    entity_c.set_value(value_3)
+    entity_d.set_value(value_5)
+    entity_e.set_value(value_6)
+
+    assert score_manager.explainScore(problem).getScore().score() == 13
+
+
 def test_to_list():
     @timefold.solver.constraint_provider
     def define_constraints(constraint_factory: timefold.solver.constraint.ConstraintFactory):
@@ -476,6 +535,40 @@ def test_compose():
     entity_b.set_value(value_2)
 
     assert score_manager.explainScore(problem).getScore() == timefold.solver.score.SimpleScore.of(22)
+
+def test_collect_and_then():
+    @timefold.solver.constraint_provider
+    def define_constraints(constraint_factory: timefold.solver.constraint.ConstraintFactory):
+        return [
+            constraint_factory.for_each(Entity)
+            .group_by(timefold.solver.constraint.ConstraintCollectors.collect_and_then(
+                timefold.solver.constraint.ConstraintCollectors.min(lambda entity: entity.value.number),
+                lambda a: 2 * a
+            ))
+            .reward('Double min value', timefold.solver.score.SimpleScore.ONE, lambda twice_min: twice_min)
+        ]
+
+    score_manager = create_score_manage(define_constraints)
+
+    entity_a: Entity = Entity('A')
+    entity_b: Entity = Entity('B')
+
+    value_1 = Value(1)
+    value_2 = Value(2)
+
+    problem = Solution([entity_a, entity_b], [value_1, value_2])
+    entity_a.set_value(value_1)
+    entity_b.set_value(value_1)
+
+    assert score_manager.explainScore(problem).getScore() == timefold.solver.score.SimpleScore.of(2)
+
+    entity_a.set_value(value_2)
+
+    assert score_manager.explainScore(problem).getScore() == timefold.solver.score.SimpleScore.of(2)
+
+    entity_b.set_value(value_2)
+
+    assert score_manager.explainScore(problem).getScore() == timefold.solver.score.SimpleScore.of(4)
 
 
 def test_flatten_last():

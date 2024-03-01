@@ -5,7 +5,7 @@ import java.util.Map;
 
 import ai.timefold.jpyinterpreter.PythonClassTranslator;
 import ai.timefold.jpyinterpreter.PythonLikeObject;
-import ai.timefold.jpyinterpreter.PythonTernaryOperators;
+import ai.timefold.jpyinterpreter.PythonTernaryOperator;
 import ai.timefold.jpyinterpreter.builtins.TernaryDunderBuiltin;
 import ai.timefold.jpyinterpreter.types.errors.AttributeError;
 
@@ -60,9 +60,9 @@ public class PythonSuperObject extends AbstractPythonLikeObject {
                     }
                 }
 
-                PythonLikeObject maybeDescriptor = typeResult.__getAttributeOrNull(PythonTernaryOperators.GET.dunderMethod);
+                PythonLikeObject maybeDescriptor = typeResult.__getAttributeOrNull(PythonTernaryOperator.GET.dunderMethod);
                 if (maybeDescriptor == null) {
-                    maybeDescriptor = typeResult.__getType().__getAttributeOrNull(PythonTernaryOperators.GET.dunderMethod);
+                    maybeDescriptor = typeResult.__getType().__getAttributeOrNull(PythonTernaryOperator.GET.dunderMethod);
                 }
 
                 if (maybeDescriptor != null) {

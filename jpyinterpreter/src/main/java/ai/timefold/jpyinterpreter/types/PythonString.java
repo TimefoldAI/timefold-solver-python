@@ -16,7 +16,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import ai.timefold.jpyinterpreter.PythonBinaryOperators;
+import ai.timefold.jpyinterpreter.PythonBinaryOperator;
 import ai.timefold.jpyinterpreter.PythonLikeObject;
 import ai.timefold.jpyinterpreter.PythonOverloadImplementor;
 import ai.timefold.jpyinterpreter.PythonUnaryOperator;
@@ -78,24 +78,24 @@ public class PythonString extends AbstractPythonLikeObject implements PythonLike
         BuiltinTypes.STRING_TYPE.addUnaryMethod(PythonUnaryOperator.LENGTH, PythonString.class.getMethod("getLength"));
 
         // Binary
-        BuiltinTypes.STRING_TYPE.addBinaryMethod(PythonBinaryOperators.GET_ITEM,
+        BuiltinTypes.STRING_TYPE.addBinaryMethod(PythonBinaryOperator.GET_ITEM,
                 PythonString.class.getMethod("getCharAt", PythonInteger.class));
-        BuiltinTypes.STRING_TYPE.addBinaryMethod(PythonBinaryOperators.GET_ITEM,
+        BuiltinTypes.STRING_TYPE.addBinaryMethod(PythonBinaryOperator.GET_ITEM,
                 PythonString.class.getMethod("getSubstring", PythonSlice.class));
-        BuiltinTypes.STRING_TYPE.addBinaryMethod(PythonBinaryOperators.CONTAINS,
+        BuiltinTypes.STRING_TYPE.addBinaryMethod(PythonBinaryOperator.CONTAINS,
                 PythonString.class.getMethod("containsSubstring", PythonString.class));
-        BuiltinTypes.STRING_TYPE.addBinaryMethod(PythonBinaryOperators.ADD,
+        BuiltinTypes.STRING_TYPE.addBinaryMethod(PythonBinaryOperator.ADD,
                 PythonString.class.getMethod("concat", PythonString.class));
-        BuiltinTypes.STRING_TYPE.addBinaryMethod(PythonBinaryOperators.MULTIPLY,
+        BuiltinTypes.STRING_TYPE.addBinaryMethod(PythonBinaryOperator.MULTIPLY,
                 PythonString.class.getMethod("repeat", PythonInteger.class));
-        BuiltinTypes.STRING_TYPE.addBinaryMethod(PythonBinaryOperators.MODULO,
+        BuiltinTypes.STRING_TYPE.addBinaryMethod(PythonBinaryOperator.MODULO,
                 PythonString.class.getMethod("interpolate", PythonLikeObject.class));
-        BuiltinTypes.STRING_TYPE.addBinaryMethod(PythonBinaryOperators.MODULO,
+        BuiltinTypes.STRING_TYPE.addBinaryMethod(PythonBinaryOperator.MODULO,
                 PythonString.class.getMethod("interpolate", PythonLikeTuple.class));
-        BuiltinTypes.STRING_TYPE.addBinaryMethod(PythonBinaryOperators.MODULO,
+        BuiltinTypes.STRING_TYPE.addBinaryMethod(PythonBinaryOperator.MODULO,
                 PythonString.class.getMethod("interpolate", PythonLikeDict.class));
-        BuiltinTypes.STRING_TYPE.addBinaryMethod(PythonBinaryOperators.FORMAT, PythonString.class.getMethod("formatSelf"));
-        BuiltinTypes.STRING_TYPE.addBinaryMethod(PythonBinaryOperators.FORMAT,
+        BuiltinTypes.STRING_TYPE.addBinaryMethod(PythonBinaryOperator.FORMAT, PythonString.class.getMethod("formatSelf"));
+        BuiltinTypes.STRING_TYPE.addBinaryMethod(PythonBinaryOperator.FORMAT,
                 PythonString.class.getMethod("formatSelf", PythonString.class));
 
         // Other
