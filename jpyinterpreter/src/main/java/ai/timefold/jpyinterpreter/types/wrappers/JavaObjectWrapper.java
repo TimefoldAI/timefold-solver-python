@@ -171,56 +171,61 @@ public class JavaObjectWrapper implements PythonLikeObject,
         return null;
     }
 
+    private static void addMemberToPythonType(PythonLikeType type, Member member,
+            Map<Object, PythonLikeObject> convertedObjectMap) {
+        if (member instanceof Method method) {
+            if (isInaccessible(member)) {
+                method = findMethodInInterfaces(method.getDeclaringClass(), method);
+                if (method == null) {
+                    return;
+                }
+            }
+            // For certain Collection/List/Map methods, also add their corresponding dunder methods,
+            // so a[x], x in a, len(a) will work.
+            switch (method.getName()) {
+                case "size" -> {
+                    if (Collection.class.isAssignableFrom(method.getDeclaringClass())) {
+                        type.__dir__.put(PythonUnaryOperator.LENGTH.getDunderMethod(),
+                                new JavaMethodReference(method, Map.of()));
+                    }
+                }
+                case "contains" -> {
+                    if (Collection.class.isAssignableFrom(method.getDeclaringClass())) {
+                        type.__dir__.put(PythonBinaryOperator.CONTAINS.getDunderMethod(),
+                                new JavaMethodReference(method, Map.of()));
+                    }
+                }
+                case "get" -> {
+                    type.__dir__.put(PythonBinaryOperator.GET_ITEM.getDunderMethod(),
+                            new JavaMethodReference(method, Map.of()));
+                }
+            }
+            type.__dir__.put(method.getName(), new JavaMethodReference(method, Map.of()));
+        } else {
+            if (isInaccessible(member)) {
+                return;
+            }
+            Field field = (Field) member;
+            if (Modifier.isPublic(field.getModifiers())) {
+                try {
+                    type.__dir__.put(field.getName(),
+                            JavaPythonTypeConversionImplementor.wrapJavaObject(field.get(null),
+                                    convertedObjectMap));
+                } catch (IllegalAccessException e) {
+                    throw (RuntimeError) new RuntimeError("Cannot get attribute (%s) on type (%s)."
+                            .formatted(field.getName(), type.getTypeName())).initCause(e);
+                }
+            }
+        }
+    }
+
     private static PythonLikeType generatePythonTypeForClass(Class<?> objectClass,
             Map<Object, PythonLikeObject> convertedObjectMap) {
         var out = new PythonLikeType(objectClass.getName(), JavaObjectWrapper.class);
         getAllDeclaredMembers(objectClass)
                 .stream()
                 .filter(member -> Modifier.isStatic(member.getModifiers()) || member instanceof Method)
-                .forEach(member -> {
-                    if (member instanceof Method method) {
-                        if (isInaccessible(member)) {
-                            method = findMethodInInterfaces(method.getDeclaringClass(), method);
-                            if (method == null) {
-                                return;
-                            }
-                        }
-                        switch (method.getName()) {
-                            case "size" -> {
-                                if (Collection.class.isAssignableFrom(method.getDeclaringClass())) {
-                                    out.__dir__.put(PythonUnaryOperator.LENGTH.getDunderMethod(),
-                                            new JavaMethodReference(method, Map.of()));
-                                }
-                            }
-                            case "contains" -> {
-                                if (Collection.class.isAssignableFrom(method.getDeclaringClass())) {
-                                    out.__dir__.put(PythonBinaryOperator.CONTAINS.getDunderMethod(),
-                                            new JavaMethodReference(method, Map.of()));
-                                }
-                            }
-                            case "get" -> {
-                                out.__dir__.put(PythonBinaryOperator.GET_ITEM.getDunderMethod(),
-                                        new JavaMethodReference(method, Map.of()));
-                            }
-                        }
-                        out.__dir__.put(method.getName(), new JavaMethodReference(method, Map.of()));
-                    } else {
-                        if (isInaccessible(member)) {
-                            return;
-                        }
-                        Field field = (Field) member;
-                        if (Modifier.isPublic(field.getModifiers())) {
-                            try {
-                                out.__dir__.put(field.getName(),
-                                        JavaPythonTypeConversionImplementor.wrapJavaObject(field.get(null),
-                                                convertedObjectMap));
-                            } catch (IllegalAccessException e) {
-                                throw (RuntimeError) new RuntimeError("Cannot get attribute (%s) on type (%s)."
-                                        .formatted(field.getName(), objectClass)).initCause(e);
-                            }
-                        }
-                    }
-                });
+                .forEach(member -> addMemberToPythonType(out, member, convertedObjectMap));
         return out;
     }
 
@@ -293,7 +298,7 @@ public class JavaObjectWrapper implements PythonLikeObject,
         if (!(wrappedObject instanceof Iterable<?> iterable)) {
             throw new IllegalStateException("Class (%s) does not implement (%s).".formatted(objectClass, Iterable.class));
         }
-        return new JavaIteratorWrapper(iterable.iterator());
+        return new WrappingJavaObjectIterator(iterable.iterator());
     }
 
     @Override

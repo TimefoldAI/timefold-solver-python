@@ -58,8 +58,9 @@ public class JavaPythonTypeConversionImplementor {
             return PythonNone.INSTANCE;
         }
 
-        if (createdObjectMap.containsKey(object)) {
-            return createdObjectMap.get(object);
+        var existingObject = createdObjectMap.get(object);
+        if (existingObject != null) {
+            return existingObject;
         }
 
         if (object instanceof OpaqueJavaReference) {

@@ -2,12 +2,7 @@ package ai.timefold.jpyinterpreter.types.wrappers;
 
 import java.util.Iterator;
 
-final class JavaIteratorWrapper implements Iterator<JavaObjectWrapper> {
-    final Iterator<?> delegate;
-
-    JavaIteratorWrapper(Iterator<?> delegate) {
-        this.delegate = delegate;
-    }
+record WrappingJavaObjectIterator(Iterator<?> delegate) implements Iterator<JavaObjectWrapper> {
 
     @Override
     public boolean hasNext() {
