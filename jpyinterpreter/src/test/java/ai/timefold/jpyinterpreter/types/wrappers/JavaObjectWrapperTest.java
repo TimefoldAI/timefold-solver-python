@@ -10,10 +10,10 @@ import ai.timefold.jpyinterpreter.PythonLikeObject;
 import ai.timefold.jpyinterpreter.PythonUnaryOperator;
 import ai.timefold.jpyinterpreter.types.PythonLikeFunction;
 import ai.timefold.jpyinterpreter.types.PythonString;
-
 import ai.timefold.jpyinterpreter.types.numeric.PythonBoolean;
 import ai.timefold.jpyinterpreter.types.numeric.PythonInteger;
 import ai.timefold.jpyinterpreter.types.wrappers.inaccessible.PublicInterface;
+
 import org.junit.jupiter.api.Test;
 
 public class JavaObjectWrapperTest {
