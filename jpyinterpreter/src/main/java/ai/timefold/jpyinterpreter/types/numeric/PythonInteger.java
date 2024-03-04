@@ -7,7 +7,7 @@ import java.text.NumberFormat;
 import java.util.List;
 import java.util.Map;
 
-import ai.timefold.jpyinterpreter.PythonBinaryOperators;
+import ai.timefold.jpyinterpreter.PythonBinaryOperator;
 import ai.timefold.jpyinterpreter.PythonLikeObject;
 import ai.timefold.jpyinterpreter.PythonOverloadImplementor;
 import ai.timefold.jpyinterpreter.PythonUnaryOperator;
@@ -73,138 +73,138 @@ public class PythonInteger extends AbstractPythonLikeObject implements PythonNum
         BuiltinTypes.INT_TYPE.addUnaryMethod(PythonUnaryOperator.HASH, PythonInteger.class.getMethod("$method$__hash__"));
 
         // Binary
-        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperators.ADD,
+        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperator.ADD,
                 PythonInteger.class.getMethod("add", PythonLikeObject.class));
-        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperators.ADD,
+        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperator.ADD,
                 PythonInteger.class.getMethod("add", PythonInteger.class));
-        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperators.ADD,
+        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperator.ADD,
                 PythonInteger.class.getMethod("add", PythonFloat.class));
 
-        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperators.SUBTRACT,
+        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperator.SUBTRACT,
                 PythonInteger.class.getMethod("subtract", PythonLikeObject.class));
-        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperators.SUBTRACT,
+        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperator.SUBTRACT,
                 PythonInteger.class.getMethod("subtract", PythonInteger.class));
-        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperators.SUBTRACT,
+        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperator.SUBTRACT,
                 PythonInteger.class.getMethod("subtract", PythonFloat.class));
 
-        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperators.MULTIPLY,
+        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperator.MULTIPLY,
                 PythonInteger.class.getMethod("multiply", PythonLikeObject.class));
-        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperators.MULTIPLY,
+        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperator.MULTIPLY,
                 PythonInteger.class.getMethod("multiply", PythonInteger.class));
-        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperators.MULTIPLY,
+        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperator.MULTIPLY,
                 PythonInteger.class.getMethod("multiply", PythonFloat.class));
 
-        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperators.TRUE_DIVIDE,
+        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperator.TRUE_DIVIDE,
                 PythonInteger.class.getMethod("trueDivide", PythonLikeObject.class));
-        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperators.TRUE_DIVIDE,
+        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperator.TRUE_DIVIDE,
                 PythonInteger.class.getMethod("trueDivide", PythonInteger.class));
-        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperators.TRUE_DIVIDE,
+        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperator.TRUE_DIVIDE,
                 PythonInteger.class.getMethod("trueDivide", PythonFloat.class));
 
-        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperators.FLOOR_DIVIDE,
+        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperator.FLOOR_DIVIDE,
                 PythonInteger.class.getMethod("floorDivide", PythonLikeObject.class));
-        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperators.FLOOR_DIVIDE,
+        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperator.FLOOR_DIVIDE,
                 PythonInteger.class.getMethod("floorDivide", PythonInteger.class));
-        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperators.FLOOR_DIVIDE,
+        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperator.FLOOR_DIVIDE,
                 PythonInteger.class.getMethod("floorDivide", PythonFloat.class));
 
-        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperators.DIVMOD,
+        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperator.DIVMOD,
                 PythonInteger.class.getMethod("divmod", PythonInteger.class));
-        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperators.DIVMOD,
+        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperator.DIVMOD,
                 PythonInteger.class.getMethod("divmod", PythonFloat.class));
 
-        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperators.MODULO,
+        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperator.MODULO,
                 PythonInteger.class.getMethod("modulo", PythonLikeObject.class));
-        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperators.MODULO,
+        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperator.MODULO,
                 PythonInteger.class.getMethod("modulo", PythonInteger.class));
-        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperators.MODULO,
+        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperator.MODULO,
                 PythonInteger.class.getMethod("modulo", PythonFloat.class));
 
-        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperators.POWER,
+        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperator.POWER,
                 PythonInteger.class.getMethod("power", PythonLikeObject.class));
-        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperators.POWER,
+        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperator.POWER,
                 PythonInteger.class.getMethod("power", PythonInteger.class));
-        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperators.POWER,
+        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperator.POWER,
                 PythonInteger.class.getMethod("power", PythonFloat.class));
 
-        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperators.LSHIFT,
+        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperator.LSHIFT,
                 PythonInteger.class.getMethod("shiftLeft", PythonLikeObject.class));
-        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperators.LSHIFT,
+        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperator.LSHIFT,
                 PythonInteger.class.getMethod("shiftLeft", PythonInteger.class));
 
-        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperators.RSHIFT,
+        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperator.RSHIFT,
                 PythonInteger.class.getMethod("shiftRight", PythonLikeObject.class));
-        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperators.RSHIFT,
+        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperator.RSHIFT,
                 PythonInteger.class.getMethod("shiftRight", PythonInteger.class));
 
-        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperators.AND,
+        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperator.AND,
                 PythonInteger.class.getMethod("bitwiseAnd", PythonLikeObject.class));
-        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperators.AND,
+        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperator.AND,
                 PythonInteger.class.getMethod("bitwiseAnd", PythonInteger.class));
 
-        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperators.OR,
+        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperator.OR,
                 PythonInteger.class.getMethod("bitwiseOr", PythonLikeObject.class));
-        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperators.OR,
+        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperator.OR,
                 PythonInteger.class.getMethod("bitwiseOr", PythonInteger.class));
 
-        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperators.XOR,
+        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperator.XOR,
                 PythonInteger.class.getMethod("bitwiseXor", PythonLikeObject.class));
-        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperators.XOR,
+        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperator.XOR,
                 PythonInteger.class.getMethod("bitwiseXor", PythonInteger.class));
 
         // Ternary
-        BuiltinTypes.INT_TYPE.addBinaryMethod(PythonBinaryOperators.POWER,
+        BuiltinTypes.INT_TYPE.addBinaryMethod(PythonBinaryOperator.POWER,
                 PythonInteger.class.getMethod("power", PythonInteger.class, PythonInteger.class));
 
         // Comparisons
-        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperators.EQUAL,
+        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperator.EQUAL,
                 PythonInteger.class.getMethod("equal", PythonLikeObject.class));
-        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperators.EQUAL,
+        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperator.EQUAL,
                 PythonInteger.class.getMethod("equal", PythonInteger.class));
-        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperators.EQUAL,
+        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperator.EQUAL,
                 PythonInteger.class.getMethod("equal", PythonFloat.class));
 
-        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperators.NOT_EQUAL,
+        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperator.NOT_EQUAL,
                 PythonInteger.class.getMethod("notEqual", PythonLikeObject.class));
-        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperators.NOT_EQUAL,
+        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperator.NOT_EQUAL,
                 PythonInteger.class.getMethod("notEqual", PythonInteger.class));
-        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperators.NOT_EQUAL,
+        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperator.NOT_EQUAL,
                 PythonInteger.class.getMethod("notEqual", PythonFloat.class));
 
-        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperators.LESS_THAN,
+        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperator.LESS_THAN,
                 PythonInteger.class.getMethod("lessThan", PythonLikeObject.class));
-        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperators.LESS_THAN,
+        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperator.LESS_THAN,
                 PythonInteger.class.getMethod("lessThan", PythonInteger.class));
-        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperators.LESS_THAN,
+        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperator.LESS_THAN,
                 PythonInteger.class.getMethod("lessThan", PythonFloat.class));
 
-        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperators.LESS_THAN_OR_EQUAL,
+        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperator.LESS_THAN_OR_EQUAL,
                 PythonInteger.class.getMethod("lessThanOrEqual", PythonLikeObject.class));
-        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperators.LESS_THAN_OR_EQUAL,
+        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperator.LESS_THAN_OR_EQUAL,
                 PythonInteger.class.getMethod("lessThanOrEqual", PythonInteger.class));
-        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperators.LESS_THAN_OR_EQUAL,
+        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperator.LESS_THAN_OR_EQUAL,
                 PythonInteger.class.getMethod("lessThanOrEqual", PythonFloat.class));
 
-        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperators.GREATER_THAN,
+        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperator.GREATER_THAN,
                 PythonInteger.class.getMethod("greaterThan", PythonLikeObject.class));
-        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperators.GREATER_THAN,
+        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperator.GREATER_THAN,
                 PythonInteger.class.getMethod("greaterThan", PythonInteger.class));
-        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperators.GREATER_THAN,
+        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperator.GREATER_THAN,
                 PythonInteger.class.getMethod("greaterThan", PythonFloat.class));
 
-        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperators.GREATER_THAN_OR_EQUAL,
+        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperator.GREATER_THAN_OR_EQUAL,
                 PythonInteger.class.getMethod("greaterThanOrEqual", PythonLikeObject.class));
-        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperators.GREATER_THAN_OR_EQUAL,
+        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperator.GREATER_THAN_OR_EQUAL,
                 PythonInteger.class.getMethod("greaterThanOrEqual", PythonInteger.class));
-        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperators.GREATER_THAN_OR_EQUAL,
+        BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperator.GREATER_THAN_OR_EQUAL,
                 PythonInteger.class.getMethod("greaterThanOrEqual", PythonFloat.class));
 
         // Other
         BuiltinTypes.INT_TYPE.addMethod("__round__", PythonInteger.class.getMethod("round"));
         BuiltinTypes.INT_TYPE.addMethod("__round__", PythonInteger.class.getMethod("round", PythonInteger.class));
-        BuiltinTypes.INT_TYPE.addBinaryMethod(PythonBinaryOperators.FORMAT,
+        BuiltinTypes.INT_TYPE.addBinaryMethod(PythonBinaryOperator.FORMAT,
                 PythonInteger.class.getMethod("$method$__format__"));
-        BuiltinTypes.INT_TYPE.addBinaryMethod(PythonBinaryOperators.FORMAT,
+        BuiltinTypes.INT_TYPE.addBinaryMethod(PythonBinaryOperator.FORMAT,
                 PythonInteger.class.getMethod("$method$__format__", PythonLikeObject.class));
 
         return BuiltinTypes.INT_TYPE;

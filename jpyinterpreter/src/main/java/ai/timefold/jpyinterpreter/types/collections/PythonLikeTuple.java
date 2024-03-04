@@ -9,7 +9,7 @@ import java.util.ListIterator;
 import java.util.Objects;
 import java.util.RandomAccess;
 
-import ai.timefold.jpyinterpreter.PythonBinaryOperators;
+import ai.timefold.jpyinterpreter.PythonBinaryOperator;
 import ai.timefold.jpyinterpreter.PythonLikeObject;
 import ai.timefold.jpyinterpreter.PythonOverloadImplementor;
 import ai.timefold.jpyinterpreter.PythonUnaryOperator;
@@ -58,15 +58,15 @@ public class PythonLikeTuple extends AbstractPythonLikeObject implements List<Py
         BuiltinTypes.TUPLE_TYPE.addUnaryMethod(PythonUnaryOperator.ITERATOR, PythonLikeTuple.class.getMethod("getIterator"));
 
         // Binary
-        BuiltinTypes.TUPLE_TYPE.addBinaryMethod(PythonBinaryOperators.ADD,
+        BuiltinTypes.TUPLE_TYPE.addBinaryMethod(PythonBinaryOperator.ADD,
                 PythonLikeTuple.class.getMethod("concatToNew", PythonLikeTuple.class));
-        BuiltinTypes.TUPLE_TYPE.addBinaryMethod(PythonBinaryOperators.MULTIPLY,
+        BuiltinTypes.TUPLE_TYPE.addBinaryMethod(PythonBinaryOperator.MULTIPLY,
                 PythonLikeTuple.class.getMethod("multiplyToNew", PythonInteger.class));
-        BuiltinTypes.TUPLE_TYPE.addBinaryMethod(PythonBinaryOperators.GET_ITEM,
+        BuiltinTypes.TUPLE_TYPE.addBinaryMethod(PythonBinaryOperator.GET_ITEM,
                 PythonLikeTuple.class.getMethod("getItem", PythonInteger.class));
-        BuiltinTypes.TUPLE_TYPE.addBinaryMethod(PythonBinaryOperators.GET_ITEM,
+        BuiltinTypes.TUPLE_TYPE.addBinaryMethod(PythonBinaryOperator.GET_ITEM,
                 PythonLikeTuple.class.getMethod("getSlice", PythonSlice.class));
-        BuiltinTypes.TUPLE_TYPE.addBinaryMethod(PythonBinaryOperators.CONTAINS,
+        BuiltinTypes.TUPLE_TYPE.addBinaryMethod(PythonBinaryOperator.CONTAINS,
                 PythonLikeTuple.class.getMethod("containsItem", PythonLikeObject.class));
 
         // Other

@@ -9,7 +9,7 @@ import java.util.Map;
 import ai.timefold.jpyinterpreter.PythonBytecodeToJavaBytecodeTranslator;
 import ai.timefold.jpyinterpreter.PythonLikeObject;
 import ai.timefold.jpyinterpreter.PythonOverloadImplementor;
-import ai.timefold.jpyinterpreter.PythonTernaryOperators;
+import ai.timefold.jpyinterpreter.PythonTernaryOperator;
 import ai.timefold.jpyinterpreter.builtins.FunctionBuiltinOperations;
 import ai.timefold.jpyinterpreter.builtins.GlobalBuiltins;
 import ai.timefold.jpyinterpreter.types.collections.PythonIterator;
@@ -114,12 +114,12 @@ public class BuiltinTypes {
         PythonOverloadImplementor.deferDispatchesFor(PythonLikeType::registerTypeType);
 
         try {
-            FUNCTION_TYPE.__dir__.put(PythonTernaryOperators.GET.dunderMethod,
+            FUNCTION_TYPE.__dir__.put(PythonTernaryOperator.GET.dunderMethod,
                     new JavaMethodReference(
                             FunctionBuiltinOperations.class.getMethod("bindFunctionToInstance", PythonLikeFunction.class,
                                     PythonLikeObject.class, PythonLikeType.class),
                             Map.of("self", 0, "obj", 1, "objtype", 2)));
-            CLASS_FUNCTION_TYPE.__dir__.put(PythonTernaryOperators.GET.dunderMethod,
+            CLASS_FUNCTION_TYPE.__dir__.put(PythonTernaryOperator.GET.dunderMethod,
                     new JavaMethodReference(
                             FunctionBuiltinOperations.class.getMethod("bindFunctionToType", PythonLikeFunction.class,
                                     PythonLikeObject.class, PythonLikeType.class),

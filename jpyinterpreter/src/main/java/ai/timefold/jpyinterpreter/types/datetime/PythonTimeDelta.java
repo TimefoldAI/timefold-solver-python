@@ -5,7 +5,7 @@ import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalUnit;
 
-import ai.timefold.jpyinterpreter.PythonBinaryOperators;
+import ai.timefold.jpyinterpreter.PythonBinaryOperator;
 import ai.timefold.jpyinterpreter.PythonLikeObject;
 import ai.timefold.jpyinterpreter.PythonOverloadImplementor;
 import ai.timefold.jpyinterpreter.PythonUnaryOperator;
@@ -77,29 +77,29 @@ public class PythonTimeDelta extends AbstractPythonLikeObject implements PythonL
                 PythonTimeDelta.class.getMethod("toPythonRepr"));
 
         // Binary
-        TIME_DELTA_TYPE.addBinaryMethod(PythonBinaryOperators.ADD,
+        TIME_DELTA_TYPE.addBinaryMethod(PythonBinaryOperator.ADD,
                 PythonTimeDelta.class.getMethod("add_time_delta", PythonTimeDelta.class));
-        TIME_DELTA_TYPE.addBinaryMethod(PythonBinaryOperators.SUBTRACT,
+        TIME_DELTA_TYPE.addBinaryMethod(PythonBinaryOperator.SUBTRACT,
                 PythonTimeDelta.class.getMethod("subtract_time_delta", PythonTimeDelta.class));
 
-        TIME_DELTA_TYPE.addBinaryMethod(PythonBinaryOperators.MULTIPLY,
+        TIME_DELTA_TYPE.addBinaryMethod(PythonBinaryOperator.MULTIPLY,
                 PythonTimeDelta.class.getMethod("get_integer_multiple", PythonInteger.class));
-        TIME_DELTA_TYPE.addBinaryMethod(PythonBinaryOperators.MULTIPLY,
+        TIME_DELTA_TYPE.addBinaryMethod(PythonBinaryOperator.MULTIPLY,
                 PythonTimeDelta.class.getMethod("get_float_multiple", PythonFloat.class));
 
-        TIME_DELTA_TYPE.addBinaryMethod(PythonBinaryOperators.TRUE_DIVIDE,
+        TIME_DELTA_TYPE.addBinaryMethod(PythonBinaryOperator.TRUE_DIVIDE,
                 PythonTimeDelta.class.getMethod("divide_time_delta", PythonTimeDelta.class));
-        TIME_DELTA_TYPE.addBinaryMethod(PythonBinaryOperators.TRUE_DIVIDE,
+        TIME_DELTA_TYPE.addBinaryMethod(PythonBinaryOperator.TRUE_DIVIDE,
                 PythonTimeDelta.class.getMethod("divide_integer", PythonInteger.class));
-        TIME_DELTA_TYPE.addBinaryMethod(PythonBinaryOperators.TRUE_DIVIDE,
+        TIME_DELTA_TYPE.addBinaryMethod(PythonBinaryOperator.TRUE_DIVIDE,
                 PythonTimeDelta.class.getMethod("divide_float", PythonFloat.class));
 
-        TIME_DELTA_TYPE.addBinaryMethod(PythonBinaryOperators.FLOOR_DIVIDE,
+        TIME_DELTA_TYPE.addBinaryMethod(PythonBinaryOperator.FLOOR_DIVIDE,
                 PythonTimeDelta.class.getMethod("floor_divide_time_delta", PythonTimeDelta.class));
-        TIME_DELTA_TYPE.addBinaryMethod(PythonBinaryOperators.FLOOR_DIVIDE,
+        TIME_DELTA_TYPE.addBinaryMethod(PythonBinaryOperator.FLOOR_DIVIDE,
                 PythonTimeDelta.class.getMethod("floor_divide_integer", PythonInteger.class));
 
-        TIME_DELTA_TYPE.addBinaryMethod(PythonBinaryOperators.MODULO,
+        TIME_DELTA_TYPE.addBinaryMethod(PythonBinaryOperator.MODULO,
                 PythonTimeDelta.class.getMethod("remainder_time_delta", PythonTimeDelta.class));
 
         // Methods

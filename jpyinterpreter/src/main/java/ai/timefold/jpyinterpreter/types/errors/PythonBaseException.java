@@ -9,6 +9,7 @@ import ai.timefold.jpyinterpreter.types.PythonLikeType;
 import ai.timefold.jpyinterpreter.types.PythonNone;
 import ai.timefold.jpyinterpreter.types.PythonString;
 import ai.timefold.jpyinterpreter.types.collections.PythonLikeTuple;
+import ai.timefold.jpyinterpreter.types.wrappers.JavaObjectWrapper;
 
 /**
  * Python base class for all exceptions. Equivalent to Java's {@link Throwable}.
@@ -79,7 +80,11 @@ public class PythonBaseException extends RuntimeException implements PythonLikeO
     @Override
     public Throwable initCause(Throwable cause) {
         super.initCause(cause);
-        __setAttribute("__cause__", (PythonLikeObject) cause);
+        if (cause instanceof PythonLikeObject pythonError) {
+            __setAttribute("__cause__", pythonError);
+        } else {
+            __setAttribute("__cause__", new JavaObjectWrapper(cause));
+        }
         return this;
     }
 

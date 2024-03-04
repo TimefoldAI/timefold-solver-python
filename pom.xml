@@ -14,7 +14,7 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <version.apache.collections4>4.4</version.apache.collections4>
-
+    <maven.compiler.release>17</maven.compiler.release>
     <sonar.moduleKey>${project.artifactId}</sonar.moduleKey>
     <sonar.organization>timefold</sonar.organization>
     <sonar.sources>src/main/java,src/main/python</sonar.sources>

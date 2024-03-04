@@ -3,7 +3,7 @@ package ai.timefold.jpyinterpreter.opcodes.dunder;
 import java.util.Optional;
 
 import ai.timefold.jpyinterpreter.FunctionMetadata;
-import ai.timefold.jpyinterpreter.PythonBinaryOperators;
+import ai.timefold.jpyinterpreter.PythonBinaryOperator;
 import ai.timefold.jpyinterpreter.PythonBytecodeInstruction;
 import ai.timefold.jpyinterpreter.PythonFunctionSignature;
 import ai.timefold.jpyinterpreter.StackMetadata;
@@ -16,9 +16,9 @@ import ai.timefold.jpyinterpreter.types.PythonLikeType;
 
 public class BinaryDunderOpcode extends AbstractOpcode {
 
-    final PythonBinaryOperators operator;
+    final PythonBinaryOperator operator;
 
-    public BinaryDunderOpcode(PythonBytecodeInstruction instruction, PythonBinaryOperators operator) {
+    public BinaryDunderOpcode(PythonBytecodeInstruction instruction, PythonBinaryOperator operator) {
         super(instruction);
         this.operator = operator;
     }

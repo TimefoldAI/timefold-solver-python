@@ -20,6 +20,10 @@ public class JavaMethodReference implements PythonLikeFunction {
         this.parameterNameToIndexMap = parameterNameToIndexMap;
     }
 
+    public Method getMethod() {
+        return method;
+    }
+
     @Override
     public PythonLikeObject $call(List<PythonLikeObject> positionalArguments,
             Map<PythonString, PythonLikeObject> namedArguments, PythonLikeObject callerInstance) {

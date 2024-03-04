@@ -10,10 +10,10 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import ai.timefold.jpyinterpreter.PythonBinaryOperators;
+import ai.timefold.jpyinterpreter.PythonBinaryOperator;
 import ai.timefold.jpyinterpreter.PythonLikeObject;
 import ai.timefold.jpyinterpreter.PythonOverloadImplementor;
-import ai.timefold.jpyinterpreter.PythonTernaryOperators;
+import ai.timefold.jpyinterpreter.PythonTernaryOperator;
 import ai.timefold.jpyinterpreter.PythonUnaryOperator;
 import ai.timefold.jpyinterpreter.builtins.UnaryDunderBuiltin;
 import ai.timefold.jpyinterpreter.types.AbstractPythonLikeObject;
@@ -70,19 +70,19 @@ public class PythonLikeDict extends AbstractPythonLikeObject
         BuiltinTypes.DICT_TYPE.addUnaryMethod(PythonUnaryOperator.REVERSED, PythonLikeDict.class.getMethod("reversed"));
 
         // Binary operators
-        BuiltinTypes.DICT_TYPE.addBinaryMethod(PythonBinaryOperators.GET_ITEM,
+        BuiltinTypes.DICT_TYPE.addBinaryMethod(PythonBinaryOperator.GET_ITEM,
                 PythonLikeDict.class.getMethod("getItemOrError", PythonLikeObject.class));
-        BuiltinTypes.DICT_TYPE.addBinaryMethod(PythonBinaryOperators.DELETE_ITEM,
+        BuiltinTypes.DICT_TYPE.addBinaryMethod(PythonBinaryOperator.DELETE_ITEM,
                 PythonLikeDict.class.getMethod("removeItemOrError", PythonLikeObject.class));
-        BuiltinTypes.DICT_TYPE.addBinaryMethod(PythonBinaryOperators.CONTAINS,
+        BuiltinTypes.DICT_TYPE.addBinaryMethod(PythonBinaryOperator.CONTAINS,
                 PythonLikeDict.class.getMethod("isKeyInDict", PythonLikeObject.class));
-        BuiltinTypes.DICT_TYPE.addBinaryMethod(PythonBinaryOperators.OR,
+        BuiltinTypes.DICT_TYPE.addBinaryMethod(PythonBinaryOperator.OR,
                 PythonLikeDict.class.getMethod("binaryOr", PythonLikeDict.class));
-        BuiltinTypes.DICT_TYPE.addBinaryMethod(PythonBinaryOperators.INPLACE_OR,
+        BuiltinTypes.DICT_TYPE.addBinaryMethod(PythonBinaryOperator.INPLACE_OR,
                 PythonLikeDict.class.getMethod("binaryInplaceOr", PythonLikeDict.class));
 
         // Ternary operators
-        BuiltinTypes.DICT_TYPE.addTernaryMethod(PythonTernaryOperators.SET_ITEM,
+        BuiltinTypes.DICT_TYPE.addTernaryMethod(PythonTernaryOperator.SET_ITEM,
                 PythonLikeDict.class.getMethod("setItem", PythonLikeObject.class, PythonLikeObject.class));
 
         // Other
