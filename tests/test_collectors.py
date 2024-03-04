@@ -54,7 +54,7 @@ class Solution:
         self.score = score
 
 
-def create_score_manage(constraint_provider):
+def create_score_manager(constraint_provider):
     return timefold.solver.score_manager_create(timefold.solver.solver_factory_create(timefold.solver.config.solver.SolverConfig()
                  .withSolutionClass(Solution)
                  .withEntityClasses(Entity)
@@ -70,7 +70,7 @@ def test_min():
                 .reward('Min value', timefold.solver.score.SimpleScore.ONE, lambda min_value: min_value)
         ]
 
-    score_manager = create_score_manage(define_constraints)
+    score_manager = create_score_manager(define_constraints)
 
     entity_a: Entity = Entity('A')
     entity_b: Entity = Entity('B')
@@ -102,7 +102,7 @@ def test_max():
             .reward('Max value', timefold.solver.score.SimpleScore.ONE, lambda max_value: max_value)
         ]
 
-    score_manager = create_score_manage(define_constraints)
+    score_manager = create_score_manager(define_constraints)
 
     entity_a: Entity = Entity('A')
     entity_b: Entity = Entity('B')
@@ -134,7 +134,7 @@ def test_sum():
             .reward('Sum value', timefold.solver.score.SimpleScore.ONE, lambda sum_value: sum_value)
         ]
 
-    score_manager = create_score_manage(define_constraints)
+    score_manager = create_score_manager(define_constraints)
 
     entity_a: Entity = Entity('A')
     entity_b: Entity = Entity('B')
@@ -166,7 +166,7 @@ def test_average():
             .reward('Average value', timefold.solver.score.SimpleScore.ONE, lambda average_value: int(10 * average_value))
         ]
 
-    score_manager = create_score_manage(define_constraints)
+    score_manager = create_score_manager(define_constraints)
 
     entity_a: Entity = Entity('A')
     entity_b: Entity = Entity('B')
@@ -199,7 +199,7 @@ def test_count():
                 .reward('Count value', timefold.solver.score.SimpleScore.ONE, lambda count: count)
         ]
 
-    score_manager = create_score_manage(define_constraints)
+    score_manager = create_score_manager(define_constraints)
 
     entity_a1: Entity = Entity('A1')
     entity_a2: Entity = Entity('A2')
@@ -225,7 +225,7 @@ def test_count_distinct():
             .reward('Count distinct value', timefold.solver.score.SimpleScore.ONE, lambda count: count)
         ]
 
-    score_manager = create_score_manage(define_constraints)
+    score_manager = create_score_manager(define_constraints)
 
     entity_a: Entity = Entity('A')
     entity_b: Entity = Entity('B')
@@ -260,7 +260,7 @@ def test_to_consecutive_sequences():
                     lambda sequence: sequence.getCount() ** 2)
         ]
 
-    score_manager = create_score_manage(define_constraints)
+    score_manager = create_score_manager(define_constraints)
 
     entity_a: Entity = Entity('A')
     entity_b: Entity = Entity('B')
@@ -316,7 +316,7 @@ def test_to_list():
             .reward('list size', timefold.solver.score.SimpleScore.ONE, lambda values: len(values))
         ]
 
-    score_manager = create_score_manage(define_constraints)
+    score_manager = create_score_manager(define_constraints)
 
     entity_a: Entity = Entity('A')
     entity_b: Entity = Entity('B')
@@ -348,7 +348,7 @@ def test_to_set():
             .reward('set size', timefold.solver.score.SimpleScore.ONE, lambda values: len(values))
         ]
 
-    score_manager = create_score_manage(define_constraints)
+    score_manager = create_score_manager(define_constraints)
 
     entity_a: Entity = Entity('A')
     entity_b: Entity = Entity('B')
@@ -381,7 +381,7 @@ def test_to_map():
             .reward('map at B', timefold.solver.score.SimpleScore.ONE, lambda entity_map: next(iter(entity_map['B'])))
         ]
 
-    score_manager = create_score_manage(define_constraints)
+    score_manager = create_score_manager(define_constraints)
 
     entity_a: Entity = Entity('A')
     entity_b: Entity = Entity('B')
@@ -413,7 +413,7 @@ def test_to_sorted_set():
             .reward('min', timefold.solver.score.SimpleScore.ONE, lambda values: next(iter(values)))
         ]
 
-    score_manager = create_score_manage(define_constraints)
+    score_manager = create_score_manager(define_constraints)
 
     entity_a: Entity = Entity('A')
     entity_b: Entity = Entity('B')
@@ -446,7 +446,7 @@ def test_to_sorted_map():
             .reward('map at A', timefold.solver.score.SimpleScore.ONE, lambda entity_map: next(iter(entity_map['A'])))
         ]
 
-    score_manager = create_score_manage(define_constraints)
+    score_manager = create_score_manager(define_constraints)
 
     entity_a: Entity = Entity('A')
     entity_b: Entity = Entity('B')
@@ -483,7 +483,7 @@ def test_conditionally():
             .reward('Conditionally count value', timefold.solver.score.SimpleScore.ONE, lambda count: count)
         ]
 
-    score_manager = create_score_manage(define_constraints)
+    score_manager = create_score_manager(define_constraints)
 
     entity_a1: Entity = Entity('A1')
     entity_a2: Entity = Entity('A2')
@@ -514,7 +514,7 @@ def test_compose():
             # min is in lower digit; max in upper digit
         ]
 
-    score_manager = create_score_manage(define_constraints)
+    score_manager = create_score_manager(define_constraints)
 
     entity_a: Entity = Entity('A')
     entity_b: Entity = Entity('B')
@@ -548,7 +548,7 @@ def test_collect_and_then():
             .reward('Double min value', timefold.solver.score.SimpleScore.ONE, lambda twice_min: twice_min)
         ]
 
-    score_manager = create_score_manage(define_constraints)
+    score_manager = create_score_manager(define_constraints)
 
     entity_a: Entity = Entity('A')
     entity_b: Entity = Entity('B')
@@ -581,7 +581,7 @@ def test_flatten_last():
             .reward('Count', timefold.solver.score.SimpleScore.ONE)
         ]
 
-    score_manager = create_score_manage(define_constraints)
+    score_manager = create_score_manager(define_constraints)
 
     entity_a: Entity = Entity('A')
 
