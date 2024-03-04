@@ -410,6 +410,41 @@ def test_multi_expand():
     assert score_manager.explainScore(problem).getScore().score() == 33
 
 
+def test_concat():
+    @timefold.solver.constraint_provider
+    def define_constraints(constraint_factory: timefold.solver.constraint.ConstraintFactory):
+        return [
+            constraint_factory.for_each(Entity)
+            .filter(lambda e: e.value.number == 1)
+            .concat(constraint_factory.for_each(Entity).filter(lambda e: e.value.number == 2))
+            .reward('Count', timefold.solver.score.SimpleScore.ONE)
+        ]
+
+    score_manager = create_score_manager(define_constraints)
+    entity_a: Entity = Entity('A')
+    entity_b: Entity = Entity('B')
+
+    value_1 = Value(1)
+    value_2 = Value(2)
+    value_3 = Value(3)
+
+    problem = Solution([entity_a, entity_b], [value_1, value_2, value_3])
+
+    assert score_manager.explainScore(problem).getScore().score() == 0
+
+    entity_a.set_value(value_1)
+
+    assert score_manager.explainScore(problem).getScore().score() == 1
+
+    entity_b.set_value(value_2)
+
+    assert score_manager.explainScore(problem).getScore().score() == 2
+
+    entity_b.set_value(value_3)
+
+    assert score_manager.explainScore(problem).getScore().score() == 1
+
+
 ignored_python_functions = {
     '_call_comparison_java_joiner',
     '__init__',
