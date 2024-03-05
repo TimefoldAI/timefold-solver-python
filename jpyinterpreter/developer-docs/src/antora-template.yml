@@ -5,7 +5,7 @@
 # The goal is to have the antora.yml containing correct attributes available in the release branch before
 # the optapy-website is refreshed.
 name: docs
-title: JPyInterpreter User Guide ${version.jpyinterpreter}
+title: JPyInterpreter Developer Guide ${version.jpyinterpreter}
 version: latest
 asciidoc:
   attributes:
