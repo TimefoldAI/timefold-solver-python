@@ -45,7 +45,7 @@ public class LoadGlobalOpcode extends AbstractOpcode {
             if (global != null) {
                 return stackMetadata
                         .push(ValueSourceInfo.of(this, BuiltinTypes.NULL_TYPE))
-                        .push(ValueSourceInfo.of(this, global.__getGenericType()));
+                        .push(ValueSourceInfo.of(this, global.$getGenericType()));
             } else {
                 return stackMetadata
                         .push(ValueSourceInfo.of(this, BuiltinTypes.NULL_TYPE))
@@ -54,7 +54,7 @@ public class LoadGlobalOpcode extends AbstractOpcode {
         } else {
             if (global != null) {
                 return stackMetadata
-                        .push(ValueSourceInfo.of(this, global.__getGenericType()));
+                        .push(ValueSourceInfo.of(this, global.$getGenericType()));
             } else {
                 return stackMetadata
                         .push(ValueSourceInfo.of(this, BuiltinTypes.BASE_TYPE));
@@ -77,6 +77,6 @@ public class LoadGlobalOpcode extends AbstractOpcode {
             functionMetadata.methodVisitor.visitInsn(Opcodes.ACONST_NULL);
         }
         VariableImplementor.loadGlobalVariable(functionMetadata, stackMetadata, globalIndex,
-                (global != null) ? global.__getGenericType() : BuiltinTypes.BASE_TYPE);
+                (global != null) ? global.$getGenericType() : BuiltinTypes.BASE_TYPE);
     }
 }

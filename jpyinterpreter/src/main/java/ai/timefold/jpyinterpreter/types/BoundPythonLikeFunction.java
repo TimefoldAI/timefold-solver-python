@@ -19,7 +19,7 @@ public class BoundPythonLikeFunction implements PythonLikeFunction {
         if (instance instanceof PythonLikeType) {
             return new BoundPythonLikeFunction(instance, function);
         } else {
-            return new BoundPythonLikeFunction(instance.__getType(), function);
+            return new BoundPythonLikeFunction(instance.$getType(), function);
         }
     }
 

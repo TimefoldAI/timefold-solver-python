@@ -24,7 +24,7 @@ public class PythonOverloadImplementorTest {
         PythonOverloadImplementor.createDispatchesFor(SingleOverload.TYPE);
 
         SingleOverload instance = new SingleOverload();
-        PythonLikeFunction overload = (PythonLikeFunction) SingleOverload.TYPE.__getAttributeOrError("overload");
+        PythonLikeFunction overload = (PythonLikeFunction) SingleOverload.TYPE.$getAttributeOrError("overload");
         assertThat(overload.$call(List.of(instance), Map.of(), null)).isEqualTo(PythonString.valueOf("1"));
     }
 
@@ -38,7 +38,7 @@ public class PythonOverloadImplementorTest {
         PythonOverloadImplementor.createDispatchesFor(DifferentArgCountOverloads.TYPE);
 
         DifferentArgCountOverloads instance = new DifferentArgCountOverloads();
-        PythonLikeFunction overload = (PythonLikeFunction) DifferentArgCountOverloads.TYPE.__getAttributeOrError("overload");
+        PythonLikeFunction overload = (PythonLikeFunction) DifferentArgCountOverloads.TYPE.$getAttributeOrError("overload");
         assertThat(overload.$call(List.of(instance), Map.of(), null)).isEqualTo(PythonString.valueOf("1"));
         assertThat(overload.$call(List.of(instance, PythonInteger.valueOf(2)), Map.of(), null))
                 .isEqualTo(PythonInteger.valueOf(2));
@@ -60,7 +60,7 @@ public class PythonOverloadImplementorTest {
         PythonOverloadImplementor.createDispatchesFor(DifferentArgTypeOverloads.TYPE);
 
         DifferentArgTypeOverloads instance = new DifferentArgTypeOverloads();
-        PythonLikeFunction overload = (PythonLikeFunction) DifferentArgTypeOverloads.TYPE.__getAttributeOrError("overload");
+        PythonLikeFunction overload = (PythonLikeFunction) DifferentArgTypeOverloads.TYPE.$getAttributeOrError("overload");
         assertThat(overload.$call(List.of(instance, PythonString.valueOf("1")), Map.of(), null))
                 .isEqualTo(PythonString.valueOf("1"));
 
@@ -94,7 +94,7 @@ public class PythonOverloadImplementorTest {
         PythonOverloadImplementor.createDispatchesFor(VariousOverloads.TYPE);
 
         VariousOverloads instance = new VariousOverloads();
-        PythonLikeFunction overload = (PythonLikeFunction) VariousOverloads.TYPE.__getAttributeOrError("overload");
+        PythonLikeFunction overload = (PythonLikeFunction) VariousOverloads.TYPE.$getAttributeOrError("overload");
         assertThat(overload.$call(List.of(instance), Map.of(), null)).isEqualTo(PythonString.valueOf("1"));
         assertThat(overload.$call(List.of(instance, PythonString.valueOf("a")), Map.of(), null))
                 .isEqualTo(PythonString.valueOf("a 1"));

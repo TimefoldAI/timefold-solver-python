@@ -23,26 +23,26 @@ public abstract class AbstractPythonLikeObject implements PythonLikeObject {
     }
 
     @Override
-    public PythonLikeObject __getAttributeOrNull(String attributeName) {
+    public PythonLikeObject $getAttributeOrNull(String attributeName) {
         return __dir__.get(attributeName);
     }
 
     @Override
-    public void __setAttribute(String attributeName, PythonLikeObject value) {
+    public void $setAttribute(String attributeName, PythonLikeObject value) {
         __dir__.put(attributeName, value);
     }
 
     @Override
-    public void __deleteAttribute(String attributeName) {
+    public void $deleteAttribute(String attributeName) {
         // TODO: Descriptors: https://docs.python.org/3/howto/descriptor.html
         if (!__dir__.containsKey(attributeName)) {
-            throw new AttributeError("'" + __getType().getTypeName() + "' object has no attribute '" + attributeName + "'");
+            throw new AttributeError("'" + $getType().getTypeName() + "' object has no attribute '" + attributeName + "'");
         }
         __dir__.remove(attributeName);
     }
 
     @Override
-    public PythonLikeType __getType() {
+    public PythonLikeType $getType() {
         return __type__;
     }
 

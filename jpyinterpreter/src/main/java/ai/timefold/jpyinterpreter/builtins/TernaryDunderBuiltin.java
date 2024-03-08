@@ -34,12 +34,12 @@ public class TernaryDunderBuiltin implements PythonLikeFunction {
         PythonLikeObject object = positionalArguments.get(0);
         PythonLikeObject arg1 = positionalArguments.get(1);
         PythonLikeObject arg2 = positionalArguments.get(2);
-        PythonLikeFunction dunderMethod = (PythonLikeFunction) object.__getType().__getAttributeOrError(DUNDER_METHOD_NAME);
+        PythonLikeFunction dunderMethod = (PythonLikeFunction) object.$getType().$getAttributeOrError(DUNDER_METHOD_NAME);
         return dunderMethod.$call(List.of(object, arg1, arg2), Map.of(), null);
     }
 
     public PythonLikeObject invoke(PythonLikeObject object, PythonLikeObject arg1, PythonLikeObject arg2) {
-        PythonLikeFunction dunderMethod = (PythonLikeFunction) object.__getType().__getAttributeOrError(DUNDER_METHOD_NAME);
+        PythonLikeFunction dunderMethod = (PythonLikeFunction) object.$getType().$getAttributeOrError(DUNDER_METHOD_NAME);
         return dunderMethod.$call(List.of(object, arg1, arg2), Map.of(), null);
     }
 }

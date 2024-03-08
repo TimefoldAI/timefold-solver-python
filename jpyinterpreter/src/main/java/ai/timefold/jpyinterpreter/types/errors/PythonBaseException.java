@@ -50,8 +50,8 @@ public class PythonBaseException extends RuntimeException implements PythonLikeO
         this.type = type;
         this.args = args;
         this.dict = new HashMap<>();
-        __setAttribute("args", PythonLikeTuple.fromList(args));
-        __setAttribute("__cause__", PythonNone.INSTANCE);
+        $setAttribute("args", PythonLikeTuple.fromList(args));
+        $setAttribute("__cause__", PythonNone.INSTANCE);
     }
 
     public PythonBaseException(PythonLikeType type, String message) {
@@ -59,8 +59,8 @@ public class PythonBaseException extends RuntimeException implements PythonLikeO
         this.type = type;
         this.args = List.of(PythonString.valueOf(message));
         this.dict = new HashMap<>();
-        __setAttribute("args", PythonLikeTuple.fromList(args));
-        __setAttribute("__cause__", PythonNone.INSTANCE);
+        $setAttribute("args", PythonLikeTuple.fromList(args));
+        $setAttribute("__cause__", PythonNone.INSTANCE);
     }
 
     /**
@@ -81,34 +81,34 @@ public class PythonBaseException extends RuntimeException implements PythonLikeO
     public Throwable initCause(Throwable cause) {
         super.initCause(cause);
         if (cause instanceof PythonLikeObject pythonError) {
-            __setAttribute("__cause__", pythonError);
+            $setAttribute("__cause__", pythonError);
         } else {
-            __setAttribute("__cause__", new JavaObjectWrapper(cause));
+            $setAttribute("__cause__", new JavaObjectWrapper(cause));
         }
         return this;
     }
 
     @Override
-    public PythonLikeObject __getAttributeOrNull(String attributeName) {
+    public PythonLikeObject $getAttributeOrNull(String attributeName) {
         return dict.get(attributeName);
     }
 
     @Override
-    public void __setAttribute(String attributeName, PythonLikeObject value) {
+    public void $setAttribute(String attributeName, PythonLikeObject value) {
         dict.put(attributeName, value);
     }
 
     @Override
-    public void __deleteAttribute(String attributeName) {
+    public void $deleteAttribute(String attributeName) {
         dict.remove(attributeName);
     }
 
     public PythonLikeTuple $getArgs() {
-        return (PythonLikeTuple) __getAttributeOrError("args");
+        return (PythonLikeTuple) $getAttributeOrError("args");
     }
 
     @Override
-    public PythonLikeType __getType() {
+    public PythonLikeType $getType() {
         return type;
     }
 }

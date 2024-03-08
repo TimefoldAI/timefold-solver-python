@@ -39,12 +39,12 @@ public class UnaryDunderBuiltin implements PythonLikeFunction {
             throw new ValueError("Function " + DUNDER_METHOD_NAME + " expects 1 positional argument");
         }
         PythonLikeObject object = positionalArguments.get(0);
-        PythonLikeFunction dunderMethod = (PythonLikeFunction) object.__getType().__getAttributeOrError(DUNDER_METHOD_NAME);
+        PythonLikeFunction dunderMethod = (PythonLikeFunction) object.$getType().$getAttributeOrError(DUNDER_METHOD_NAME);
         return dunderMethod.$call(List.of(object), Map.of(), null);
     }
 
     public PythonLikeObject invoke(PythonLikeObject object) {
-        PythonLikeFunction dunderMethod = (PythonLikeFunction) object.__getType().__getAttributeOrError(DUNDER_METHOD_NAME);
+        PythonLikeFunction dunderMethod = (PythonLikeFunction) object.$getType().$getAttributeOrError(DUNDER_METHOD_NAME);
         return dunderMethod.$call(List.of(object), Map.of(), null);
     }
 }

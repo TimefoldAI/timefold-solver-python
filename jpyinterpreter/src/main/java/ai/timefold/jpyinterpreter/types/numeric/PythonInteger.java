@@ -51,8 +51,8 @@ public class PythonInteger extends AbstractPythonLikeObject implements PythonNum
                 } else if (value instanceof PythonFloat) {
                     return ((PythonFloat) value).asInteger();
                 } else {
-                    PythonLikeType valueType = value.__getType();
-                    PythonLikeFunction asIntFunction = (PythonLikeFunction) (valueType.__getAttributeOrError("__int__"));
+                    PythonLikeType valueType = value.$getType();
+                    PythonLikeFunction asIntFunction = (PythonLikeFunction) (valueType.$getAttributeOrError("__int__"));
                     return asIntFunction.$call(List.of(value), Map.of(), null);
                 }
             } else {

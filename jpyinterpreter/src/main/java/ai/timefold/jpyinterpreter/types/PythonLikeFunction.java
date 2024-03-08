@@ -30,22 +30,22 @@ public interface PythonLikeFunction extends PythonLikeObject {
             PythonLikeObject callerInstance);
 
     @Override
-    default PythonLikeObject __getAttributeOrNull(String attributeName) {
+    default PythonLikeObject $getAttributeOrNull(String attributeName) {
         return null;
     }
 
     @Override
-    default void __setAttribute(String attributeName, PythonLikeObject value) {
+    default void $setAttribute(String attributeName, PythonLikeObject value) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    default void __deleteAttribute(String attributeName) {
+    default void $deleteAttribute(String attributeName) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    default PythonLikeType __getType() {
+    default PythonLikeType $getType() {
         return BuiltinTypes.FUNCTION_TYPE;
     }
 }

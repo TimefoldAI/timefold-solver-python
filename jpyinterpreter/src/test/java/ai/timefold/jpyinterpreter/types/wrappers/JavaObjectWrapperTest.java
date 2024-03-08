@@ -58,7 +58,7 @@ public class JavaObjectWrapperTest {
     void testCallingRecordGetter() {
         TestObject object = new TestObject("My name");
         JavaObjectWrapper wrapper = new JavaObjectWrapper(object);
-        PythonLikeObject result = wrapper.__getAttributeOrNull("name");
+        PythonLikeObject result = wrapper.$getAttributeOrNull("name");
         assertThat(result).isEqualTo(PythonString.valueOf("My name"));
     }
 

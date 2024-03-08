@@ -221,7 +221,7 @@ public class ExceptionImplementor {
             // Get exception class
             methodVisitor.visitInsn(Opcodes.DUP);
             methodVisitor.visitMethodInsn(Opcodes.INVOKEINTERFACE, Type.getInternalName(PythonLikeObject.class),
-                    "__getType", Type.getMethodDescriptor(Type.getType(PythonLikeType.class)),
+                    "$getType", Type.getMethodDescriptor(Type.getType(PythonLikeType.class)),
                     true);
 
             // Stack is (stack-before-try), instruction, stack-size, label, traceback, exception, exception_class
@@ -255,11 +255,11 @@ public class ExceptionImplementor {
 
         // First load the method __exit__
         methodVisitor.visitMethodInsn(Opcodes.INVOKEINTERFACE, Type.getInternalName(PythonLikeObject.class),
-                "__getType", Type.getMethodDescriptor(Type.getType(PythonLikeType.class)),
+                "$getType", Type.getMethodDescriptor(Type.getType(PythonLikeType.class)),
                 true);
         methodVisitor.visitLdcInsn("__exit__");
         methodVisitor.visitMethodInsn(Opcodes.INVOKEINTERFACE, Type.getInternalName(PythonLikeObject.class),
-                "__getAttributeOrError",
+                "$getAttributeOrError",
                 Type.getMethodDescriptor(Type.getType(PythonLikeObject.class), Type.getType(String.class)),
                 true);
         methodVisitor.visitTypeInsn(Opcodes.CHECKCAST, Type.getInternalName(PythonLikeFunction.class));

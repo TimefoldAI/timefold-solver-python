@@ -17,22 +17,22 @@ public class TimefoldObjectReference implements PythonLikeObject {
     }
 
     @Override
-    public PythonLikeObject __getAttributeOrNull(String attributeName) {
+    public PythonLikeObject $getAttributeOrNull(String attributeName) {
         return null;
     }
 
     @Override
-    public void __setAttribute(String attributeName, PythonLikeObject value) {
+    public void $setAttribute(String attributeName, PythonLikeObject value) {
 
     }
 
     @Override
-    public void __deleteAttribute(String attributeName) {
+    public void $deleteAttribute(String attributeName) {
 
     }
 
     @Override
-    public PythonLikeType __getType() {
+    public PythonLikeType $getType() {
         return null;
     }
 

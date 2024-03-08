@@ -113,7 +113,7 @@ public class CPythonBackedPythonInterpreter implements PythonInterpreter {
             OpaquePythonReference pythonObject,
             Map<Number, PythonLikeObject> instanceMap) {
         Map<String, PythonLikeObject> dict = getPythonReferenceDict(pythonObject, instanceMap);
-        dict.forEach(javaObject::__setAttribute);
+        dict.forEach(javaObject::$setAttribute);
     }
 
     public static PythonLikeObject callPythonReference(OpaquePythonReference object, List<PythonLikeObject> positionalArguments,

@@ -98,7 +98,7 @@ public class KnownCallImplementor {
             methodVisitor.visitTypeInsn(Opcodes.INSTANCEOF, Type.getInternalName(PythonLikeType.class));
             methodVisitor.visitJumpInsn(Opcodes.IFNE, doneGettingType);
             methodVisitor.visitMethodInsn(Opcodes.INVOKEINTERFACE, Type.getInternalName(PythonLikeObject.class),
-                    "__getType", Type.getMethodDescriptor(Type.getType(PythonLikeType.class)),
+                    "$getType", Type.getMethodDescriptor(Type.getType(PythonLikeType.class)),
                     true);
             methodVisitor.visitJumpInsn(Opcodes.GOTO, doneGettingType);
             methodVisitor.visitLabel(ifIsBoundFunction);
@@ -264,7 +264,7 @@ public class KnownCallImplementor {
             methodVisitor.visitTypeInsn(Opcodes.INSTANCEOF, Type.getInternalName(PythonLikeType.class));
             methodVisitor.visitJumpInsn(Opcodes.IFNE, doneGettingType);
             methodVisitor.visitMethodInsn(Opcodes.INVOKEINTERFACE, Type.getInternalName(PythonLikeObject.class),
-                    "__getType", Type.getMethodDescriptor(Type.getType(PythonLikeType.class)),
+                    "$getType", Type.getMethodDescriptor(Type.getType(PythonLikeType.class)),
                     true);
             methodVisitor.visitJumpInsn(Opcodes.GOTO, doneGettingType);
             methodVisitor.visitLabel(ifIsBoundFunction);
@@ -379,7 +379,7 @@ public class KnownCallImplementor {
                 methodVisitor.visitTypeInsn(Opcodes.INSTANCEOF, Type.getInternalName(PythonLikeType.class));
                 methodVisitor.visitJumpInsn(Opcodes.IFNE, doneGettingType);
                 methodVisitor.visitMethodInsn(Opcodes.INVOKEINTERFACE, Type.getInternalName(PythonLikeObject.class),
-                        "__getType", Type.getMethodDescriptor(Type.getType(PythonLikeType.class)),
+                        "$getType", Type.getMethodDescriptor(Type.getType(PythonLikeType.class)),
                         true);
                 methodVisitor.visitJumpInsn(Opcodes.GOTO, doneGettingType);
                 methodVisitor.visitLabel(ifIsBoundFunction);

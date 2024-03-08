@@ -62,11 +62,11 @@ public class PythonDateTime extends PythonDate<PythonDateTime> {
             PythonLikeComparable.setup(DATE_TIME_TYPE);
             registerMethods();
 
-            DATE_TIME_TYPE.__setAttribute("min", new PythonDateTime(LocalDate.of(1, 1, 1),
+            DATE_TIME_TYPE.$setAttribute("min", new PythonDateTime(LocalDate.of(1, 1, 1),
                     LocalTime.MAX));
-            DATE_TIME_TYPE.__setAttribute("max", new PythonDateTime(LocalDate.of(9999, 12, 31),
+            DATE_TIME_TYPE.$setAttribute("max", new PythonDateTime(LocalDate.of(9999, 12, 31),
                     LocalTime.MIN));
-            DATE_TIME_TYPE.__setAttribute("resolution", new PythonTimeDelta(Duration.ofNanos(1000L)));
+            DATE_TIME_TYPE.$setAttribute("resolution", new PythonTimeDelta(Duration.ofNanos(1000L)));
 
             PythonOverloadImplementor.createDispatchesFor(DATE_TIME_TYPE);
         } catch (NoSuchMethodException e) {
@@ -300,7 +300,7 @@ public class PythonDateTime extends PythonDate<PythonDateTime> {
     }
 
     @Override
-    public PythonLikeObject __getAttributeOrNull(String name) {
+    public PythonLikeObject $getAttributeOrNull(String name) {
         switch (name) {
             case "hour":
                 return hour;
@@ -315,7 +315,7 @@ public class PythonDateTime extends PythonDate<PythonDateTime> {
             case "tzinfo":
                 return tzinfo;
             default:
-                return super.__getAttributeOrNull(name);
+                return super.$getAttributeOrNull(name);
         }
     }
 

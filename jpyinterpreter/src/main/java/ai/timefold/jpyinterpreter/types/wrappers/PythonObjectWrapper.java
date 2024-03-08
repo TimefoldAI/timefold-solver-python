@@ -33,20 +33,20 @@ public class PythonObjectWrapper extends CPythonBackedPythonLikeObject
     }
 
     @Override
-    public PythonLikeObject __getAttributeOrNull(String attributeName) {
+    public PythonLikeObject $getAttributeOrNull(String attributeName) {
         return cachedAttributeMap.computeIfAbsent(attributeName,
                 key -> CPythonBackedPythonInterpreter.lookupAttributeOnPythonReference($cpythonReference,
                         attributeName, $instanceMap));
     }
 
     @Override
-    public void __setAttribute(String attributeName, PythonLikeObject value) {
+    public void $setAttribute(String attributeName, PythonLikeObject value) {
         cachedAttributeMap.put(attributeName, value);
         CPythonBackedPythonInterpreter.setAttributeOnPythonReference($cpythonReference, attributeName, value);
     }
 
     @Override
-    public void __deleteAttribute(String attributeName) {
+    public void $deleteAttribute(String attributeName) {
         cachedAttributeMap.remove(attributeName);
         CPythonBackedPythonInterpreter.deleteAttributeOnPythonReference($cpythonReference, attributeName);
     }
@@ -63,7 +63,7 @@ public class PythonObjectWrapper extends CPythonBackedPythonLikeObject
             return 0;
         }
 
-        PythonLikeFunction lessThan = (PythonLikeFunction) __getType().__getAttributeOrError("__lt__");
+        PythonLikeFunction lessThan = (PythonLikeFunction) $getType().$getAttributeOrError("__lt__");
         PythonLikeObject result = lessThan.$call(List.of(this, other), Map.of(), null);
 
         if (result instanceof PythonBoolean) {
@@ -73,8 +73,8 @@ public class PythonObjectWrapper extends CPythonBackedPythonLikeObject
                 return 1;
             }
         } else {
-            throw new NotImplementedError("Cannot compare " + this.__getType().getTypeName() +
-                    " with " + other.__getType().getTypeName());
+            throw new NotImplementedError("Cannot compare " + this.$getType().getTypeName() +
+                    " with " + other.$getType().getTypeName());
         }
     }
 
@@ -87,7 +87,7 @@ public class PythonObjectWrapper extends CPythonBackedPythonLikeObject
             return false;
         }
         PythonObjectWrapper other = (PythonObjectWrapper) o;
-        Object maybeEquals = __getType().__getAttributeOrNull("__eq__");
+        Object maybeEquals = $getType().$getAttributeOrNull("__eq__");
         if (!(maybeEquals instanceof PythonLikeFunction)) {
             return super.equals(o);
         }
@@ -101,7 +101,7 @@ public class PythonObjectWrapper extends CPythonBackedPythonLikeObject
 
     @Override
     public int hashCode() {
-        Object maybeHash = __getType().__getAttributeOrNull("__hash__");
+        Object maybeHash = $getType().$getAttributeOrNull("__hash__");
         if (!(maybeHash instanceof PythonLikeFunction)) {
             return super.hashCode();
         }
@@ -121,7 +121,7 @@ public class PythonObjectWrapper extends CPythonBackedPythonLikeObject
 
     @Override
     public String toString() {
-        Object maybeStr = __getType().__getAttributeOrNull("__str__");
+        Object maybeStr = $getType().$getAttributeOrNull("__str__");
         if (!(maybeStr instanceof PythonLikeFunction)) {
             return super.toString();
         }

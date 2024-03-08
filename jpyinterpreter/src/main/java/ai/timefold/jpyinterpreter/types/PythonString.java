@@ -1138,7 +1138,7 @@ public class PythonString extends AbstractPythonLikeObject implements PythonLike
             PythonLikeObject maybeString = iterator.nextPythonItem();
             if (!(maybeString instanceof PythonString)) {
                 throw new TypeError("sequence item " + index + ": expected str instance, "
-                        + maybeString.__getType().getTypeName() + " found");
+                        + maybeString.$getType().getTypeName() + " found");
             }
             PythonString string = (PythonString) maybeString;
             out.append(string.value);

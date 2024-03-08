@@ -51,7 +51,7 @@ public class DictValueView extends AbstractPythonLikeObject {
         super(BuiltinTypes.DICT_VALUE_VIEW_TYPE);
         this.mapping = mapping;
         this.valueCollection = mapping.delegate.values();
-        __setAttribute("mapping", mapping);
+        $setAttribute("mapping", mapping);
     }
 
     public PythonInteger getValuesSize() {

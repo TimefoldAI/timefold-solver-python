@@ -44,7 +44,7 @@ public class CPythonType extends PythonLikeType {
     }
 
     @Override
-    public PythonLikeObject __getAttributeOrNull(String attributeName) {
+    public PythonLikeObject $getAttributeOrNull(String attributeName) {
         switch (attributeName) {
             case "__eq__":
                 return cachedAttributeMap.computeIfAbsent(attributeName,
@@ -114,19 +114,19 @@ public class CPythonType extends PythonLikeType {
     }
 
     @Override
-    public void __setAttribute(String attributeName, PythonLikeObject value) {
+    public void $setAttribute(String attributeName, PythonLikeObject value) {
         cachedAttributeMap.put(attributeName, value);
         CPythonBackedPythonInterpreter.setAttributeOnPythonReference(pythonReference, attributeName, value);
     }
 
     @Override
-    public void __deleteAttribute(String attributeName) {
+    public void $deleteAttribute(String attributeName) {
         cachedAttributeMap.remove(attributeName);
         CPythonBackedPythonInterpreter.deleteAttributeOnPythonReference(pythonReference, attributeName);
     }
 
     @Override
-    public PythonLikeType __getType() {
+    public PythonLikeType $getType() {
         return BuiltinTypes.TYPE_TYPE;
     }
 

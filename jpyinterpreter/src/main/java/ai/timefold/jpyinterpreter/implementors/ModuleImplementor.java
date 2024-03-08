@@ -120,7 +120,7 @@ public class ModuleImplementor {
 
         // Get the attribute
         methodVisitor.visitMethodInsn(Opcodes.INVOKEINTERFACE, Type.getInternalName(PythonLikeObject.class),
-                "__getAttributeOrError",
+                "$getAttributeOrError",
                 Type.getMethodDescriptor(Type.getType(PythonLikeObject.class), Type.getType(String.class)),
                 true);
 

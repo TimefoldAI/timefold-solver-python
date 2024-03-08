@@ -144,7 +144,7 @@ public class PythonClassTranslator {
         classWriter.visit(Opcodes.V11, Modifier.PUBLIC, internalClassName, null,
                 superClassType.getJavaTypeInternalName(), interfaces);
 
-        pythonCompiledClass.staticAttributeNameToObject.forEach(pythonLikeType::__setAttribute);
+        pythonCompiledClass.staticAttributeNameToObject.forEach(pythonLikeType::$setAttribute);
 
         classWriter.visitField(Modifier.PUBLIC | Modifier.STATIC, TYPE_FIELD_NAME, Type.getDescriptor(PythonLikeType.class),
                 null, null);
@@ -154,7 +154,7 @@ public class PythonClassTranslator {
 
         for (Map.Entry<String, PythonLikeObject> staticAttributeEntry : pythonCompiledClass.staticAttributeNameToObject
                 .entrySet()) {
-            pythonLikeType.__setAttribute(staticAttributeEntry.getKey(), staticAttributeEntry.getValue());
+            pythonLikeType.$setAttribute(staticAttributeEntry.getKey(), staticAttributeEntry.getValue());
         }
 
         Map<String, PythonLikeType> attributeNameToTypeMap = new HashMap<>();
@@ -259,17 +259,17 @@ public class PythonClassTranslator {
         PythonBytecodeToJavaBytecodeTranslator.writeClassOutput(BuiltinTypes.classNameToBytecode, className,
                 classWriter.toByteArray());
 
-        pythonLikeType.__setAttribute("__name__", PythonString.valueOf(pythonCompiledClass.className));
-        pythonLikeType.__setAttribute("__qualname__", PythonString.valueOf(pythonCompiledClass.qualifiedName));
-        pythonLikeType.__setAttribute("__module__", PythonString.valueOf(pythonCompiledClass.module));
+        pythonLikeType.$setAttribute("__name__", PythonString.valueOf(pythonCompiledClass.className));
+        pythonLikeType.$setAttribute("__qualname__", PythonString.valueOf(pythonCompiledClass.qualifiedName));
+        pythonLikeType.$setAttribute("__module__", PythonString.valueOf(pythonCompiledClass.module));
 
         PythonLikeDict annotations = new PythonLikeDict();
         pythonCompiledClass.typeAnnotations.forEach((name, type) -> annotations.put(PythonString.valueOf(name), type));
-        pythonLikeType.__setAttribute("__annotations__", annotations);
+        pythonLikeType.$setAttribute("__annotations__", annotations);
 
         PythonLikeTuple mro = new PythonLikeTuple();
         mro.addAll(superTypeList);
-        pythonLikeType.__setAttribute("__mro__", mro);
+        pythonLikeType.$setAttribute("__mro__", mro);
 
         Class<? extends PythonLikeObject> generatedClass;
         try {
@@ -339,7 +339,7 @@ public class PythonClassTranslator {
                 objectInstance.$setCPythonId(PythonInteger.valueOf(pythonReferenceId.longValue()));
                 objectInstance.$setInstanceMap(instanceMap);
                 objectInstance.$readFieldsFromCPythonReference();
-                pythonLikeType.__setAttribute(attributeName, objectInstance);
+                pythonLikeType.$setAttribute(attributeName, objectInstance);
             } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
                 throw new RuntimeException("Unable to construct instance of class (" + generatedClass + ")", e);
             }
@@ -442,7 +442,7 @@ public class PythonClassTranslator {
 
             generatedClass.getField(getJavaMethodName(methodEntry.getKey()))
                     .set(null, functionInstance);
-            pythonLikeType.__setAttribute(methodEntry.getKey(), translatedPythonMethodWrapper);
+            pythonLikeType.$setAttribute(methodEntry.getKey(), translatedPythonMethodWrapper);
             return functionClass;
         } catch (IllegalAccessException | NoSuchFieldException e) {
             throw new IllegalStateException("Impossible State: could not access method (" + methodEntry.getKey()
@@ -508,7 +508,7 @@ public class PythonClassTranslator {
                 Type.getDescriptor(PythonLikeType.class));
         methodVisitor.visitLdcInsn(methodName);
         methodVisitor.visitMethodInsn(Opcodes.INVOKEINTERFACE, Type.getInternalName(PythonLikeObject.class),
-                "__getAttributeOrError",
+                "$getAttributeOrError",
                 Type.getMethodDescriptor(Type.getType(PythonLikeObject.class), Type.getType(String.class)),
                 true);
         methodVisitor.visitTypeInsn(Opcodes.CHECKCAST, Type.getInternalName(PythonLikeFunction.class));
@@ -805,7 +805,7 @@ public class PythonClassTranslator {
     public static void createGetAttribute(ClassWriter classWriter, String classInternalName, String superInternalName,
             Collection<String> instanceAttributes,
             Map<String, PythonLikeType> fieldToType) {
-        MethodVisitor methodVisitor = classWriter.visitMethod(Modifier.PUBLIC, "__getAttributeOrNull",
+        MethodVisitor methodVisitor = classWriter.visitMethod(Modifier.PUBLIC, "$getAttributeOrNull",
                 Type.getMethodDescriptor(Type.getType(PythonLikeObject.class),
                         Type.getType(String.class)),
                 null, null);
@@ -823,7 +823,7 @@ public class PythonClassTranslator {
         }, () -> {
             methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
             methodVisitor.visitVarInsn(Opcodes.ALOAD, 1);
-            methodVisitor.visitMethodInsn(Opcodes.INVOKESPECIAL, superInternalName, "__getAttributeOrNull",
+            methodVisitor.visitMethodInsn(Opcodes.INVOKESPECIAL, superInternalName, "$getAttributeOrNull",
                     Type.getMethodDescriptor(Type.getType(PythonLikeObject.class),
                             Type.getType(String.class)),
                     false);
@@ -837,7 +837,7 @@ public class PythonClassTranslator {
     public static void createSetAttribute(ClassWriter classWriter, String classInternalName, String superInternalName,
             Collection<String> instanceAttributes,
             Map<String, PythonLikeType> fieldToType) {
-        MethodVisitor methodVisitor = classWriter.visitMethod(Modifier.PUBLIC, "__setAttribute",
+        MethodVisitor methodVisitor = classWriter.visitMethod(Modifier.PUBLIC, "$setAttribute",
                 Type.getMethodDescriptor(Type.VOID_TYPE,
                         Type.getType(String.class),
                         Type.getType(PythonLikeObject.class)),
@@ -860,7 +860,7 @@ public class PythonClassTranslator {
             methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
             methodVisitor.visitVarInsn(Opcodes.ALOAD, 1);
             methodVisitor.visitVarInsn(Opcodes.ALOAD, 2);
-            methodVisitor.visitMethodInsn(Opcodes.INVOKESPECIAL, superInternalName, "__setAttribute",
+            methodVisitor.visitMethodInsn(Opcodes.INVOKESPECIAL, superInternalName, "$setAttribute",
                     Type.getMethodDescriptor(Type.VOID_TYPE,
                             Type.getType(String.class),
                             Type.getType(PythonLikeObject.class)),
@@ -875,7 +875,7 @@ public class PythonClassTranslator {
     public static void createDeleteAttribute(ClassWriter classWriter, String classInternalName, String superInternalName,
             Collection<String> instanceAttributes,
             Map<String, PythonLikeType> fieldToType) {
-        MethodVisitor methodVisitor = classWriter.visitMethod(Modifier.PUBLIC, "__deleteAttribute",
+        MethodVisitor methodVisitor = classWriter.visitMethod(Modifier.PUBLIC, "$deleteAttribute",
                 Type.getMethodDescriptor(Type.VOID_TYPE,
                         Type.getType(String.class)),
                 null, null);
@@ -894,7 +894,7 @@ public class PythonClassTranslator {
         }, () -> {
             methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
             methodVisitor.visitVarInsn(Opcodes.ALOAD, 1);
-            methodVisitor.visitMethodInsn(Opcodes.INVOKESPECIAL, superInternalName, "__deleteAttribute",
+            methodVisitor.visitMethodInsn(Opcodes.INVOKESPECIAL, superInternalName, "$deleteAttribute",
                     Type.getMethodDescriptor(Type.VOID_TYPE,
                             Type.getType(String.class)),
                     false);
