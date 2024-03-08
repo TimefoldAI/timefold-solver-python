@@ -79,7 +79,7 @@ public class DictItemView extends AbstractPythonLikeObject {
         super(BuiltinTypes.DICT_ITEM_VIEW_TYPE);
         this.mapping = mapping;
         this.entrySet = mapping.delegate.entrySet();
-        __setAttribute("mapping", mapping);
+        $setAttribute("mapping", mapping);
     }
 
     private List<PythonLikeObject> getEntriesAsTuples() {

@@ -104,9 +104,9 @@ public class PythonRange extends AbstractPythonLikeObject implements List<Python
         this.stop = stop;
         this.step = step;
 
-        __setAttribute("start", start);
-        __setAttribute("stop", stop);
-        __setAttribute("step", step);
+        $setAttribute("start", start);
+        $setAttribute("stop", stop);
+        $setAttribute("step", step);
     }
 
     @Override

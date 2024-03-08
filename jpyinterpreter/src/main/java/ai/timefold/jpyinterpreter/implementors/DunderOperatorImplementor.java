@@ -62,7 +62,7 @@ public class DunderOperatorImplementor {
      *
      * <code>
      * <pre>
-     *    BiFunction[List, Map, Result] operand_method = TOS.__getType().__getAttributeOrError(operator.getDunderMethod());
+     *    BiFunction[List, Map, Result] operand_method = TOS.$getType().$getAttributeOrError(operator.getDunderMethod());
      *    List args = new ArrayList(1);
      *    args.set(0) = TOS
      *    pop TOS
@@ -74,11 +74,11 @@ public class DunderOperatorImplementor {
     public static void unaryOperator(MethodVisitor methodVisitor, PythonUnaryOperator operator) {
         methodVisitor.visitInsn(Opcodes.DUP);
         methodVisitor.visitMethodInsn(Opcodes.INVOKEINTERFACE, Type.getInternalName(PythonLikeObject.class),
-                "__getType", Type.getMethodDescriptor(Type.getType(PythonLikeType.class)),
+                "$getType", Type.getMethodDescriptor(Type.getType(PythonLikeType.class)),
                 true);
         methodVisitor.visitLdcInsn(operator.getDunderMethod());
         methodVisitor.visitMethodInsn(Opcodes.INVOKEINTERFACE, Type.getInternalName(PythonLikeObject.class),
-                "__getAttributeOrError", Type.getMethodDescriptor(Type.getType(PythonLikeObject.class),
+                "$getAttributeOrError", Type.getMethodDescriptor(Type.getType(PythonLikeObject.class),
                         Type.getType(String.class)),
                 true);
 
@@ -257,7 +257,7 @@ public class DunderOperatorImplementor {
                     false);
             localVariableHelper.readTemp(methodVisitor, Type.getType(PythonLikeObject.class), left);
             methodVisitor.visitMethodInsn(Opcodes.INVOKEINTERFACE, Type.getInternalName(PythonLikeObject.class),
-                    "__getType", Type.getMethodDescriptor(Type.getType(PythonLikeType.class)),
+                    "$getType", Type.getMethodDescriptor(Type.getType(PythonLikeType.class)),
                     true);
             methodVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, Type.getInternalName(PythonLikeType.class),
                     "getTypeName", Type.getMethodDescriptor(Type.getType(String.class)),
@@ -273,7 +273,7 @@ public class DunderOperatorImplementor {
                     false);
             localVariableHelper.readTemp(methodVisitor, Type.getType(PythonLikeObject.class), right);
             methodVisitor.visitMethodInsn(Opcodes.INVOKEINTERFACE, Type.getInternalName(PythonLikeObject.class),
-                    "__getType", Type.getMethodDescriptor(Type.getType(PythonLikeType.class)),
+                    "$getType", Type.getMethodDescriptor(Type.getType(PythonLikeType.class)),
                     true);
             methodVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, Type.getInternalName(PythonLikeType.class),
                     "getTypeName", Type.getMethodDescriptor(Type.getType(String.class)),
@@ -320,7 +320,7 @@ public class DunderOperatorImplementor {
      *
      * <code>
      * <pre>
-     *    BiFunction[List, Map, Result] operand_method = TOS1.__getType().__getAttributeOrError(operator.getDunderMethod());
+     *    BiFunction[List, Map, Result] operand_method = TOS1.$getType().$getAttributeOrError(operator.getDunderMethod());
      *    List args = new ArrayList(2);
      *    args.set(0) = TOS1
      *    args.set(1) = TOS
@@ -342,11 +342,11 @@ public class DunderOperatorImplementor {
         // Stack is now (TOS1, TOS,)? TOS, TOS1
         methodVisitor.visitInsn(Opcodes.DUP);
         methodVisitor.visitMethodInsn(Opcodes.INVOKEINTERFACE, Type.getInternalName(PythonLikeObject.class),
-                "__getType", Type.getMethodDescriptor(Type.getType(PythonLikeType.class)),
+                "$getType", Type.getMethodDescriptor(Type.getType(PythonLikeType.class)),
                 true);
         methodVisitor.visitLdcInsn(operator.getDunderMethod());
         methodVisitor.visitMethodInsn(Opcodes.INVOKEINTERFACE, Type.getInternalName(PythonLikeObject.class),
-                "__getAttributeOrNull", Type.getMethodDescriptor(Type.getType(PythonLikeObject.class),
+                "$getAttributeOrNull", Type.getMethodDescriptor(Type.getType(PythonLikeObject.class),
                         Type.getType(String.class)),
                 true);
         methodVisitor.visitInsn(Opcodes.DUP);
@@ -410,11 +410,11 @@ public class DunderOperatorImplementor {
             // Stack is now TOS1, TOS
             methodVisitor.visitInsn(Opcodes.DUP);
             methodVisitor.visitMethodInsn(Opcodes.INVOKEINTERFACE, Type.getInternalName(PythonLikeObject.class),
-                    "__getType", Type.getMethodDescriptor(Type.getType(PythonLikeType.class)),
+                    "$getType", Type.getMethodDescriptor(Type.getType(PythonLikeType.class)),
                     true);
             methodVisitor.visitLdcInsn(operator.getRightDunderMethod());
             methodVisitor.visitMethodInsn(Opcodes.INVOKEINTERFACE, Type.getInternalName(PythonLikeObject.class),
-                    "__getAttributeOrNull", Type.getMethodDescriptor(Type.getType(PythonLikeObject.class),
+                    "$getAttributeOrNull", Type.getMethodDescriptor(Type.getType(PythonLikeObject.class),
                             Type.getType(String.class)),
                     true);
             methodVisitor.visitInsn(Opcodes.DUP);
@@ -482,11 +482,11 @@ public class DunderOperatorImplementor {
         // Stack is now TOS1, TOS
         methodVisitor.visitInsn(Opcodes.DUP);
         methodVisitor.visitMethodInsn(Opcodes.INVOKEINTERFACE, Type.getInternalName(PythonLikeObject.class),
-                "__getType", Type.getMethodDescriptor(Type.getType(PythonLikeType.class)),
+                "$getType", Type.getMethodDescriptor(Type.getType(PythonLikeType.class)),
                 true);
         methodVisitor.visitLdcInsn(operator.getRightDunderMethod());
         methodVisitor.visitMethodInsn(Opcodes.INVOKEINTERFACE, Type.getInternalName(PythonLikeObject.class),
-                "__getAttributeOrNull", Type.getMethodDescriptor(Type.getType(PythonLikeObject.class),
+                "$getAttributeOrNull", Type.getMethodDescriptor(Type.getType(PythonLikeObject.class),
                         Type.getType(String.class)),
                 true);
         methodVisitor.visitInsn(Opcodes.DUP);
@@ -548,7 +548,7 @@ public class DunderOperatorImplementor {
      *
      * <code>
      * <pre>
-     *    BiFunction[List, Map, Result] operand_method = TOS2.__getType().__getAttributeOrError(operator.getDunderMethod());
+     *    BiFunction[List, Map, Result] operand_method = TOS2.$getType().$getAttributeOrError(operator.getDunderMethod());
      *    List args = new ArrayList(2);
      *    args.set(0) = TOS2
      *    args.set(1) = TOS1
@@ -568,11 +568,11 @@ public class DunderOperatorImplementor {
         // Stack is now TOS, TOS1, TOS2
         methodVisitor.visitInsn(Opcodes.DUP);
         methodVisitor.visitMethodInsn(Opcodes.INVOKEINTERFACE, Type.getInternalName(PythonLikeObject.class),
-                "__getType", Type.getMethodDescriptor(Type.getType(PythonLikeType.class)),
+                "$getType", Type.getMethodDescriptor(Type.getType(PythonLikeType.class)),
                 true);
         methodVisitor.visitLdcInsn(operator.getDunderMethod());
         methodVisitor.visitMethodInsn(Opcodes.INVOKEINTERFACE, Type.getInternalName(PythonLikeObject.class),
-                "__getAttributeOrError", Type.getMethodDescriptor(Type.getType(PythonLikeObject.class),
+                "$getAttributeOrError", Type.getMethodDescriptor(Type.getType(PythonLikeObject.class),
                         Type.getType(String.class)),
                 true);
         // Stack is now TOS, TOS1, TOS2, method
@@ -669,7 +669,7 @@ public class DunderOperatorImplementor {
         methodVisitor.visitInsn(Opcodes.DUP_X1);
 
         methodVisitor.visitMethodInsn(Opcodes.INVOKEINTERFACE, Type.getInternalName(PythonLikeObject.class),
-                "__getType", Type.getMethodDescriptor(Type.getType(PythonLikeType.class)),
+                "$getType", Type.getMethodDescriptor(Type.getType(PythonLikeType.class)),
                 true);
         methodVisitor.visitLdcInsn(operator.getDunderMethod());
         methodVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, Type.getInternalName(PythonLikeType.class),

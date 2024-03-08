@@ -56,7 +56,7 @@ public class GeneratedFunctionMethodReference implements PythonLikeFunction {
     }
 
     @Override
-    public PythonLikeType __getType() {
+    public PythonLikeType $getType() {
         return type;
     }
 }

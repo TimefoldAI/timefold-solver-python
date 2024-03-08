@@ -273,7 +273,7 @@ public class StringFormatter {
                     toConvert = ((PythonFloat) toConvert).asInteger();
                 }
                 if (!(toConvert instanceof PythonInteger)) {
-                    throw new TypeError("%d format: a real number is required, not " + toConvert.__getType().getTypeName());
+                    throw new TypeError("%d format: a real number is required, not " + toConvert.$getType().getTypeName());
                 }
                 result = ((PythonInteger) toConvert).value.toString(10);
                 break;
@@ -283,7 +283,7 @@ public class StringFormatter {
                     toConvert = ((PythonFloat) toConvert).asInteger();
                 }
                 if (!(toConvert instanceof PythonInteger)) {
-                    throw new TypeError("%o format: a real number is required, not " + toConvert.__getType().getTypeName());
+                    throw new TypeError("%o format: a real number is required, not " + toConvert.$getType().getTypeName());
                 }
                 result = ((PythonInteger) toConvert).value.toString(8);
                 if (useAlternateForm) {
@@ -296,7 +296,7 @@ public class StringFormatter {
                     toConvert = ((PythonFloat) toConvert).asInteger();
                 }
                 if (!(toConvert instanceof PythonInteger)) {
-                    throw new TypeError("%x format: a real number is required, not " + toConvert.__getType().getTypeName());
+                    throw new TypeError("%x format: a real number is required, not " + toConvert.$getType().getTypeName());
                 }
                 result = ((PythonInteger) toConvert).value.toString(16);
                 if (useAlternateForm) {
@@ -309,7 +309,7 @@ public class StringFormatter {
                     toConvert = ((PythonFloat) toConvert).asInteger();
                 }
                 if (!(toConvert instanceof PythonInteger)) {
-                    throw new TypeError("%X format: a real number is required, not " + toConvert.__getType().getTypeName());
+                    throw new TypeError("%X format: a real number is required, not " + toConvert.$getType().getTypeName());
                 }
                 result = ((PythonInteger) toConvert).value.toString(16).toUpperCase();
                 if (useAlternateForm) {
@@ -322,7 +322,7 @@ public class StringFormatter {
                     toConvert = ((PythonInteger) toConvert).asFloat();
                 }
                 if (!(toConvert instanceof PythonFloat)) {
-                    throw new TypeError("%e format: a real number is required, not " + toConvert.__getType().getTypeName());
+                    throw new TypeError("%e format: a real number is required, not " + toConvert.$getType().getTypeName());
                 }
                 BigDecimal value = BigDecimal.valueOf(((PythonFloat) toConvert).value);
                 result = getUppercaseEngineeringString(value, maybePrecision.map(precision -> precision + 1)
@@ -337,7 +337,7 @@ public class StringFormatter {
                     toConvert = ((PythonInteger) toConvert).asFloat();
                 }
                 if (!(toConvert instanceof PythonFloat)) {
-                    throw new TypeError("%E format: a real number is required, not " + toConvert.__getType().getTypeName());
+                    throw new TypeError("%E format: a real number is required, not " + toConvert.$getType().getTypeName());
                 }
                 BigDecimal value = BigDecimal.valueOf(((PythonFloat) toConvert).value);
                 result = getUppercaseEngineeringString(value, maybePrecision.map(precision -> precision + 1)
@@ -352,7 +352,7 @@ public class StringFormatter {
                     toConvert = ((PythonInteger) toConvert).asFloat();
                 }
                 if (!(toConvert instanceof PythonFloat)) {
-                    throw new TypeError("%f format: a real number is required, not " + toConvert.__getType().getTypeName());
+                    throw new TypeError("%f format: a real number is required, not " + toConvert.$getType().getTypeName());
                 }
                 BigDecimal value = BigDecimal.valueOf(((PythonFloat) toConvert).value);
                 BigDecimal valueWithPrecision = value.setScale(maybePrecision.orElse(6), RoundingMode.HALF_EVEN);
@@ -367,7 +367,7 @@ public class StringFormatter {
                     toConvert = ((PythonInteger) toConvert).asFloat();
                 }
                 if (!(toConvert instanceof PythonFloat)) {
-                    throw new TypeError("%g format: a real number is required, not " + toConvert.__getType().getTypeName());
+                    throw new TypeError("%g format: a real number is required, not " + toConvert.$getType().getTypeName());
                 }
                 BigDecimal value = BigDecimal.valueOf(((PythonFloat) toConvert).value);
                 BigDecimal valueWithPrecision;
@@ -390,7 +390,7 @@ public class StringFormatter {
                     toConvert = ((PythonInteger) toConvert).asFloat();
                 }
                 if (!(toConvert instanceof PythonFloat)) {
-                    throw new TypeError("%G format: a real number is required, not " + toConvert.__getType().getTypeName());
+                    throw new TypeError("%G format: a real number is required, not " + toConvert.$getType().getTypeName());
                 }
                 BigDecimal value = BigDecimal.valueOf(((PythonFloat) toConvert).value);
                 BigDecimal valueWithPrecision;

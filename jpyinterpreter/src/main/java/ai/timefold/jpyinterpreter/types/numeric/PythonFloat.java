@@ -54,8 +54,8 @@ public class PythonFloat extends AbstractPythonLikeObject implements PythonNumbe
                 } else if (value instanceof PythonFloat) {
                     return value;
                 } else {
-                    PythonLikeType valueType = value.__getType();
-                    PythonLikeFunction asFloatFunction = (PythonLikeFunction) (valueType.__getAttributeOrError("__float__"));
+                    PythonLikeType valueType = value.$getType();
+                    PythonLikeFunction asFloatFunction = (PythonLikeFunction) (valueType.$getAttributeOrError("__float__"));
                     return asFloatFunction.$call(List.of(value), Map.of(), null);
                 }
             } else {

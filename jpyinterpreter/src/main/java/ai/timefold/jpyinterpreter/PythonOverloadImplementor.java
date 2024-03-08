@@ -74,7 +74,7 @@ public class PythonOverloadImplementor {
                     createDispatchForMethod(pythonLikeType, methodName, pythonLikeType.getMethodType(methodName).orElseThrow(),
                             pythonLikeType.getMethodKind(methodName)
                                     .orElse(PythonClassTranslator.PythonMethodKind.VIRTUAL_METHOD));
-            pythonLikeType.__setAttribute(methodName, overloadDispatch);
+            pythonLikeType.$setAttribute(methodName, overloadDispatch);
         }
 
         if (pythonLikeType.getConstructorType().isPresent()) {
@@ -82,7 +82,7 @@ public class PythonOverloadImplementor {
                     createDispatchForMethod(pythonLikeType, "__init__", pythonLikeType.getConstructorType().orElseThrow(),
                             PythonClassTranslator.PythonMethodKind.VIRTUAL_METHOD);
             pythonLikeType.setConstructor(overloadDispatch);
-            pythonLikeType.__setAttribute("__init__", overloadDispatch);
+            pythonLikeType.$setAttribute("__init__", overloadDispatch);
         }
     }
 
@@ -142,7 +142,7 @@ public class PythonOverloadImplementor {
     }
 
     private static void createGetTypeFunction(PythonClassTranslator.PythonMethodKind kind, ClassWriter classWriter) {
-        MethodVisitor methodVisitor = classWriter.visitMethod(Modifier.PUBLIC, "__getType",
+        MethodVisitor methodVisitor = classWriter.visitMethod(Modifier.PUBLIC, "$getType",
                 Type.getMethodDescriptor(Type.getType(PythonLikeType.class)),
                 null,
                 null);
@@ -484,7 +484,7 @@ public class PythonOverloadImplementor {
     public static String getCallErrorInfo(List<PythonLikeObject> positionalArgs,
             Map<PythonString, PythonLikeObject> namedArgs) {
         return "Could not find an overload that accept " + positionalArgs.stream()
-                .map(arg -> arg.__getType().getTypeName()).collect(Collectors.joining(", ", "(", ") argument types. "));
+                .map(arg -> arg.$getType().getTypeName()).collect(Collectors.joining(", ", "(", ") argument types. "));
     }
 
     private static SortedMap<PythonLikeType, List<PythonFunctionSignature>>

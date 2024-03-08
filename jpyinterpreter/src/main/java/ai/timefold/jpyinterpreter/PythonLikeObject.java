@@ -27,7 +27,7 @@ public interface PythonLikeObject {
      * @return The attribute of the object that corresponds with attributeName
      * @throws AttributeError if the attribute does not exist
      */
-    PythonLikeObject __getAttributeOrNull(String attributeName);
+    PythonLikeObject $getAttributeOrNull(String attributeName);
 
     /**
      * Gets an attribute by name.
@@ -36,8 +36,8 @@ public interface PythonLikeObject {
      * @return The attribute of the object that corresponds with attributeName
      * @throws AttributeError if the attribute does not exist
      */
-    default PythonLikeObject __getAttributeOrError(String attributeName) {
-        PythonLikeObject out = this.__getAttributeOrNull(attributeName);
+    default PythonLikeObject $getAttributeOrError(String attributeName) {
+        PythonLikeObject out = this.$getAttributeOrNull(attributeName);
         if (out == null) {
             throw new AttributeError("object '" + this + "' does not have attribute '" + attributeName + "'");
         }
@@ -50,52 +50,52 @@ public interface PythonLikeObject {
      * @param attributeName Name of the attribute to set
      * @param value Value to set the attribute to
      */
-    void __setAttribute(String attributeName, PythonLikeObject value);
+    void $setAttribute(String attributeName, PythonLikeObject value);
 
     /**
      * Delete an attribute by name.
      *
      * @param attributeName Name of the attribute to delete
      */
-    void __deleteAttribute(String attributeName);
+    void $deleteAttribute(String attributeName);
 
     /**
      * Returns the type describing the object
      *
      * @return the type describing the object
      */
-    PythonLikeType __getType();
+    PythonLikeType $getType();
 
     /**
-     * Return a generic version of {@link PythonLikeObject#__getType()}. This is used in bytecode
+     * Return a generic version of {@link PythonLikeObject#$getType()}. This is used in bytecode
      * generation and not at runtime. For example, for a list of integers, this return
      * list[int], while getType returns list. Both methods are needed so type([1,2,3]) is type(['a', 'b', 'c'])
      * return True.
      *
      * @return the generic version of this object's type. Must not be used in identity checks.
      */
-    default PythonLikeType __getGenericType() {
-        return __getType();
+    default PythonLikeType $getGenericType() {
+        return $getType();
     }
 
     default PythonLikeObject $method$__getattribute__(PythonString pythonName) {
         String name = pythonName.value;
-        PythonLikeObject objectResult = __getAttributeOrNull(name);
+        PythonLikeObject objectResult = $getAttributeOrNull(name);
         if (objectResult != null) {
             return objectResult;
         }
 
-        PythonLikeType type = __getType();
-        PythonLikeObject typeResult = type.__getAttributeOrNull(name);
+        PythonLikeType type = $getType();
+        PythonLikeObject typeResult = type.$getAttributeOrNull(name);
         if (typeResult != null) {
-            PythonLikeObject maybeDescriptor = typeResult.__getAttributeOrNull(PythonTernaryOperator.GET.dunderMethod);
+            PythonLikeObject maybeDescriptor = typeResult.$getAttributeOrNull(PythonTernaryOperator.GET.dunderMethod);
             if (maybeDescriptor == null) {
-                maybeDescriptor = typeResult.__getType().__getAttributeOrNull(PythonTernaryOperator.GET.dunderMethod);
+                maybeDescriptor = typeResult.$getType().$getAttributeOrNull(PythonTernaryOperator.GET.dunderMethod);
             }
 
             if (maybeDescriptor != null) {
                 if (!(maybeDescriptor instanceof PythonLikeFunction)) {
-                    throw new UnsupportedOperationException("'" + maybeDescriptor.__getType() + "' is not callable");
+                    throw new UnsupportedOperationException("'" + maybeDescriptor.$getType() + "' is not callable");
                 }
                 return TernaryDunderBuiltin.GET_DESCRIPTOR.invoke(typeResult, this, type);
             }
@@ -107,13 +107,13 @@ public interface PythonLikeObject {
 
     default PythonLikeObject $method$__setattr__(PythonString pythonName, PythonLikeObject value) {
         String name = pythonName.value;
-        __setAttribute(name, value);
+        $setAttribute(name, value);
         return PythonNone.INSTANCE;
     }
 
     default PythonLikeObject $method$__delattr__(PythonString pythonName) {
         String name = pythonName.value;
-        __deleteAttribute(name);
+        $deleteAttribute(name);
         return PythonNone.INSTANCE;
     }
 
@@ -141,7 +141,7 @@ public interface PythonLikeObject {
         } else {
             position = String.valueOf(System.identityHashCode(this));
         }
-        return PythonString.valueOf("<" + __getType().getTypeName() + " object at " + position + ">");
+        return PythonString.valueOf("<" + $getType().getTypeName() + " object at " + position + ">");
     }
 
     default PythonLikeObject $method$__format__() {
@@ -153,6 +153,6 @@ public interface PythonLikeObject {
     }
 
     default PythonLikeObject $method$__hash__() {
-        throw new TypeError("unhashable type: '" + __getType().getTypeName() + "'");
+        throw new TypeError("unhashable type: '" + $getType().getTypeName() + "'");
     }
 }

@@ -49,9 +49,9 @@ public class PythonDate<T extends PythonDate<?>> extends AbstractPythonLikeObjec
             PythonLikeComparable.setup(DATE_TYPE);
             registerMethods();
 
-            DATE_TYPE.__setAttribute("min", new PythonDate(LocalDate.of(1, 1, 1)));
-            DATE_TYPE.__setAttribute("max", new PythonDate(LocalDate.of(9999, 12, 31)));
-            DATE_TYPE.__setAttribute("resolution", new PythonTimeDelta(Duration.ofDays(1)));
+            DATE_TYPE.$setAttribute("min", new PythonDate(LocalDate.of(1, 1, 1)));
+            DATE_TYPE.$setAttribute("max", new PythonDate(LocalDate.of(9999, 12, 31)));
+            DATE_TYPE.$setAttribute("resolution", new PythonTimeDelta(Duration.ofDays(1)));
 
             PythonOverloadImplementor.createDispatchesFor(DATE_TYPE);
         } catch (NoSuchMethodException e) {
@@ -183,7 +183,7 @@ public class PythonDate<T extends PythonDate<?>> extends AbstractPythonLikeObjec
     }
 
     @Override
-    public PythonLikeObject __getAttributeOrNull(String name) {
+    public PythonLikeObject $getAttributeOrNull(String name) {
         switch (name) {
             case "year":
                 return year;
@@ -192,7 +192,7 @@ public class PythonDate<T extends PythonDate<?>> extends AbstractPythonLikeObjec
             case "day":
                 return day;
             default:
-                return super.__getAttributeOrNull(name);
+                return super.$getAttributeOrNull(name);
         }
     }
 

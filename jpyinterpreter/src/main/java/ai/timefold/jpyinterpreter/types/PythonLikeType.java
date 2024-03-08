@@ -124,7 +124,7 @@ public class PythonLikeType implements PythonLikeObject,
     }
 
     public boolean isInstance(PythonLikeObject object) {
-        PythonLikeType objectType = object.__getType();
+        PythonLikeType objectType = object.$getType();
         return objectType.isSubclassOf(this);
     }
 
@@ -162,7 +162,7 @@ public class PythonLikeType implements PythonLikeObject,
     public static PythonLikeType registerTypeType() {
         BuiltinTypes.TYPE_TYPE.setConstructor((positional, keywords, callerInstance) -> {
             if (positional.size() == 1) {
-                return positional.get(0).__getType();
+                return positional.get(0).$getType();
             } else if (positional.size() == 3) {
                 PythonString name = (PythonString) positional.get(0);
                 PythonLikeTuple baseClasses = (PythonLikeTuple) positional.get(1);
@@ -178,7 +178,7 @@ public class PythonLikeType implements PythonLikeObject,
                 for (Map.Entry<PythonLikeObject, PythonLikeObject> entry : dict.entrySet()) {
                     PythonString attributeName = (PythonString) entry.getKey();
 
-                    out.__setAttribute(attributeName.value, entry.getValue());
+                    out.$setAttribute(attributeName.value, entry.getValue());
                 }
 
                 return out;
@@ -193,16 +193,16 @@ public class PythonLikeType implements PythonLikeObject,
     @Override
     public PythonLikeObject $method$__getattribute__(PythonString pythonName) {
         String name = pythonName.value;
-        PythonLikeObject typeResult = __getAttributeOrNull(name);
+        PythonLikeObject typeResult = this.$getAttributeOrNull(name);
         if (typeResult != null) {
-            PythonLikeObject maybeDescriptor = typeResult.__getAttributeOrNull(PythonTernaryOperator.GET.dunderMethod);
+            PythonLikeObject maybeDescriptor = typeResult.$getAttributeOrNull(PythonTernaryOperator.GET.dunderMethod);
             if (maybeDescriptor == null) {
-                maybeDescriptor = typeResult.__getType().__getAttributeOrNull(PythonTernaryOperator.GET.dunderMethod);
+                maybeDescriptor = typeResult.$getType().$getAttributeOrNull(PythonTernaryOperator.GET.dunderMethod);
             }
 
             if (maybeDescriptor != null) {
                 if (!(maybeDescriptor instanceof PythonLikeFunction)) {
-                    throw new UnsupportedOperationException("'" + maybeDescriptor.__getType() + "' is not callable");
+                    throw new UnsupportedOperationException("'" + maybeDescriptor.$getType() + "' is not callable");
                 }
                 return TernaryDunderBuiltin.GET_DESCRIPTOR.invoke(typeResult, PythonNone.INSTANCE, this);
             }
@@ -312,9 +312,9 @@ public class PythonLikeType implements PythonLikeObject,
     }
 
     public Optional<PythonClassTranslator.PythonMethodKind> getMethodKind(String methodName) {
-        PythonLikeObject maybeMethod = __getAttributeOrNull(methodName);
+        PythonLikeObject maybeMethod = this.$getAttributeOrNull(methodName);
         if (maybeMethod != null) {
-            PythonLikeType methodKind = maybeMethod.__getType();
+            PythonLikeType methodKind = maybeMethod.$getType();
             if (methodKind == BuiltinTypes.FUNCTION_TYPE) {
                 return Optional.of(PythonClassTranslator.PythonMethodKind.VIRTUAL_METHOD);
             }
@@ -450,17 +450,17 @@ public class PythonLikeType implements PythonLikeObject,
     }
 
     public PythonLikeObject loadMethod(String methodName) {
-        PythonLikeObject out = __getAttributeOrNull(methodName);
+        PythonLikeObject out = this.$getAttributeOrNull(methodName);
         if (out == null) {
             return null;
         }
 
-        if (out.__getType() == BuiltinTypes.FUNCTION_TYPE) {
+        if (out.$getType() == BuiltinTypes.FUNCTION_TYPE) {
             return out;
         }
 
         return null;
-        //if (out.__getType() == PythonLikeFunction.getClassFunctionType()) {
+        //if (out.$getType() == PythonLikeFunction.getClassFunctionType()) {
         //    return FunctionBuiltinOperations.bindFunctionToType((PythonLikeFunction) out, null, this);
         //} else {
         //    return null;
@@ -484,11 +484,11 @@ public class PythonLikeType implements PythonLikeObject,
         return null;
     }
 
-    public PythonLikeObject __getAttributeOrNull(String attributeName) {
+    public PythonLikeObject $getAttributeOrNull(String attributeName) {
         PythonLikeObject out = __dir__.get(attributeName);
         if (out == null) {
             for (PythonLikeType type : PARENT_TYPES) {
-                out = type.__getAttributeOrNull(attributeName);
+                out = type.$getAttributeOrNull(attributeName);
                 if (out != null) {
                     return out;
                 }
@@ -500,23 +500,23 @@ public class PythonLikeType implements PythonLikeObject,
     }
 
     @Override
-    public void __setAttribute(String attributeName, PythonLikeObject value) {
+    public void $setAttribute(String attributeName, PythonLikeObject value) {
         __dir__.put(attributeName, value);
     }
 
     @Override
-    public void __deleteAttribute(String attributeName) {
+    public void $deleteAttribute(String attributeName) {
         // TODO: Descriptors: https://docs.python.org/3/howto/descriptor.html
         __dir__.remove(attributeName);
     }
 
     @Override
-    public PythonLikeType __getType() {
+    public PythonLikeType $getType() {
         return BuiltinTypes.TYPE_TYPE;
     }
 
     @Override
-    public PythonLikeType __getGenericType() {
+    public PythonLikeType $getGenericType() {
         return new PythonLikeGenericType(this);
     }
 

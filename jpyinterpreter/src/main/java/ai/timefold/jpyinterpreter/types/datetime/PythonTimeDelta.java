@@ -38,10 +38,10 @@ public class PythonTimeDelta extends AbstractPythonLikeObject implements PythonL
             PythonLikeComparable.setup(TIME_DELTA_TYPE);
             registerMethods();
 
-            TIME_DELTA_TYPE.__setAttribute("min", new PythonTimeDelta(Duration.ofDays(-999999999)));
-            TIME_DELTA_TYPE.__setAttribute("max", new PythonTimeDelta(Duration.ofDays(1000000000)
+            TIME_DELTA_TYPE.$setAttribute("min", new PythonTimeDelta(Duration.ofDays(-999999999)));
+            TIME_DELTA_TYPE.$setAttribute("max", new PythonTimeDelta(Duration.ofDays(1000000000)
                     .minusNanos(1000)));
-            TIME_DELTA_TYPE.__setAttribute("resolution", new PythonTimeDelta(Duration.ofNanos(1000)));
+            TIME_DELTA_TYPE.$setAttribute("resolution", new PythonTimeDelta(Duration.ofNanos(1000)));
 
             PythonOverloadImplementor.createDispatchesFor(TIME_DELTA_TYPE);
         } catch (NoSuchMethodException e) {
@@ -133,7 +133,7 @@ public class PythonTimeDelta extends AbstractPythonLikeObject implements PythonL
     }
 
     @Override
-    public PythonLikeObject __getAttributeOrNull(String name) {
+    public PythonLikeObject $getAttributeOrNull(String name) {
         switch (name) {
             case "days":
                 return days;
@@ -142,7 +142,7 @@ public class PythonTimeDelta extends AbstractPythonLikeObject implements PythonL
             case "microseconds":
                 return microseconds;
             default:
-                return super.__getAttributeOrNull(name);
+                return super.$getAttributeOrNull(name);
         }
     }
 

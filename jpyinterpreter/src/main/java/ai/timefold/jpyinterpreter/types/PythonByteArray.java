@@ -519,7 +519,7 @@ public class PythonByteArray extends AbstractPythonLikeObject implements PythonB
                 PythonLikeObject next = iterator.nextPythonItem();
                 byte[] byteWrapper = new byte[1];
                 if (!(next instanceof PythonInteger)) {
-                    throw new TypeError("'" + next.__getType().getTypeName() + "' object cannot be interpreted as an integer");
+                    throw new TypeError("'" + next.$getType().getTypeName() + "' object cannot be interpreted as an integer");
                 }
                 byteWrapper[0] = ((PythonInteger) next).asByte();
                 out.writeBytes(byteWrapper);
@@ -1038,7 +1038,7 @@ public class PythonByteArray extends AbstractPythonLikeObject implements PythonB
             PythonLikeObject item = iterator.nextPythonItem();
 
             if (!(item instanceof PythonBytesLikeObject)) {
-                throw new TypeError("type " + item.__getType() + " is not a bytes-like type");
+                throw new TypeError("type " + item.$getType() + " is not a bytes-like type");
             }
 
             outputStream.writeBytes(((PythonBytesLikeObject) item).asByteArray());

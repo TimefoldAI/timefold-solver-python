@@ -43,9 +43,9 @@ public class PythonTime extends AbstractPythonLikeObject {
         try {
             registerMethods();
 
-            TIME_TYPE.__setAttribute("min", new PythonTime(LocalTime.MAX));
-            TIME_TYPE.__setAttribute("max", new PythonTime(LocalTime.MIN));
-            TIME_TYPE.__setAttribute("resolution", new PythonTimeDelta(Duration.ofNanos(1000L)));
+            TIME_TYPE.$setAttribute("min", new PythonTime(LocalTime.MAX));
+            TIME_TYPE.$setAttribute("max", new PythonTime(LocalTime.MIN));
+            TIME_TYPE.$setAttribute("resolution", new PythonTimeDelta(Duration.ofNanos(1000L)));
 
             PythonOverloadImplementor.createDispatchesFor(TIME_TYPE);
         } catch (NoSuchMethodException e) {
@@ -133,7 +133,7 @@ public class PythonTime extends AbstractPythonLikeObject {
     }
 
     @Override
-    public PythonLikeObject __getAttributeOrNull(String name) {
+    public PythonLikeObject $getAttributeOrNull(String name) {
         switch (name) {
             case "hour":
                 return hour;
@@ -148,7 +148,7 @@ public class PythonTime extends AbstractPythonLikeObject {
             case "fold":
                 return fold;
             default:
-                return super.__getAttributeOrNull(name);
+                return super.$getAttributeOrNull(name);
         }
     }
 

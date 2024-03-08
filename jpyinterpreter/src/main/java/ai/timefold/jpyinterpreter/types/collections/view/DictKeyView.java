@@ -71,7 +71,7 @@ public class DictKeyView extends AbstractPythonLikeObject {
         super(BuiltinTypes.DICT_KEY_VIEW_TYPE);
         this.mapping = mapping;
         this.keySet = mapping.delegate.keySet();
-        __setAttribute("mapping", mapping);
+        $setAttribute("mapping", mapping);
     }
 
     public PythonInteger getKeysSize() {

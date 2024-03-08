@@ -557,7 +557,7 @@ public class GlobalBuiltins {
             throw new ValueError("delattr expects 2 argument, got " + positionalArgs.size());
         }
 
-        object.__deleteAttribute(name.value);
+        object.$deleteAttribute(name.value);
 
         return PythonNone.INSTANCE;
     }
@@ -574,20 +574,20 @@ public class GlobalBuiltins {
             throw new TypeError("divmod() expects 2 positional arguments");
         }
 
-        PythonLikeObject maybeDivmod = left.__getType().__getAttributeOrNull("__divmod__");
+        PythonLikeObject maybeDivmod = left.$getType().$getAttributeOrNull("__divmod__");
         if (maybeDivmod != null) {
             PythonLikeObject result = ((PythonLikeFunction) maybeDivmod).$call(List.of(left, right), Map.of(), null);
             if (result != NotImplemented.INSTANCE) {
                 return result;
             }
-            maybeDivmod = right.__getType().__getAttributeOrNull("__rdivmod__");
+            maybeDivmod = right.$getType().$getAttributeOrNull("__rdivmod__");
             if (maybeDivmod != null) {
                 result = ((PythonLikeFunction) maybeDivmod).$call(List.of(right, left), Map.of(), null);
                 if (result != NotImplemented.INSTANCE) {
                     return result;
                 } else {
-                    PythonLikeObject maybeDiv = left.__getType().__getAttributeOrNull("__floordiv__");
-                    PythonLikeObject maybeMod = left.__getType().__getAttributeOrNull("__mod__");
+                    PythonLikeObject maybeDiv = left.$getType().$getAttributeOrNull("__floordiv__");
+                    PythonLikeObject maybeMod = left.$getType().$getAttributeOrNull("__mod__");
 
                     if (maybeDiv != null && maybeMod != null) {
                         PythonLikeObject divResult =
@@ -597,8 +597,8 @@ public class GlobalBuiltins {
                         if (divResult != NotImplemented.INSTANCE && modResult != NotImplemented.INSTANCE) {
                             return PythonLikeTuple.fromList(List.of(divResult, modResult));
                         } else {
-                            maybeDiv = right.__getType().__getAttributeOrNull("__rfloordiv__");
-                            maybeMod = right.__getType().__getAttributeOrNull("__rmod__");
+                            maybeDiv = right.$getType().$getAttributeOrNull("__rfloordiv__");
+                            maybeMod = right.$getType().$getAttributeOrNull("__rmod__");
 
                             if (maybeDiv != null && maybeMod != null) {
                                 divResult = ((PythonLikeFunction) maybeDiv).$call(List.of(right, left), Map.of(), null);
@@ -607,13 +607,13 @@ public class GlobalBuiltins {
                                     return PythonLikeTuple.fromList(List.of(divResult, modResult));
                                 } else {
                                     throw new TypeError(
-                                            "Unsupported operands for divmod: " + left.__getType() + ", " + right.__getType());
+                                            "Unsupported operands for divmod: " + left.$getType() + ", " + right.$getType());
                                 }
                             }
                         }
                     } else {
-                        maybeDiv = right.__getType().__getAttributeOrNull("__rfloordiv__");
-                        maybeMod = right.__getType().__getAttributeOrNull("__rmod__");
+                        maybeDiv = right.$getType().$getAttributeOrNull("__rfloordiv__");
+                        maybeMod = right.$getType().$getAttributeOrNull("__rmod__");
 
                         if (maybeDiv != null && maybeMod != null) {
                             PythonLikeObject divResult =
@@ -624,21 +624,21 @@ public class GlobalBuiltins {
                                 return PythonLikeTuple.fromList(List.of(divResult, modResult));
                             } else {
                                 throw new TypeError(
-                                        "Unsupported operands for divmod: " + left.__getType() + ", " + right.__getType());
+                                        "Unsupported operands for divmod: " + left.$getType() + ", " + right.$getType());
                             }
                         }
                     }
                 }
             }
         } else {
-            maybeDivmod = right.__getType().__getAttributeOrNull("__rdivmod__");
+            maybeDivmod = right.$getType().$getAttributeOrNull("__rdivmod__");
             if (maybeDivmod != null) {
                 PythonLikeObject result = ((PythonLikeFunction) maybeDivmod).$call(List.of(right, left), Map.of(), null);
                 if (result != NotImplemented.INSTANCE) {
                     return result;
                 } else {
-                    PythonLikeObject maybeDiv = left.__getType().__getAttributeOrNull("__floordiv__");
-                    PythonLikeObject maybeMod = left.__getType().__getAttributeOrNull("__mod__");
+                    PythonLikeObject maybeDiv = left.$getType().$getAttributeOrNull("__floordiv__");
+                    PythonLikeObject maybeMod = left.$getType().$getAttributeOrNull("__mod__");
 
                     if (maybeDiv != null && maybeMod != null) {
                         PythonLikeObject divResult =
@@ -648,8 +648,8 @@ public class GlobalBuiltins {
                         if (divResult != NotImplemented.INSTANCE && modResult != NotImplemented.INSTANCE) {
                             return PythonLikeTuple.fromList(List.of(divResult, modResult));
                         } else {
-                            maybeDiv = right.__getType().__getAttributeOrNull("__rfloordiv__");
-                            maybeMod = right.__getType().__getAttributeOrNull("__rmod__");
+                            maybeDiv = right.$getType().$getAttributeOrNull("__rfloordiv__");
+                            maybeMod = right.$getType().$getAttributeOrNull("__rmod__");
 
                             if (maybeDiv != null && maybeMod != null) {
                                 divResult = ((PythonLikeFunction) maybeDiv).$call(List.of(right, left), Map.of(), null);
@@ -658,13 +658,13 @@ public class GlobalBuiltins {
                                     return PythonLikeTuple.fromList(List.of(divResult, modResult));
                                 } else {
                                     throw new TypeError(
-                                            "Unsupported operands for divmod: " + left.__getType() + ", " + right.__getType());
+                                            "Unsupported operands for divmod: " + left.$getType() + ", " + right.$getType());
                                 }
                             }
                         }
                     } else {
-                        maybeDiv = right.__getType().__getAttributeOrNull("__rfloordiv__");
-                        maybeMod = right.__getType().__getAttributeOrNull("__rmod__");
+                        maybeDiv = right.$getType().$getAttributeOrNull("__rfloordiv__");
+                        maybeMod = right.$getType().$getAttributeOrNull("__rmod__");
 
                         if (maybeDiv != null && maybeMod != null) {
                             PythonLikeObject divResult =
@@ -675,22 +675,22 @@ public class GlobalBuiltins {
                                 return PythonLikeTuple.fromList(List.of(divResult, modResult));
                             } else {
                                 throw new TypeError(
-                                        "Unsupported operands for divmod: " + left.__getType() + ", " + right.__getType());
+                                        "Unsupported operands for divmod: " + left.$getType() + ", " + right.$getType());
                             }
                         }
                     }
                 }
             } else {
-                PythonLikeObject maybeDiv = left.__getType().__getAttributeOrNull("__floordiv__");
-                PythonLikeObject maybeMod = left.__getType().__getAttributeOrNull("__mod__");
+                PythonLikeObject maybeDiv = left.$getType().$getAttributeOrNull("__floordiv__");
+                PythonLikeObject maybeMod = left.$getType().$getAttributeOrNull("__mod__");
                 if (maybeDiv != null && maybeMod != null) {
                     PythonLikeObject divResult = ((PythonLikeFunction) maybeDiv).$call(List.of(left, right), Map.of(), null);
                     PythonLikeObject modResult = ((PythonLikeFunction) maybeMod).$call(List.of(left, right), Map.of(), null);
                     if (divResult != NotImplemented.INSTANCE && modResult != NotImplemented.INSTANCE) {
                         return PythonLikeTuple.fromList(List.of(divResult, modResult));
                     } else {
-                        maybeDiv = right.__getType().__getAttributeOrNull("__rfloordiv__");
-                        maybeMod = right.__getType().__getAttributeOrNull("__rmod__");
+                        maybeDiv = right.$getType().$getAttributeOrNull("__rfloordiv__");
+                        maybeMod = right.$getType().$getAttributeOrNull("__rmod__");
 
                         if (maybeDiv != null && maybeMod != null) {
                             divResult = ((PythonLikeFunction) maybeDiv).$call(List.of(right, left), Map.of(), null);
@@ -699,13 +699,13 @@ public class GlobalBuiltins {
                                 return PythonLikeTuple.fromList(List.of(divResult, modResult));
                             } else {
                                 throw new TypeError(
-                                        "Unsupported operands for divmod: " + left.__getType() + ", " + right.__getType());
+                                        "Unsupported operands for divmod: " + left.$getType() + ", " + right.$getType());
                             }
                         }
                     }
                 } else {
-                    maybeDiv = right.__getType().__getAttributeOrNull("__rfloordiv__");
-                    maybeMod = right.__getType().__getAttributeOrNull("__rmod__");
+                    maybeDiv = right.$getType().$getAttributeOrNull("__rfloordiv__");
+                    maybeMod = right.$getType().$getAttributeOrNull("__rmod__");
 
                     if (maybeDiv != null && maybeMod != null) {
                         PythonLikeObject divResult =
@@ -716,7 +716,7 @@ public class GlobalBuiltins {
                             return PythonLikeTuple.fromList(List.of(divResult, modResult));
                         } else {
                             throw new TypeError(
-                                    "Unsupported operands for divmod: " + left.__getType() + ", " + right.__getType());
+                                    "Unsupported operands for divmod: " + left.$getType() + ", " + right.$getType());
                         }
                     }
                 }
@@ -895,7 +895,7 @@ public class GlobalBuiltins {
             throw new ValueError("getattr expects 2 or 3 arguments, got " + positionalArgs.size());
         }
 
-        PythonLikeFunction getAttribute = (PythonLikeFunction) object.__getType().__getAttributeOrError("__getattribute__");
+        PythonLikeFunction getAttribute = (PythonLikeFunction) object.$getType().$getAttributeOrError("__getattribute__");
 
         try {
             return getAttribute.$call(List.of(object, name), Map.of(), null);
@@ -1048,20 +1048,20 @@ public class GlobalBuiltins {
 
         if (positionalArgs.size() == 2) {
             if (!(positionalArgs.get(0) instanceof PythonLikeType)) {
-                throw new TypeError("issubclass argument 0 must be a class, not " + positionalArgs.get(0).__getType());
+                throw new TypeError("issubclass argument 0 must be a class, not " + positionalArgs.get(0).$getType());
             }
             type = (PythonLikeType) positionalArgs.get(0);
             classInfo = positionalArgs.get(1);
         } else if (positionalArgs.size() == 1 && keywordArgs.containsKey(PythonString.valueOf("classinfo"))) {
             if (!(positionalArgs.get(0) instanceof PythonLikeType)) {
-                throw new TypeError("issubclass argument 0 must be a class, not " + positionalArgs.get(0).__getType());
+                throw new TypeError("issubclass argument 0 must be a class, not " + positionalArgs.get(0).$getType());
             }
             type = (PythonLikeType) positionalArgs.get(0);
             classInfo = keywordArgs.get(PythonString.valueOf("classinfo"));
         } else if (positionalArgs.size() == 0 && keywordArgs.containsKey(PythonString.valueOf("class"))
                 && keywordArgs.containsKey(PythonString.valueOf("classinfo"))) {
             if (!(keywordArgs.get(PythonString.valueOf("class")) instanceof PythonLikeType)) {
-                throw new TypeError("issubclass argument 0 must be a class, not " + positionalArgs.get(0).__getType());
+                throw new TypeError("issubclass argument 0 must be a class, not " + positionalArgs.get(0).$getType());
             }
             type = (PythonLikeType) keywordArgs.get(PythonString.valueOf("class"));
             classInfo = keywordArgs.get(PythonString.valueOf("classinfo"));
@@ -1154,8 +1154,8 @@ public class GlobalBuiltins {
             }
             return defaultValue;
         } else if (positionalArgs.size() == 1) {
-            Iterator<Comparable> iterator = (Iterator<Comparable>) ((PythonLikeFunction) (positionalArgs.get(0).__getType()
-                    .__getAttributeOrError("__iter__"))).$call(List.of(positionalArgs.get(0)),
+            Iterator<Comparable> iterator = (Iterator<Comparable>) ((PythonLikeFunction) (positionalArgs.get(0).$getType()
+                    .$getAttributeOrError("__iter__"))).$call(List.of(positionalArgs.get(0)),
                             Map.of(), null);
             Comparable min = null;
             for (Iterator<Comparable> it = iterator; it.hasNext();) {
@@ -1198,8 +1198,8 @@ public class GlobalBuiltins {
             }
             return defaultValue;
         } else if (positionalArgs.size() == 1) {
-            Iterator<Comparable> iterator = (Iterator<Comparable>) ((PythonLikeFunction) (positionalArgs.get(0).__getType()
-                    .__getAttributeOrError("__iter__"))).$call(List.of(positionalArgs.get(0)),
+            Iterator<Comparable> iterator = (Iterator<Comparable>) ((PythonLikeFunction) (positionalArgs.get(0).$getType()
+                    .$getAttributeOrError("__iter__"))).$call(List.of(positionalArgs.get(0)),
                             Map.of(), null);
             Comparable max = null;
             for (Iterator<Comparable> it = iterator; it.hasNext();) {
@@ -1371,13 +1371,13 @@ public class GlobalBuiltins {
         }
 
         sequence = positionalArgs.get(0);
-        PythonLikeType sequenceType = sequence.__getType();
-        if (sequenceType.__getAttributeOrNull(PythonUnaryOperator.REVERSED.getDunderMethod()) != null) {
+        PythonLikeType sequenceType = sequence.$getType();
+        if (sequenceType.$getAttributeOrNull(PythonUnaryOperator.REVERSED.getDunderMethod()) != null) {
             return UnaryDunderBuiltin.REVERSED.invoke(sequence);
         }
 
-        if (sequenceType.__getAttributeOrNull(PythonUnaryOperator.LENGTH.getDunderMethod()) != null &&
-                sequenceType.__getAttributeOrNull(PythonBinaryOperator.GET_ITEM.getDunderMethod()) != null) {
+        if (sequenceType.$getAttributeOrNull(PythonUnaryOperator.LENGTH.getDunderMethod()) != null &&
+                sequenceType.$getAttributeOrNull(PythonBinaryOperator.GET_ITEM.getDunderMethod()) != null) {
             PythonInteger length = (PythonInteger) UnaryDunderBuiltin.LENGTH.invoke(sequence);
             Iterator<PythonLikeObject> reversedIterator = new Iterator<>() {
                 PythonInteger current = length.subtract(PythonInteger.ONE);
@@ -1408,9 +1408,9 @@ public class GlobalBuiltins {
         }
 
         PythonLikeObject number = positionalArgs.get(0);
-        PythonLikeType numberType = number.__getType();
-        if (numberType.__getAttributeOrNull("__round__") != null) {
-            return ((PythonLikeFunction) numberType.__getAttributeOrNull("__round__")).$call(positionalArgs, keywordArgs, null);
+        PythonLikeType numberType = number.$getType();
+        if (numberType.$getAttributeOrNull("__round__") != null) {
+            return ((PythonLikeFunction) numberType.$getAttributeOrNull("__round__")).$call(positionalArgs, keywordArgs, null);
         }
 
         throw new ValueError(numberType + " does not has a __round__ method");
@@ -1566,7 +1566,7 @@ public class GlobalBuiltins {
             throw new ValueError("0-argument version of vars is not supported when executed in Java bytecode");
         }
 
-        return positionalArgs.get(0).__getAttributeOrError("__dict__");
+        return positionalArgs.get(0).$getAttributeOrError("__dict__");
     }
 
     public static PythonIterator zip(List<PythonLikeObject> positionalArgs,

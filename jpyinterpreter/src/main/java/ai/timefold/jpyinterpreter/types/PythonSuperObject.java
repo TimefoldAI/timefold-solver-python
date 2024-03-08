@@ -34,7 +34,7 @@ public class PythonSuperObject extends AbstractPythonLikeObject {
             if (instance instanceof PythonLikeType) {
                 mro = ((PythonLikeType) instance).MRO;
             } else {
-                mro = instance.__getType().MRO;
+                mro = instance.$getType().MRO;
             }
         } else {
             mro = previousType.MRO;
@@ -44,7 +44,7 @@ public class PythonSuperObject extends AbstractPythonLikeObject {
         for (int currentIndex = mro.indexOf(previousType) + 1; currentIndex < mro.size(); currentIndex++) {
             PythonLikeType candidate = mro.get(currentIndex);
 
-            PythonLikeObject typeResult = candidate.__getAttributeOrNull(name);
+            PythonLikeObject typeResult = candidate.$getAttributeOrNull(name);
             if (typeResult != null) {
 
                 if (typeResult instanceof PythonLikeFunction && !(typeResult instanceof PythonLikeType)) {
@@ -54,20 +54,20 @@ public class PythonSuperObject extends AbstractPythonLikeObject {
                         typeResult = new GeneratedFunctionMethodReference(methodInstance,
                                 methodInstance.getClass().getDeclaredMethods()[0],
                                 Map.of(),
-                                typeResult.__getType());
+                                typeResult.$getType());
                     } catch (ClassNotFoundException | NoSuchFieldException | IllegalAccessException e) {
                         // ignore
                     }
                 }
 
-                PythonLikeObject maybeDescriptor = typeResult.__getAttributeOrNull(PythonTernaryOperator.GET.dunderMethod);
+                PythonLikeObject maybeDescriptor = typeResult.$getAttributeOrNull(PythonTernaryOperator.GET.dunderMethod);
                 if (maybeDescriptor == null) {
-                    maybeDescriptor = typeResult.__getType().__getAttributeOrNull(PythonTernaryOperator.GET.dunderMethod);
+                    maybeDescriptor = typeResult.$getType().$getAttributeOrNull(PythonTernaryOperator.GET.dunderMethod);
                 }
 
                 if (maybeDescriptor != null) {
                     if (!(maybeDescriptor instanceof PythonLikeFunction)) {
-                        throw new UnsupportedOperationException("'" + maybeDescriptor.__getType() + "' is not callable");
+                        throw new UnsupportedOperationException("'" + maybeDescriptor.$getType() + "' is not callable");
                     }
                     return TernaryDunderBuiltin.GET_DESCRIPTOR.invoke(typeResult,
                             (instance != null) ? instance : PythonNone.INSTANCE,

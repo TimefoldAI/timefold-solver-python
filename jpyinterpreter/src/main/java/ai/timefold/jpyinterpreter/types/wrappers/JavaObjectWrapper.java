@@ -83,7 +83,7 @@ public class JavaObjectWrapper implements PythonLikeObject,
             getterName = (field.getType().equals(boolean.class) ? "is" : "get")
                     + capitalizedName;
         }
-        PythonLikeObject object = type.__getAttributeOrNull(getterName);
+        PythonLikeObject object = type.$getAttributeOrNull(getterName);
         if (object instanceof JavaMethodReference methodReference) {
             return methodReference.getMethod();
         }
@@ -97,7 +97,7 @@ public class JavaObjectWrapper implements PythonLikeObject,
                 propertyName.isEmpty() ? "" : propertyName.substring(0, 1).toUpperCase() + propertyName.substring(1);
         String setterName = "set" + capitalizedName;
 
-        PythonLikeObject object = type.__getAttributeOrNull(setterName);
+        PythonLikeObject object = type.$getAttributeOrNull(setterName);
         if (object instanceof JavaMethodReference methodReference) {
             return methodReference.getMethod();
         }
@@ -234,7 +234,7 @@ public class JavaObjectWrapper implements PythonLikeObject,
     }
 
     @Override
-    public PythonLikeObject __getAttributeOrNull(String attributeName) {
+    public PythonLikeObject $getAttributeOrNull(String attributeName) {
         Field field = attributeNameToMemberListMap.get(attributeName);
         if (field == null) {
             return null;
@@ -255,7 +255,7 @@ public class JavaObjectWrapper implements PythonLikeObject,
     }
 
     @Override
-    public void __setAttribute(String attributeName, PythonLikeObject value) {
+    public void $setAttribute(String attributeName, PythonLikeObject value) {
         Field field = attributeNameToMemberListMap.get(attributeName);
         if (field == null) {
             throw new AttributeError("(%s) object does not have attribute (%s)."
@@ -275,12 +275,12 @@ public class JavaObjectWrapper implements PythonLikeObject,
     }
 
     @Override
-    public void __deleteAttribute(String attributeName) {
+    public void $deleteAttribute(String attributeName) {
         throw new IllegalArgumentException("Cannot delete attributes on type '" + objectClass + "'");
     }
 
     @Override
-    public PythonLikeType __getType() {
+    public PythonLikeType $getType() {
         return type;
     }
 

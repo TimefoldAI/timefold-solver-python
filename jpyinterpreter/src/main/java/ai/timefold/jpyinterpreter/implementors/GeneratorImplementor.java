@@ -256,12 +256,12 @@ public class GeneratorImplementor {
                             methodVisitor.visitInsn(Opcodes.DUP);
                             methodVisitor.visitMethodInsn(Opcodes.INVOKEINTERFACE,
                                     Type.getInternalName(PythonLikeObject.class),
-                                    "__getType", Type.getMethodDescriptor(Type.getType(PythonLikeType.class)),
+                                    "$getType", Type.getMethodDescriptor(Type.getType(PythonLikeType.class)),
                                     true);
                             methodVisitor.visitLdcInsn("throw");
                             methodVisitor.visitMethodInsn(Opcodes.INVOKEINTERFACE,
                                     Type.getInternalName(PythonLikeObject.class),
-                                    "__getAttributeOrNull",
+                                    "$getAttributeOrNull",
                                     Type.getMethodDescriptor(Type.getType(PythonLikeObject.class),
                                             Type.getType(String.class)),
                                     true);

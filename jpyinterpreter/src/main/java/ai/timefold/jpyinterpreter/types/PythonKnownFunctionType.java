@@ -28,12 +28,12 @@ public class PythonKnownFunctionType extends PythonLikeType {
     }
 
     @Override
-    public PythonLikeType __getType() {
+    public PythonLikeType $getType() {
         return BuiltinTypes.BASE_TYPE;
     }
 
     @Override
-    public PythonLikeType __getGenericType() {
+    public PythonLikeType $getGenericType() {
         return BuiltinTypes.BASE_TYPE;
     }
 

@@ -81,9 +81,9 @@ public class PythonSlice extends AbstractPythonLikeObject {
         this.stop = stop;
         this.step = step;
 
-        __setAttribute("start", (start != null) ? start : PythonNone.INSTANCE);
-        __setAttribute("stop", (stop != null) ? stop : PythonNone.INSTANCE);
-        __setAttribute("step", (step != null) ? step : PythonNone.INSTANCE);
+        $setAttribute("start", (start != null) ? start : PythonNone.INSTANCE);
+        $setAttribute("stop", (stop != null) ? stop : PythonNone.INSTANCE);
+        $setAttribute("step", (step != null) ? step : PythonNone.INSTANCE);
     }
 
     /**

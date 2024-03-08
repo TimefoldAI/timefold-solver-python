@@ -95,13 +95,13 @@ public class PythonBoolean extends PythonInteger {
         } else if (tested instanceof Map) {
             return ((Map<?, ?>) tested).size() == 0;
         } else {
-            PythonLikeType testedType = tested.__getType();
-            PythonLikeFunction boolMethod = (PythonLikeFunction) testedType.__getAttributeOrNull("__bool__");
+            PythonLikeType testedType = tested.$getType();
+            PythonLikeFunction boolMethod = (PythonLikeFunction) testedType.$getAttributeOrNull("__bool__");
             if (boolMethod != null) {
                 return isTruthful(boolMethod.$call(List.of(tested), Map.of(), null));
             }
 
-            PythonLikeFunction lenMethod = (PythonLikeFunction) testedType.__getAttributeOrNull("__len__");
+            PythonLikeFunction lenMethod = (PythonLikeFunction) testedType.$getAttributeOrNull("__len__");
             if (lenMethod != null) {
                 return isTruthful(lenMethod.$call(List.of(tested), Map.of(), null));
             }
@@ -119,7 +119,7 @@ public class PythonBoolean extends PythonInteger {
     }
 
     @Override
-    public PythonLikeType __getType() {
+    public PythonLikeType $getType() {
         return BuiltinTypes.BOOLEAN_TYPE;
     }
 

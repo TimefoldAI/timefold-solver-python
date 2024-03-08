@@ -33,24 +33,24 @@ public final class PythonLikeFunctionWrapper implements PythonLikeFunction {
         return wrapped.$call(positionalArguments, namedArguments, callerInstance);
     }
 
-    public PythonLikeObject __getAttributeOrNull(String attributeName) {
-        return wrapped.__getAttributeOrNull(attributeName);
+    public PythonLikeObject $getAttributeOrNull(String attributeName) {
+        return wrapped.$getAttributeOrNull(attributeName);
     }
 
-    public PythonLikeObject __getAttributeOrError(String attributeName) {
-        return wrapped.__getAttributeOrError(attributeName);
+    public PythonLikeObject $getAttributeOrError(String attributeName) {
+        return wrapped.$getAttributeOrError(attributeName);
     }
 
-    public void __setAttribute(String attributeName, PythonLikeObject value) {
-        wrapped.__setAttribute(attributeName, value);
+    public void $setAttribute(String attributeName, PythonLikeObject value) {
+        wrapped.$setAttribute(attributeName, value);
     }
 
-    public void __deleteAttribute(String attributeName) {
-        wrapped.__deleteAttribute(attributeName);
+    public void $deleteAttribute(String attributeName) {
+        wrapped.$deleteAttribute(attributeName);
     }
 
-    public PythonLikeType __getType() {
-        return wrapped.__getType();
+    public PythonLikeType $getType() {
+        return wrapped.$getType();
     }
 
     public PythonLikeObject $method$__getattribute__(PythonString pythonName) {

@@ -844,7 +844,7 @@ public class PythonBytes extends AbstractPythonLikeObject implements PythonBytes
             PythonLikeObject item = iterator.nextPythonItem();
 
             if (!(item instanceof PythonBytesLikeObject)) {
-                throw new TypeError("type " + item.__getType() + " is not a bytes-like type");
+                throw new TypeError("type " + item.$getType() + " is not a bytes-like type");
             }
 
             outputStream.writeBytes(((PythonBytesLikeObject) item).asByteArray());

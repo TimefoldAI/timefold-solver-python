@@ -19,7 +19,7 @@ public class PythonModule extends AbstractPythonLikeObject {
     }
 
     public void addItem(String itemName, PythonLikeObject itemValue) {
-        __setAttribute(itemName, itemValue);
+        $setAttribute(itemName, itemValue);
     }
 
     public OpaquePythonReference getPythonReference() {
@@ -31,12 +31,12 @@ public class PythonModule extends AbstractPythonLikeObject {
     }
 
     @Override
-    public PythonLikeObject __getAttributeOrNull(String attributeName) {
-        PythonLikeObject result = super.__getAttributeOrNull(attributeName);
+    public PythonLikeObject $getAttributeOrNull(String attributeName) {
+        PythonLikeObject result = super.$getAttributeOrNull(attributeName);
         if (result == null) {
             PythonLikeObject actual = CPythonBackedPythonInterpreter.lookupAttributeOnPythonReference(pythonReference,
                     attributeName, referenceMap);
-            __setAttribute(attributeName, actual);
+            $setAttribute(attributeName, actual);
             return actual;
         }
         return result;

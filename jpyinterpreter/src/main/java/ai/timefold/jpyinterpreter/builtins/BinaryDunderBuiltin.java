@@ -39,12 +39,12 @@ public class BinaryDunderBuiltin implements PythonLikeFunction {
 
         PythonLikeObject object = positionalArguments.get(0);
         PythonLikeObject arg = positionalArguments.get(1);
-        PythonLikeFunction dunderMethod = (PythonLikeFunction) object.__getType().__getAttributeOrError(DUNDER_METHOD_NAME);
+        PythonLikeFunction dunderMethod = (PythonLikeFunction) object.$getType().$getAttributeOrError(DUNDER_METHOD_NAME);
         return dunderMethod.$call(List.of(object, arg), Map.of(), null);
     }
 
     public PythonLikeObject invoke(PythonLikeObject object, PythonLikeObject arg) {
-        PythonLikeFunction dunderMethod = (PythonLikeFunction) object.__getType().__getAttributeOrError(DUNDER_METHOD_NAME);
+        PythonLikeFunction dunderMethod = (PythonLikeFunction) object.$getType().$getAttributeOrError(DUNDER_METHOD_NAME);
         return dunderMethod.$call(List.of(object, arg), Map.of(), null);
     }
 }
