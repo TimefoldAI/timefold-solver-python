@@ -802,7 +802,7 @@ def get_python_exception_table(python_code):
 
 
 def get_function_bytecode_object(python_function):
-    from java.util import ArrayList, Optional
+    from java.util import ArrayList
     from ai.timefold.jpyinterpreter import PythonBytecodeInstruction, PythonCompiledFunction, PythonVersion # noqa
 
     init_type_to_compiled_java_class()
@@ -810,12 +810,15 @@ def get_function_bytecode_object(python_function):
     python_compiled_function = PythonCompiledFunction()
     instruction_list = ArrayList()
     for instruction in get_instructions(python_function):
-        java_instruction = PythonBytecodeInstruction(instruction.opname,
-                                                     JInt(instruction.offset // 2),
-                                                     JInt(instruction.arg) if instruction.arg is not None else JInt(0),
-                                                     Optional.of(JInt(instruction.starts_line)) \
-                                                         if instruction.starts_line is not None else Optional.empty(),
-                                                     JBoolean(instruction.is_jump_target))
+        java_instruction = (
+            PythonBytecodeInstruction
+            .atOffset(instruction.opname, JInt(instruction.offset // 2))
+            .withIsJumpTarget(JBoolean(instruction.is_jump_target)))
+        if instruction.arg is not None:
+            java_instruction = java_instruction.withArg(instruction.arg)
+        if instruction.starts_line:
+            java_instruction = java_instruction.startsLine(instruction.starts_line)
+
         instruction_list.add(java_instruction)
 
     python_compiled_function.module = python_function.__module__
@@ -850,7 +853,7 @@ def get_static_function_bytecode_object(the_class, python_function):
 
 
 def get_code_bytecode_object(python_code):
-    from java.util import Optional, ArrayList, HashMap
+    from java.util import ArrayList, HashMap
     from ai.timefold.jpyinterpreter import PythonBytecodeInstruction, PythonCompiledFunction, PythonVersion # noqa
 
     init_type_to_compiled_java_class()
@@ -858,12 +861,14 @@ def get_code_bytecode_object(python_code):
     python_compiled_function = PythonCompiledFunction()
     instruction_list = ArrayList()
     for instruction in get_instructions(python_code):
-        java_instruction = PythonBytecodeInstruction(instruction.opname,
-                                                     JInt(instruction.offset // 2),
-                                                     JInt(instruction.arg) if instruction.arg is not None else JInt(0),
-                                                     Optional.of(JInt(instruction.starts_line)) \
-                                                         if instruction.starts_line is not None else Optional.empty(),
-                                                     JBoolean(instruction.is_jump_target))
+        java_instruction = (
+            PythonBytecodeInstruction
+            .atOffset(instruction.opname, JInt(instruction.offset // 2))
+            .withIsJumpTarget(JBoolean(instruction.is_jump_target)))
+        if instruction.arg is not None:
+            java_instruction = java_instruction.withArg(instruction.arg)
+        if instruction.starts_line:
+            java_instruction = java_instruction.startsLine(instruction.starts_line)
         instruction_list.add(java_instruction)
 
     python_compiled_function.module = '__code__'

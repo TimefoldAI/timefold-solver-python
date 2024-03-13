@@ -4,7 +4,6 @@ import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Stream;
 
 import ai.timefold.jpyinterpreter.dag.FlowGraph;
@@ -801,11 +800,7 @@ public class PythonGeneratorTranslator {
         start.functionMetadata = functionMetadata;
         start.afterYield = 0;
         start.originalMethodDescriptor = stackMetadataMethod;
-        start.instruction = new PythonBytecodeInstruction(GeneratorOpDescriptor.YIELD_VALUE.name(),
-                0,
-                0,
-                Optional.empty(),
-                false);
+        start.instruction = PythonBytecodeInstruction.atOffset(GeneratorOpDescriptor.YIELD_VALUE, 0);
         generatorStateToMethod.put(0, start);
 
         return generatorStateToMethod;

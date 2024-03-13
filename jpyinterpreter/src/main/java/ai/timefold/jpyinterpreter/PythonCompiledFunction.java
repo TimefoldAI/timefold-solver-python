@@ -129,18 +129,18 @@ public class PythonCompiledFunction {
 
         out.module = module;
         out.qualifiedName = qualifiedName;
-        out.instructionList = new ArrayList<>(instructionList);
+        out.instructionList = List.copyOf(instructionList);
         out.closure = closure;
         out.globalsMap = globalsMap;
         out.typeAnnotations = typeAnnotations;
         out.defaultPositionalArguments = defaultPositionalArguments;
         out.defaultKeywordArguments = defaultKeywordArguments;
         out.co_exceptiontable = this.co_exceptiontable;
-        out.co_names = new ArrayList<>(co_names);
-        out.co_varnames = new ArrayList<>(co_varnames);
-        out.co_cellvars = new ArrayList<>(co_cellvars);
-        out.co_freevars = new ArrayList<>(co_freevars);
-        out.co_constants = new ArrayList<>(co_constants);
+        out.co_names = List.copyOf(co_names);
+        out.co_varnames = List.copyOf(co_varnames);
+        out.co_cellvars = List.copyOf(co_cellvars);
+        out.co_freevars = List.copyOf(co_freevars);
+        out.co_constants = List.copyOf(co_constants);
         out.co_argcount = co_argcount;
         out.co_kwonlyargcount = co_kwonlyargcount;
         out.pythonVersion = pythonVersion;

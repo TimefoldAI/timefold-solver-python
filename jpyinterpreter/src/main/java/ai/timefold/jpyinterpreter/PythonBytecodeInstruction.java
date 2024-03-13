@@ -1,21 +1,29 @@
 package ai.timefold.jpyinterpreter;
 
-import java.util.Optional;
+import java.util.OptionalInt;
 
 import ai.timefold.jpyinterpreter.opcodes.descriptor.OpcodeDescriptor;
 
-public record PythonBytecodeInstruction(String opname, int offset, int arg, Optional<Integer> startsLine,
+public record PythonBytecodeInstruction(String opname, int offset, int arg, OptionalInt startsLine,
         boolean isJumpTarget) {
+    public static PythonBytecodeInstruction atOffset(String opname, int offset) {
+        return new PythonBytecodeInstruction(opname, offset, 0, OptionalInt.empty(), false);
+    }
+
     public static PythonBytecodeInstruction atOffset(OpcodeDescriptor instruction, int offset) {
-        return new PythonBytecodeInstruction(instruction.name(), offset, 0, Optional.empty(), false);
+        return atOffset(instruction.name(), offset);
     }
 
     public PythonBytecodeInstruction withArg(int newArg) {
         return new PythonBytecodeInstruction(opname, offset, newArg, startsLine, isJumpTarget);
     }
 
-    public PythonBytecodeInstruction withOffset(int newOffset) {
-        return new PythonBytecodeInstruction(opname, newOffset, arg, startsLine, isJumpTarget);
+    public PythonBytecodeInstruction startsLine(int lineNumber) {
+        return new PythonBytecodeInstruction(opname, offset, arg, OptionalInt.of(lineNumber), isJumpTarget);
+    }
+
+    public PythonBytecodeInstruction withIsJumpTarget(boolean isJumpTarget) {
+        return new PythonBytecodeInstruction(opname, offset, arg, startsLine, isJumpTarget);
     }
 
     public PythonBytecodeInstruction markAsJumpTarget() {
