@@ -86,7 +86,7 @@ public class ModuleImplementor {
         // Stack is interpreter, level, from_list, globals_map, locals_map
 
         // Finally, push the name of the module to load
-        methodVisitor.visitLdcInsn(functionMetadata.pythonCompiledFunction.co_names.get(instruction.arg));
+        methodVisitor.visitLdcInsn(functionMetadata.pythonCompiledFunction.co_names.get(instruction.arg()));
 
         // Now call the interpreter's importModule function
         methodVisitor.visitMethodInsn(Opcodes.INVOKEINTERFACE, Type.getInternalName(PythonInterpreter.class),
@@ -114,7 +114,7 @@ public class ModuleImplementor {
         // Stack is module, module
 
         // Push the attribute name to load
-        methodVisitor.visitLdcInsn(functionMetadata.pythonCompiledFunction.co_names.get(instruction.arg));
+        methodVisitor.visitLdcInsn(functionMetadata.pythonCompiledFunction.co_names.get(instruction.arg()));
 
         // Stack is module, module, attribute_name
 

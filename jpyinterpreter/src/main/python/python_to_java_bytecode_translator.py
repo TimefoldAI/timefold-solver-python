@@ -802,29 +802,20 @@ def get_python_exception_table(python_code):
 
 
 def get_function_bytecode_object(python_function):
-    from java.util import ArrayList
-    from ai.timefold.jpyinterpreter import PythonBytecodeInstruction, PythonCompiledFunction, PythonVersion, OpcodeIdentifier # noqa
+    from java.util import ArrayList, Optional
+    from ai.timefold.jpyinterpreter import PythonBytecodeInstruction, PythonCompiledFunction, PythonVersion # noqa
 
     init_type_to_compiled_java_class()
 
     python_compiled_function = PythonCompiledFunction()
     instruction_list = ArrayList()
     for instruction in get_instructions(python_function):
-        java_instruction = PythonBytecodeInstruction()
-        java_instruction.opcode = OpcodeIdentifier.valueOf(instruction.opname)
-        java_instruction.opname = instruction.opname
-        java_instruction.offset = JInt(instruction.offset // 2)
-
-        if instruction.arg is not None:
-            java_instruction.arg = JInt(instruction.arg)
-        else:
-            java_instruction.arg = JInt(0)
-
-        if java_instruction.startsLine is not None:
-            java_instruction.startsLine = JInt(instruction.starts_line)
-
-        java_instruction.isJumpTarget = JBoolean(instruction.is_jump_target)
-
+        java_instruction = PythonBytecodeInstruction(instruction.opname,
+                                                     JInt(instruction.offset // 2),
+                                                     JInt(instruction.arg) if instruction.arg is not None else JInt(0),
+                                                     Optional.of(JInt(instruction.starts_line)) \
+                                                         if instruction.starts_line is not None else Optional.empty(),
+                                                     JBoolean(instruction.is_jump_target))
         instruction_list.add(java_instruction)
 
     python_compiled_function.module = python_function.__module__
@@ -859,29 +850,20 @@ def get_static_function_bytecode_object(the_class, python_function):
 
 
 def get_code_bytecode_object(python_code):
-    from java.util import ArrayList, HashMap
-    from ai.timefold.jpyinterpreter import PythonBytecodeInstruction, PythonCompiledFunction, PythonVersion, OpcodeIdentifier # noqa
+    from java.util import Optional, ArrayList, HashMap
+    from ai.timefold.jpyinterpreter import PythonBytecodeInstruction, PythonCompiledFunction, PythonVersion # noqa
 
     init_type_to_compiled_java_class()
 
     python_compiled_function = PythonCompiledFunction()
     instruction_list = ArrayList()
     for instruction in get_instructions(python_code):
-        java_instruction = PythonBytecodeInstruction()
-        java_instruction.opcode = OpcodeIdentifier.valueOf(instruction.opname)
-        java_instruction.opname = instruction.opname
-        java_instruction.offset = JInt(instruction.offset // 2)
-
-        if instruction.arg is not None:
-            java_instruction.arg = JInt(instruction.arg)
-        else:
-            java_instruction.arg = JInt(0)
-
-        if java_instruction.startsLine is not None:
-            java_instruction.startsLine = JInt(instruction.starts_line)
-
-        java_instruction.isJumpTarget = JBoolean(instruction.is_jump_target)
-
+        java_instruction = PythonBytecodeInstruction(instruction.opname,
+                                                     JInt(instruction.offset // 2),
+                                                     JInt(instruction.arg) if instruction.arg is not None else JInt(0),
+                                                     Optional.of(JInt(instruction.starts_line)) \
+                                                         if instruction.starts_line is not None else Optional.empty(),
+                                                     JBoolean(instruction.is_jump_target))
         instruction_list.add(java_instruction)
 
     python_compiled_function.module = '__code__'

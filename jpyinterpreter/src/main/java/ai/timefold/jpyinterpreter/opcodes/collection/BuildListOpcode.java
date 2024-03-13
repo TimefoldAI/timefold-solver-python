@@ -17,12 +17,12 @@ public class BuildListOpcode extends AbstractOpcode {
 
     @Override
     protected StackMetadata getStackMetadataAfterInstruction(FunctionMetadata functionMetadata, StackMetadata stackMetadata) {
-        return stackMetadata.pop(instruction.arg).push(ValueSourceInfo.of(this, BuiltinTypes.LIST_TYPE,
-                stackMetadata.getValueSourcesUpToStackIndex(instruction.arg)));
+        return stackMetadata.pop(instruction.arg()).push(ValueSourceInfo.of(this, BuiltinTypes.LIST_TYPE,
+                stackMetadata.getValueSourcesUpToStackIndex(instruction.arg())));
     }
 
     @Override
     public void implement(FunctionMetadata functionMetadata, StackMetadata stackMetadata) {
-        CollectionImplementor.buildCollection(PythonLikeList.class, functionMetadata.methodVisitor, instruction.arg);
+        CollectionImplementor.buildCollection(PythonLikeList.class, functionMetadata.methodVisitor, instruction.arg());
     }
 }

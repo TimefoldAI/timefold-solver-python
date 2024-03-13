@@ -6,11 +6,11 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import ai.timefold.jpyinterpreter.OpcodeIdentifier;
 import ai.timefold.jpyinterpreter.PythonBytecodeToJavaBytecodeTranslator;
 import ai.timefold.jpyinterpreter.PythonCompiledFunction;
 import ai.timefold.jpyinterpreter.PythonInterpreter;
 import ai.timefold.jpyinterpreter.PythonLikeObject;
+import ai.timefold.jpyinterpreter.opcodes.descriptor.ControlOpDescriptor;
 import ai.timefold.jpyinterpreter.types.PythonString;
 import ai.timefold.jpyinterpreter.util.PythonFunctionBuilder;
 
@@ -24,12 +24,12 @@ public class VariableImplementorTest {
         PythonCompiledFunction setterCompiledFunction = PythonFunctionBuilder.newFunction("value")
                 .loadParameter("value")
                 .storeGlobalVariable("my_global")
-                .op(OpcodeIdentifier.RETURN_VALUE)
+                .op(ControlOpDescriptor.RETURN_VALUE)
                 .build();
 
         PythonCompiledFunction getterCompiledFunction = PythonFunctionBuilder.newFunction()
                 .loadGlobalVariable("my_global")
-                .op(OpcodeIdentifier.RETURN_VALUE)
+                .op(ControlOpDescriptor.RETURN_VALUE)
                 .build();
 
         AtomicReference<PythonLikeObject> myGlobalReference = new AtomicReference<>();

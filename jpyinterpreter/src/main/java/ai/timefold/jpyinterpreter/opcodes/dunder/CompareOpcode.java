@@ -25,6 +25,6 @@ public class CompareOpcode extends AbstractOpcode {
     @Override
     public void implement(FunctionMetadata functionMetadata, StackMetadata stackMetadata) {
         DunderOperatorImplementor.compareValues(functionMetadata.methodVisitor, stackMetadata,
-                CompareOp.getOp(instruction.arg));
+                CompareOp.getOp(instruction.arg()));
     }
 }

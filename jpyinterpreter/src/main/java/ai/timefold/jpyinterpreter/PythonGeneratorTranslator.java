@@ -4,6 +4,7 @@ import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import ai.timefold.jpyinterpreter.dag.FlowGraph;
@@ -14,6 +15,7 @@ import ai.timefold.jpyinterpreter.implementors.PythonConstantsImplementor;
 import ai.timefold.jpyinterpreter.implementors.VariableImplementor;
 import ai.timefold.jpyinterpreter.opcodes.AbstractOpcode;
 import ai.timefold.jpyinterpreter.opcodes.Opcode;
+import ai.timefold.jpyinterpreter.opcodes.descriptor.GeneratorOpDescriptor;
 import ai.timefold.jpyinterpreter.opcodes.generator.GeneratorStartOpcode;
 import ai.timefold.jpyinterpreter.opcodes.generator.ResumeOpcode;
 import ai.timefold.jpyinterpreter.opcodes.generator.YieldFromOpcode;
@@ -426,17 +428,17 @@ public class PythonGeneratorTranslator {
 
     private static void generateAdvanceGeneratorMethod(ClassWriter classWriter, String internalClassName,
             GeneratorMethodPart generatorMethodPart) {
-        switch (generatorMethodPart.instruction.opcode) {
-            case YIELD_VALUE:
+        var instruction = AbstractOpcode.lookupInstruction(generatorMethodPart.instruction.opname());
+        if (!(instruction instanceof GeneratorOpDescriptor generatorInstruction)) {
+            throw new IllegalArgumentException(
+                    "Invalid opcode for instruction: %s".formatted(generatorMethodPart.instruction.opname()));
+        }
+        switch (generatorInstruction) {
+            case YIELD_VALUE ->
                 generateAdvanceGeneratorMethodForYieldValue(classWriter, internalClassName, generatorMethodPart);
-                return;
-
-            case YIELD_FROM:
-                generateAdvanceGeneratorMethodForYieldFrom(classWriter, internalClassName, generatorMethodPart);
-                return;
-
-            default:
-                throw new IllegalArgumentException("Invalid opcode for instruction: " + generatorMethodPart.instruction.opcode);
+            case YIELD_FROM -> generateAdvanceGeneratorMethodForYieldFrom(classWriter, internalClassName, generatorMethodPart);
+            default -> throw new IllegalArgumentException(
+                    "Invalid opcode for instruction: " + generatorMethodPart.instruction.opname());
         }
     }
 
@@ -491,7 +493,7 @@ public class PythonGeneratorTranslator {
                 stackMetadataForOpcodeIndex, opcodeList,
                 instruction -> {
                     if (actualResumeType == ResumeOpcode.ResumeType.YIELD) {
-                        if (instruction.offset == generatorMethodPart.afterYield) {
+                        if (instruction.offset() == generatorMethodPart.afterYield) {
                             // Put thrownValue on TOS
                             methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
                             methodVisitor.visitFieldInsn(Opcodes.GETFIELD, Type.getInternalName(PythonGenerator.class),
@@ -560,7 +562,7 @@ public class PythonGeneratorTranslator {
         PythonBytecodeToJavaBytecodeTranslator.writeInstructionsForOpcodes(generatorMethodPart.functionMetadata,
                 stackMetadataForOpcodeIndex, opcodeList,
                 instruction -> {
-                    if (instruction.offset == generatorMethodPart.afterYield) {
+                    if (instruction.offset() == generatorMethodPart.afterYield) {
                         // 0 = next, 1 = send, 2 = throw
 
                         Label wasNotSentValue = new Label();
@@ -799,9 +801,11 @@ public class PythonGeneratorTranslator {
         start.functionMetadata = functionMetadata;
         start.afterYield = 0;
         start.originalMethodDescriptor = stackMetadataMethod;
-        start.instruction = new PythonBytecodeInstruction();
-        start.instruction.opcode = OpcodeIdentifier.YIELD_VALUE;
-        start.instruction.offset = 0;
+        start.instruction = new PythonBytecodeInstruction(GeneratorOpDescriptor.YIELD_VALUE.name(),
+                0,
+                0,
+                Optional.empty(),
+                false);
         generatorStateToMethod.put(0, start);
 
         return generatorStateToMethod;

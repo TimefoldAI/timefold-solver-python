@@ -483,7 +483,7 @@ public class CollectionImplementor {
                 .push(stackMetadata.getTOSValueSource())
                 .push(stackMetadata.getValueSourceForStackIndex(1)), PythonBinaryOperator.CONTAINS);
         // TODO: implement fallback on __iter__ if __contains__ does not exist
-        if (instruction.arg == 1) {
+        if (instruction.arg() == 1) {
             PythonBuiltinOperatorImplementor.performNotOnTOS(methodVisitor);
         }
     }
@@ -513,7 +513,7 @@ public class CollectionImplementor {
         MethodVisitor methodVisitor = functionMetadata.methodVisitor;
 
         // instruction.arg is distance from TOS
-        StackManipulationImplementor.duplicateToTOS(functionMetadata, stackMetadata, instruction.arg);
+        StackManipulationImplementor.duplicateToTOS(functionMetadata, stackMetadata, instruction.arg());
         StackManipulationImplementor.swap(methodVisitor);
         methodVisitor.visitMethodInsn(Opcodes.INVOKEINTERFACE, Type.getInternalName(Collection.class),
                 "add",
@@ -530,7 +530,7 @@ public class CollectionImplementor {
         MethodVisitor methodVisitor = functionMetadata.methodVisitor;
 
         // instruction.arg is distance from TOS
-        StackManipulationImplementor.duplicateToTOS(functionMetadata, stackMetadata, instruction.arg);
+        StackManipulationImplementor.duplicateToTOS(functionMetadata, stackMetadata, instruction.arg());
         StackManipulationImplementor.swap(methodVisitor);
         methodVisitor.visitMethodInsn(Opcodes.INVOKEINTERFACE, Type.getInternalName(Collection.class),
                 "addAll",
@@ -548,7 +548,7 @@ public class CollectionImplementor {
         MethodVisitor methodVisitor = functionMetadata.methodVisitor;
 
         // instruction.arg is distance from TOS1, so add 1 to get distance from TOS
-        StackManipulationImplementor.duplicateToTOS(functionMetadata, stackMetadata, instruction.arg + 1);
+        StackManipulationImplementor.duplicateToTOS(functionMetadata, stackMetadata, instruction.arg() + 1);
 
         StackManipulationImplementor.rotateThree(methodVisitor);
         methodVisitor.visitMethodInsn(Opcodes.INVOKEINTERFACE, Type.getInternalName(Map.class),
@@ -565,7 +565,7 @@ public class CollectionImplementor {
             PythonBytecodeInstruction instruction) {
         MethodVisitor methodVisitor = functionMetadata.methodVisitor;
         // instruction.arg is distance from TOS
-        StackManipulationImplementor.duplicateToTOS(functionMetadata, stackMetadata, instruction.arg);
+        StackManipulationImplementor.duplicateToTOS(functionMetadata, stackMetadata, instruction.arg());
         StackManipulationImplementor.swap(methodVisitor);
         methodVisitor.visitMethodInsn(Opcodes.INVOKEINTERFACE, Type.getInternalName(Map.class),
                 "putAll",
@@ -583,7 +583,7 @@ public class CollectionImplementor {
         MethodVisitor methodVisitor = functionMetadata.methodVisitor;
 
         // instruction.arg is distance from TOS
-        StackManipulationImplementor.duplicateToTOS(functionMetadata, stackMetadata, instruction.arg);
+        StackManipulationImplementor.duplicateToTOS(functionMetadata, stackMetadata, instruction.arg());
         StackManipulationImplementor.swap(methodVisitor);
 
         // Duplicate both maps so we can get their key sets

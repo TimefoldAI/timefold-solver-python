@@ -9,11 +9,15 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import ai.timefold.jpyinterpreter.CompareOp;
-import ai.timefold.jpyinterpreter.OpcodeIdentifier;
 import ai.timefold.jpyinterpreter.PythonBytecodeToJavaBytecodeTranslator;
 import ai.timefold.jpyinterpreter.PythonCompiledFunction;
 import ai.timefold.jpyinterpreter.PythonInterpreter;
 import ai.timefold.jpyinterpreter.PythonLikeObject;
+import ai.timefold.jpyinterpreter.opcodes.descriptor.CollectionOpDescriptor;
+import ai.timefold.jpyinterpreter.opcodes.descriptor.ControlOpDescriptor;
+import ai.timefold.jpyinterpreter.opcodes.descriptor.DunderOpDescriptor;
+import ai.timefold.jpyinterpreter.opcodes.descriptor.ExceptionOpDescriptor;
+import ai.timefold.jpyinterpreter.opcodes.descriptor.StackOpDescriptor;
 import ai.timefold.jpyinterpreter.types.PythonLikeType;
 import ai.timefold.jpyinterpreter.types.PythonNone;
 import ai.timefold.jpyinterpreter.types.errors.PythonAssertionError;
@@ -37,13 +41,13 @@ public class ExceptionImplementorTest {
                             .loadConstant(5)
                             .compare(CompareOp.LESS_THAN)
                             .ifTrue(block -> {
-                                block.loadConstant("Try").op(OpcodeIdentifier.RETURN_VALUE);
+                                block.loadConstant("Try").op(ControlOpDescriptor.RETURN_VALUE);
                             })
-                            .op(OpcodeIdentifier.LOAD_ASSERTION_ERROR)
-                            .op(OpcodeIdentifier.RAISE_VARARGS, 1);
+                            .op(ExceptionOpDescriptor.LOAD_ASSERTION_ERROR)
+                            .op(ExceptionOpDescriptor.RAISE_VARARGS, 1);
                 }, true)
                 .except(PythonAssertionError.ASSERTION_ERROR_TYPE, except -> {
-                    except.loadConstant("Assert").op(OpcodeIdentifier.RETURN_VALUE);
+                    except.loadConstant("Assert").op(ControlOpDescriptor.RETURN_VALUE);
                 }, true)
                 .tryEnd()
                 .build();
@@ -65,15 +69,15 @@ public class ExceptionImplementorTest {
                             .loadConstant(1)
                             .compare(CompareOp.EQUALS)
                             .ifTrue(block -> {
-                                block.op(OpcodeIdentifier.LOAD_ASSERTION_ERROR)
-                                        .op(OpcodeIdentifier.RAISE_VARARGS, 1);
+                                block.op(ExceptionOpDescriptor.LOAD_ASSERTION_ERROR)
+                                        .op(ExceptionOpDescriptor.RAISE_VARARGS, 1);
                             })
                             .loadParameter("item")
                             .loadConstant(2)
                             .compare(CompareOp.EQUALS)
                             .ifTrue(block -> {
                                 block.loadConstant(new StopIteration())
-                                        .op(OpcodeIdentifier.RAISE_VARARGS, 1);
+                                        .op(ExceptionOpDescriptor.RAISE_VARARGS, 1);
                             });
                 }, false)
                 .except(PythonAssertionError.ASSERTION_ERROR_TYPE, except -> {
@@ -85,7 +89,7 @@ public class ExceptionImplementorTest {
                 }, false)
                 .tryEnd()
                 .loadConstant(1)
-                .op(OpcodeIdentifier.RETURN_VALUE)
+                .op(ControlOpDescriptor.RETURN_VALUE)
                 .build();
 
         Class javaFunctionClass =
@@ -124,25 +128,25 @@ public class ExceptionImplementorTest {
                 .loadGlobalVariable("reversed")
                 .loadParameter("last_values")
                 .callFunction(1)
-                .op(OpcodeIdentifier.GET_ITER)
+                .op(CollectionOpDescriptor.GET_ITER)
                 .loop(loopBuilder -> {
                     loopBuilder.storeVariable("last_value")
                             .tryCode(tryBuilder -> {
                                 tryBuilder.loadVariable("last_value")
                                         .loadConstant(1)
-                                        .op(OpcodeIdentifier.BINARY_ADD)
-                                        .op(OpcodeIdentifier.POP_BLOCK)
-                                        .op(OpcodeIdentifier.ROT_TWO)
-                                        .op(OpcodeIdentifier.POP_TOP)
-                                        .op(OpcodeIdentifier.RETURN_VALUE);
+                                        .op(DunderOpDescriptor.BINARY_ADD)
+                                        .op(ExceptionOpDescriptor.POP_BLOCK)
+                                        .op(StackOpDescriptor.ROT_TWO)
+                                        .op(StackOpDescriptor.POP_TOP)
+                                        .op(ControlOpDescriptor.RETURN_VALUE);
                             }, true).except(PythonException.EXCEPTION_TYPE, exceptBuilder -> {
                                 exceptBuilder
-                                        .op(OpcodeIdentifier.JUMP_ABSOLUTE, 4);
+                                        .op(ControlOpDescriptor.JUMP_ABSOLUTE, 4);
                             }, true)
                             .tryEnd();
                 }, true)
                 .loadParameter("start")
-                .op(OpcodeIdentifier.RETURN_VALUE)
+                .op(ControlOpDescriptor.RETURN_VALUE)
                 .build();
 
         BiFunction biFunction =
@@ -158,11 +162,11 @@ public class ExceptionImplementorTest {
                 .with(withBuilder -> {
                     withBuilder
                             .loadConstant(1)
-                            .op(OpcodeIdentifier.BINARY_ADD)
+                            .op(DunderOpDescriptor.BINARY_ADD)
                             .storeVariable("result");
                 })
                 .loadVariable("result")
-                .op(OpcodeIdentifier.RETURN_VALUE)
+                .op(ControlOpDescriptor.RETURN_VALUE)
                 .build();
 
         Function function =
@@ -181,12 +185,12 @@ public class ExceptionImplementorTest {
                 .with(withBuilder -> {
                     withBuilder
                             .ifTrue(ifBuilder -> {
-                                ifBuilder.op(OpcodeIdentifier.LOAD_ASSERTION_ERROR)
-                                        .op(OpcodeIdentifier.RERAISE);
+                                ifBuilder.op(ExceptionOpDescriptor.LOAD_ASSERTION_ERROR)
+                                        .op(ExceptionOpDescriptor.RERAISE);
                             });
                 })
                 .loadConstant(null)
-                .op(OpcodeIdentifier.RETURN_VALUE)
+                .op(ControlOpDescriptor.RETURN_VALUE)
                 .build();
 
         Function function =

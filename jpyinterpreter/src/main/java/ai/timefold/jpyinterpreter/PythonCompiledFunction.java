@@ -5,7 +5,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiFunction;
-import java.util.stream.Collectors;
 
 import ai.timefold.jpyinterpreter.types.BuiltinTypes;
 import ai.timefold.jpyinterpreter.types.PythonLikeType;
@@ -130,8 +129,7 @@ public class PythonCompiledFunction {
 
         out.module = module;
         out.qualifiedName = qualifiedName;
-        out.instructionList = instructionList.stream().map(PythonBytecodeInstruction::copy)
-                .collect(Collectors.toCollection(ArrayList::new));
+        out.instructionList = new ArrayList<>(instructionList);
         out.closure = closure;
         out.globalsMap = globalsMap;
         out.typeAnnotations = typeAnnotations;

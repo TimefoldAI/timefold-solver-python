@@ -17,12 +17,12 @@ public class BuildTupleOpcode extends AbstractOpcode {
 
     @Override
     protected StackMetadata getStackMetadataAfterInstruction(FunctionMetadata functionMetadata, StackMetadata stackMetadata) {
-        return stackMetadata.pop(instruction.arg).push(ValueSourceInfo.of(this, BuiltinTypes.TUPLE_TYPE,
-                stackMetadata.getValueSourcesUpToStackIndex(instruction.arg)));
+        return stackMetadata.pop(instruction.arg()).push(ValueSourceInfo.of(this, BuiltinTypes.TUPLE_TYPE,
+                stackMetadata.getValueSourcesUpToStackIndex(instruction.arg())));
     }
 
     @Override
     public void implement(FunctionMetadata functionMetadata, StackMetadata stackMetadata) {
-        CollectionImplementor.buildCollection(PythonLikeTuple.class, functionMetadata.methodVisitor, instruction.arg);
+        CollectionImplementor.buildCollection(PythonLikeTuple.class, functionMetadata.methodVisitor, instruction.arg());
     }
 }

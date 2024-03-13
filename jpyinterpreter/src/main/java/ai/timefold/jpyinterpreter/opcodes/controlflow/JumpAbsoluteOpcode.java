@@ -1,7 +1,6 @@
 package ai.timefold.jpyinterpreter.opcodes.controlflow;
 
 import java.util.List;
-import java.util.Map;
 
 import ai.timefold.jpyinterpreter.FunctionMetadata;
 import ai.timefold.jpyinterpreter.PythonBytecodeInstruction;
@@ -19,12 +18,6 @@ public class JumpAbsoluteOpcode extends AbstractControlFlowOpcode {
     @Override
     public List<Integer> getPossibleNextBytecodeIndexList() {
         return List.of(jumpTarget);
-    }
-
-    @Override
-    public void relabel(Map<Integer, Integer> originalBytecodeIndexToNewBytecodeIndex) {
-        jumpTarget = originalBytecodeIndexToNewBytecodeIndex.get(jumpTarget);
-        super.relabel(originalBytecodeIndexToNewBytecodeIndex);
     }
 
     @Override

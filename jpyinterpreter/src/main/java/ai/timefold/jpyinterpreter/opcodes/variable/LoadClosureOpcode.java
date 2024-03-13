@@ -22,6 +22,6 @@ public class LoadClosureOpcode extends AbstractOpcode {
     @Override
     public void implement(FunctionMetadata functionMetadata, StackMetadata stackMetadata) {
         VariableImplementor.loadCell(functionMetadata, stackMetadata,
-                VariableImplementor.getCellIndex(functionMetadata, instruction.arg));
+                VariableImplementor.getCellIndex(functionMetadata, instruction.arg()));
     }
 }

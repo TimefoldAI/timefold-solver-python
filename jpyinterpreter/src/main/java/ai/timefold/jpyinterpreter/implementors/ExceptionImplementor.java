@@ -10,7 +10,6 @@ import java.util.function.BiConsumer;
 import ai.timefold.jpyinterpreter.ExceptionBlock;
 import ai.timefold.jpyinterpreter.FunctionMetadata;
 import ai.timefold.jpyinterpreter.LocalVariableHelper;
-import ai.timefold.jpyinterpreter.OpcodeIdentifier;
 import ai.timefold.jpyinterpreter.PythonBytecodeInstruction;
 import ai.timefold.jpyinterpreter.PythonBytecodeToJavaBytecodeTranslator;
 import ai.timefold.jpyinterpreter.PythonInterpreter;
@@ -20,6 +19,7 @@ import ai.timefold.jpyinterpreter.PythonVersion;
 import ai.timefold.jpyinterpreter.StackMetadata;
 import ai.timefold.jpyinterpreter.ValueSourceInfo;
 import ai.timefold.jpyinterpreter.opcodes.OpcodeWithoutSource;
+import ai.timefold.jpyinterpreter.opcodes.descriptor.ControlOpDescriptor;
 import ai.timefold.jpyinterpreter.types.BoundPythonLikeFunction;
 import ai.timefold.jpyinterpreter.types.PythonLikeFunction;
 import ai.timefold.jpyinterpreter.types.PythonLikeType;
@@ -127,24 +127,17 @@ public class ExceptionImplementor {
      */
     public static void raiseWithOptionalExceptionAndCause(MethodVisitor methodVisitor, PythonBytecodeInstruction instruction,
             LocalVariableHelper localVariableHelper) {
-        switch (instruction.arg) {
-            case 0:
-                reraiseLast(methodVisitor, localVariableHelper);
-                break;
-            case 1:
-                reraise(methodVisitor);
-                break;
-            case 2:
-                raiseWithCause(methodVisitor);
-                break;
-            default:
-                throw new IllegalStateException("Impossible argc value (" + instruction.arg + ") for RAISE_VARARGS.");
+        switch (instruction.arg()) {
+            case 0 -> reraiseLast(methodVisitor, localVariableHelper);
+            case 1 -> reraise(methodVisitor);
+            case 2 -> raiseWithCause(methodVisitor);
+            default -> throw new IllegalStateException("Impossible argc value (" + instruction.arg() + ") for RAISE_VARARGS.");
         }
     }
 
     /**
      * Creates a try...finally block. Python also treat catch blocks as finally blocks, which
-     * are handled via the {@link OpcodeIdentifier#JUMP_IF_NOT_EXC_MATCH} instruction.
+     * are handled via the {@link ControlOpDescriptor#JUMP_IF_NOT_EXC_MATCH} instruction.
      * {@code instruction.arg} is the difference in bytecode offset to the first catch/finally block.
      */
     public static void createTryFinallyBlock(MethodVisitor methodVisitor, String className,

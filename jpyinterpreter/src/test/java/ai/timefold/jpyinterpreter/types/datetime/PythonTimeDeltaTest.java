@@ -9,8 +9,8 @@ import java.util.function.BiPredicate;
 import java.util.function.Function;
 
 import ai.timefold.jpyinterpreter.CompareOp;
-import ai.timefold.jpyinterpreter.OpcodeIdentifier;
 import ai.timefold.jpyinterpreter.PythonBytecodeToJavaBytecodeTranslator;
+import ai.timefold.jpyinterpreter.opcodes.descriptor.ControlOpDescriptor;
 import ai.timefold.jpyinterpreter.types.numeric.PythonFloat;
 import ai.timefold.jpyinterpreter.types.numeric.PythonInteger;
 import ai.timefold.jpyinterpreter.types.numeric.PythonNumber;
@@ -26,7 +26,7 @@ public class PythonTimeDeltaTest {
                 .loadConstant(PythonTimeDelta.TIME_DELTA_TYPE)
                 .loadParameter("days")
                 .callFunction(1)
-                .op(OpcodeIdentifier.RETURN_VALUE);
+                .op(ControlOpDescriptor.RETURN_VALUE);
 
         Function<PythonNumber, PythonTimeDelta> constructor =
                 PythonBytecodeToJavaBytecodeTranslator.translatePythonBytecode(builder.build(),
@@ -46,7 +46,7 @@ public class PythonTimeDeltaTest {
                 .loadConstant("minutes")
                 .tuple(1)
                 .callFunctionWithKeywords(1)
-                .op(OpcodeIdentifier.RETURN_VALUE);
+                .op(ControlOpDescriptor.RETURN_VALUE);
 
         Function<PythonNumber, PythonTimeDelta> constructor =
                 PythonBytecodeToJavaBytecodeTranslator.translatePythonBytecode(builder.build(),
@@ -178,7 +178,7 @@ public class PythonTimeDeltaTest {
                 .loadParameter("a")
                 .loadParameter("b")
                 .compare(CompareOp.LESS_THAN)
-                .op(OpcodeIdentifier.RETURN_VALUE);
+                .op(ControlOpDescriptor.RETURN_VALUE);
 
         BiPredicate<PythonTimeDelta, PythonTimeDelta> lessThan =
                 PythonBytecodeToJavaBytecodeTranslator.translatePythonBytecode(builder.build(),
@@ -195,7 +195,7 @@ public class PythonTimeDeltaTest {
                 .loadParameter("a")
                 .loadParameter("b")
                 .compare(CompareOp.EQUALS)
-                .op(OpcodeIdentifier.RETURN_VALUE);
+                .op(ControlOpDescriptor.RETURN_VALUE);
 
         BiPredicate<PythonTimeDelta, PythonTimeDelta> lessThan =
                 PythonBytecodeToJavaBytecodeTranslator.translatePythonBytecode(builder.build(),

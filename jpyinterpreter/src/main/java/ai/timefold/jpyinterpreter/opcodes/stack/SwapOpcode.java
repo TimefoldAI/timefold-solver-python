@@ -16,12 +16,12 @@ public class SwapOpcode extends AbstractOpcode {
     public StackMetadata getStackMetadataAfterInstruction(FunctionMetadata functionMetadata,
             StackMetadata stackMetadata) {
         return stackMetadata
-                .set(instruction.arg - 1, stackMetadata.getTOSValueSource())
-                .set(0, stackMetadata.getValueSourceForStackIndex(instruction.arg - 1));
+                .set(instruction.arg() - 1, stackMetadata.getTOSValueSource())
+                .set(0, stackMetadata.getValueSourceForStackIndex(instruction.arg() - 1));
     }
 
     @Override
     public void implement(FunctionMetadata functionMetadata, StackMetadata stackMetadata) {
-        StackManipulationImplementor.swapTOSWithIndex(functionMetadata, stackMetadata, instruction.arg - 1);
+        StackManipulationImplementor.swapTOSWithIndex(functionMetadata, stackMetadata, instruction.arg() - 1);
     }
 }

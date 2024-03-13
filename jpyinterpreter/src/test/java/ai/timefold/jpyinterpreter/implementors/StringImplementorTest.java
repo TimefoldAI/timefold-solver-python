@@ -7,11 +7,12 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import ai.timefold.jpyinterpreter.OpcodeIdentifier;
 import ai.timefold.jpyinterpreter.PythonBytecodeToJavaBytecodeTranslator;
 import ai.timefold.jpyinterpreter.PythonCompiledFunction;
 import ai.timefold.jpyinterpreter.PythonInterpreter;
 import ai.timefold.jpyinterpreter.builtins.UnaryDunderBuiltin;
+import ai.timefold.jpyinterpreter.opcodes.descriptor.ControlOpDescriptor;
+import ai.timefold.jpyinterpreter.opcodes.descriptor.StringOpDescriptor;
 import ai.timefold.jpyinterpreter.types.PythonLikeFunction;
 import ai.timefold.jpyinterpreter.types.PythonNone;
 import ai.timefold.jpyinterpreter.util.PythonFunctionBuilder;
@@ -27,8 +28,8 @@ public class StringImplementorTest {
                 .loadConstant("My name")
                 .loadConstant(" is ")
                 .loadConstant("awesome!")
-                .op(OpcodeIdentifier.BUILD_STRING, 3)
-                .op(OpcodeIdentifier.RETURN_VALUE)
+                .op(StringOpDescriptor.BUILD_STRING, 3)
+                .op(ControlOpDescriptor.RETURN_VALUE)
                 .build();
 
         Supplier javaFunction =
@@ -41,8 +42,8 @@ public class StringImplementorTest {
         PythonCompiledFunction pythonCompiledFunction = PythonFunctionBuilder.newFunction("item", "format")
                 .loadParameter("item")
                 .loadParameter("format")
-                .op(OpcodeIdentifier.FORMAT_VALUE, 4)
-                .op(OpcodeIdentifier.RETURN_VALUE)
+                .op(StringOpDescriptor.FORMAT_VALUE, 4)
+                .op(ControlOpDescriptor.RETURN_VALUE)
                 .build();
 
         BiFunction javaFunction =
@@ -58,8 +59,8 @@ public class StringImplementorTest {
     public void testFormatWithoutParameter() {
         PythonCompiledFunction pythonCompiledFunction = PythonFunctionBuilder.newFunction("item")
                 .loadParameter("item")
-                .op(OpcodeIdentifier.FORMAT_VALUE, 0)
-                .op(OpcodeIdentifier.RETURN_VALUE)
+                .op(StringOpDescriptor.FORMAT_VALUE, 0)
+                .op(ControlOpDescriptor.RETURN_VALUE)
                 .build();
 
         Function javaFunction =
@@ -73,9 +74,9 @@ public class StringImplementorTest {
     public void testPrint() {
         PythonCompiledFunction compiledFunction = PythonFunctionBuilder.newFunction("to_print")
                 .loadParameter("to_print")
-                .op(OpcodeIdentifier.PRINT_EXPR)
+                .op(StringOpDescriptor.PRINT_EXPR)
                 .loadConstant(null)
-                .op(OpcodeIdentifier.RETURN_VALUE)
+                .op(ControlOpDescriptor.RETURN_VALUE)
                 .build();
 
         PythonInterpreter interpreter = Mockito.mock(PythonInterpreter.class);

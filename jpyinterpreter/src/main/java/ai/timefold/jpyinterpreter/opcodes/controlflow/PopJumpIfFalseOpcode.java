@@ -1,7 +1,6 @@
 package ai.timefold.jpyinterpreter.opcodes.controlflow;
 
 import java.util.List;
-import java.util.Map;
 
 import ai.timefold.jpyinterpreter.FunctionMetadata;
 import ai.timefold.jpyinterpreter.PythonBytecodeInstruction;
@@ -21,12 +20,6 @@ public class PopJumpIfFalseOpcode extends AbstractControlFlowOpcode {
         return List.of(
                 getBytecodeIndex() + 1,
                 jumpTarget);
-    }
-
-    @Override
-    public void relabel(Map<Integer, Integer> originalBytecodeIndexToNewBytecodeIndex) {
-        jumpTarget = originalBytecodeIndexToNewBytecodeIndex.get(jumpTarget);
-        super.relabel(originalBytecodeIndexToNewBytecodeIndex);
     }
 
     @Override

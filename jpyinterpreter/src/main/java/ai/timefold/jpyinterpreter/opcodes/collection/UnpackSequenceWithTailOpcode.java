@@ -21,7 +21,7 @@ public class UnpackSequenceWithTailOpcode extends AbstractOpcode {
 
         newStackMetadata = newStackMetadata
                 .push(ValueSourceInfo.of(this, BuiltinTypes.LIST_TYPE, stackMetadata.getValueSourcesUpToStackIndex(1)));
-        for (int i = 0; i < instruction.arg; i++) {
+        for (int i = 0; i < instruction.arg(); i++) {
             newStackMetadata = newStackMetadata.push(ValueSourceInfo.of(this, BuiltinTypes.BASE_TYPE,
                     stackMetadata.getValueSourcesUpToStackIndex(1)));
         }
@@ -30,7 +30,7 @@ public class UnpackSequenceWithTailOpcode extends AbstractOpcode {
 
     @Override
     public void implement(FunctionMetadata functionMetadata, StackMetadata stackMetadata) {
-        CollectionImplementor.unpackSequenceWithTail(functionMetadata.methodVisitor, instruction.arg,
+        CollectionImplementor.unpackSequenceWithTail(functionMetadata.methodVisitor, instruction.arg(),
                 stackMetadata.localVariableHelper);
     }
 }

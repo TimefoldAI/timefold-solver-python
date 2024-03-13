@@ -19,22 +19,22 @@ public class CallFunctionOpcode extends AbstractOpcode {
 
     @Override
     protected StackMetadata getStackMetadataAfterInstruction(FunctionMetadata functionMetadata, StackMetadata stackMetadata) {
-        PythonLikeType functionType = stackMetadata.getTypeAtStackIndex(instruction.arg);
+        PythonLikeType functionType = stackMetadata.getTypeAtStackIndex(instruction.arg());
         if (functionType instanceof PythonLikeGenericType) {
             functionType = ((PythonLikeGenericType) functionType).getOrigin().getConstructorType().orElse(null);
         }
         if (functionType instanceof PythonKnownFunctionType) {
             PythonKnownFunctionType knownFunctionType = (PythonKnownFunctionType) functionType;
             return knownFunctionType.getDefaultFunctionSignature()
-                    .map(functionSignature -> stackMetadata.pop(instruction.arg + 1).push(ValueSourceInfo.of(this,
+                    .map(functionSignature -> stackMetadata.pop(instruction.arg() + 1).push(ValueSourceInfo.of(this,
                             functionSignature.getReturnType(),
-                            stackMetadata.getValueSourcesUpToStackIndex(instruction.arg + 1))))
-                    .orElseGet(() -> stackMetadata.pop(instruction.arg + 1)
+                            stackMetadata.getValueSourcesUpToStackIndex(instruction.arg() + 1))))
+                    .orElseGet(() -> stackMetadata.pop(instruction.arg() + 1)
                             .push(ValueSourceInfo.of(this, BuiltinTypes.BASE_TYPE,
-                                    stackMetadata.getValueSourcesUpToStackIndex(instruction.arg + 1))));
+                                    stackMetadata.getValueSourcesUpToStackIndex(instruction.arg() + 1))));
         }
-        return stackMetadata.pop(instruction.arg + 1).push(ValueSourceInfo.of(this, BuiltinTypes.BASE_TYPE,
-                stackMetadata.getValueSourcesUpToStackIndex(instruction.arg + 1)));
+        return stackMetadata.pop(instruction.arg() + 1).push(ValueSourceInfo.of(this, BuiltinTypes.BASE_TYPE,
+                stackMetadata.getValueSourcesUpToStackIndex(instruction.arg() + 1)));
     }
 
     @Override

@@ -33,7 +33,7 @@ public class ResumeOpcode extends AbstractOpcode {
     }
 
     public ResumeType getResumeType() {
-        return getResumeType(instruction.arg);
+        return getResumeType(instruction.arg());
     }
 
     @Override

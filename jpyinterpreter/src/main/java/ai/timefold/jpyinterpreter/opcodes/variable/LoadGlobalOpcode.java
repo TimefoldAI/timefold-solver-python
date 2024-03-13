@@ -22,13 +22,13 @@ public class LoadGlobalOpcode extends AbstractOpcode {
 
     private int getGlobalIndex(FunctionMetadata functionMetadata) {
         return (functionMetadata.pythonCompiledFunction.pythonVersion.compareTo(PythonVersion.PYTHON_3_11) >= 0)
-                ? instruction.arg >> 1
-                : instruction.arg;
+                ? instruction.arg() >> 1
+                : instruction.arg();
     }
 
     private boolean pushNullBeforeGlobal(FunctionMetadata functionMetadata) {
         return functionMetadata.pythonCompiledFunction.pythonVersion.compareTo(PythonVersion.PYTHON_3_11) >= 0
-                && ((instruction.arg & 1) == 1);
+                && ((instruction.arg() & 1) == 1);
     }
 
     private PythonLikeObject getGlobal(FunctionMetadata functionMetadata) {

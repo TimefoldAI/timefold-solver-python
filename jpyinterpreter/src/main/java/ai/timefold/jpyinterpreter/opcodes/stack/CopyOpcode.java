@@ -15,11 +15,11 @@ public class CopyOpcode extends AbstractOpcode {
     @Override
     public StackMetadata getStackMetadataAfterInstruction(FunctionMetadata functionMetadata,
             StackMetadata stackMetadata) {
-        return stackMetadata.push(stackMetadata.getValueSourceForStackIndex(instruction.arg - 1));
+        return stackMetadata.push(stackMetadata.getValueSourceForStackIndex(instruction.arg() - 1));
     }
 
     @Override
     public void implement(FunctionMetadata functionMetadata, StackMetadata stackMetadata) {
-        StackManipulationImplementor.duplicateToTOS(functionMetadata, stackMetadata, instruction.arg - 1);
+        StackManipulationImplementor.duplicateToTOS(functionMetadata, stackMetadata, instruction.arg() - 1);
     }
 }

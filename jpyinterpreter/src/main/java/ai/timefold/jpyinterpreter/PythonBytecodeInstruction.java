@@ -1,51 +1,30 @@
 package ai.timefold.jpyinterpreter;
 
-public class PythonBytecodeInstruction {
-    /**
-     * The {@link OpcodeIdentifier} for this operation
-     */
-    public OpcodeIdentifier opcode;
+import java.util.Optional;
 
-    /**
-     * Human readable name for operation
-     */
-    public String opname;
+import ai.timefold.jpyinterpreter.opcodes.descriptor.OpcodeDescriptor;
 
-    /**
-     * Numeric argument to operation (if any), otherwise null
-     */
-    public Integer arg;
+public record PythonBytecodeInstruction(String opname, int offset, int arg, Optional<Integer> startsLine,
+        boolean isJumpTarget) {
+    public static PythonBytecodeInstruction atOffset(OpcodeDescriptor instruction, int offset) {
+        return new PythonBytecodeInstruction(instruction.name(), offset, 0, Optional.empty(), false);
+    }
 
-    /**
-     * Start index of operation within bytecode sequence
-     */
-    public int offset;
+    public PythonBytecodeInstruction withArg(int newArg) {
+        return new PythonBytecodeInstruction(opname, offset, newArg, startsLine, isJumpTarget);
+    }
 
-    /**
-     * Line started by this opcode (if any), otherwise None
-     */
-    public Integer startsLine;
+    public PythonBytecodeInstruction withOffset(int newOffset) {
+        return new PythonBytecodeInstruction(opname, newOffset, arg, startsLine, isJumpTarget);
+    }
 
-    /**
-     * True if other code jumps to here, otherwise False
-     */
-    public boolean isJumpTarget;
-
-    public PythonBytecodeInstruction copy() {
-        PythonBytecodeInstruction out = new PythonBytecodeInstruction();
-
-        out.opcode = opcode;
-        out.opname = opname;
-        out.arg = arg;
-        out.offset = offset;
-        out.startsLine = startsLine;
-        out.isJumpTarget = isJumpTarget;
-
-        return out;
+    public PythonBytecodeInstruction markAsJumpTarget() {
+        return new PythonBytecodeInstruction(opname, offset, arg, startsLine, true);
     }
 
     @Override
     public String toString() {
-        return "[" + offset + "] " + opcode.name() + " (" + arg + ")" + (isJumpTarget ? " {JUMP TARGET}" : "");
+        return "[%d] %s (%d) %s"
+                .formatted(offset, opname, arg, isJumpTarget ? "{JUMP TARGET}" : "");
     }
 }

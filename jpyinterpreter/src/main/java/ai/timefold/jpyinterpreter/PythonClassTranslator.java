@@ -1184,14 +1184,14 @@ public class PythonClassTranslator {
                 if (opcode instanceof LoadFastOpcode || opcode instanceof StoreAttrOpcode
                         || opcode instanceof DeleteAttrOpcode) {
                     AbstractOpcode instructionOpcode = (AbstractOpcode) opcode;
-                    return instructionOpcode.getInstruction().arg == 0;
+                    return instructionOpcode.getInstruction().arg() == 0;
                 }
                 if (opcode instanceof SelfOpcodeWithoutSource) {
                     return true;
                 }
                 return false;
             })) {
-                referencedSelfAttributeSet.add(pythonCompiledFunction.co_names.get(attributeOpcode.getInstruction().arg));
+                referencedSelfAttributeSet.add(pythonCompiledFunction.co_names.get(attributeOpcode.getInstruction().arg()));
             }
         };
 

@@ -19,18 +19,18 @@ public class LoadConstantOpcode extends AbstractOpcode {
 
     @Override
     protected StackMetadata getStackMetadataAfterInstruction(FunctionMetadata functionMetadata, StackMetadata stackMetadata) {
-        PythonLikeObject constant = functionMetadata.pythonCompiledFunction.co_constants.get(instruction.arg);
+        PythonLikeObject constant = functionMetadata.pythonCompiledFunction.co_constants.get(instruction.arg());
         PythonLikeType constantType = constant.$getGenericType();
         return stackMetadata.push(ValueSourceInfo.of(this, constantType));
     }
 
     @Override
     public void implement(FunctionMetadata functionMetadata, StackMetadata stackMetadata) {
-        PythonLikeObject constant = functionMetadata.pythonCompiledFunction.co_constants.get(instruction.arg);
+        PythonLikeObject constant = functionMetadata.pythonCompiledFunction.co_constants.get(instruction.arg());
         PythonLikeType constantType = constant.$getGenericType();
 
         PythonConstantsImplementor.loadConstant(functionMetadata.methodVisitor, functionMetadata.className,
-                instruction.arg);
+                instruction.arg());
         functionMetadata.methodVisitor.visitTypeInsn(Opcodes.CHECKCAST, constantType.getJavaTypeInternalName());
     }
 }
