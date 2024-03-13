@@ -2,6 +2,8 @@ package ai.timefold.jpyinterpreter;
 
 import java.util.Optional;
 
+import ai.timefold.jpyinterpreter.opcodes.dunder.BinaryDunderOpcode;
+
 /**
  * The list of all Python Binary Operators, which are performed
  * by calling the left operand's corresponding dunder method on the
@@ -139,68 +141,39 @@ public enum PythonBinaryOperator {
         return Optional.ofNullable(fallbackOperation);
     }
 
-    public static PythonBinaryOperator lookup(int instructionArg) {
+    public static BinaryDunderOpcode getBinaryOpcode(PythonBytecodeInstruction instruction) {
         // As defined by https://github.com/python/cpython/blob/0faa0ba240e815614e5a2900e48007acac41b214/Python/ceval.c#L299
 
         // Binary operations are in alphabetical order (note: CPython refer to Modulo as Remainder),
         // and are followed by the inplace operations in the same order
-        switch (instructionArg) {
-            case 0:
-                return PythonBinaryOperator.ADD;
-            case 1:
-                return PythonBinaryOperator.AND;
-            case 2:
-                return PythonBinaryOperator.FLOOR_DIVIDE;
-            case 3:
-                return PythonBinaryOperator.LSHIFT;
-            case 4:
-                return PythonBinaryOperator.MATRIX_MULTIPLY;
-            case 5:
-                return PythonBinaryOperator.MULTIPLY;
-            case 6:
-                return PythonBinaryOperator.MODULO;
-            case 7:
-                return PythonBinaryOperator.OR;
-            case 8:
-                return PythonBinaryOperator.POWER;
-            case 9:
-                return PythonBinaryOperator.RSHIFT;
-            case 10:
-                return PythonBinaryOperator.SUBTRACT;
-            case 11:
-                return PythonBinaryOperator.TRUE_DIVIDE;
-            case 12:
-                return PythonBinaryOperator.XOR;
-
-            case 13:
-                return PythonBinaryOperator.INPLACE_ADD;
-            case 14:
-                return PythonBinaryOperator.INPLACE_AND;
-            case 15:
-                return PythonBinaryOperator.INPLACE_FLOOR_DIVIDE;
-            case 16:
-                return PythonBinaryOperator.INPLACE_LSHIFT;
-            case 17:
-                return PythonBinaryOperator.INPLACE_MATRIX_MULTIPLY;
-            case 18:
-                return PythonBinaryOperator.INPLACE_MULTIPLY;
-            case 19:
-                return PythonBinaryOperator.INPLACE_MODULO;
-            case 20:
-                return PythonBinaryOperator.INPLACE_OR;
-            case 21:
-                return PythonBinaryOperator.INPLACE_POWER;
-            case 22:
-                return PythonBinaryOperator.INPLACE_RSHIFT;
-            case 23:
-                return PythonBinaryOperator.INPLACE_SUBTRACT;
-            case 24:
-                return PythonBinaryOperator.INPLACE_TRUE_DIVIDE;
-            case 25:
-                return PythonBinaryOperator.INPLACE_XOR;
-
-            default:
-                throw new IllegalArgumentException("Unknown binary op id: " + instructionArg);
-        }
+        return new BinaryDunderOpcode(instruction, switch (instruction.arg()) {
+            case 0 -> PythonBinaryOperator.ADD;
+            case 1 -> PythonBinaryOperator.AND;
+            case 2 -> PythonBinaryOperator.FLOOR_DIVIDE;
+            case 3 -> PythonBinaryOperator.LSHIFT;
+            case 4 -> PythonBinaryOperator.MATRIX_MULTIPLY;
+            case 5 -> PythonBinaryOperator.MULTIPLY;
+            case 6 -> PythonBinaryOperator.MODULO;
+            case 7 -> PythonBinaryOperator.OR;
+            case 8 -> PythonBinaryOperator.POWER;
+            case 9 -> PythonBinaryOperator.RSHIFT;
+            case 10 -> PythonBinaryOperator.SUBTRACT;
+            case 11 -> PythonBinaryOperator.TRUE_DIVIDE;
+            case 12 -> PythonBinaryOperator.XOR;
+            case 13 -> PythonBinaryOperator.INPLACE_ADD;
+            case 14 -> PythonBinaryOperator.INPLACE_AND;
+            case 15 -> PythonBinaryOperator.INPLACE_FLOOR_DIVIDE;
+            case 16 -> PythonBinaryOperator.INPLACE_LSHIFT;
+            case 17 -> PythonBinaryOperator.INPLACE_MATRIX_MULTIPLY;
+            case 18 -> PythonBinaryOperator.INPLACE_MULTIPLY;
+            case 19 -> PythonBinaryOperator.INPLACE_MODULO;
+            case 20 -> PythonBinaryOperator.INPLACE_OR;
+            case 21 -> PythonBinaryOperator.INPLACE_POWER;
+            case 22 -> PythonBinaryOperator.INPLACE_RSHIFT;
+            case 23 -> PythonBinaryOperator.INPLACE_SUBTRACT;
+            case 24 -> PythonBinaryOperator.INPLACE_TRUE_DIVIDE;
+            case 25 -> PythonBinaryOperator.INPLACE_XOR;
+            default -> throw new IllegalArgumentException("Unknown binary op id: " + instruction.arg());
+        });
     }
 }

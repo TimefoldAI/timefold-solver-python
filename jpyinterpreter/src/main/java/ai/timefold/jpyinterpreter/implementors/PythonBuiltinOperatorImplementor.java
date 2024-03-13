@@ -27,7 +27,7 @@ public class PythonBuiltinOperatorImplementor {
      * Perform TOS is TOS1. If {@code instruction} argument is 1, perform TOS is not TOS1 instead.
      */
     public static void isOperator(MethodVisitor methodVisitor, PythonBytecodeInstruction instruction) {
-        int opcode = (instruction.arg == 0) ? Opcodes.IF_ACMPEQ : Opcodes.IF_ACMPNE;
+        int opcode = (instruction.arg() == 0) ? Opcodes.IF_ACMPEQ : Opcodes.IF_ACMPNE;
         Label trueBranchLabel = new Label();
         Label endLabel = new Label();
 

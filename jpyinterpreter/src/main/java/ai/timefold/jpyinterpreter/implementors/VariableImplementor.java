@@ -5,7 +5,6 @@ import java.util.Map;
 
 import ai.timefold.jpyinterpreter.FunctionMetadata;
 import ai.timefold.jpyinterpreter.LocalVariableHelper;
-import ai.timefold.jpyinterpreter.OpcodeIdentifier;
 import ai.timefold.jpyinterpreter.PythonBytecodeInstruction;
 import ai.timefold.jpyinterpreter.PythonBytecodeToJavaBytecodeTranslator;
 import ai.timefold.jpyinterpreter.PythonCompiledFunction;
@@ -13,6 +12,7 @@ import ai.timefold.jpyinterpreter.PythonInterpreter;
 import ai.timefold.jpyinterpreter.PythonLikeObject;
 import ai.timefold.jpyinterpreter.PythonVersion;
 import ai.timefold.jpyinterpreter.StackMetadata;
+import ai.timefold.jpyinterpreter.opcodes.descriptor.VariableOpDescriptor;
 import ai.timefold.jpyinterpreter.types.PythonCell;
 import ai.timefold.jpyinterpreter.types.PythonLikeType;
 import ai.timefold.jpyinterpreter.types.collections.PythonLikeTuple;
@@ -33,7 +33,7 @@ public class VariableImplementor {
      */
     public static void loadLocalVariable(MethodVisitor methodVisitor, PythonBytecodeInstruction instruction,
             LocalVariableHelper localVariableHelper) {
-        localVariableHelper.readLocal(methodVisitor, instruction.arg);
+        localVariableHelper.readLocal(methodVisitor, instruction.arg());
     }
 
     /**
@@ -41,7 +41,7 @@ public class VariableImplementor {
      */
     public static void storeInLocalVariable(MethodVisitor methodVisitor, PythonBytecodeInstruction instruction,
             LocalVariableHelper localVariableHelper) {
-        localVariableHelper.writeLocal(methodVisitor, instruction.arg);
+        localVariableHelper.writeLocal(methodVisitor, instruction.arg());
     }
 
     /**
@@ -50,7 +50,7 @@ public class VariableImplementor {
     public static void deleteGlobalVariable(MethodVisitor methodVisitor, String className,
             PythonCompiledFunction pythonCompiledFunction,
             PythonBytecodeInstruction instruction) {
-        String globalName = pythonCompiledFunction.co_names.get(instruction.arg);
+        String globalName = pythonCompiledFunction.co_names.get(instruction.arg());
 
         methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
         methodVisitor.visitTypeInsn(Opcodes.CHECKCAST, className);
@@ -101,7 +101,7 @@ public class VariableImplementor {
     public static void storeInGlobalVariable(MethodVisitor methodVisitor, String className,
             PythonCompiledFunction pythonCompiledFunction,
             PythonBytecodeInstruction instruction) {
-        String globalName = pythonCompiledFunction.co_names.get(instruction.arg);
+        String globalName = pythonCompiledFunction.co_names.get(instruction.arg());
 
         methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
         methodVisitor.visitTypeInsn(Opcodes.CHECKCAST, className);
@@ -129,7 +129,7 @@ public class VariableImplementor {
             LocalVariableHelper localVariableHelper) {
         // Deleting is implemented as setting the value to null
         methodVisitor.visitInsn(Opcodes.ACONST_NULL);
-        localVariableHelper.writeLocal(methodVisitor, instruction.arg);
+        localVariableHelper.writeLocal(methodVisitor, instruction.arg());
     }
 
     public static int getCellIndex(FunctionMetadata functionMetadata, int instructionArg) {
@@ -147,7 +147,7 @@ public class VariableImplementor {
 
     /**
      * Loads the cell indicated by the {@code instruction} argument onto the stack.
-     * This is used by {@link OpcodeIdentifier#LOAD_CLOSURE} when creating a closure
+     * This is used by {@link VariableOpDescriptor#LOAD_CLOSURE} when creating a closure
      * for a dependent function.
      */
     public static void createCell(MethodVisitor methodVisitor, LocalVariableHelper localVariableHelper, int cellIndex) {
@@ -184,7 +184,7 @@ public class VariableImplementor {
 
     /**
      * Loads the cell indicated by the {@code instruction} argument onto the stack.
-     * This is used by {@link OpcodeIdentifier#LOAD_CLOSURE} when creating a closure
+     * This is used by {@link VariableOpDescriptor#LOAD_CLOSURE} when creating a closure
      * for a dependent function.
      */
     public static void loadCell(FunctionMetadata functionMetadata, StackMetadata stackMetadata, int cellIndex) {

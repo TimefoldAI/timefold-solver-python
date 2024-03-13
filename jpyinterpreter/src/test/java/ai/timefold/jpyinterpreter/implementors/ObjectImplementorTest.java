@@ -7,9 +7,12 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import ai.timefold.jpyinterpreter.MyObject;
-import ai.timefold.jpyinterpreter.OpcodeIdentifier;
 import ai.timefold.jpyinterpreter.PythonBytecodeToJavaBytecodeTranslator;
 import ai.timefold.jpyinterpreter.PythonCompiledFunction;
+import ai.timefold.jpyinterpreter.opcodes.descriptor.ControlOpDescriptor;
+import ai.timefold.jpyinterpreter.opcodes.descriptor.DunderOpDescriptor;
+import ai.timefold.jpyinterpreter.opcodes.descriptor.ObjectOpDescriptor;
+import ai.timefold.jpyinterpreter.opcodes.descriptor.StackOpDescriptor;
 import ai.timefold.jpyinterpreter.types.numeric.PythonBoolean;
 import ai.timefold.jpyinterpreter.util.PythonFunctionBuilder;
 
@@ -22,9 +25,9 @@ public class ObjectImplementorTest {
     public void testIs() {
         PythonCompiledFunction pythonCompiledFunction = PythonFunctionBuilder.newFunction()
                 .loadConstant(5)
-                .op(OpcodeIdentifier.DUP_TOP)
-                .op(OpcodeIdentifier.IS_OP, 0)
-                .op(OpcodeIdentifier.RETURN_VALUE)
+                .op(StackOpDescriptor.DUP_TOP)
+                .op(ObjectOpDescriptor.IS_OP, 0)
+                .op(ControlOpDescriptor.RETURN_VALUE)
                 .build();
 
         Supplier javaFunction =
@@ -33,11 +36,11 @@ public class ObjectImplementorTest {
 
         pythonCompiledFunction = PythonFunctionBuilder.newFunction()
                 .loadConstant(5)
-                .op(OpcodeIdentifier.DUP_TOP)
+                .op(StackOpDescriptor.DUP_TOP)
                 .loadConstant(0)
-                .op(OpcodeIdentifier.BINARY_ADD)
-                .op(OpcodeIdentifier.IS_OP, 0)
-                .op(OpcodeIdentifier.RETURN_VALUE)
+                .op(DunderOpDescriptor.BINARY_ADD)
+                .op(ObjectOpDescriptor.IS_OP, 0)
+                .op(ControlOpDescriptor.RETURN_VALUE)
                 .build();
 
         javaFunction = PythonBytecodeToJavaBytecodeTranslator.translatePythonBytecode(pythonCompiledFunction, Supplier.class);
@@ -46,9 +49,9 @@ public class ObjectImplementorTest {
         // Test is not
         pythonCompiledFunction = PythonFunctionBuilder.newFunction()
                 .loadConstant(5)
-                .op(OpcodeIdentifier.DUP_TOP)
-                .op(OpcodeIdentifier.IS_OP, 1)
-                .op(OpcodeIdentifier.RETURN_VALUE)
+                .op(StackOpDescriptor.DUP_TOP)
+                .op(ObjectOpDescriptor.IS_OP, 1)
+                .op(ControlOpDescriptor.RETURN_VALUE)
                 .build();
 
         javaFunction = PythonBytecodeToJavaBytecodeTranslator.translatePythonBytecode(pythonCompiledFunction, Supplier.class);
@@ -56,11 +59,11 @@ public class ObjectImplementorTest {
 
         pythonCompiledFunction = PythonFunctionBuilder.newFunction()
                 .loadConstant(5)
-                .op(OpcodeIdentifier.DUP_TOP)
+                .op(StackOpDescriptor.DUP_TOP)
                 .loadConstant(0)
-                .op(OpcodeIdentifier.BINARY_ADD)
-                .op(OpcodeIdentifier.IS_OP, 1)
-                .op(OpcodeIdentifier.RETURN_VALUE)
+                .op(DunderOpDescriptor.BINARY_ADD)
+                .op(ObjectOpDescriptor.IS_OP, 1)
+                .op(ControlOpDescriptor.RETURN_VALUE)
                 .build();
 
         javaFunction = PythonBytecodeToJavaBytecodeTranslator.translatePythonBytecode(pythonCompiledFunction, Supplier.class);
@@ -72,7 +75,7 @@ public class ObjectImplementorTest {
         PythonCompiledFunction pythonCompiledFunction = PythonFunctionBuilder.newFunction("item")
                 .loadParameter("item")
                 .getAttribute("name")
-                .op(OpcodeIdentifier.RETURN_VALUE)
+                .op(ControlOpDescriptor.RETURN_VALUE)
                 .build();
 
         Function javaFunction =
@@ -88,7 +91,7 @@ public class ObjectImplementorTest {
                 .loadParameter("value")
                 .loadParameter("item")
                 .storeAttribute("name")
-                .op(OpcodeIdentifier.RETURN_VALUE)
+                .op(ControlOpDescriptor.RETURN_VALUE)
                 .build();
 
         BiConsumer javaFunction =

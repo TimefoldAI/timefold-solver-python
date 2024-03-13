@@ -5,9 +5,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.util.List;
 import java.util.function.Supplier;
 
-import ai.timefold.jpyinterpreter.OpcodeIdentifier;
 import ai.timefold.jpyinterpreter.PythonBytecodeToJavaBytecodeTranslator;
 import ai.timefold.jpyinterpreter.PythonCompiledFunction;
+import ai.timefold.jpyinterpreter.opcodes.descriptor.ControlOpDescriptor;
+import ai.timefold.jpyinterpreter.opcodes.descriptor.StackOpDescriptor;
 import ai.timefold.jpyinterpreter.util.PythonFunctionBuilder;
 
 import org.junit.jupiter.api.Test;
@@ -18,9 +19,9 @@ public class StackManipulationImplementorTest {
         PythonCompiledFunction pythonCompiledFunction = PythonFunctionBuilder.newFunction()
                 .loadConstant(1)
                 .loadConstant(2)
-                .op(OpcodeIdentifier.ROT_TWO)
+                .op(StackOpDescriptor.ROT_TWO)
                 .tuple(2)
-                .op(OpcodeIdentifier.RETURN_VALUE)
+                .op(ControlOpDescriptor.RETURN_VALUE)
                 .build();
 
         Supplier<?> javaFunction =
@@ -35,9 +36,9 @@ public class StackManipulationImplementorTest {
                 .loadConstant(1)
                 .loadConstant(2)
                 .loadConstant(3)
-                .op(OpcodeIdentifier.ROT_THREE)
+                .op(StackOpDescriptor.ROT_THREE)
                 .tuple(3)
-                .op(OpcodeIdentifier.RETURN_VALUE)
+                .op(ControlOpDescriptor.RETURN_VALUE)
                 .build();
 
         Supplier<?> javaFunction =
@@ -53,9 +54,9 @@ public class StackManipulationImplementorTest {
                 .loadConstant(2)
                 .loadConstant(3)
                 .loadConstant(4)
-                .op(OpcodeIdentifier.ROT_FOUR)
+                .op(StackOpDescriptor.ROT_FOUR)
                 .tuple(4)
-                .op(OpcodeIdentifier.RETURN_VALUE)
+                .op(ControlOpDescriptor.RETURN_VALUE)
                 .build();
 
         Supplier<?> javaFunction =

@@ -17,13 +17,13 @@ public class BuildConstantKeyMapOpcode extends AbstractOpcode {
 
     @Override
     protected StackMetadata getStackMetadataAfterInstruction(FunctionMetadata functionMetadata, StackMetadata stackMetadata) {
-        return stackMetadata.pop(instruction.arg + 1).push(ValueSourceInfo.of(this,
+        return stackMetadata.pop(instruction.arg() + 1).push(ValueSourceInfo.of(this,
                 BuiltinTypes.DICT_TYPE,
-                stackMetadata.getValueSourcesUpToStackIndex(instruction.arg + 1)));
+                stackMetadata.getValueSourcesUpToStackIndex(instruction.arg() + 1)));
     }
 
     @Override
     public void implement(FunctionMetadata functionMetadata, StackMetadata stackMetadata) {
-        CollectionImplementor.buildConstKeysMap(PythonLikeDict.class, functionMetadata.methodVisitor, instruction.arg);
+        CollectionImplementor.buildConstKeysMap(PythonLikeDict.class, functionMetadata.methodVisitor, instruction.arg());
     }
 }

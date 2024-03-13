@@ -17,7 +17,7 @@ public class FormatValueOpcode extends AbstractOpcode {
     @Override
     public StackMetadata getStackMetadataAfterInstruction(FunctionMetadata functionMetadata,
             StackMetadata stackMetadata) {
-        if ((instruction.arg & 4) == 4) {
+        if ((instruction.arg() & 4) == 4) {
             // There is a format argument above the value
             return stackMetadata.pop(2)
                     .push(ValueSourceInfo.of(this, BuiltinTypes.STRING_TYPE,

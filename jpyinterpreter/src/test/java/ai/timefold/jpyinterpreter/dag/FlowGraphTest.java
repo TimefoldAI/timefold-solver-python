@@ -12,7 +12,6 @@ import java.util.stream.IntStream;
 import ai.timefold.jpyinterpreter.CompareOp;
 import ai.timefold.jpyinterpreter.FunctionMetadata;
 import ai.timefold.jpyinterpreter.LocalVariableHelper;
-import ai.timefold.jpyinterpreter.OpcodeIdentifier;
 import ai.timefold.jpyinterpreter.PythonBytecodeInstruction;
 import ai.timefold.jpyinterpreter.PythonBytecodeToJavaBytecodeTranslator;
 import ai.timefold.jpyinterpreter.PythonCompiledFunction;
@@ -21,6 +20,13 @@ import ai.timefold.jpyinterpreter.StackMetadata;
 import ai.timefold.jpyinterpreter.ValueSourceInfo;
 import ai.timefold.jpyinterpreter.opcodes.Opcode;
 import ai.timefold.jpyinterpreter.opcodes.OpcodeWithoutSource;
+import ai.timefold.jpyinterpreter.opcodes.descriptor.CollectionOpDescriptor;
+import ai.timefold.jpyinterpreter.opcodes.descriptor.ControlOpDescriptor;
+import ai.timefold.jpyinterpreter.opcodes.descriptor.DunderOpDescriptor;
+import ai.timefold.jpyinterpreter.opcodes.descriptor.ExceptionOpDescriptor;
+import ai.timefold.jpyinterpreter.opcodes.descriptor.ModuleOpDescriptor;
+import ai.timefold.jpyinterpreter.opcodes.descriptor.StackOpDescriptor;
+import ai.timefold.jpyinterpreter.opcodes.descriptor.StringOpDescriptor;
 import ai.timefold.jpyinterpreter.types.BuiltinTypes;
 import ai.timefold.jpyinterpreter.types.PythonLikeType;
 import ai.timefold.jpyinterpreter.types.PythonString;
@@ -80,9 +86,9 @@ public class FlowGraphTest {
         PythonCompiledFunction pythonCompiledFunction = PythonFunctionBuilder.newFunction()
                 .loadConstant(1)
                 .loadConstant("Hi")
-                .op(OpcodeIdentifier.ROT_TWO)
+                .op(StackOpDescriptor.ROT_TWO)
                 .tuple(2)
-                .op(OpcodeIdentifier.RETURN_VALUE)
+                .op(ControlOpDescriptor.RETURN_VALUE)
                 .build();
 
         FunctionMetadata functionMetadata = getFunctionMetadata(pythonCompiledFunction);
@@ -108,7 +114,7 @@ public class FlowGraphTest {
                 .loadVariable("one")
                 .loadVariable("two")
                 .tuple(2)
-                .op(OpcodeIdentifier.RETURN_VALUE)
+                .op(ControlOpDescriptor.RETURN_VALUE)
                 .build();
 
         FunctionMetadata functionMetadata = getFunctionMetadata(pythonCompiledFunction);
@@ -137,14 +143,14 @@ public class FlowGraphTest {
                 .loadConstant(2)
                 .loadConstant(3)
                 .tuple(3)
-                .op(OpcodeIdentifier.GET_ITER)
+                .op(CollectionOpDescriptor.GET_ITER)
                 .loop(block -> {
                     block.loadVariable("sum");
-                    block.op(OpcodeIdentifier.BINARY_ADD);
+                    block.op(DunderOpDescriptor.BINARY_ADD);
                     block.storeVariable("sum");
                 })
                 .loadVariable("sum")
-                .op(OpcodeIdentifier.RETURN_VALUE)
+                .op(ControlOpDescriptor.RETURN_VALUE)
                 .build();
 
         FunctionMetadata functionMetadata = getFunctionMetadata(pythonCompiledFunction);
@@ -182,13 +188,13 @@ public class FlowGraphTest {
                             .loadConstant(5)
                             .compare(CompareOp.LESS_THAN)
                             .ifTrue(block -> {
-                                block.loadConstant("Try").op(OpcodeIdentifier.RETURN_VALUE);
+                                block.loadConstant("Try").op(ControlOpDescriptor.RETURN_VALUE);
                             })
-                            .op(OpcodeIdentifier.LOAD_ASSERTION_ERROR)
-                            .op(OpcodeIdentifier.RAISE_VARARGS, 1);
+                            .op(ExceptionOpDescriptor.LOAD_ASSERTION_ERROR)
+                            .op(ExceptionOpDescriptor.RAISE_VARARGS, 1);
                 }, true)
                 .except(PythonAssertionError.ASSERTION_ERROR_TYPE, except -> {
-                    except.loadConstant("Assert").op(OpcodeIdentifier.RETURN_VALUE);
+                    except.loadConstant("Assert").op(ControlOpDescriptor.RETURN_VALUE);
                 }, true)
                 .tryEnd()
                 .build();
@@ -248,15 +254,15 @@ public class FlowGraphTest {
                             .loadConstant(1)
                             .compare(CompareOp.EQUALS)
                             .ifTrue(block -> {
-                                block.op(OpcodeIdentifier.LOAD_ASSERTION_ERROR)
-                                        .op(OpcodeIdentifier.RAISE_VARARGS, 1);
+                                block.op(ExceptionOpDescriptor.LOAD_ASSERTION_ERROR)
+                                        .op(ExceptionOpDescriptor.RAISE_VARARGS, 1);
                             })
                             .loadConstant(1)
                             .loadConstant(2)
                             .compare(CompareOp.EQUALS)
                             .ifTrue(block -> {
                                 block.loadConstant(new StopIteration())
-                                        .op(OpcodeIdentifier.RAISE_VARARGS, 1);
+                                        .op(ExceptionOpDescriptor.RAISE_VARARGS, 1);
                             });
                 }, false)
                 .except(PythonAssertionError.ASSERTION_ERROR_TYPE, except -> {
@@ -268,7 +274,7 @@ public class FlowGraphTest {
                 }, false)
                 .tryEnd()
                 .loadConstant(1)
-                .op(OpcodeIdentifier.RETURN_VALUE)
+                .op(ControlOpDescriptor.RETURN_VALUE)
                 .build();
 
         FunctionMetadata functionMetadata = getFunctionMetadata(pythonCompiledFunction);
@@ -352,10 +358,10 @@ public class FlowGraphTest {
                     block.loadConstant("10");
                     block.storeVariable("a");
                     block.loadVariable("a");
-                    block.op(OpcodeIdentifier.RETURN_VALUE);
+                    block.op(ControlOpDescriptor.RETURN_VALUE);
                 })
                 .loadConstant(-10)
-                .op(OpcodeIdentifier.RETURN_VALUE)
+                .op(ControlOpDescriptor.RETURN_VALUE)
                 .build();
 
         FunctionMetadata functionMetadata = getFunctionMetadata(pythonCompiledFunction);
@@ -393,7 +399,7 @@ public class FlowGraphTest {
                     block.storeVariable("a");
                 })
                 .loadConstant(-10)
-                .op(OpcodeIdentifier.RETURN_VALUE)
+                .op(ControlOpDescriptor.RETURN_VALUE)
                 .build();
 
         FunctionMetadata functionMetadata = getFunctionMetadata(pythonCompiledFunction);
@@ -427,19 +433,19 @@ public class FlowGraphTest {
                 .callMethod(2)
                 .storeVariable("fullname_as_path")
                 .loadVariable("fullname_as_path")
-                .op(OpcodeIdentifier.FORMAT_VALUE, 0)
+                .op(StringOpDescriptor.FORMAT_VALUE, 0)
                 .loadConstant("/")
                 .loadParameter("resource")
-                .op(OpcodeIdentifier.FORMAT_VALUE, 0)
-                .op(OpcodeIdentifier.BUILD_STRING, 3)
+                .op(StringOpDescriptor.FORMAT_VALUE, 0)
+                .op(StringOpDescriptor.BUILD_STRING, 3)
                 .storeVariable("path")
                 .loadConstant(0)
                 .loadConstant(List.of(PythonString.valueOf("BytesIO")))
-                .op(OpcodeIdentifier.IMPORT_NAME, 2)
-                .op(OpcodeIdentifier.IMPORT_FROM, 3)
+                .op(ModuleOpDescriptor.IMPORT_NAME, 2)
+                .op(ModuleOpDescriptor.IMPORT_FROM, 3)
                 .storeVariable("BytesIO")
-                .op(OpcodeIdentifier.POP_TOP)
-                .op(OpcodeIdentifier.SETUP_FINALLY, 9)
+                .op(StackOpDescriptor.POP_TOP)
+                .op(ExceptionOpDescriptor.SETUP_FINALLY, 9)
                 .loadVariable("BytesIO")
                 .loadParameter("self")
                 .getAttribute("zipimporter")
@@ -447,23 +453,23 @@ public class FlowGraphTest {
                 .loadVariable("path")
                 .callMethod(1)
                 .callFunction(1)
-                .op(OpcodeIdentifier.POP_BLOCK)
-                .op(OpcodeIdentifier.RETURN_VALUE)
-                .op(OpcodeIdentifier.DUP_TOP)
+                .op(ExceptionOpDescriptor.POP_BLOCK)
+                .op(ControlOpDescriptor.RETURN_VALUE)
+                .op(StackOpDescriptor.DUP_TOP)
                 .loadGlobalVariable("OSError")
-                .op(OpcodeIdentifier.JUMP_IF_NOT_EXC_MATCH, 42)
-                .op(OpcodeIdentifier.POP_TOP)
-                .op(OpcodeIdentifier.POP_TOP)
-                .op(OpcodeIdentifier.POP_TOP)
+                .op(ControlOpDescriptor.JUMP_IF_NOT_EXC_MATCH, 42)
+                .op(StackOpDescriptor.POP_TOP)
+                .op(StackOpDescriptor.POP_TOP)
+                .op(StackOpDescriptor.POP_TOP)
                 .loadGlobalVariable("FileNotFoundError")
                 .loadVariable("path")
                 .callFunction(1)
-                .op(OpcodeIdentifier.RAISE_VARARGS, 1)
-                .op(OpcodeIdentifier.POP_EXCEPT)
-                .op(OpcodeIdentifier.JUMP_FORWARD, 1)
-                .op(OpcodeIdentifier.RERAISE, 0)
+                .op(ExceptionOpDescriptor.RAISE_VARARGS, 1)
+                .op(ExceptionOpDescriptor.POP_EXCEPT)
+                .op(ControlOpDescriptor.JUMP_FORWARD, 1)
+                .op(ExceptionOpDescriptor.RERAISE, 0)
                 .loadConstant(null)
-                .op(OpcodeIdentifier.RETURN_VALUE)
+                .op(ControlOpDescriptor.RETURN_VALUE)
                 .build();
 
         FunctionMetadata functionMetadata = getFunctionMetadata(pythonCompiledFunction);

@@ -17,14 +17,14 @@ public class BuildSetOpcode extends AbstractOpcode {
 
     @Override
     protected StackMetadata getStackMetadataAfterInstruction(FunctionMetadata functionMetadata, StackMetadata stackMetadata) {
-        return stackMetadata.pop(instruction.arg).push(ValueSourceInfo.of(this, BuiltinTypes.SET_TYPE,
-                stackMetadata.getValueSourcesUpToStackIndex(instruction.arg)));
+        return stackMetadata.pop(instruction.arg()).push(ValueSourceInfo.of(this, BuiltinTypes.SET_TYPE,
+                stackMetadata.getValueSourcesUpToStackIndex(instruction.arg())));
     }
 
     @Override
     public void implement(FunctionMetadata functionMetadata, StackMetadata stackMetadata) {
         // TODO: either modify reverseAdd for PythonLikeSet so it replaces already encountered elements
         //       or store the top count items in local variables and do it in forward order.
-        CollectionImplementor.buildCollection(PythonLikeSet.class, functionMetadata.methodVisitor, instruction.arg);
+        CollectionImplementor.buildCollection(PythonLikeSet.class, functionMetadata.methodVisitor, instruction.arg());
     }
 }

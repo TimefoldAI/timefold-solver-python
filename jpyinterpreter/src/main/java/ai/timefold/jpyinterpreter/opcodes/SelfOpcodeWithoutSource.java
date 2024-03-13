@@ -1,7 +1,6 @@
 package ai.timefold.jpyinterpreter.opcodes;
 
 import java.util.List;
-import java.util.Map;
 
 import ai.timefold.jpyinterpreter.FunctionMetadata;
 import ai.timefold.jpyinterpreter.StackMetadata;
@@ -10,11 +9,6 @@ public class SelfOpcodeWithoutSource implements Opcode {
 
     @Override
     public int getBytecodeIndex() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void relabel(Map<Integer, Integer> originalBytecodeIndexToNewBytecodeIndex) {
         throw new UnsupportedOperationException();
     }
 

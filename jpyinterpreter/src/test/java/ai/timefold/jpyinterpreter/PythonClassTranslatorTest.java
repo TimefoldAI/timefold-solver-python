@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
+import ai.timefold.jpyinterpreter.opcodes.descriptor.ControlOpDescriptor;
 import ai.timefold.jpyinterpreter.types.BuiltinTypes;
 import ai.timefold.jpyinterpreter.types.PythonLikeFunction;
 import ai.timefold.jpyinterpreter.types.PythonLikeType;
@@ -26,18 +27,18 @@ public class PythonClassTranslatorTest {
                 .loadParameter("self")
                 .storeAttribute("age")
                 .loadConstant(null)
-                .op(OpcodeIdentifier.RETURN_VALUE)
+                .op(ControlOpDescriptor.RETURN_VALUE)
                 .build();
 
         PythonCompiledFunction ageFunction = PythonFunctionBuilder.newFunction("self")
                 .loadParameter("self")
                 .getAttribute("age")
-                .op(OpcodeIdentifier.RETURN_VALUE)
+                .op(ControlOpDescriptor.RETURN_VALUE)
                 .build();
 
         PythonCompiledFunction helloWorldFunction = PythonFunctionBuilder.newFunction()
                 .loadConstant("hello world")
-                .op(OpcodeIdentifier.RETURN_VALUE)
+                .op(ControlOpDescriptor.RETURN_VALUE)
                 .build();
 
         compiledClass.className = "MyClass";
@@ -74,7 +75,7 @@ public class PythonClassTranslatorTest {
                 .loadParameter("self")
                 .storeAttribute("key")
                 .loadConstant(null)
-                .op(OpcodeIdentifier.RETURN_VALUE)
+                .op(ControlOpDescriptor.RETURN_VALUE)
                 .build();
 
         Function<CompareOp, PythonCompiledFunction> getCompareFunction =
@@ -84,7 +85,7 @@ public class PythonClassTranslatorTest {
                         .loadParameter("other")
                         .getAttribute("key")
                         .compare(compareOp)
-                        .op(OpcodeIdentifier.RETURN_VALUE)
+                        .op(ControlOpDescriptor.RETURN_VALUE)
                         .build();
 
         for (CompareOp compareOp : List.of(CompareOp.LESS_THAN, CompareOp.GREATER_THAN,
@@ -141,7 +142,7 @@ public class PythonClassTranslatorTest {
                 .loadParameter("self")
                 .storeAttribute("key")
                 .loadConstant(null)
-                .op(OpcodeIdentifier.RETURN_VALUE)
+                .op(ControlOpDescriptor.RETURN_VALUE)
                 .build();
 
         PythonCompiledFunction equalsFunction = PythonFunctionBuilder.newFunction("self", "other")
@@ -150,13 +151,13 @@ public class PythonClassTranslatorTest {
                 .loadParameter("other")
                 .getAttribute("key")
                 .compare(CompareOp.EQUALS)
-                .op(OpcodeIdentifier.RETURN_VALUE)
+                .op(ControlOpDescriptor.RETURN_VALUE)
                 .build();
 
         PythonCompiledFunction hashFunction = PythonFunctionBuilder.newFunction("self")
                 .loadParameter("self")
                 .getAttribute("key")
-                .op(OpcodeIdentifier.RETURN_VALUE)
+                .op(ControlOpDescriptor.RETURN_VALUE)
                 .build();
 
         PythonCompiledClass compiledClass = new PythonCompiledClass();

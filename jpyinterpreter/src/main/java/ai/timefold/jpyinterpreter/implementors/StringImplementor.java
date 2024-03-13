@@ -5,13 +5,13 @@ import java.util.List;
 import java.util.Map;
 
 import ai.timefold.jpyinterpreter.FunctionMetadata;
-import ai.timefold.jpyinterpreter.OpcodeIdentifier;
 import ai.timefold.jpyinterpreter.PythonBytecodeInstruction;
 import ai.timefold.jpyinterpreter.PythonBytecodeToJavaBytecodeTranslator;
 import ai.timefold.jpyinterpreter.PythonInterpreter;
 import ai.timefold.jpyinterpreter.PythonLikeObject;
 import ai.timefold.jpyinterpreter.PythonUnaryOperator;
 import ai.timefold.jpyinterpreter.StackMetadata;
+import ai.timefold.jpyinterpreter.opcodes.descriptor.StringOpDescriptor;
 import ai.timefold.jpyinterpreter.types.PythonLikeFunction;
 import ai.timefold.jpyinterpreter.types.PythonString;
 import ai.timefold.jpyinterpreter.types.collections.PythonLikeTuple;
@@ -72,7 +72,7 @@ public class StringImplementor {
     /**
      * TOS1 is a value and TOS is an optional format string (either PythonNone or PythonString).
      * Depending on {@code instruction.arg}, does one of several things to TOS1 before formatting it
-     * (as specified by {@link OpcodeIdentifier#FORMAT_VALUE}:
+     * (as specified by {@link StringOpDescriptor#FORMAT_VALUE}:
      *
      * arg & 3 == 0: Do nothing
      * arg & 3 == 1: Call str() on value before formatting it
@@ -83,32 +83,35 @@ public class StringImplementor {
      * if arg & 4 == 4, TOS is a format string, use it in the call
      */
     public static void formatValue(MethodVisitor methodVisitor, PythonBytecodeInstruction instruction) {
-        if ((instruction.arg & 4) == 0) {
+        if ((instruction.arg() & 4) == 0) {
             // No format string on stack; push None
             PythonConstantsImplementor.loadNone(methodVisitor);
         }
 
-        switch (instruction.arg & 3) {
-            case 0: // Do Nothing
-                break;
-            case 1: // Call str()
+        switch (instruction.arg() & 3) {
+            case 0 -> {
+                // Do Nothing
+            }
+            case 1 -> {
+                // Call str()
                 StackManipulationImplementor.swap(methodVisitor);
                 DunderOperatorImplementor.unaryOperator(methodVisitor, PythonUnaryOperator.AS_STRING);
                 StackManipulationImplementor.swap(methodVisitor);
-                break;
-            case 2: // Call repr()
+            }
+            case 2 -> {
+                // Call repr()
                 StackManipulationImplementor.swap(methodVisitor);
                 DunderOperatorImplementor.unaryOperator(methodVisitor, PythonUnaryOperator.REPRESENTATION);
                 StackManipulationImplementor.swap(methodVisitor);
-                break;
-            case 3: // Call ascii()
+            }
+            case 3 -> {
+                // Call ascii()
                 StackManipulationImplementor.swap(methodVisitor);
                 // TODO: Create method that calls repr and convert non-ascii character to ascii and call it
                 StackManipulationImplementor.swap(methodVisitor);
-                break;
-            default:
-                throw new IllegalStateException("Invalid flag: " + instruction.arg +
-                        "; & did not produce a value in range 0-3: " + (instruction.arg & 3));
+            }
+            default -> throw new IllegalStateException("Invalid flag: %d; & did not produce a value in range 0-3: %d"
+                    .formatted(instruction.arg(), instruction.arg() & 3));
         }
         methodVisitor.visitMethodInsn(Opcodes.INVOKEINTERFACE, Type.getInternalName(PythonLikeObject.class),
                 "$method$__format__",

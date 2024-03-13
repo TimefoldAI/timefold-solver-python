@@ -17,13 +17,13 @@ public class BuildStringOpcode extends AbstractOpcode {
     @Override
     public StackMetadata getStackMetadataAfterInstruction(FunctionMetadata functionMetadata,
             StackMetadata stackMetadata) {
-        return stackMetadata.pop(instruction.arg).push(
+        return stackMetadata.pop(instruction.arg()).push(
                 ValueSourceInfo.of(this, BuiltinTypes.STRING_TYPE,
-                        stackMetadata.getValueSourcesUpToStackIndex(instruction.arg)));
+                        stackMetadata.getValueSourcesUpToStackIndex(instruction.arg())));
     }
 
     @Override
     public void implement(FunctionMetadata functionMetadata, StackMetadata stackMetadata) {
-        StringImplementor.buildString(functionMetadata.methodVisitor, instruction.arg);
+        StringImplementor.buildString(functionMetadata.methodVisitor, instruction.arg());
     }
 }

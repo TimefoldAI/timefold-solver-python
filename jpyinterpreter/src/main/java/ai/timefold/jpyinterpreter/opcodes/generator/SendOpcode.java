@@ -1,7 +1,6 @@
 package ai.timefold.jpyinterpreter.opcodes.generator;
 
 import java.util.List;
-import java.util.Map;
 
 import ai.timefold.jpyinterpreter.FunctionMetadata;
 import ai.timefold.jpyinterpreter.PythonBytecodeInstruction;
@@ -17,12 +16,6 @@ public class SendOpcode extends AbstractControlFlowOpcode {
     public SendOpcode(PythonBytecodeInstruction instruction, int jumpTarget) {
         super(instruction);
         this.jumpTarget = jumpTarget;
-    }
-
-    @Override
-    public void relabel(Map<Integer, Integer> originalBytecodeIndexToNewBytecodeIndex) {
-        jumpTarget = originalBytecodeIndexToNewBytecodeIndex.get(jumpTarget);
-        super.relabel(originalBytecodeIndexToNewBytecodeIndex);
     }
 
     @Override

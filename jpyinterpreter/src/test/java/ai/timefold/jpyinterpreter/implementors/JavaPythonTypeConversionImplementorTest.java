@@ -8,9 +8,9 @@ import java.util.function.Consumer;
 import java.util.function.LongToIntFunction;
 import java.util.function.Predicate;
 
-import ai.timefold.jpyinterpreter.OpcodeIdentifier;
 import ai.timefold.jpyinterpreter.PythonBytecodeToJavaBytecodeTranslator;
 import ai.timefold.jpyinterpreter.PythonCompiledFunction;
+import ai.timefold.jpyinterpreter.opcodes.descriptor.ControlOpDescriptor;
 import ai.timefold.jpyinterpreter.util.PythonFunctionBuilder;
 
 import org.junit.jupiter.api.Test;
@@ -21,7 +21,7 @@ public class JavaPythonTypeConversionImplementorTest {
     public void testLoadParameter() {
         PythonCompiledFunction pythonCompiledFunction = PythonFunctionBuilder.newFunction("a", "b")
                 .loadParameter("b")
-                .op(OpcodeIdentifier.RETURN_VALUE)
+                .op(ControlOpDescriptor.RETURN_VALUE)
                 .build();
 
         BiFunction javaFunction =
@@ -32,7 +32,7 @@ public class JavaPythonTypeConversionImplementorTest {
 
         pythonCompiledFunction = PythonFunctionBuilder.newFunction("a", "b")
                 .loadParameter("a")
-                .op(OpcodeIdentifier.RETURN_VALUE)
+                .op(ControlOpDescriptor.RETURN_VALUE)
                 .build();
 
         javaFunction = PythonBytecodeToJavaBytecodeTranslator.translatePythonBytecode(pythonCompiledFunction, BiFunction.class);
@@ -44,7 +44,7 @@ public class JavaPythonTypeConversionImplementorTest {
     public void testLoadPrimitiveParameter() {
         PythonCompiledFunction pythonCompiledFunction = PythonFunctionBuilder.newFunction("a")
                 .loadParameter("a")
-                .op(OpcodeIdentifier.RETURN_VALUE)
+                .op(ControlOpDescriptor.RETURN_VALUE)
                 .build();
 
         LongToIntFunction javaFunction =
@@ -57,7 +57,7 @@ public class JavaPythonTypeConversionImplementorTest {
     public void testReturnBoolean() {
         PythonCompiledFunction pythonCompiledFunction = PythonFunctionBuilder.newFunction("ignored")
                 .loadConstant(Boolean.TRUE)
-                .op(OpcodeIdentifier.RETURN_VALUE)
+                .op(ControlOpDescriptor.RETURN_VALUE)
                 .build();
 
         Predicate javaFunction =
@@ -67,7 +67,7 @@ public class JavaPythonTypeConversionImplementorTest {
 
         pythonCompiledFunction = PythonFunctionBuilder.newFunction("ignored")
                 .loadConstant(Boolean.FALSE)
-                .op(OpcodeIdentifier.RETURN_VALUE)
+                .op(ControlOpDescriptor.RETURN_VALUE)
                 .build();
 
         javaFunction = PythonBytecodeToJavaBytecodeTranslator.translatePythonBytecode(pythonCompiledFunction, Predicate.class);
@@ -79,7 +79,7 @@ public class JavaPythonTypeConversionImplementorTest {
     public void testReturnVoid() {
         PythonCompiledFunction pythonCompiledFunction = PythonFunctionBuilder.newFunction("ignored")
                 .loadConstant(null)
-                .op(OpcodeIdentifier.RETURN_VALUE)
+                .op(ControlOpDescriptor.RETURN_VALUE)
                 .build();
 
         Consumer javaFunction =

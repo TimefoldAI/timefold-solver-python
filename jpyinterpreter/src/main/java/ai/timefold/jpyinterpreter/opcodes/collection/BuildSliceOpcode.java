@@ -16,12 +16,12 @@ public class BuildSliceOpcode extends AbstractOpcode {
 
     @Override
     protected StackMetadata getStackMetadataAfterInstruction(FunctionMetadata functionMetadata, StackMetadata stackMetadata) {
-        return stackMetadata.pop(instruction.arg).push(ValueSourceInfo.of(this, PythonSlice.SLICE_TYPE,
-                stackMetadata.getValueSourcesUpToStackIndex(instruction.arg)));
+        return stackMetadata.pop(instruction.arg()).push(ValueSourceInfo.of(this, PythonSlice.SLICE_TYPE,
+                stackMetadata.getValueSourcesUpToStackIndex(instruction.arg())));
     }
 
     @Override
     public void implement(FunctionMetadata functionMetadata, StackMetadata stackMetadata) {
-        CollectionImplementor.buildSlice(functionMetadata, stackMetadata, instruction.arg);
+        CollectionImplementor.buildSlice(functionMetadata, stackMetadata, instruction.arg());
     }
 }

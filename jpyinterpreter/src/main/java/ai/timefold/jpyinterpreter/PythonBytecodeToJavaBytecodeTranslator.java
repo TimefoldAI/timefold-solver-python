@@ -25,9 +25,11 @@ import ai.timefold.jpyinterpreter.implementors.FunctionImplementor;
 import ai.timefold.jpyinterpreter.implementors.JavaPythonTypeConversionImplementor;
 import ai.timefold.jpyinterpreter.implementors.StackManipulationImplementor;
 import ai.timefold.jpyinterpreter.implementors.VariableImplementor;
+import ai.timefold.jpyinterpreter.opcodes.AbstractOpcode;
 import ai.timefold.jpyinterpreter.opcodes.Opcode;
 import ai.timefold.jpyinterpreter.opcodes.OpcodeWithoutSource;
 import ai.timefold.jpyinterpreter.opcodes.SelfOpcodeWithoutSource;
+import ai.timefold.jpyinterpreter.opcodes.descriptor.GeneratorOpDescriptor;
 import ai.timefold.jpyinterpreter.types.BuiltinTypes;
 import ai.timefold.jpyinterpreter.types.PythonLikeFunction;
 import ai.timefold.jpyinterpreter.types.PythonLikeType;
@@ -972,16 +974,18 @@ public class PythonBytecodeToJavaBytecodeTranslator {
 
     public static PythonFunctionType getFunctionType(PythonCompiledFunction pythonCompiledFunction) {
         for (PythonBytecodeInstruction instruction : pythonCompiledFunction.instructionList) {
-            switch (instruction.opcode) {
-                case GEN_START:
-                case RETURN_GENERATOR:
-                case YIELD_VALUE:
-                case YIELD_FROM:
-                    return PythonFunctionType.GENERATOR;
+            var opcode = AbstractOpcode.lookupInstruction(instruction.opname());
+            if (opcode instanceof GeneratorOpDescriptor generatorInstruction)
+                switch (generatorInstruction) {
+                    case GEN_START:
+                    case RETURN_GENERATOR:
+                    case YIELD_VALUE:
+                    case YIELD_FROM:
+                        return PythonFunctionType.GENERATOR;
 
-                default:
-                    break; // Do nothing
-            }
+                    default:
+                        break; // Do nothing
+                }
         }
         return PythonFunctionType.FUNCTION;
     }
@@ -1140,23 +1144,23 @@ public class PythonBytecodeToJavaBytecodeTranslator {
             StackMetadata stackMetadata = stackMetadataForOpcodeIndex.get(i);
             PythonBytecodeInstruction instruction = pythonCompiledFunction.instructionList.get(i);
 
-            if (exceptionTableTargetLabelMap.containsKey(instruction.offset)) {
-                Label label = exceptionTableTargetLabelMap.get(instruction.offset);
+            if (exceptionTableTargetLabelMap.containsKey(instruction.offset())) {
+                Label label = exceptionTableTargetLabelMap.get(instruction.offset());
                 methodVisitor.visitLabel(label);
             }
-            exceptionTableTryBlockMap.getOrDefault(instruction.offset, List.of()).forEach(Runnable::run);
+            exceptionTableTryBlockMap.getOrDefault(instruction.offset(), List.of()).forEach(Runnable::run);
 
-            if (instruction.isJumpTarget || bytecodeCounterToLabelMap.containsKey(instruction.offset)) {
-                Label label = bytecodeCounterToLabelMap.computeIfAbsent(instruction.offset, offset -> new Label());
+            if (instruction.isJumpTarget() || bytecodeCounterToLabelMap.containsKey(instruction.offset())) {
+                Label label = bytecodeCounterToLabelMap.computeIfAbsent(instruction.offset(), offset -> new Label());
                 methodVisitor.visitLabel(label);
             }
 
             runAfterLabelAndBeforeArgumentors.accept(instruction);
 
-            bytecodeIndexToArgumentorsMap.getOrDefault(instruction.offset, List.of()).forEach(Runnable::run);
+            bytecodeIndexToArgumentorsMap.getOrDefault(instruction.offset(), List.of()).forEach(Runnable::run);
 
-            if (exceptionTableStartLabelMap.containsKey(instruction.offset)) {
-                Label label = exceptionTableStartLabelMap.get(instruction.offset);
+            if (exceptionTableStartLabelMap.containsKey(instruction.offset())) {
+                Label label = exceptionTableStartLabelMap.get(instruction.offset());
                 methodVisitor.visitLabel(label);
             }
 

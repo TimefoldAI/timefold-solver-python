@@ -68,7 +68,7 @@ public class GeneratorImplementor {
 
         // Set the generator state
         methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
-        methodVisitor.visitLdcInsn(instruction.offset + 1);
+        methodVisitor.visitLdcInsn(instruction.offset() + 1);
         methodVisitor.visitFieldInsn(Opcodes.PUTFIELD, functionMetadata.className, PythonGeneratorTranslator.GENERATOR_STATE,
                 Type.INT_TYPE.getDescriptor());
     }

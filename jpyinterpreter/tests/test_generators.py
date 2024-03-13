@@ -92,8 +92,8 @@ def test_try_except_in_generator():
 
         except KeyError:
             yield 'Key'
-
-        yield 'End'
+        finally:
+            yield 'End'
 
     verifier = verifier_for(my_function)
 

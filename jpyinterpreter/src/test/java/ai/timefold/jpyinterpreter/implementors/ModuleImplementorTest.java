@@ -10,11 +10,13 @@ import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
-import ai.timefold.jpyinterpreter.OpcodeIdentifier;
 import ai.timefold.jpyinterpreter.PythonBytecodeToJavaBytecodeTranslator;
 import ai.timefold.jpyinterpreter.PythonCompiledFunction;
 import ai.timefold.jpyinterpreter.PythonInterpreter;
 import ai.timefold.jpyinterpreter.PythonLikeObject;
+import ai.timefold.jpyinterpreter.opcodes.descriptor.ControlOpDescriptor;
+import ai.timefold.jpyinterpreter.opcodes.descriptor.DunderOpDescriptor;
+import ai.timefold.jpyinterpreter.opcodes.descriptor.StackOpDescriptor;
 import ai.timefold.jpyinterpreter.types.PythonModule;
 import ai.timefold.jpyinterpreter.types.PythonString;
 import ai.timefold.jpyinterpreter.types.numeric.PythonInteger;
@@ -34,7 +36,7 @@ public class ModuleImplementorTest {
                 .loadParameter("level")
                 .loadParameter("from_list")
                 .loadModule("module")
-                .op(OpcodeIdentifier.RETURN_VALUE)
+                .op(ControlOpDescriptor.RETURN_VALUE)
                 .build();
 
         PythonInterpreter interpreter = Mockito.mock(PythonInterpreter.class);
@@ -58,7 +60,7 @@ public class ModuleImplementorTest {
                 .loadParameter("level")
                 .loadParameter("from_list")
                 .loadModule("module")
-                .op(OpcodeIdentifier.RETURN_VALUE)
+                .op(ControlOpDescriptor.RETURN_VALUE)
                 .build();
 
         PythonInterpreter interpreter = Mockito.mock(PythonInterpreter.class);
@@ -88,11 +90,11 @@ public class ModuleImplementorTest {
                 .storeVariable("a")
                 .getFromModule("item2")
                 .storeVariable("b")
-                .op(OpcodeIdentifier.POP_TOP)
+                .op(StackOpDescriptor.POP_TOP)
                 .loadVariable("a")
                 .loadVariable("b")
-                .op(OpcodeIdentifier.BINARY_ADD)
-                .op(OpcodeIdentifier.RETURN_VALUE)
+                .op(DunderOpDescriptor.BINARY_ADD)
+                .op(ControlOpDescriptor.RETURN_VALUE)
                 .build();
 
         PythonInterpreter interpreter = Mockito.mock(PythonInterpreter.class);

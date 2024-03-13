@@ -9,6 +9,8 @@ public final class PythonVersion implements Comparable<PythonVersion> {
     public static final PythonVersion PYTHON_3_10 = new PythonVersion(3, 10);
     public static final PythonVersion PYTHON_3_11 = new PythonVersion(3, 11);
 
+    public static final PythonVersion MINIMUM_PYTHON_VERSION = PYTHON_3_9;
+
     public PythonVersion(int hexversion) {
         this.hexversion = hexversion;
     }

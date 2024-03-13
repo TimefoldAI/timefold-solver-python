@@ -18,7 +18,7 @@ public class CallFunctionUnpackOpcode extends AbstractOpcode {
     @Override
     protected StackMetadata getStackMetadataAfterInstruction(FunctionMetadata functionMetadata, StackMetadata stackMetadata) {
         if (functionMetadata.pythonCompiledFunction.pythonVersion.isBefore(PythonVersion.PYTHON_3_11)) {
-            if ((instruction.arg & 1) == 1) {
+            if ((instruction.arg() & 1) == 1) {
                 // Stack is callable, iterable, map
                 return stackMetadata.pop(3).push(ValueSourceInfo.of(this, BuiltinTypes.BASE_TYPE,
                         stackMetadata.getValueSourcesUpToStackIndex(3)));
@@ -28,7 +28,7 @@ public class CallFunctionUnpackOpcode extends AbstractOpcode {
                         stackMetadata.getValueSourcesUpToStackIndex(2)));
             }
         } else {
-            if ((instruction.arg & 1) == 1) {
+            if ((instruction.arg() & 1) == 1) {
                 // Stack is null, callable, iterable, map
                 return stackMetadata.pop(4).push(ValueSourceInfo.of(this, BuiltinTypes.BASE_TYPE,
                         stackMetadata.getValueSourcesUpToStackIndex(3)));

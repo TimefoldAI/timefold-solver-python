@@ -27,7 +27,7 @@ public class LoadMethodOpcode extends AbstractOpcode {
             tosType = stackTosType;
         }
 
-        return tosType.getMethodType(functionMetadata.pythonCompiledFunction.co_names.get(instruction.arg))
+        return tosType.getMethodType(functionMetadata.pythonCompiledFunction.co_names.get(instruction.arg()))
                 .map(knownFunction -> stackMetadata.pop()
                         .push(ValueSourceInfo.of(this, knownFunction, stackMetadata.getValueSourcesUpToStackIndex(1)))
                         .push(ValueSourceInfo.of(this, tosType, stackMetadata.getValueSourcesUpToStackIndex(1))) // TOS, since we know the function exists

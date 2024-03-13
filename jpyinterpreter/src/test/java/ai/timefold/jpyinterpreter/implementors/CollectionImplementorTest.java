@@ -11,9 +11,12 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
-import ai.timefold.jpyinterpreter.OpcodeIdentifier;
 import ai.timefold.jpyinterpreter.PythonBytecodeToJavaBytecodeTranslator;
 import ai.timefold.jpyinterpreter.PythonCompiledFunction;
+import ai.timefold.jpyinterpreter.opcodes.descriptor.CollectionOpDescriptor;
+import ai.timefold.jpyinterpreter.opcodes.descriptor.ControlOpDescriptor;
+import ai.timefold.jpyinterpreter.opcodes.descriptor.DunderOpDescriptor;
+import ai.timefold.jpyinterpreter.opcodes.descriptor.StackOpDescriptor;
 import ai.timefold.jpyinterpreter.types.PythonSlice;
 import ai.timefold.jpyinterpreter.types.collections.PythonLikeList;
 import ai.timefold.jpyinterpreter.types.collections.PythonLikeTuple;
@@ -33,8 +36,8 @@ public class CollectionImplementorTest {
                 .loadConstant(2)
                 .loadConstant(3)
                 .tuple(3)
-                .op(OpcodeIdentifier.GET_ITER)
-                .op(OpcodeIdentifier.RETURN_VALUE)
+                .op(CollectionOpDescriptor.GET_ITER)
+                .op(ControlOpDescriptor.RETURN_VALUE)
                 .build();
 
         Iterable javaFunction =
@@ -51,14 +54,14 @@ public class CollectionImplementorTest {
                 .loadConstant(2)
                 .loadConstant(3)
                 .tuple(3)
-                .op(OpcodeIdentifier.GET_ITER)
+                .op(CollectionOpDescriptor.GET_ITER)
                 .loop(block -> {
                     block.loadVariable("sum");
-                    block.op(OpcodeIdentifier.BINARY_ADD);
+                    block.op(DunderOpDescriptor.BINARY_ADD);
                     block.storeVariable("sum");
                 })
                 .loadVariable("sum")
-                .op(OpcodeIdentifier.RETURN_VALUE)
+                .op(ControlOpDescriptor.RETURN_VALUE)
                 .build();
 
         Supplier javaFunction =
@@ -74,8 +77,8 @@ public class CollectionImplementorTest {
                 .loadConstant(2)
                 .loadConstant(3)
                 .tuple(3)
-                .op(OpcodeIdentifier.CONTAINS_OP, 0)
-                .op(OpcodeIdentifier.RETURN_VALUE)
+                .op(CollectionOpDescriptor.CONTAINS_OP, 0)
+                .op(ControlOpDescriptor.RETURN_VALUE)
                 .build();
 
         Predicate javaFunction =
@@ -89,8 +92,8 @@ public class CollectionImplementorTest {
                 .loadConstant(2)
                 .loadConstant(3)
                 .tuple(3)
-                .op(OpcodeIdentifier.CONTAINS_OP, 1)
-                .op(OpcodeIdentifier.RETURN_VALUE)
+                .op(CollectionOpDescriptor.CONTAINS_OP, 1)
+                .op(ControlOpDescriptor.RETURN_VALUE)
                 .build();
 
         javaFunction = PythonBytecodeToJavaBytecodeTranslator.translatePythonBytecode(pythonCompiledFunction, Predicate.class);
@@ -105,7 +108,7 @@ public class CollectionImplementorTest {
                 .loadConstant(2)
                 .loadConstant(2)
                 .set(3)
-                .op(OpcodeIdentifier.RETURN_VALUE)
+                .op(ControlOpDescriptor.RETURN_VALUE)
                 .build();
 
         Supplier javaFunction =
@@ -120,10 +123,10 @@ public class CollectionImplementorTest {
                 .loadConstant(1)
                 .loadConstant(2)
                 .loadConstant(3)
-                .op(OpcodeIdentifier.LIST_APPEND, 3)
-                .op(OpcodeIdentifier.LIST_APPEND, 2)
-                .op(OpcodeIdentifier.LIST_APPEND, 1)
-                .op(OpcodeIdentifier.RETURN_VALUE)
+                .op(CollectionOpDescriptor.LIST_APPEND, 3)
+                .op(CollectionOpDescriptor.LIST_APPEND, 2)
+                .op(CollectionOpDescriptor.LIST_APPEND, 1)
+                .op(ControlOpDescriptor.RETURN_VALUE)
                 .build();
 
         Supplier javaFunction =
@@ -139,10 +142,10 @@ public class CollectionImplementorTest {
                 .loadConstant(1)
                 .loadConstant(2)
                 .loadConstant(2)
-                .op(OpcodeIdentifier.SET_ADD, 3)
-                .op(OpcodeIdentifier.SET_ADD, 2)
-                .op(OpcodeIdentifier.SET_ADD, 1)
-                .op(OpcodeIdentifier.RETURN_VALUE)
+                .op(CollectionOpDescriptor.SET_ADD, 3)
+                .op(CollectionOpDescriptor.SET_ADD, 2)
+                .op(CollectionOpDescriptor.SET_ADD, 1)
+                .op(ControlOpDescriptor.RETURN_VALUE)
                 .build();
 
         Supplier javaFunction =
@@ -159,9 +162,9 @@ public class CollectionImplementorTest {
                 .loadConstant(2)
                 .loadConstant(3)
                 .list(2)
-                .op(OpcodeIdentifier.LIST_EXTEND, 2)
-                .op(OpcodeIdentifier.LIST_EXTEND, 1)
-                .op(OpcodeIdentifier.RETURN_VALUE)
+                .op(CollectionOpDescriptor.LIST_EXTEND, 2)
+                .op(CollectionOpDescriptor.LIST_EXTEND, 1)
+                .op(ControlOpDescriptor.RETURN_VALUE)
                 .build();
 
         Supplier javaFunction =
@@ -177,8 +180,8 @@ public class CollectionImplementorTest {
                 .loadConstant(2)
                 .loadConstant(3)
                 .list(3)
-                .op(OpcodeIdentifier.LIST_TO_TUPLE)
-                .op(OpcodeIdentifier.RETURN_VALUE)
+                .op(CollectionOpDescriptor.LIST_TO_TUPLE)
+                .op(ControlOpDescriptor.RETURN_VALUE)
                 .build();
 
         Supplier javaFunction =
@@ -192,7 +195,7 @@ public class CollectionImplementorTest {
     public void testUnpackSequence() {
         PythonCompiledFunction pythonCompiledFunction = PythonFunctionBuilder.newFunction("sequence")
                 .loadParameter("sequence")
-                .op(OpcodeIdentifier.UNPACK_SEQUENCE, 3)
+                .op(CollectionOpDescriptor.UNPACK_SEQUENCE, 3)
                 .storeVariable("a")
                 .storeVariable("b")
                 .storeVariable("c")
@@ -200,7 +203,7 @@ public class CollectionImplementorTest {
                 .loadVariable("b")
                 .loadVariable("c")
                 .tuple(3)
-                .op(OpcodeIdentifier.RETURN_VALUE)
+                .op(ControlOpDescriptor.RETURN_VALUE)
                 .build();
 
         Function javaFunction =
@@ -214,19 +217,19 @@ public class CollectionImplementorTest {
     public void testUnpackSequenceWithTail() {
         PythonCompiledFunction pythonCompiledFunction = PythonFunctionBuilder.newFunction("sequence")
                 .loadParameter("sequence")
-                .op(OpcodeIdentifier.UNPACK_EX, 3)
+                .op(CollectionOpDescriptor.UNPACK_EX, 3)
                 .storeVariable("a")
                 .storeVariable("b")
                 .storeVariable("c")
                 .storeVariable("tail")
                 .loadVariable("tail")
                 .loadVariable("a")
-                .op(OpcodeIdentifier.LIST_APPEND, 1)
+                .op(CollectionOpDescriptor.LIST_APPEND, 1)
                 .loadVariable("b")
-                .op(OpcodeIdentifier.LIST_APPEND, 1)
+                .op(CollectionOpDescriptor.LIST_APPEND, 1)
                 .loadVariable("c")
-                .op(OpcodeIdentifier.LIST_APPEND, 1)
-                .op(OpcodeIdentifier.RETURN_VALUE)
+                .op(CollectionOpDescriptor.LIST_APPEND, 1)
+                .op(ControlOpDescriptor.RETURN_VALUE)
                 .build();
 
         Function javaFunction =
@@ -246,9 +249,9 @@ public class CollectionImplementorTest {
                 .loadConstant(2)
                 .loadConstant(3)
                 .set(2)
-                .op(OpcodeIdentifier.SET_UPDATE, 2)
-                .op(OpcodeIdentifier.SET_UPDATE, 1)
-                .op(OpcodeIdentifier.RETURN_VALUE)
+                .op(CollectionOpDescriptor.SET_UPDATE, 2)
+                .op(CollectionOpDescriptor.SET_UPDATE, 1)
+                .op(ControlOpDescriptor.RETURN_VALUE)
                 .build();
 
         Supplier javaFunction =
@@ -267,10 +270,10 @@ public class CollectionImplementorTest {
                 .loadConstant(4)
                 .loadConstant(3)
                 .loadConstant(6)
-                .op(OpcodeIdentifier.MAP_ADD, 5)
-                .op(OpcodeIdentifier.MAP_ADD, 3)
-                .op(OpcodeIdentifier.MAP_ADD, 1)
-                .op(OpcodeIdentifier.RETURN_VALUE)
+                .op(CollectionOpDescriptor.MAP_ADD, 5)
+                .op(CollectionOpDescriptor.MAP_ADD, 3)
+                .op(CollectionOpDescriptor.MAP_ADD, 1)
+                .op(ControlOpDescriptor.RETURN_VALUE)
                 .build();
 
         Supplier javaFunction =
@@ -292,9 +295,9 @@ public class CollectionImplementorTest {
                 .loadConstant(3)
                 .loadConstant(6)
                 .dict(2)
-                .op(OpcodeIdentifier.DICT_UPDATE, 2)
-                .op(OpcodeIdentifier.DICT_UPDATE, 1)
-                .op(OpcodeIdentifier.RETURN_VALUE)
+                .op(CollectionOpDescriptor.DICT_UPDATE, 2)
+                .op(CollectionOpDescriptor.DICT_UPDATE, 1)
+                .op(ControlOpDescriptor.RETURN_VALUE)
                 .build();
 
         Supplier javaFunction =
@@ -316,9 +319,9 @@ public class CollectionImplementorTest {
                 .loadConstant(3)
                 .loadConstant(6)
                 .dict(2)
-                .op(OpcodeIdentifier.DICT_MERGE, 2)
-                .op(OpcodeIdentifier.DICT_MERGE, 1)
-                .op(OpcodeIdentifier.RETURN_VALUE)
+                .op(CollectionOpDescriptor.DICT_MERGE, 2)
+                .op(CollectionOpDescriptor.DICT_MERGE, 1)
+                .op(ControlOpDescriptor.RETURN_VALUE)
                 .build();
 
         Supplier javaFunction =
@@ -340,9 +343,9 @@ public class CollectionImplementorTest {
                 .loadConstant(2)
                 .loadConstant(4)
                 .dict(2)
-                .op(OpcodeIdentifier.DICT_MERGE, 2)
-                .op(OpcodeIdentifier.DICT_MERGE, 1)
-                .op(OpcodeIdentifier.RETURN_VALUE)
+                .op(CollectionOpDescriptor.DICT_MERGE, 2)
+                .op(CollectionOpDescriptor.DICT_MERGE, 1)
+                .op(ControlOpDescriptor.RETURN_VALUE)
                 .build();
 
         Supplier javaFunction =
@@ -360,7 +363,7 @@ public class CollectionImplementorTest {
                 .loadConstant(3)
                 .loadConstant(6)
                 .dict(3)
-                .op(OpcodeIdentifier.RETURN_VALUE)
+                .op(ControlOpDescriptor.RETURN_VALUE)
                 .build();
 
         Supplier javaFunction =
@@ -381,7 +384,7 @@ public class CollectionImplementorTest {
                 .loadConstant(3)
                 .tuple(3)
                 .constDict(3)
-                .op(OpcodeIdentifier.RETURN_VALUE)
+                .op(ControlOpDescriptor.RETURN_VALUE)
                 .build();
 
         Supplier javaFunction =
@@ -395,12 +398,12 @@ public class CollectionImplementorTest {
     public void testSetItem() {
         PythonCompiledFunction pythonCompiledFunction = PythonFunctionBuilder.newFunction("key", "value")
                 .dict(0)
-                .op(OpcodeIdentifier.DUP_TOP)
+                .op(StackOpDescriptor.DUP_TOP)
                 .loadParameter("value")
-                .op(OpcodeIdentifier.ROT_TWO)
+                .op(StackOpDescriptor.ROT_TWO)
                 .loadParameter("key")
-                .op(OpcodeIdentifier.STORE_SUBSCR)
-                .op(OpcodeIdentifier.RETURN_VALUE)
+                .op(CollectionOpDescriptor.STORE_SUBSCR)
+                .op(ControlOpDescriptor.RETURN_VALUE)
                 .build();
 
         BiFunction javaFunction =
@@ -411,12 +414,12 @@ public class CollectionImplementorTest {
                 .loadConstant(1)
                 .loadConstant(2)
                 .list(2)
-                .op(OpcodeIdentifier.DUP_TOP)
+                .op(StackOpDescriptor.DUP_TOP)
                 .loadParameter("value")
-                .op(OpcodeIdentifier.ROT_TWO)
+                .op(StackOpDescriptor.ROT_TWO)
                 .loadParameter("key")
-                .op(OpcodeIdentifier.STORE_SUBSCR)
-                .op(OpcodeIdentifier.RETURN_VALUE)
+                .op(CollectionOpDescriptor.STORE_SUBSCR)
+                .op(ControlOpDescriptor.RETURN_VALUE)
                 .build();
 
         javaFunction = PythonBytecodeToJavaBytecodeTranslator.translatePythonBytecode(pythonCompiledFunction, BiFunction.class);
@@ -428,8 +431,8 @@ public class CollectionImplementorTest {
         PythonCompiledFunction pythonCompiledFunction = PythonFunctionBuilder.newFunction("start", "stop")
                 .loadParameter("start")
                 .loadParameter("stop")
-                .op(OpcodeIdentifier.BUILD_SLICE, 2)
-                .op(OpcodeIdentifier.RETURN_VALUE)
+                .op(CollectionOpDescriptor.BUILD_SLICE, 2)
+                .op(ControlOpDescriptor.RETURN_VALUE)
                 .build();
 
         BiFunction javaFunction =
@@ -444,8 +447,8 @@ public class CollectionImplementorTest {
                 .loadParameter("start")
                 .loadParameter("stop")
                 .loadParameter("step")
-                .op(OpcodeIdentifier.BUILD_SLICE, 3)
-                .op(OpcodeIdentifier.RETURN_VALUE)
+                .op(CollectionOpDescriptor.BUILD_SLICE, 3)
+                .op(ControlOpDescriptor.RETURN_VALUE)
                 .build();
 
         TriFunction javaFunction =
@@ -460,9 +463,9 @@ public class CollectionImplementorTest {
                 .loadParameter("sequence")
                 .loadParameter("start")
                 .loadParameter("stop")
-                .op(OpcodeIdentifier.BUILD_SLICE, 2)
-                .op(OpcodeIdentifier.BINARY_SUBSCR)
-                .op(OpcodeIdentifier.RETURN_VALUE)
+                .op(CollectionOpDescriptor.BUILD_SLICE, 2)
+                .op(DunderOpDescriptor.BINARY_SUBSCR)
+                .op(ControlOpDescriptor.RETURN_VALUE)
                 .build();
 
         TriFunction javaFunction =

@@ -20,12 +20,12 @@ public class SetCallKeywordNameTupleOpcode extends AbstractOpcode {
     public StackMetadata getStackMetadataAfterInstruction(FunctionMetadata functionMetadata,
             StackMetadata stackMetadata) {
         return stackMetadata.setCallKeywordNameList(
-                ((List<PythonString>) functionMetadata.pythonCompiledFunction.co_constants.get(instruction.arg))
+                ((List<PythonString>) functionMetadata.pythonCompiledFunction.co_constants.get(instruction.arg()))
                         .stream().map(PythonString::getValue).collect(Collectors.toList()));
     }
 
     @Override
     public void implement(FunctionMetadata functionMetadata, StackMetadata stackMetadata) {
-        FunctionImplementor.setCallKeywordNameTuple(functionMetadata, stackMetadata, instruction.arg);
+        FunctionImplementor.setCallKeywordNameTuple(functionMetadata, stackMetadata, instruction.arg());
     }
 }

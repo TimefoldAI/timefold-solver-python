@@ -114,10 +114,10 @@ public class FunctionImplementor {
             tosType = stackTosType;
             isTosType = false;
         }
-        tosType.getMethodType(functionMetadata.pythonCompiledFunction.co_names.get(instruction.arg)).ifPresentOrElse(
+        tosType.getMethodType(functionMetadata.pythonCompiledFunction.co_names.get(instruction.arg())).ifPresentOrElse(
                 knownFunctionType -> {
                     if (isTosType && knownFunctionType.isStaticMethod()) {
-                        methodVisitor.visitLdcInsn(function.co_names.get(instruction.arg));
+                        methodVisitor.visitLdcInsn(function.co_names.get(instruction.arg()));
                         methodVisitor.visitMethodInsn(Opcodes.INVOKEINTERFACE, Type.getInternalName(PythonLikeObject.class),
                                 "$getAttributeOrNull", Type.getMethodDescriptor(Type.getType(PythonLikeObject.class),
                                         Type.getType(String.class)),
@@ -133,7 +133,7 @@ public class FunctionImplementor {
                         methodVisitor.visitMethodInsn(Opcodes.INVOKEINTERFACE, Type.getInternalName(PythonLikeObject.class),
                                 "$getType", Type.getMethodDescriptor(Type.getType(PythonLikeType.class)),
                                 true);
-                        methodVisitor.visitLdcInsn(function.co_names.get(instruction.arg));
+                        methodVisitor.visitLdcInsn(function.co_names.get(instruction.arg()));
                         methodVisitor.visitMethodInsn(Opcodes.INVOKEINTERFACE, Type.getInternalName(PythonLikeObject.class),
                                 "$getAttributeOrNull", Type.getMethodDescriptor(Type.getType(PythonLikeObject.class),
                                         Type.getType(String.class)),
@@ -146,7 +146,7 @@ public class FunctionImplementor {
                         }
                     } else if (isTosType && knownFunctionType.isClassMethod()) {
                         methodVisitor.visitInsn(Opcodes.DUP);
-                        methodVisitor.visitLdcInsn(function.co_names.get(instruction.arg));
+                        methodVisitor.visitLdcInsn(function.co_names.get(instruction.arg()));
                         methodVisitor.visitMethodInsn(Opcodes.INVOKEINTERFACE, Type.getInternalName(PythonLikeObject.class),
                                 "$getAttributeOrNull", Type.getMethodDescriptor(Type.getType(PythonLikeObject.class),
                                         Type.getType(String.class)),
@@ -157,7 +157,7 @@ public class FunctionImplementor {
                         methodVisitor.visitMethodInsn(Opcodes.INVOKEINTERFACE, Type.getInternalName(PythonLikeObject.class),
                                 "$getType", Type.getMethodDescriptor(Type.getType(PythonLikeType.class)),
                                 true);
-                        methodVisitor.visitLdcInsn(function.co_names.get(instruction.arg));
+                        methodVisitor.visitLdcInsn(function.co_names.get(instruction.arg()));
                         methodVisitor.visitMethodInsn(Opcodes.INVOKEINTERFACE, Type.getInternalName(PythonLikeObject.class),
                                 "$getAttributeOrNull", Type.getMethodDescriptor(Type.getType(PythonLikeObject.class),
                                         Type.getType(String.class)),
@@ -165,7 +165,7 @@ public class FunctionImplementor {
                         methodVisitor.visitInsn(Opcodes.SWAP);
                     } else if (isTosType) {
                         methodVisitor.visitInsn(Opcodes.DUP);
-                        methodVisitor.visitLdcInsn(function.co_names.get(instruction.arg));
+                        methodVisitor.visitLdcInsn(function.co_names.get(instruction.arg()));
                         methodVisitor.visitMethodInsn(Opcodes.INVOKEINTERFACE, Type.getInternalName(PythonLikeObject.class),
                                 "$getAttributeOrNull", Type.getMethodDescriptor(Type.getType(PythonLikeObject.class),
                                         Type.getType(String.class)),
@@ -176,7 +176,7 @@ public class FunctionImplementor {
                         methodVisitor.visitMethodInsn(Opcodes.INVOKEINTERFACE, Type.getInternalName(PythonLikeObject.class),
                                 "$getType", Type.getMethodDescriptor(Type.getType(PythonLikeType.class)),
                                 true);
-                        methodVisitor.visitLdcInsn(function.co_names.get(instruction.arg));
+                        methodVisitor.visitLdcInsn(function.co_names.get(instruction.arg()));
                         methodVisitor.visitMethodInsn(Opcodes.INVOKEINTERFACE, Type.getInternalName(PythonLikeObject.class),
                                 "$getAttributeOrNull", Type.getMethodDescriptor(Type.getType(PythonLikeObject.class),
                                         Type.getType(String.class)),
@@ -201,7 +201,7 @@ public class FunctionImplementor {
         methodVisitor.visitMethodInsn(Opcodes.INVOKEINTERFACE, Type.getInternalName(PythonLikeObject.class),
                 "$getType", Type.getMethodDescriptor(Type.getType(PythonLikeType.class)),
                 true);
-        methodVisitor.visitLdcInsn(function.co_names.get(instruction.arg));
+        methodVisitor.visitLdcInsn(function.co_names.get(instruction.arg()));
         methodVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, Type.getInternalName(PythonLikeType.class),
                 "loadMethod", Type.getMethodDescriptor(Type.getType(PythonLikeObject.class),
                         Type.getType(String.class)),
@@ -388,16 +388,17 @@ public class FunctionImplementor {
      */
     public static void callMethod(FunctionMetadata functionMetadata, StackMetadata stackMetadata, MethodVisitor methodVisitor,
             PythonBytecodeInstruction instruction, LocalVariableHelper localVariableHelper) {
-        PythonLikeType functionType = stackMetadata.getTypeAtStackIndex(instruction.arg + 1);
+        PythonLikeType functionType = stackMetadata.getTypeAtStackIndex(instruction.arg() + 1);
         if (functionType instanceof PythonKnownFunctionType) {
             PythonKnownFunctionType knownFunctionType = (PythonKnownFunctionType) functionType;
-            PythonLikeType[] parameterTypes = new PythonLikeType[instruction.arg];
+            PythonLikeType[] parameterTypes = new PythonLikeType[instruction.arg()];
             for (int i = 0; i < parameterTypes.length; i++) {
                 parameterTypes[parameterTypes.length - i - 1] = stackMetadata.getTypeAtStackIndex(i);
             }
             knownFunctionType.getFunctionForParameters(parameterTypes)
                     .ifPresentOrElse(functionSignature -> {
-                        KnownCallImplementor.callMethod(functionSignature, methodVisitor, localVariableHelper, instruction.arg);
+                        KnownCallImplementor.callMethod(functionSignature, methodVisitor, localVariableHelper,
+                                instruction.arg());
                         methodVisitor.visitInsn(Opcodes.SWAP);
                         methodVisitor.visitInsn(Opcodes.POP);
                         if (knownFunctionType.isStaticMethod()) {
@@ -417,7 +418,7 @@ public class FunctionImplementor {
             PythonBytecodeInstruction instruction,
             LocalVariableHelper localVariableHelper) {
         // Stack is method, (obj or null), arg0, ..., arg(argc - 1)
-        CollectionImplementor.buildCollection(PythonLikeTuple.class, methodVisitor, instruction.arg);
+        CollectionImplementor.buildCollection(PythonLikeTuple.class, methodVisitor, instruction.arg());
         methodVisitor.visitInsn(Opcodes.SWAP);
 
         // Stack is method, argList, (obj or null)
@@ -478,7 +479,7 @@ public class FunctionImplementor {
     public static void callFunction(FunctionMetadata functionMetadata,
             StackMetadata stackMetadata,
             MethodVisitor methodVisitor, PythonBytecodeInstruction instruction) {
-        PythonLikeType functionType = stackMetadata.getTypeAtStackIndex(instruction.arg);
+        PythonLikeType functionType = stackMetadata.getTypeAtStackIndex(instruction.arg());
         if (functionType instanceof PythonLikeGenericType) {
             functionType = ((PythonLikeGenericType) functionType).getOrigin().getConstructorType().orElse(null);
         }
@@ -487,7 +488,7 @@ public class FunctionImplementor {
             knownFunctionType.getDefaultFunctionSignature()
                     .ifPresentOrElse(functionSignature -> {
                         KnownCallImplementor.callWithoutKeywords(functionSignature, functionMetadata, stackMetadata,
-                                instruction.arg);
+                                instruction.arg());
                         methodVisitor.visitInsn(Opcodes.SWAP);
                         methodVisitor.visitInsn(Opcodes.POP);
                     }, () -> callGenericFunction(functionMetadata, stackMetadata, methodVisitor, instruction));
@@ -499,7 +500,7 @@ public class FunctionImplementor {
     public static void callGenericFunction(FunctionMetadata functionMetadata,
             StackMetadata stackMetadata,
             MethodVisitor methodVisitor, PythonBytecodeInstruction instruction) {
-        callGenericFunction(functionMetadata, stackMetadata, methodVisitor, instruction.arg);
+        callGenericFunction(functionMetadata, stackMetadata, methodVisitor, instruction.arg());
     }
 
     public static void callGenericFunction(MethodVisitor methodVisitor, int argCount) {
@@ -548,7 +549,7 @@ public class FunctionImplementor {
      */
     public static void callFunctionWithKeywords(FunctionMetadata functionMetadata, StackMetadata stackMetadata,
             MethodVisitor methodVisitor, PythonBytecodeInstruction instruction) {
-        PythonLikeType functionType = stackMetadata.getTypeAtStackIndex(instruction.arg + 1);
+        PythonLikeType functionType = stackMetadata.getTypeAtStackIndex(instruction.arg() + 1);
         if (functionType instanceof PythonLikeGenericType) {
             functionType = ((PythonLikeGenericType) functionType).getOrigin().getConstructorType().orElse(null);
         }
@@ -557,7 +558,7 @@ public class FunctionImplementor {
             knownFunctionType.getDefaultFunctionSignature()
                     .ifPresentOrElse(functionSignature -> {
                         KnownCallImplementor.callWithKeywordsAndUnwrapSelf(functionSignature, functionMetadata, stackMetadata,
-                                instruction.arg);
+                                instruction.arg());
                         methodVisitor.visitInsn(Opcodes.SWAP);
                         methodVisitor.visitInsn(Opcodes.POP);
                     }, () -> callGenericFunction(functionMetadata, stackMetadata, methodVisitor, instruction));
@@ -581,7 +582,7 @@ public class FunctionImplementor {
         // Since Java Bytecode require consistent stack frames  (i.e. the body of a loop must start with
         // the same number of elements in the stack), we need to add the tuple/map in the same object
         // which will delegate it to either the tuple or the map depending on position and the first item size
-        CollectionImplementor.buildCollection(TupleMapPair.class, methodVisitor, instruction.arg + 1);
+        CollectionImplementor.buildCollection(TupleMapPair.class, methodVisitor, instruction.arg() + 1);
 
         // stack is callable, tupleMapPair
         methodVisitor.visitInsn(Opcodes.DUP);
@@ -611,7 +612,7 @@ public class FunctionImplementor {
      */
     public static void callFunctionUnpack(FunctionMetadata functionMetadata, StackMetadata stackMetadata,
             PythonBytecodeInstruction instruction) {
-        if ((instruction.arg & 1) == 1) {
+        if ((instruction.arg() & 1) == 1) {
             callFunctionUnpackMapAndIterable(functionMetadata, stackMetadata, functionMetadata.methodVisitor);
         } else {
             callFunctionUnpackIterable(functionMetadata, stackMetadata, functionMetadata.methodVisitor);
@@ -705,7 +706,7 @@ public class FunctionImplementor {
                     Type.getMethodDescriptor(Type.getType(PythonString.class), Type.getType(String.class)), false);
             stackMetadata = stackMetadata.pushTemp(BuiltinTypes.STRING_TYPE);
         }
-        int providedOptionalArgs = Integer.bitCount(instruction.arg);
+        int providedOptionalArgs = Integer.bitCount(instruction.arg());
 
         // If the argument present, decrement providedOptionalArgs to keep argument shifting logic the same
         // Ex: present, missing, present, present -> need to shift default for missing down by 4 = 2 + (3 - 1)
@@ -714,7 +715,7 @@ public class FunctionImplementor {
         //                                             need to shift default for missing2 down by 3 = 2 + (2 - 1)
         StackMetadata tempStackmetadata = stackMetadata;
 
-        if ((instruction.arg & 1) != 1) {
+        if ((instruction.arg() & 1) != 1) {
             CollectionImplementor.buildCollection(PythonLikeTuple.class, methodVisitor, 0);
 
             tempStackmetadata = tempStackmetadata.pushTemp(BuiltinTypes.TUPLE_TYPE);
@@ -724,7 +725,7 @@ public class FunctionImplementor {
             providedOptionalArgs--;
         }
 
-        if ((instruction.arg & 2) != 2) {
+        if ((instruction.arg() & 2) != 2) {
             CollectionImplementor.buildMap(PythonLikeDict.class, methodVisitor, 0);
 
             tempStackmetadata = tempStackmetadata.pushTemp(BuiltinTypes.DICT_TYPE);
@@ -734,7 +735,7 @@ public class FunctionImplementor {
             providedOptionalArgs--;
         }
 
-        if ((instruction.arg & 4) != 4) {
+        if ((instruction.arg() & 4) != 4) {
             // In Python 3.10 and above, it a tuple of string; in 3.9 and below, a dict
             if (functionMetadata.pythonCompiledFunction.pythonVersion.isBefore(PythonVersion.PYTHON_3_10)) {
                 CollectionImplementor.buildMap(PythonLikeDict.class, methodVisitor, 0);
@@ -754,7 +755,7 @@ public class FunctionImplementor {
             providedOptionalArgs--;
         }
 
-        if ((instruction.arg & 8) != 8) {
+        if ((instruction.arg() & 8) != 8) {
             CollectionImplementor.buildCollection(PythonLikeTuple.class, methodVisitor, 0);
 
             tempStackmetadata = tempStackmetadata.pushTemp(BuiltinTypes.TUPLE_TYPE);

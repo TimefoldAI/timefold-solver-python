@@ -17,7 +17,7 @@ public class UnpackSequenceOpcode extends AbstractOpcode {
     @Override
     protected StackMetadata getStackMetadataAfterInstruction(FunctionMetadata functionMetadata, StackMetadata stackMetadata) {
         StackMetadata newStackMetadata = stackMetadata.pop();
-        for (int i = 0; i < instruction.arg; i++) {
+        for (int i = 0; i < instruction.arg(); i++) {
             newStackMetadata = newStackMetadata.push(ValueSourceInfo.of(this, BuiltinTypes.BASE_TYPE,
                     stackMetadata.getValueSourcesUpToStackIndex(1)));
         }
@@ -26,7 +26,7 @@ public class UnpackSequenceOpcode extends AbstractOpcode {
 
     @Override
     public void implement(FunctionMetadata functionMetadata, StackMetadata stackMetadata) {
-        CollectionImplementor.unpackSequence(functionMetadata.methodVisitor, instruction.arg,
+        CollectionImplementor.unpackSequence(functionMetadata.methodVisitor, instruction.arg(),
                 stackMetadata.localVariableHelper);
     }
 }

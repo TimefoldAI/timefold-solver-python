@@ -17,12 +17,12 @@ public class BuildMapOpcode extends AbstractOpcode {
 
     @Override
     protected StackMetadata getStackMetadataAfterInstruction(FunctionMetadata functionMetadata, StackMetadata stackMetadata) {
-        return stackMetadata.pop(2 * instruction.arg).push(ValueSourceInfo.of(this, BuiltinTypes.DICT_TYPE,
-                stackMetadata.getValueSourcesUpToStackIndex(2 * instruction.arg)));
+        return stackMetadata.pop(2 * instruction.arg()).push(ValueSourceInfo.of(this, BuiltinTypes.DICT_TYPE,
+                stackMetadata.getValueSourcesUpToStackIndex(2 * instruction.arg())));
     }
 
     @Override
     public void implement(FunctionMetadata functionMetadata, StackMetadata stackMetadata) {
-        CollectionImplementor.buildMap(PythonLikeDict.class, functionMetadata.methodVisitor, instruction.arg);
+        CollectionImplementor.buildMap(PythonLikeDict.class, functionMetadata.methodVisitor, instruction.arg());
     }
 }

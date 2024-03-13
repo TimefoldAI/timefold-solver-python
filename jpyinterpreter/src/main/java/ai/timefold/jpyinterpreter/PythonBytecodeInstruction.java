@@ -1,51 +1,38 @@
 package ai.timefold.jpyinterpreter;
 
-public class PythonBytecodeInstruction {
-    /**
-     * The {@link OpcodeIdentifier} for this operation
-     */
-    public OpcodeIdentifier opcode;
+import java.util.OptionalInt;
 
-    /**
-     * Human readable name for operation
-     */
-    public String opname;
+import ai.timefold.jpyinterpreter.opcodes.descriptor.OpcodeDescriptor;
 
-    /**
-     * Numeric argument to operation (if any), otherwise null
-     */
-    public Integer arg;
+public record PythonBytecodeInstruction(String opname, int offset, int arg, OptionalInt startsLine,
+        boolean isJumpTarget) {
+    public static PythonBytecodeInstruction atOffset(String opname, int offset) {
+        return new PythonBytecodeInstruction(opname, offset, 0, OptionalInt.empty(), false);
+    }
 
-    /**
-     * Start index of operation within bytecode sequence
-     */
-    public int offset;
+    public static PythonBytecodeInstruction atOffset(OpcodeDescriptor instruction, int offset) {
+        return atOffset(instruction.name(), offset);
+    }
 
-    /**
-     * Line started by this opcode (if any), otherwise None
-     */
-    public Integer startsLine;
+    public PythonBytecodeInstruction withArg(int newArg) {
+        return new PythonBytecodeInstruction(opname, offset, newArg, startsLine, isJumpTarget);
+    }
 
-    /**
-     * True if other code jumps to here, otherwise False
-     */
-    public boolean isJumpTarget;
+    public PythonBytecodeInstruction startsLine(int lineNumber) {
+        return new PythonBytecodeInstruction(opname, offset, arg, OptionalInt.of(lineNumber), isJumpTarget);
+    }
 
-    public PythonBytecodeInstruction copy() {
-        PythonBytecodeInstruction out = new PythonBytecodeInstruction();
+    public PythonBytecodeInstruction withIsJumpTarget(boolean isJumpTarget) {
+        return new PythonBytecodeInstruction(opname, offset, arg, startsLine, isJumpTarget);
+    }
 
-        out.opcode = opcode;
-        out.opname = opname;
-        out.arg = arg;
-        out.offset = offset;
-        out.startsLine = startsLine;
-        out.isJumpTarget = isJumpTarget;
-
-        return out;
+    public PythonBytecodeInstruction markAsJumpTarget() {
+        return new PythonBytecodeInstruction(opname, offset, arg, startsLine, true);
     }
 
     @Override
     public String toString() {
-        return "[" + offset + "] " + opcode.name() + " (" + arg + ")" + (isJumpTarget ? " {JUMP TARGET}" : "");
+        return "[%d] %s (%d) %s"
+                .formatted(offset, opname, arg, isJumpTarget ? "{JUMP TARGET}" : "");
     }
 }
