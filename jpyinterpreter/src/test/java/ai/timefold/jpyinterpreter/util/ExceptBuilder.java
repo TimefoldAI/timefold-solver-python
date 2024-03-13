@@ -59,9 +59,7 @@ public class ExceptBuilder {
         PythonBytecodeInstruction exceptBlockStartInstruction = delegate.instruction(StackOpDescriptor.DUP_TOP)
                 .markAsJumpTarget();
         delegate.instructionList.add(exceptBlockStartInstruction);
-
         delegate.loadConstant(type);
-
         PythonBytecodeInstruction instruction = delegate.instruction(ControlOpDescriptor.JUMP_IF_NOT_EXC_MATCH);
         delegate.instructionList.add(instruction);
 
@@ -101,7 +99,9 @@ public class ExceptBuilder {
         delegate.op(StackOpDescriptor.POP_TOP);
         delegate.op(ExceptionOpDescriptor.RERAISE, 0);
 
-        delegate.update(tryEndGoto = tryEndGoto.withArg(delegate.instructionList.size()));
+        if (tryEndGoto != null) {
+            delegate.update(tryEndGoto = tryEndGoto.withArg(delegate.instructionList.size()));
+        }
 
         for (int i = 0; i < exceptEndJumpList.size(); i++) {
             var instruction = exceptEndJumpList.get(i).withArg(delegate.instructionList.size());
@@ -154,7 +154,7 @@ public class ExceptBuilder {
             delegate.op(ExceptionOpDescriptor.RERAISE, 0);
         }
 
-        if (tryEndGoto.arg() == 0) {
+        if (tryEndGoto == null || tryEndGoto.arg() == 0) {
             if (!hasFinally) {
                 delegate.update(exceptFinallyInstruction = exceptFinallyInstruction
                         .withArg(delegate.instructionList.size() - exceptFinallyInstruction.offset() - 1));
@@ -166,7 +166,9 @@ public class ExceptBuilder {
             }
 
             if (!allExceptsExitEarly) {
-                delegate.update(tryEndGoto = tryEndGoto.withArg(delegate.instructionList.size()));
+                if (tryEndGoto != null) {
+                    delegate.update(tryEndGoto = tryEndGoto.withArg(delegate.instructionList.size()));
+                }
                 PythonBytecodeInstruction noopInstruction = delegate.instruction(MetaOpDescriptor.NOP)
                         .markAsJumpTarget();
                 delegate.instructionList.add(noopInstruction);

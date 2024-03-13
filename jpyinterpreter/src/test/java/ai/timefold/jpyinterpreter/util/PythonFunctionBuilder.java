@@ -189,22 +189,23 @@ public class PythonFunctionBuilder {
         PythonBytecodeInstruction notCatchedFinallyBlock = instruction(ExceptionOpDescriptor.SETUP_FINALLY);
         instructionList.add(notCatchedFinallyBlock);
 
-        PythonBytecodeInstruction instruction = instruction(ExceptionOpDescriptor.SETUP_FINALLY);
-        instructionList.add(instruction);
+        PythonBytecodeInstruction setupFinallyInstruction = instruction(ExceptionOpDescriptor.SETUP_FINALLY);
+        instructionList.add(setupFinallyInstruction);
         int tryStart = instructionList.size();
 
         tryBlockBuilder.accept(this);
 
-        update(instruction.withArg(instructionList.size() - tryStart + (tryExitEarly ? 0 : 1)));
+        update(setupFinallyInstruction.withArg(instructionList.size() - tryStart + (tryExitEarly ? 0 : 1)));
 
-        instruction = instruction(ControlOpDescriptor.JUMP_ABSOLUTE)
-                .withArg(0);
+        PythonBytecodeInstruction tryJumpToEnd = null;
 
         if (!tryExitEarly) {
-            instructionList.add(instruction);
+            tryJumpToEnd = instruction(ControlOpDescriptor.JUMP_ABSOLUTE)
+                    .withArg(0);
+            instructionList.add(tryJumpToEnd);
         }
 
-        return new ExceptBuilder(this, instruction, notCatchedFinallyBlock);
+        return new ExceptBuilder(this, tryJumpToEnd, notCatchedFinallyBlock);
     }
 
     /**

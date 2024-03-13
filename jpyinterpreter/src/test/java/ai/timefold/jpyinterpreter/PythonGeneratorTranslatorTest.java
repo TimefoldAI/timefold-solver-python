@@ -25,7 +25,6 @@ import ai.timefold.jpyinterpreter.types.numeric.PythonInteger;
 import ai.timefold.jpyinterpreter.util.PythonFunctionBuilder;
 import ai.timefold.jpyinterpreter.util.function.TriFunction;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 public class PythonGeneratorTranslatorTest {
@@ -120,7 +119,6 @@ public class PythonGeneratorTranslatorTest {
     }
 
     @Test
-    @Disabled // TODO: Find bug in PythonFunctionBuilder/ExceptBuilder
     public void testGeneratorWithTryExcept() {
         PythonCompiledFunction generatorFunction = PythonFunctionBuilder.newFunction()
                 .op(GeneratorOpDescriptor.GEN_START)
