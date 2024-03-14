@@ -869,3 +869,49 @@ def test_class_vargs_with_manatory_args():
     verifier.verify(1, 2, 3, expected_result=16)
     verifier.verify(2, 4, 6, expected_result=22)
     verifier.verify(1, 1, 1, expected_result=13)
+
+
+def test_class_annotations():
+    from typing import Annotated
+    from java.lang import Deprecated
+    from java.lang.annotation import Target, ElementType
+    from jpyinterpreter import add_class_annotation, JavaAnnotation, translate_python_class_to_java_class
+
+    @add_class_annotation(Deprecated,
+                          forRemoval=True,
+                          since='0.0.0')
+    class A:
+        my_field: Annotated[int, JavaAnnotation(Deprecated, {
+            'forRemoval': True,
+            'since': '1.0.0'
+        }), 'extra metadata',
+        JavaAnnotation(Target, {
+            'value': [ElementType.CONSTRUCTOR, ElementType.METHOD]
+        })]
+
+        def my_method(self) -> Annotated[str, 'extra', JavaAnnotation(Deprecated, {
+            'forRemoval': False,
+            'since': '2.0.0'
+        })]:
+            return 'hello world'
+
+    translated_class = translate_python_class_to_java_class(A).getJavaClass()
+    annotations = translated_class.getAnnotations()
+    assert len(annotations) == 1
+    assert isinstance(annotations[0], Deprecated)
+    assert annotations[0].forRemoval()
+    assert annotations[0].since() == '0.0.0'
+
+    annotations = translated_class.getField('$field$my_field').getAnnotations()
+    assert len(annotations) == 2
+    assert isinstance(annotations[0], Deprecated)
+    assert annotations[0].forRemoval()
+    assert annotations[0].since() == '1.0.0'
+    assert isinstance(annotations[1], Target)
+    assert list(annotations[1].value()) == [ElementType.CONSTRUCTOR, ElementType.METHOD]
+
+    annotations = translated_class.getMethod('$method$my_method').getAnnotations()
+    assert len(annotations) == 1
+    assert isinstance(annotations[0], Deprecated)
+    assert annotations[0].forRemoval() is False
+    assert annotations[0].since() == '2.0.0'

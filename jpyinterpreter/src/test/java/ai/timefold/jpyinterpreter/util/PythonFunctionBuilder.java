@@ -14,6 +14,7 @@ import ai.timefold.jpyinterpreter.PythonCompiledFunction;
 import ai.timefold.jpyinterpreter.PythonExceptionTable;
 import ai.timefold.jpyinterpreter.PythonLikeObject;
 import ai.timefold.jpyinterpreter.PythonVersion;
+import ai.timefold.jpyinterpreter.TypeHint;
 import ai.timefold.jpyinterpreter.implementors.JavaPythonTypeConversionImplementor;
 import ai.timefold.jpyinterpreter.opcodes.descriptor.CollectionOpDescriptor;
 import ai.timefold.jpyinterpreter.opcodes.descriptor.ControlOpDescriptor;
@@ -26,7 +27,6 @@ import ai.timefold.jpyinterpreter.opcodes.descriptor.ObjectOpDescriptor;
 import ai.timefold.jpyinterpreter.opcodes.descriptor.OpcodeDescriptor;
 import ai.timefold.jpyinterpreter.opcodes.descriptor.StackOpDescriptor;
 import ai.timefold.jpyinterpreter.opcodes.descriptor.VariableOpDescriptor;
-import ai.timefold.jpyinterpreter.types.PythonLikeType;
 
 /**
  * A builder for Python bytecode.
@@ -65,7 +65,7 @@ public class PythonFunctionBuilder {
 
     Map<String, PythonLikeObject> globalsMap = new HashMap<>();
 
-    Map<String, PythonLikeType> typeAnnotations = new HashMap<>();
+    Map<String, TypeHint> typeAnnotations = new HashMap<>();
 
     int co_argcount = 0;
     int co_kwonlyargcount = 0;

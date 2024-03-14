@@ -22,9 +22,14 @@ public class PythonCompiledClass {
     public String className;
 
     /**
+     * The annotations on the type
+     */
+    public List<AnnotationMetadata> annotations;
+
+    /**
      * Type annotations for fields
      */
-    public Map<String, PythonLikeType> typeAnnotations;
+    public Map<String, TypeHint> typeAnnotations;
 
     /**
      * The binary type of this PythonCompiledClass;
@@ -46,6 +51,9 @@ public class PythonCompiledClass {
      * Contains static attributes that are instances of this class
      */
     public Map<String, OpaquePythonReference> staticAttributeNameToClassInstance;
+
+    public PythonCompiledClass() {
+    }
 
     public String getGeneratedClassBaseName() {
         if (module == null || module.isEmpty()) {

@@ -4,7 +4,10 @@ import dis
 import inspect
 import sys
 import abc
-from typing import Union
+from dataclasses import dataclass
+from types import FunctionType
+from typing import TypeVar, Any, List, Tuple, Dict, Union, Annotated, Type, Callable, \
+    get_origin, get_args, get_type_hints
 
 from jpype import JInt, JLong, JDouble, JBoolean, JProxy, JClass, JArray
 
@@ -14,8 +17,34 @@ MAXIMUM_SUPPORTED_PYTHON_VERSION = (3, 11)
 global_dict_to_instance = dict()
 global_dict_to_key_set = dict()
 type_to_compiled_java_class = dict()
+type_to_annotations = dict()
+
 function_interface_pair_to_instance = dict()
 function_interface_pair_to_class = dict()
+
+
+@dataclass
+class JavaAnnotation:
+    annotation_type: JClass
+    annotation_values: Dict[str, Any]
+
+
+T = TypeVar('T')
+
+
+def add_class_annotation(annotation_type, /, **annotation_values: Any) -> Callable[[Type[T]], Type[T]]:
+    def decorator(_cls: Type[T]) -> Type[T]:
+        global type_to_compiled_java_class
+        global type_to_annotations
+        if _cls in type_to_compiled_java_class:
+            raise RuntimeError('Cannot add an annotation after a class been compiled.')
+        annotations = type_to_annotations.get(_cls, [])
+        annotation = JavaAnnotation(annotation_type, annotation_values)
+        annotations.append(annotation)
+        type_to_annotations[_cls] = annotations
+        return _cls
+
+    return decorator
 
 
 def is_python_version_supported(python_version):
@@ -662,37 +691,176 @@ def get_default_args(func):
     }
 
 
-def copy_type_annotations(annotations_dict, default_args, vargs_name, kwargs_name):
-    from java.util import HashMap
+def copy_type_annotations(hinted_object, default_args, vargs_name, kwargs_name):
+    from java.util import List, HashMap
     from java.lang import Class as JavaClass
+    from ai.timefold.jpyinterpreter import TypeHint
     from ai.timefold.jpyinterpreter.types.wrappers import OpaquePythonReference, JavaObjectWrapper, CPythonType # noqa
 
     global type_to_compiled_java_class
 
     out = HashMap()
-    if annotations_dict is None or not isinstance(annotations_dict, dict):
-        return out
+    type_hints = get_type_hints(hinted_object, include_extras=True)
 
-    for name, value in annotations_dict.items():
+    for name, type_hint in type_hints.items():
         if not isinstance(name, str):
             continue
         if name == vargs_name:
-            out.put(name, type_to_compiled_java_class[tuple])
+            out.put(name, TypeHint.withoutAnnotations(type_to_compiled_java_class[tuple]))
             continue
         if name == kwargs_name:
-            out.put(name, type_to_compiled_java_class[dict])
+            out.put(name, TypeHint.withoutAnnotations(type_to_compiled_java_class[dict]))
             continue
+        hint_type = type_hint
+        hint_annotations = List.of()
+        if get_origin(type_hint) is Annotated:
+            hint_type = get_args(type_hint)[0]
+            hint_annotations = get_java_annotations(type_hint.__metadata__)
+
         if name in default_args:
-            value = Union[value, type(default_args[name])]
-        if value in type_to_compiled_java_class:
-            out.put(name, type_to_compiled_java_class[value])
-        elif isinstance(value, (JClass, JavaClass)):
-            java_type = JavaObjectWrapper.getPythonTypeForClass(value)
-            type_to_compiled_java_class[value] = java_type
-            out.put(name, java_type)
-        elif isinstance(value, (type, str)):
-            out.put(name, get_java_type_for_python_type(value))
+            hint_type = Union[hint_type, type(default_args[name])]
+
+        java_type = None
+        if hint_type in type_to_compiled_java_class:
+            java_type = type_to_compiled_java_class[hint_type]
+        elif isinstance(hint_type, (JClass, JavaClass)):
+            java_type = JavaObjectWrapper.getPythonTypeForClass(hint_type)
+            type_to_compiled_java_class[hint_type] = java_type
+        elif isinstance(hint_type, (type, str)):
+            java_type = get_java_type_for_python_type(hint_type)
+
+        if java_type is not None:
+            out.put(name, TypeHint(java_type, hint_annotations))
     return out
+
+
+def get_java_annotations(annotated_metadata: List[Any]):
+    from java.util import ArrayList
+    out = ArrayList()
+    for metadata in annotated_metadata:
+        if not isinstance(metadata, JavaAnnotation):
+            continue
+        out.add(convert_java_annotation(metadata))
+    return out
+
+
+def convert_java_annotation(java_annotation: JavaAnnotation):
+    from java.util import HashMap
+    from ai.timefold.jpyinterpreter import AnnotationMetadata
+    annotation_values = HashMap()
+    for attribute_name, attribute_value in java_annotation.annotation_values.items():
+        annotation_method = java_annotation.annotation_type.class_.getDeclaredMethod(attribute_name)
+        attribute_type = annotation_method.getReturnType()
+        java_attribute_value = convert_annotation_value(java_annotation.annotation_type, attribute_type,
+                                                        attribute_name, attribute_value)
+        annotation_values.put(attribute_name, java_attribute_value)
+    return AnnotationMetadata(java_annotation.annotation_type.class_, annotation_values)
+
+
+def convert_annotation_value(annotation_type: JClass, attribute_type: JClass, attribute_name: str, attribute_value: Any):
+    from jpype import JBoolean, JByte, JChar, JShort, JInt, JLong, JFloat, JDouble, JString, JArray
+    # See 9.6.1 of the Java spec for possible element values of annotations
+    if attribute_type == JClass('boolean').class_:
+        return JBoolean(attribute_value)
+    elif attribute_type == JClass('byte').class_:
+        return JByte(attribute_value)
+    elif attribute_type == JClass('char').class_:
+        return JChar(attribute_value)
+    elif attribute_type == JClass('short').class_:
+        return JShort(attribute_value)
+    elif attribute_type == JClass('int').class_:
+        return JInt(attribute_value)
+    elif attribute_type == JClass('long').class_:
+        return JLong(attribute_value)
+    elif attribute_type == JClass('float').class_:
+        return JFloat(attribute_value)
+    elif attribute_type == JClass('double').class_:
+        return JDouble(attribute_value)
+    elif attribute_type == JClass('java.lang.String').class_:
+        return JString(attribute_value)
+    elif attribute_type == JClass('java.lang.Class').class_:
+        if isinstance(attribute_value, type):
+            return get_java_type_for_python_type(attribute_type)
+        elif isinstance(attribute_value, FunctionType):
+            generic_type = annotation_type.class_.getDeclaredMethod(attribute_name).getGenericReturnType()
+            function_type_and_generic_args = resolve_java_function_type_as_tuple(generic_type)
+            return translate_python_bytecode_to_java_bytecode(attribute_value, *function_type_and_generic_args)
+        else:
+            raise ValueError(f'Illegal value for {attribute_name} in annotation {annotation_type}: {attribute_value}')
+    elif attribute_type.isEnum():
+        return attribute_value
+    elif attribute_type.isArray():
+        dimensions = get_dimensions(attribute_type)
+        component_type = get_component_type(attribute_type)
+        return JArray(component_type, dims=dimensions)(convert_annotation_array_elements(annotation_type,
+                                                                                         component_type.class_,
+                                                                                         attribute_name,
+                                                                                         attribute_value))
+    elif JClass('java.lang.Annotation').class_.isAssignableFrom(attribute_type):
+        if not isinstance(attribute_value, JavaAnnotation):
+            raise ValueError(f'Illegal value for {attribute_name} in annotation {annotation_type}: {attribute_value}')
+        return convert_java_annotation(attribute_value)
+    else:
+        raise ValueError(f'Illegal type for annotation element {attribute_type} for element named '
+                         f'{attribute_name} on annotation type {annotation_type}.')
+
+
+def resolve_java_function_type_as_tuple(function_class) -> Tuple[JClass]:
+    from java.lang.reflect import ParameterizedType, WildcardType
+    if isinstance(function_class, WildcardType):
+        return resolve_java_type_as_tuple(function_class.getUpperBounds()[0])
+    elif isinstance(function_class, ParameterizedType):
+        return resolve_java_type_as_tuple(function_class.getActualTypeArguments()[0])
+    else:
+        raise ValueError(f'Unable to determine interface for type {function_class}')
+
+def resolve_java_type_as_tuple(generic_type) -> Tuple[JClass]:
+    from java.lang.reflect import ParameterizedType, WildcardType
+    if isinstance(generic_type, WildcardType):
+        return (*map(resolve_java_type_as_tuple, generic_type.getUpperBounds()),)
+    elif isinstance(generic_type, ParameterizedType):
+        return resolve_raw_types(generic_type.getRawType(), *generic_type.getActualTypeArguments())
+    elif isinstance(generic_type, JClass):
+        return (generic_type,)
+    else:
+        raise ValueError(f'Unable to determine interface for type {generic_type}')
+
+
+def resolve_raw_types(*type_arguments) -> Tuple[JClass]:
+    return (*map(resolve_raw_type, type_arguments),)
+
+
+def resolve_raw_type(type_argument) -> JClass:
+    from java.lang.reflect import ParameterizedType
+    if isinstance(type_argument, ParameterizedType):
+        return resolve_raw_type(type_argument.getRawType())
+    elif isinstance(type_argument, JClass):
+        return type_argument
+    else:
+        raise ValueError(f'Unable to determine raw type for type {type_argument}')
+
+
+def convert_annotation_array_elements(annotation_type: JClass, component_type: JClass, attribute_name: str,
+                                      array_elements: List) -> List:
+    out = []
+    for item in array_elements:
+        if isinstance(item, (list, tuple)):
+            out.append(convert_annotation_array_elements(annotation_type, component_type, attribute_name, item))
+        else:
+            out.append(convert_annotation_value(annotation_type, component_type, attribute_name, item))
+    return out
+
+
+def get_dimensions(array_type: JClass) -> int:
+    if array_type.getComponentType() is None:
+        return 0
+    return get_dimensions(array_type.getComponentType()) + 1
+
+
+def get_component_type(array_type: JClass) -> JClass:
+    if not array_type.getComponentType().isArray():
+        return JClass(array_type.getComponentType().getCanonicalName())
+    return get_component_type(array_type.getComponentType())
 
 
 def copy_constants(constants_iterable):
@@ -834,7 +1002,7 @@ def get_function_bytecode_object(python_function):
     python_compiled_function.co_kwonlyargcount = python_function.__code__.co_kwonlyargcount
     python_compiled_function.closure = copy_closure(python_function.__closure__)
     python_compiled_function.globalsMap = copy_globals(python_function.__globals__, python_function.__code__.co_names)
-    python_compiled_function.typeAnnotations = copy_type_annotations(python_function.__annotations__,
+    python_compiled_function.typeAnnotations = copy_type_annotations(python_function,
                                                                      get_default_args(python_function),
                                                                      inspect.getfullargspec(python_function).varargs,
                                                                      inspect.getfullargspec(python_function).varkw)
@@ -1065,7 +1233,7 @@ def erase_generic_args(python_type):
 def translate_python_class_to_java_class(python_class):
     from java.lang import Class as JavaClass
     from java.util import ArrayList, HashMap
-    from ai.timefold.jpyinterpreter import PythonCompiledClass, PythonClassTranslator, CPythonBackedPythonInterpreter # noqa
+    from ai.timefold.jpyinterpreter import AnnotationMetadata, PythonCompiledClass, PythonClassTranslator, CPythonBackedPythonInterpreter # noqa
     from ai.timefold.jpyinterpreter.types import BuiltinTypes
     from ai.timefold.jpyinterpreter.types.wrappers import JavaObjectWrapper, OpaquePythonReference, CPythonType # noqa
 
@@ -1179,24 +1347,20 @@ def translate_python_class_to_java_class(python_class):
 
             static_attributes_map.put(attribute[0], convert_to_java_python_like_object(attribute[1]))
 
-
     python_compiled_class = PythonCompiledClass()
+    python_compiled_class.annotations = ArrayList()
+    for annotation in type_to_annotations.get(python_class, []):
+        python_compiled_class.annotations.add(convert_java_annotation(annotation))
+
     python_compiled_class.binaryType = CPythonType.getType(JProxy(OpaquePythonReference, inst=python_class,
                                                                   convert=True))
     python_compiled_class.module = python_class.__module__
     python_compiled_class.qualifiedName = python_class.__qualname__
     python_compiled_class.className = python_class.__name__
-    if hasattr(python_class, '__annotations__'):
-        python_compiled_class.typeAnnotations = copy_type_annotations(python_class.__annotations__,
-                                                                      dict(),
-                                                                      None,
-                                                                      None)
-    else:
-        python_compiled_class.typeAnnotations = copy_type_annotations(None,
-                                                                      dict(),
-                                                                      None,
-                                                                      None)
-
+    python_compiled_class.typeAnnotations = copy_type_annotations(python_class,
+                                                                  dict(),
+                                                                  None,
+                                                                  None)
     python_compiled_class.superclassList = superclass_list
     python_compiled_class.instanceFunctionNameToPythonBytecode = instance_method_map
     python_compiled_class.staticFunctionNameToPythonBytecode = static_method_map
