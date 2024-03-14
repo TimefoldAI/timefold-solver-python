@@ -1,7 +1,6 @@
 package ai.timefold.jpyinterpreter.types;
 
 import java.math.BigInteger;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -199,7 +198,7 @@ public class PythonSlice extends AbstractPythonLikeObject {
             stopIndex = PythonInteger.valueOf(sequenceLength.value.subtract(BigInteger.ONE));
         }
 
-        return PythonLikeTuple.fromList(List.of(startIndex, stopIndex, strideLength));
+        return PythonLikeTuple.fromItems(startIndex, stopIndex, strideLength);
     }
 
     public int getStartIndex(int length) {

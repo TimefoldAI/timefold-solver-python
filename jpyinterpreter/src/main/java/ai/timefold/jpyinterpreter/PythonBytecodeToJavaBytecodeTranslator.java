@@ -145,8 +145,8 @@ public class PythonBytecodeToJavaBytecodeTranslator {
         Class<T> compiledClass = translatePythonBytecodeToClass(pythonCompiledFunction, javaFunctionalInterfaceType);
         PythonLikeTuple annotationTuple = pythonCompiledFunction.typeAnnotations.entrySet()
                 .stream()
-                .map(entry -> PythonLikeTuple.fromList(List.of(PythonString.valueOf(entry.getKey()),
-                        entry.getValue() != null ? entry.getValue().type() : BuiltinTypes.BASE_TYPE)))
+                .map(entry -> PythonLikeTuple.fromItems(PythonString.valueOf(entry.getKey()),
+                        entry.getValue() != null ? entry.getValue().type() : BuiltinTypes.BASE_TYPE))
                 .collect(Collectors.toCollection(PythonLikeTuple::new));
         return FunctionImplementor.createInstance(pythonCompiledFunction.defaultPositionalArguments,
                 pythonCompiledFunction.defaultKeywordArguments,
@@ -161,7 +161,7 @@ public class PythonBytecodeToJavaBytecodeTranslator {
                 translatePythonBytecodeToClass(pythonCompiledFunction, javaFunctionalInterfaceType, genericTypeArgumentList);
         PythonLikeTuple annotationTuple = pythonCompiledFunction.typeAnnotations.entrySet()
                 .stream()
-                .map(entry -> PythonLikeTuple.fromList(List.of(PythonString.valueOf(entry.getKey()), entry.getValue().type())))
+                .map(entry -> PythonLikeTuple.fromItems(PythonString.valueOf(entry.getKey()), entry.getValue().type()))
                 .collect(Collectors.toCollection(PythonLikeTuple::new));
         return FunctionImplementor.createInstance(pythonCompiledFunction.defaultPositionalArguments,
                 pythonCompiledFunction.defaultKeywordArguments,
@@ -216,7 +216,7 @@ public class PythonBytecodeToJavaBytecodeTranslator {
         Class<T> compiledClass = translatePythonBytecodeToClass(pythonCompiledFunction, methodDescriptor, isVirtual);
         PythonLikeTuple annotationTuple = pythonCompiledFunction.typeAnnotations.entrySet()
                 .stream()
-                .map(entry -> PythonLikeTuple.fromList(List.of(PythonString.valueOf(entry.getKey()), entry.getValue().type())))
+                .map(entry -> PythonLikeTuple.fromItems(PythonString.valueOf(entry.getKey()), entry.getValue().type()))
                 .collect(Collectors.toCollection(PythonLikeTuple::new));
         return FunctionImplementor.createInstance(pythonCompiledFunction.defaultPositionalArguments,
                 pythonCompiledFunction.defaultKeywordArguments,

@@ -11,7 +11,6 @@ import java.time.YearMonth;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.IsoFields;
-import java.util.List;
 
 import ai.timefold.jpyinterpreter.PythonBinaryOperator;
 import ai.timefold.jpyinterpreter.PythonLikeObject;
@@ -324,9 +323,9 @@ public class PythonDate<T extends PythonDate<?>> extends AbstractPythonLikeObjec
     public PythonLikeTuple timetuple() {
         PythonInteger yday =
                 to_ordinal().subtract(PythonDate.of(year.value.intValueExact(), 1, 1).to_ordinal()).add(PythonInteger.ONE);
-        return PythonLikeTuple.fromList(List.of(year, month, day,
+        return PythonLikeTuple.fromItems(year, month, day,
                 PythonInteger.ZERO, PythonInteger.ZERO, PythonInteger.ZERO,
-                weekday(), yday, PythonInteger.valueOf(-1)));
+                weekday(), yday, PythonInteger.valueOf(-1));
     }
 
     public PythonInteger to_ordinal() {
@@ -346,7 +345,7 @@ public class PythonDate<T extends PythonDate<?>> extends AbstractPythonLikeObjec
         PythonInteger week = PythonInteger.valueOf(IsoFields.WEEK_OF_WEEK_BASED_YEAR.getFrom(localDate));
         PythonInteger day = PythonInteger.valueOf(localDate.getDayOfWeek().getValue());
 
-        return PythonLikeTuple.fromList(List.of(year, week, day));
+        return PythonLikeTuple.fromItems(year, week, day);
     }
 
     public PythonString iso_format() {

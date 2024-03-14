@@ -647,10 +647,10 @@ public class PythonDateTime extends PythonDate<PythonDateTime> {
         } else {
             dst = PythonInteger.valueOf(-1);
         }
-        return PythonLikeTuple.fromList(List.of(
+        return PythonLikeTuple.fromItems(
                 year, month, day,
                 hour, minute, second,
-                weekday(), yday, dst));
+                weekday(), yday, dst);
     }
 
     public PythonLikeTuple utctimetuple() {

@@ -3,6 +3,7 @@ package ai.timefold.jpyinterpreter.types.collections;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
@@ -93,6 +94,12 @@ public class PythonLikeTuple extends AbstractPythonLikeObject implements List<Py
         for (int i = 0; i < size; i++) {
             delegate.add(null);
         }
+    }
+
+    public static PythonLikeTuple fromItems(PythonLikeObject... items) {
+        PythonLikeTuple result = new PythonLikeTuple();
+        Collections.addAll(result, items);
+        return result;
     }
 
     public static PythonLikeTuple fromList(List<PythonLikeObject> other) {

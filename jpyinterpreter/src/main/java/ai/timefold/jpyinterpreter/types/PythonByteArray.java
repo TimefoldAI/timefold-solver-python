@@ -9,7 +9,6 @@ import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.BitSet;
-import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -1016,7 +1015,7 @@ public class PythonByteArray extends AbstractPythonLikeObject implements PythonB
         } else if (object instanceof PythonLikeDict) {
             return interpolate((PythonLikeDict) object);
         } else {
-            return interpolate(PythonLikeTuple.fromList(List.of(object)));
+            return interpolate(PythonLikeTuple.fromItems(object));
         }
     }
 
@@ -1061,18 +1060,18 @@ public class PythonByteArray extends AbstractPythonLikeObject implements PythonB
             }
 
             if (j == sepBytes.length) {
-                return PythonLikeTuple.fromList(List.of(
+                return PythonLikeTuple.fromItems(
                         new PythonByteArray(Arrays.copyOfRange(valueBuffer.array(), 0, i)),
                         sep,
                         new PythonByteArray(
-                                Arrays.copyOfRange(valueBuffer.array(), i + sepBytes.length, valueBuffer.limit()))));
+                                Arrays.copyOfRange(valueBuffer.array(), i + sepBytes.length, valueBuffer.limit())));
             }
         }
 
-        return PythonLikeTuple.fromList(List.of(
+        return PythonLikeTuple.fromItems(
                 this,
                 new PythonByteArray(new byte[] {}),
-                new PythonByteArray(new byte[] {})));
+                new PythonByteArray(new byte[] {}));
     }
 
     public PythonLikeTuple partition(PythonByteArray sep) {
@@ -1288,16 +1287,16 @@ public class PythonByteArray extends AbstractPythonLikeObject implements PythonB
                 continue;
             }
 
-            return PythonLikeTuple.fromList(List.of(
+            return PythonLikeTuple.fromItems(
                     new PythonByteArray(Arrays.copyOfRange(valueBuffer.array(), 0, i)),
                     sep,
-                    new PythonByteArray(Arrays.copyOfRange(valueBuffer.array(), i + sepBytes.length, valueBuffer.limit()))));
+                    new PythonByteArray(Arrays.copyOfRange(valueBuffer.array(), i + sepBytes.length, valueBuffer.limit())));
         }
 
-        return PythonLikeTuple.fromList(List.of(
+        return PythonLikeTuple.fromItems(
                 new PythonByteArray(new byte[] {}),
                 new PythonByteArray(new byte[] {}),
-                this));
+                this);
     }
 
     public PythonLikeTuple rightPartition(PythonByteArray sep) {
