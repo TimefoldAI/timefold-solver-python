@@ -491,8 +491,8 @@ public class PythonInteger extends AbstractPythonLikeObject implements PythonNum
                 result[1] = result[1].add(other.value);
             }
         }
-        return PythonLikeTuple.fromList(List.of(PythonInteger.valueOf(result[0]),
-                PythonInteger.valueOf(result[1])));
+        return PythonLikeTuple.fromItems(PythonInteger.valueOf(result[0]),
+                PythonInteger.valueOf(result[1]));
     }
 
     public PythonLikeTuple divmod(PythonFloat other) {
@@ -519,7 +519,7 @@ public class PythonInteger extends AbstractPythonLikeObject implements PythonNum
                 remainder = remainder + other.value;
             }
         }
-        return PythonLikeTuple.fromList(List.of(quotient, new PythonFloat(remainder)));
+        return PythonLikeTuple.fromItems(quotient, new PythonFloat(remainder));
     }
 
     public PythonInteger round() {

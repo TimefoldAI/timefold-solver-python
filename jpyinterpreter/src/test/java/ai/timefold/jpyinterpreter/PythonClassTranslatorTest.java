@@ -41,11 +41,12 @@ public class PythonClassTranslatorTest {
                 .op(ControlOpDescriptor.RETURN_VALUE)
                 .build();
 
+        compiledClass.annotations = List.of();
         compiledClass.className = "MyClass";
         compiledClass.superclassList = List.of(BuiltinTypes.BASE_TYPE);
         compiledClass.staticAttributeNameToObject = Map.of("type_variable", new PythonString("type_value"));
         compiledClass.staticAttributeNameToClassInstance = Map.of();
-        compiledClass.typeAnnotations = Map.of("age", BuiltinTypes.INT_TYPE);
+        compiledClass.typeAnnotations = Map.of("age", TypeHint.withoutAnnotations(BuiltinTypes.INT_TYPE));
         compiledClass.instanceFunctionNameToPythonBytecode = Map.of("__init__", initFunction,
                 "get_age", ageFunction);
         compiledClass.staticFunctionNameToPythonBytecode = Map.of("hello_world", helloWorldFunction);
@@ -93,11 +94,12 @@ public class PythonClassTranslatorTest {
             PythonCompiledFunction comparisonFunction = getCompareFunction.apply(compareOp);
 
             PythonCompiledClass compiledClass = new PythonCompiledClass();
+            compiledClass.annotations = List.of();
             compiledClass.className = "MyClass";
             compiledClass.superclassList = List.of(BuiltinTypes.BASE_TYPE);
             compiledClass.staticAttributeNameToObject = Map.of();
             compiledClass.staticAttributeNameToClassInstance = Map.of();
-            compiledClass.typeAnnotations = Map.of("key", BuiltinTypes.INT_TYPE);
+            compiledClass.typeAnnotations = Map.of("key", TypeHint.withoutAnnotations(BuiltinTypes.INT_TYPE));
             compiledClass.instanceFunctionNameToPythonBytecode = Map.of("__init__", initFunction,
                     compareOp.dunderMethod, comparisonFunction);
             compiledClass.staticFunctionNameToPythonBytecode = Map.of();
@@ -161,11 +163,12 @@ public class PythonClassTranslatorTest {
                 .build();
 
         PythonCompiledClass compiledClass = new PythonCompiledClass();
+        compiledClass.annotations = List.of();
         compiledClass.className = "MyClass";
         compiledClass.superclassList = List.of(BuiltinTypes.BASE_TYPE);
         compiledClass.staticAttributeNameToObject = Map.of();
         compiledClass.staticAttributeNameToClassInstance = Map.of();
-        compiledClass.typeAnnotations = Map.of("key", BuiltinTypes.INT_TYPE);
+        compiledClass.typeAnnotations = Map.of("key", TypeHint.withoutAnnotations(BuiltinTypes.INT_TYPE));
         compiledClass.instanceFunctionNameToPythonBytecode = Map.of("__init__", initFunction,
                 "__eq__", equalsFunction,
                 "__hash__", hashFunction);

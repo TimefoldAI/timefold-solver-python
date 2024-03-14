@@ -595,7 +595,7 @@ public class GlobalBuiltins {
                         PythonLikeObject modResult =
                                 ((PythonLikeFunction) maybeMod).$call(List.of(left, right), Map.of(), null);
                         if (divResult != NotImplemented.INSTANCE && modResult != NotImplemented.INSTANCE) {
-                            return PythonLikeTuple.fromList(List.of(divResult, modResult));
+                            return PythonLikeTuple.fromItems(divResult, modResult);
                         } else {
                             maybeDiv = right.$getType().$getAttributeOrNull("__rfloordiv__");
                             maybeMod = right.$getType().$getAttributeOrNull("__rmod__");
@@ -604,7 +604,7 @@ public class GlobalBuiltins {
                                 divResult = ((PythonLikeFunction) maybeDiv).$call(List.of(right, left), Map.of(), null);
                                 modResult = ((PythonLikeFunction) maybeMod).$call(List.of(right, left), Map.of(), null);
                                 if (divResult != NotImplemented.INSTANCE && modResult != NotImplemented.INSTANCE) {
-                                    return PythonLikeTuple.fromList(List.of(divResult, modResult));
+                                    return PythonLikeTuple.fromItems(divResult, modResult);
                                 } else {
                                     throw new TypeError(
                                             "Unsupported operands for divmod: " + left.$getType() + ", " + right.$getType());
@@ -621,7 +621,7 @@ public class GlobalBuiltins {
                             PythonLikeObject modResult =
                                     ((PythonLikeFunction) maybeMod).$call(List.of(right, left), Map.of(), null);
                             if (divResult != NotImplemented.INSTANCE && modResult != NotImplemented.INSTANCE) {
-                                return PythonLikeTuple.fromList(List.of(divResult, modResult));
+                                return PythonLikeTuple.fromItems(divResult, modResult);
                             } else {
                                 throw new TypeError(
                                         "Unsupported operands for divmod: " + left.$getType() + ", " + right.$getType());
@@ -646,7 +646,7 @@ public class GlobalBuiltins {
                         PythonLikeObject modResult =
                                 ((PythonLikeFunction) maybeMod).$call(List.of(left, right), Map.of(), null);
                         if (divResult != NotImplemented.INSTANCE && modResult != NotImplemented.INSTANCE) {
-                            return PythonLikeTuple.fromList(List.of(divResult, modResult));
+                            return PythonLikeTuple.fromItems(divResult, modResult);
                         } else {
                             maybeDiv = right.$getType().$getAttributeOrNull("__rfloordiv__");
                             maybeMod = right.$getType().$getAttributeOrNull("__rmod__");
@@ -655,7 +655,7 @@ public class GlobalBuiltins {
                                 divResult = ((PythonLikeFunction) maybeDiv).$call(List.of(right, left), Map.of(), null);
                                 modResult = ((PythonLikeFunction) maybeMod).$call(List.of(right, left), Map.of(), null);
                                 if (divResult != NotImplemented.INSTANCE && modResult != NotImplemented.INSTANCE) {
-                                    return PythonLikeTuple.fromList(List.of(divResult, modResult));
+                                    return PythonLikeTuple.fromItems(divResult, modResult);
                                 } else {
                                     throw new TypeError(
                                             "Unsupported operands for divmod: " + left.$getType() + ", " + right.$getType());
@@ -672,7 +672,7 @@ public class GlobalBuiltins {
                             PythonLikeObject modResult =
                                     ((PythonLikeFunction) maybeMod).$call(List.of(right, left), Map.of(), null);
                             if (divResult != NotImplemented.INSTANCE && modResult != NotImplemented.INSTANCE) {
-                                return PythonLikeTuple.fromList(List.of(divResult, modResult));
+                                return PythonLikeTuple.fromItems(divResult, modResult);
                             } else {
                                 throw new TypeError(
                                         "Unsupported operands for divmod: " + left.$getType() + ", " + right.$getType());
@@ -687,7 +687,7 @@ public class GlobalBuiltins {
                     PythonLikeObject divResult = ((PythonLikeFunction) maybeDiv).$call(List.of(left, right), Map.of(), null);
                     PythonLikeObject modResult = ((PythonLikeFunction) maybeMod).$call(List.of(left, right), Map.of(), null);
                     if (divResult != NotImplemented.INSTANCE && modResult != NotImplemented.INSTANCE) {
-                        return PythonLikeTuple.fromList(List.of(divResult, modResult));
+                        return PythonLikeTuple.fromItems(divResult, modResult);
                     } else {
                         maybeDiv = right.$getType().$getAttributeOrNull("__rfloordiv__");
                         maybeMod = right.$getType().$getAttributeOrNull("__rmod__");
@@ -696,7 +696,7 @@ public class GlobalBuiltins {
                             divResult = ((PythonLikeFunction) maybeDiv).$call(List.of(right, left), Map.of(), null);
                             modResult = ((PythonLikeFunction) maybeMod).$call(List.of(right, left), Map.of(), null);
                             if (divResult != NotImplemented.INSTANCE && modResult != NotImplemented.INSTANCE) {
-                                return PythonLikeTuple.fromList(List.of(divResult, modResult));
+                                return PythonLikeTuple.fromItems(divResult, modResult);
                             } else {
                                 throw new TypeError(
                                         "Unsupported operands for divmod: " + left.$getType() + ", " + right.$getType());
@@ -713,7 +713,7 @@ public class GlobalBuiltins {
                         PythonLikeObject modResult =
                                 ((PythonLikeFunction) maybeMod).$call(List.of(right, left), Map.of(), null);
                         if (divResult != NotImplemented.INSTANCE && modResult != NotImplemented.INSTANCE) {
-                            return PythonLikeTuple.fromList(List.of(divResult, modResult));
+                            return PythonLikeTuple.fromItems(divResult, modResult);
                         } else {
                             throw new TypeError(
                                     "Unsupported operands for divmod: " + left.$getType() + ", " + right.$getType());
@@ -785,7 +785,7 @@ public class GlobalBuiltins {
                 }
                 PythonLikeObject index = currentIndex.get();
                 currentIndex.set(BinaryDunderBuiltin.ADD.invoke(index, PythonInteger.valueOf(1)));
-                return PythonLikeTuple.fromList(List.of(index, value));
+                return PythonLikeTuple.fromItems(index, value);
             }
         });
     }

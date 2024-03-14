@@ -810,7 +810,7 @@ public class PythonString extends AbstractPythonLikeObject implements PythonLike
         } else if (object instanceof PythonLikeDict) {
             return interpolate((PythonLikeDict) object);
         } else {
-            return interpolate(PythonLikeTuple.fromList(List.of(object)));
+            return interpolate(PythonLikeTuple.fromItems(object));
         }
     }
 
@@ -1223,30 +1223,30 @@ public class PythonString extends AbstractPythonLikeObject implements PythonLike
     public PythonLikeTuple partition(PythonString seperator) {
         int firstIndex = value.indexOf(seperator.value);
         if (firstIndex != -1) {
-            return PythonLikeTuple.fromList(List.of(
+            return PythonLikeTuple.fromItems(
                     PythonString.valueOf(value.substring(0, firstIndex)),
                     seperator,
-                    PythonString.valueOf(value.substring(firstIndex + seperator.value.length()))));
+                    PythonString.valueOf(value.substring(firstIndex + seperator.value.length())));
         } else {
-            return PythonLikeTuple.fromList(List.of(
+            return PythonLikeTuple.fromItems(
                     this,
                     EMPTY,
-                    EMPTY));
+                    EMPTY);
         }
     }
 
     public PythonLikeTuple rightPartition(PythonString seperator) {
         int lastIndex = value.lastIndexOf(seperator.value);
         if (lastIndex != -1) {
-            return PythonLikeTuple.fromList(List.of(
+            return PythonLikeTuple.fromItems(
                     PythonString.valueOf(value.substring(0, lastIndex)),
                     seperator,
-                    PythonString.valueOf(value.substring(lastIndex + seperator.value.length()))));
+                    PythonString.valueOf(value.substring(lastIndex + seperator.value.length())));
         } else {
-            return PythonLikeTuple.fromList(List.of(
+            return PythonLikeTuple.fromItems(
                     EMPTY,
                     EMPTY,
-                    this));
+                    this);
         }
     }
 

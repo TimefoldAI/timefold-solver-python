@@ -46,7 +46,7 @@ public class PythonCompiledFunction {
      * Type annotations for the parameters and return.
      * (return is stored under the "return" key).
      */
-    public Map<String, PythonLikeType> typeAnnotations;
+    public Map<String, TypeHint> typeAnnotations;
 
     /**
      * Default positional arguments
@@ -155,9 +155,10 @@ public class PythonCompiledFunction {
 
         for (int i = 0; i < totalArgCount(); i++) {
             String parameterName = co_varnames.get(i);
-            PythonLikeType parameterType = typeAnnotations.get(parameterName);
-            if (parameterType == null) { // map may have nulls
-                parameterType = defaultType;
+            var parameterTypeHint = typeAnnotations.get(parameterName);
+            PythonLikeType parameterType = defaultType;
+            if (parameterTypeHint != null) {
+                parameterType = parameterTypeHint.type();
             }
             out.add(parameterType);
         }
@@ -165,7 +166,11 @@ public class PythonCompiledFunction {
     }
 
     public Optional<PythonLikeType> getReturnType() {
-        return Optional.ofNullable(typeAnnotations.get("return"));
+        var returnTypeHint = typeAnnotations.get("return");
+        if (returnTypeHint == null) {
+            return Optional.empty();
+        }
+        return Optional.of(returnTypeHint.type());
     }
 
     public String getAsmMethodDescriptorString() {

@@ -200,7 +200,7 @@ public class PythonFloat extends AbstractPythonLikeObject implements PythonNumbe
             numerator = numerator.divide(FIVE);
         }
 
-        return PythonLikeTuple.fromList(List.of(PythonInteger.valueOf(numerator), PythonInteger.valueOf(denominator)));
+        return PythonLikeTuple.fromItems(PythonInteger.valueOf(numerator), PythonInteger.valueOf(denominator));
     }
 
     @Override
@@ -472,7 +472,7 @@ public class PythonFloat extends AbstractPythonLikeObject implements PythonNumbe
                 remainder = remainder + other.value.doubleValue();
             }
         }
-        return PythonLikeTuple.fromList(List.of(quotient, new PythonFloat(remainder)));
+        return PythonLikeTuple.fromItems(quotient, new PythonFloat(remainder));
     }
 
     public PythonLikeTuple divmod(PythonFloat other) {
@@ -499,7 +499,7 @@ public class PythonFloat extends AbstractPythonLikeObject implements PythonNumbe
                 remainder = remainder + other.value;
             }
         }
-        return PythonLikeTuple.fromList(List.of(quotient, new PythonFloat(remainder)));
+        return PythonLikeTuple.fromItems(quotient, new PythonFloat(remainder));
     }
 
     public PythonInteger round() {

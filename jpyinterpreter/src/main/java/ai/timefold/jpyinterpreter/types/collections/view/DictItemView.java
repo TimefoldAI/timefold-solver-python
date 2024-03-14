@@ -85,7 +85,7 @@ public class DictItemView extends AbstractPythonLikeObject {
     private List<PythonLikeObject> getEntriesAsTuples() {
         List<PythonLikeObject> out = new ArrayList<>(entrySet.size());
         for (Map.Entry<PythonLikeObject, PythonLikeObject> entry : entrySet) {
-            out.add(PythonLikeTuple.fromList(List.of(entry.getKey(), entry.getValue())));
+            out.add(PythonLikeTuple.fromItems(entry.getKey(), entry.getValue()));
         }
         return out;
     }
@@ -97,7 +97,7 @@ public class DictItemView extends AbstractPythonLikeObject {
     public PythonIterator<PythonLikeObject> getItemsIterator() {
         return new PythonIterator<>(
                 IteratorUtils.iteratorMap(entrySet.iterator(),
-                        entry -> PythonLikeTuple.fromList(List.of(entry.getKey(), entry.getValue()))));
+                        entry -> PythonLikeTuple.fromItems(entry.getKey(), entry.getValue())));
     }
 
     public PythonBoolean containsItem(PythonLikeObject o) {
@@ -115,7 +115,7 @@ public class DictItemView extends AbstractPythonLikeObject {
 
     public PythonIterator<PythonLikeObject> getReversedItemIterator() {
         return new PythonIterator<>(IteratorUtils.iteratorMap(mapping.reversed(),
-                key -> PythonLikeTuple.fromList(List.of(key, mapping.delegate.get(key)))));
+                key -> PythonLikeTuple.fromItems(key, mapping.delegate.get(key))));
     }
 
     public PythonBoolean isDisjoint(DictItemView other) {

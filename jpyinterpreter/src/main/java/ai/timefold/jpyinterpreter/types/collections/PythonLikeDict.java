@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import ai.timefold.jpyinterpreter.PythonBinaryOperator;
@@ -128,9 +127,9 @@ public class PythonLikeDict extends AbstractPythonLikeObject
     }
 
     public PythonLikeTuple toFlattenKeyValueTuple() {
-        return PythonLikeTuple.fromList(delegate.entrySet().stream()
+        return PythonLikeTuple.fromItems(delegate.entrySet().stream()
                 .flatMap(entry -> Stream.of(entry.getKey(), entry.getValue()))
-                .collect(Collectors.toList()));
+                .toArray(PythonLikeObject[]::new));
     }
 
     public PythonLikeDict copy() {
@@ -232,7 +231,7 @@ public class PythonLikeDict extends AbstractPythonLikeObject
         }
 
         PythonLikeObject lastKey = delegate.lastKey();
-        return PythonLikeTuple.fromList(List.of(lastKey, delegate.remove(lastKey)));
+        return PythonLikeTuple.fromItems(lastKey, delegate.remove(lastKey));
     }
 
     public PythonIterator<PythonLikeObject> reversed() {

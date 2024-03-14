@@ -22,9 +22,14 @@ public class PythonCompiledClass {
     public String className;
 
     /**
+     * The annotations on the type
+     */
+    public List<AnnotationMetadata> annotations;
+
+    /**
      * Type annotations for fields
      */
-    public Map<String, PythonLikeType> typeAnnotations;
+    public Map<String, TypeHint> typeAnnotations;
 
     /**
      * The binary type of this PythonCompiledClass;

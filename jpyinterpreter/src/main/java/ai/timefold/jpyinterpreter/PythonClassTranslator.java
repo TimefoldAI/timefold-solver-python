@@ -56,6 +56,8 @@ public class PythonClassTranslator {
     // $ is illegal in variables/methods in Python
     public static String TYPE_FIELD_NAME = "$TYPE";
     public static String CPYTHON_TYPE_FIELD_NAME = "$CPYTHON_TYPE";
+    private static String JAVA_FIELD_PREFIX = "$field$";
+    private static String JAVA_METHOD_PREFIX = "$method$";
 
     public static PythonLikeType translatePythonClass(PythonCompiledClass pythonCompiledClass) {
         String maybeClassName =
@@ -144,6 +146,10 @@ public class PythonClassTranslator {
         classWriter.visit(Opcodes.V11, Modifier.PUBLIC, internalClassName, null,
                 superClassType.getJavaTypeInternalName(), interfaces);
 
+        for (var annotation : pythonCompiledClass.annotations) {
+            annotation.addAnnotationTo(classWriter);
+        }
+
         pythonCompiledClass.staticAttributeNameToObject.forEach(pythonLikeType::$setAttribute);
 
         classWriter.visitField(Modifier.PUBLIC | Modifier.STATIC, TYPE_FIELD_NAME, Type.getDescriptor(PythonLikeType.class),
@@ -157,15 +163,28 @@ public class PythonClassTranslator {
             pythonLikeType.$setAttribute(staticAttributeEntry.getKey(), staticAttributeEntry.getValue());
         }
 
+        for (var attributeName : pythonCompiledClass.typeAnnotations.keySet()) {
+            if (pythonLikeType.$getAttributeOrNull(attributeName) == null) {
+                instanceAttributeSet.add(attributeName);
+            }
+        }
+
         Map<String, PythonLikeType> attributeNameToTypeMap = new HashMap<>();
         for (String attributeName : instanceAttributeSet) {
-            PythonLikeType type = pythonCompiledClass.typeAnnotations.getOrDefault(attributeName, BuiltinTypes.BASE_TYPE);
+            var typeHint = pythonCompiledClass.typeAnnotations.getOrDefault(attributeName,
+                    TypeHint.withoutAnnotations(BuiltinTypes.BASE_TYPE));
+            PythonLikeType type = typeHint.type();
             if (type == null) { // null might be in __annotations__
                 type = BuiltinTypes.BASE_TYPE;
             }
             String javaFieldTypeDescriptor = 'L' + type.getJavaTypeInternalName() + ';';
             attributeNameToTypeMap.put(attributeName, type);
-            classWriter.visitField(Modifier.PUBLIC, getJavaFieldName(attributeName), javaFieldTypeDescriptor, null, null);
+            var fieldVisitor = classWriter.visitField(Modifier.PUBLIC, getJavaFieldName(attributeName), javaFieldTypeDescriptor,
+                    null, null);
+            for (var annotation : typeHint.annotationList()) {
+                annotation.addAnnotationTo(fieldVisitor);
+            }
+            fieldVisitor.visitEnd();
             FieldDescriptor fieldDescriptor =
                     new FieldDescriptor(attributeName, getJavaFieldName(attributeName), internalClassName,
                             javaFieldTypeDescriptor, type, true);
@@ -264,7 +283,7 @@ public class PythonClassTranslator {
         pythonLikeType.$setAttribute("__module__", PythonString.valueOf(pythonCompiledClass.module));
 
         PythonLikeDict annotations = new PythonLikeDict();
-        pythonCompiledClass.typeAnnotations.forEach((name, type) -> annotations.put(PythonString.valueOf(name), type));
+        pythonCompiledClass.typeAnnotations.forEach((name, type) -> annotations.put(PythonString.valueOf(name), type.type()));
         pythonLikeType.$setAttribute("__annotations__", annotations);
 
         PythonLikeTuple mro = new PythonLikeTuple();
@@ -347,19 +366,19 @@ public class PythonClassTranslator {
     }
 
     public static String getJavaFieldName(String pythonFieldName) {
-        return "$field$" + pythonFieldName;
+        return JAVA_FIELD_PREFIX + pythonFieldName;
     }
 
     public static String getPythonFieldName(String javaFieldName) {
-        return javaFieldName.substring("$field$".length());
+        return javaFieldName.substring(JAVA_FIELD_PREFIX.length());
     }
 
     public static String getJavaMethodName(String pythonMethodName) {
-        return "$method$" + pythonMethodName;
+        return JAVA_METHOD_PREFIX + pythonMethodName;
     }
 
     public static String getPythonMethodName(String javaMethodName) {
-        return javaMethodName.substring("$method$".length());
+        return javaMethodName.substring(JAVA_METHOD_PREFIX.length());
     }
 
     private static Class<?> createBytecodeForMethodAndSetOnClass(String className, PythonLikeType pythonLikeType,
@@ -673,6 +692,15 @@ public class PythonClassTranslator {
         }
     }
 
+    private static void addAnnotationsToMethod(PythonCompiledFunction function, MethodVisitor methodVisitor) {
+        var returnTypeHint = function.typeAnnotations.get("return");
+        if (returnTypeHint != null) {
+            for (var annotation : returnTypeHint.annotationList()) {
+                annotation.addAnnotationTo(methodVisitor);
+            }
+        }
+    }
+
     private static void createInstanceMethod(PythonLikeType pythonLikeType, ClassWriter classWriter, String internalClassName,
             String methodName, PythonCompiledFunction function) {
         InterfaceDeclaration interfaceDeclaration = getInterfaceForInstancePythonFunction(internalClassName, function);
@@ -693,7 +721,8 @@ public class PythonClassTranslator {
         MethodVisitor methodVisitor =
                 classWriter.visitMethod(Modifier.PUBLIC, javaMethodName, javaMethodDescriptor, null, null);
 
-        createMethodBody(internalClassName, javaMethodName, javaParameterTypes, interfaceDeclaration.methodDescriptor, function,
+        createInstanceOrStaticMethodBody(internalClassName, javaMethodName, javaParameterTypes,
+                interfaceDeclaration.methodDescriptor, function,
                 interfaceDeclaration.interfaceName, interfaceDescriptor, methodVisitor);
 
         pythonLikeType.addMethod(methodName,
@@ -722,7 +751,9 @@ public class PythonClassTranslator {
         for (int i = 0; i < function.totalArgCount(); i++) {
             javaParameterTypes[i] = Type.getType('L' + parameterPythonTypeList.get(i).getJavaTypeInternalName() + ';');
         }
-        createMethodBody(internalClassName, javaMethodName, javaParameterTypes, interfaceDeclaration.methodDescriptor, function,
+
+        createInstanceOrStaticMethodBody(internalClassName, javaMethodName, javaParameterTypes,
+                interfaceDeclaration.methodDescriptor, function,
                 interfaceDeclaration.interfaceName, interfaceDescriptor, methodVisitor);
 
         pythonLikeType.addMethod(methodName,
@@ -746,8 +777,10 @@ public class PythonClassTranslator {
                 classWriter.visitMethod(Modifier.PUBLIC | Modifier.STATIC, javaMethodName, javaMethodDescriptor, null, null);
 
         for (int i = 0; i < function.getParameterTypes().size(); i++) {
-            methodVisitor.visitParameter("parameter" + i, 0);
+            methodVisitor.visitParameter(function.co_varnames.get(i), 0);
         }
+
+        addAnnotationsToMethod(function, methodVisitor);
         methodVisitor.visitCode();
 
         methodVisitor.visitFieldInsn(Opcodes.GETSTATIC, internalClassName, javaMethodName, interfaceDescriptor);
@@ -775,13 +808,15 @@ public class PythonClassTranslator {
                         parameterTypes));
     }
 
-    private static void createMethodBody(String internalClassName, String javaMethodName, Type[] javaParameterTypes,
+    private static void createInstanceOrStaticMethodBody(String internalClassName, String javaMethodName,
+            Type[] javaParameterTypes,
             String methodDescriptorString,
             PythonCompiledFunction function, String interfaceInternalName, String interfaceDescriptor,
             MethodVisitor methodVisitor) {
         for (int i = 0; i < javaParameterTypes.length; i++) {
-            methodVisitor.visitParameter("parameter" + i, 0);
+            methodVisitor.visitParameter(function.co_varnames.get(i), 0);
         }
+        addAnnotationsToMethod(function, methodVisitor);
         methodVisitor.visitCode();
 
         methodVisitor.visitFieldInsn(Opcodes.GETSTATIC, internalClassName, javaMethodName, interfaceDescriptor);
