@@ -126,12 +126,13 @@ class GetAttributeOnPythonObjectWithMap:
             raise e
 
 
-@jpype.JImplements('ai.timefold.jpyinterpreter.util.function.TriConsumer', deferred=True)
+@jpype.JImplements('ai.timefold.jpyinterpreter.util.function.QuadConsumer', deferred=True)
 class SetAttributeOnPythonObject:
     @jpype.JOverride()
-    def accept(self, python_object, attribute_name, value):
+    def accept(self, python_object, clone_map, attribute_name, value):
         from .python_to_java_bytecode_translator import unwrap_python_like_object
-        setattr(python_object, attribute_name, unwrap_python_like_object(value))
+        setattr(python_object, attribute_name, unwrap_python_like_object(value,
+                                                                         clone_map))
 
 
 @jpype.JImplements('java.util.function.BiConsumer', deferred=True)

@@ -538,8 +538,6 @@ class PythonConstraintFactory:
         """
         return self.delegate.getDefaultConstraintPackage()
 
-    getDefaultConstraintPackage = get_default_constraint_package
-
     def for_each(self, source_class: Type[A_]) -> 'PythonUniConstraintStream[A_]':
         """Start a ConstraintStream of all instances of the source_class that are known as problem facts or planning entities.
 
@@ -550,14 +548,12 @@ class PythonConstraintFactory:
         global function_bytecode_translation
         source_class = get_class(source_class)
         function_bytecode_translation = self.function_bytecode_translation
-        return PythonUniConstraintStream(self.delegate.forEach(source_class), self.getDefaultConstraintPackage(),
-                                             source_class)
+        return PythonUniConstraintStream(self.delegate.forEach(source_class), self.get_default_constraint_package(),
+                                         source_class)
 
-    forEach = for_each
-
-    def for_each_including_null_vars(self, source_class: Type[A_]) -> 'PythonUniConstraintStream[A_]':
+    def for_each_including_unassigned(self, source_class: Type[A_]) -> 'PythonUniConstraintStream[A_]':
         """Start a ConstraintStream of all instances of the source_class that are known as problem facts or planning
-        entities, without filtering of entities with null planning variables.
+        entities, without filtering of entities with unassigned planning variables.
 
         :param source_class:
 
@@ -566,10 +562,8 @@ class PythonConstraintFactory:
         global function_bytecode_translation
         source_class = get_class(source_class)
         function_bytecode_translation = self.function_bytecode_translation
-        return PythonUniConstraintStream(self.delegate.forEachIncludingNullVars(source_class),
-                                             self.getDefaultConstraintPackage(), source_class)
-
-    forEachIncludingNullVars = for_each_including_null_vars
+        return PythonUniConstraintStream(self.delegate.forEachIncludingUnassigned(source_class),
+                                         self.get_default_constraint_package(), source_class)
 
     def for_each_unique_pair(self, source_class: Type[A_], *joiners: 'BiJoiner[A_, A_]') ->\
             'PythonBiConstraintStream[A_, A_]':
@@ -586,55 +580,8 @@ class PythonConstraintFactory:
         source_class = get_class(source_class)
         function_bytecode_translation = self.function_bytecode_translation
         return PythonBiConstraintStream(self.delegate.forEachUniquePair(source_class,
-                                                                            extract_joiners(joiners, source_class, source_class)),
-                                            self.getDefaultConstraintPackage(), source_class, source_class)
-
-    forEachUniquePair = for_each_unique_pair
-
-    def from_(self, source_class: Type[A_]) -> 'PythonUniConstraintStream[A_]':
-        """Deprecated, for removal: use for_each instead
-
-        :param source_class:
-
-        :return:
-        """
-        global function_bytecode_translation
-        source_class = get_class(source_class)
-        function_bytecode_translation = self.function_bytecode_translation
-        return PythonUniConstraintStream(self.delegate.from_(source_class), self.getDefaultConstraintPackage(),
-                                             source_class)
-
-    def from_unfiltered(self, source_class: Type[A_]) -> 'PythonUniConstraintStream[A_]':
-        """Deprecated, for removal: use for_each_including_null_vars instead
-
-        :param source_class:
-
-        :return:
-        """
-        global function_bytecode_translation
-        source_class = get_class(source_class)
-        function_bytecode_translation = self.function_bytecode_translation
-        return PythonUniConstraintStream(self.delegate.fromUnfiltered(source_class), self.getDefaultConstraintPackage(),
-                                             source_class)
-
-    fromUnfiltered = from_unfiltered
-
-    def from_unique_pair(self, source_class: Type[A_], *joiners: 'BiJoiner[A_, A_]') ->\
-            'PythonBiConstraintStream[A_, A_]':
-        """Deprecated, for removal: use for_each_unique_pair instead
-
-        :param source_class:
-
-        :return:
-        """
-        global function_bytecode_translation
-        source_class = get_class(source_class)
-        function_bytecode_translation = self.function_bytecode_translation
-        return PythonBiConstraintStream(self.delegate.fromUniquePair(source_class,
-                                                                     extract_joiners(joiners, source_class, source_class)),
-                                        self.getDefaultConstraintPackage(), source_class, source_class)
-
-    fromUniquePair = from_unique_pair
+                                                                        extract_joiners(joiners, source_class, source_class)),
+                                        self.get_default_constraint_package(), source_class, source_class)
 
 
 class PythonUniConstraintStream(Generic[A]):
@@ -654,8 +601,6 @@ class PythonUniConstraintStream(Generic[A]):
 
     def get_constraint_factory(self):
         return PythonConstraintFactory(self.delegate.getConstraintFactory())
-
-    getConstraintFactory = get_constraint_factory
 
     def filter(self, predicate: Callable[[A], bool]) -> 'PythonUniConstraintStream[A]':
         """Exhaustively test each fact against the predicate and match if the predicate returns True.
@@ -702,9 +647,7 @@ class PythonUniConstraintStream(Generic[A]):
                                                                 extract_joiners(joiners, self.a_type, item_type)),
                                          self.package, self.a_type)
 
-    ifExists = if_exists
-
-    def if_exists_including_null_vars(self, item_type: Type[B_], *joiners: 'BiJoiner[A, B_]') ->\
+    def if_exists_including_unassigned(self, item_type: Type[B_], *joiners: 'BiJoiner[A, B_]') ->\
             'PythonUniConstraintStream[A]':
         """Create a new UniConstraintStream for every A where B exists that satisfy all specified joiners.
 
@@ -715,13 +658,11 @@ class PythonUniConstraintStream(Generic[A]):
         :return:
         """
         item_type = get_class(item_type)
-        return PythonUniConstraintStream(self.delegate.ifExistsIncludingNullVars(item_type,
+        return PythonUniConstraintStream(self.delegate.ifExistsIncludingUnassigned(item_type,
                                                                                  extract_joiners(joiners, self.a_type,
                                                                                                  item_type)),
                                          self.package,
                                          self.a_type)
-
-    ifExistsIncludingNullVars = if_exists_including_null_vars
 
     def if_exists_other(self, item_type: Type[B_], *joiners: 'BiJoiner[A, B_]') -> 'PythonUniConstraintStream[A]':
         """Create a new UniConstraintStream for every A, if another A exists that does not equal the first, and for which all specified joiners are satisfied.
@@ -737,19 +678,15 @@ class PythonUniConstraintStream(Generic[A]):
                                                                                                 item_type)),
                                          self.package, self.a_type)
 
-    ifExistsOther = if_exists_other
-
-    def if_exists_other_including_null_vars(self, item_type: Type, *joiners: 'BiJoiner') -> \
+    def if_exists_other_including_unassigned(self, item_type: Type, *joiners: 'BiJoiner') -> \
             'PythonUniConstraintStream':
         item_type = get_class(item_type)
-        return PythonUniConstraintStream(self.delegate.ifExistsOtherIncludingNullVars(item_type,
+        return PythonUniConstraintStream(self.delegate.ifExistsOtherIncludingUnassigned(item_type,
                                                                                       extract_joiners(joiners,
                                                                                                       self.a_type,
                                                                                                       item_type)),
                                          self.package,
                                          self.a_type)
-
-    ifExistsOtherIncludingNullVars = if_exists_other_including_null_vars
 
     def if_not_exists(self, item_type: Type[B_], *joiners: 'BiJoiner[A, B_]') -> 'PythonUniConstraintStream[A]':
         """Create a new UniConstraintStream for every A where there does not exist a B where all specified joiners are satisfied.
@@ -765,9 +702,7 @@ class PythonUniConstraintStream(Generic[A]):
                                                                                               item_type)),
                                          self.package, self.a_type)
 
-    ifNotExists = if_not_exists
-
-    def if_not_exists_including_null_vars(self, item_type: Type[B_], *joiners: 'BiJoiner[A, B_]') -> \
+    def if_not_exists_including_unassigned(self, item_type: Type[B_], *joiners: 'BiJoiner[A, B_]') -> \
             'PythonUniConstraintStream[A]':
         """Create a new UniConstraintStream for every A where there does not exist a B where all specified joiners are
         satisfied.
@@ -779,14 +714,12 @@ class PythonUniConstraintStream(Generic[A]):
        :return:
        """
         item_type = get_class(item_type)
-        return PythonUniConstraintStream(self.delegate.ifNotExistsIncludingNullVars(item_type,
+        return PythonUniConstraintStream(self.delegate.ifNotExistsIncludingUnassigned(item_type,
                                                                                     extract_joiners(joiners,
                                                                                                     self.a_type,
                                                                                                     item_type)),
                                          self.package,
                                          self.a_type)
-
-    ifNotExistsIncludingNullVars = if_not_exists_including_null_vars
 
     def if_not_exists_other(self, item_type: Type[B_], *joiners: 'BiJoiner[A, B_]') ->\
             'PythonUniConstraintStream[A]':
@@ -805,10 +738,7 @@ class PythonUniConstraintStream(Generic[A]):
                                          self.package,
                                          self.a_type)
 
-
-    ifNotExistsOther = if_not_exists_other
-
-    def if_not_exists_other_including_null_vars(self, item_type: Type[B_], *joiners: 'BiJoiner[A, B_]') -> \
+    def if_not_exists_other_including_unassigned(self, item_type: Type[B_], *joiners: 'BiJoiner[A, B_]') -> \
             'PythonUniConstraintStream[A]':
         """Create a new UniConstraintStream for every A where there does not exist a different A where all specified
         joiners are satisfied.
@@ -820,13 +750,11 @@ class PythonUniConstraintStream(Generic[A]):
         :return:
         """
         item_type = get_class(item_type)
-        return PythonUniConstraintStream(self.delegate.ifNotExistsOtherIncludingNullVars(item_type,
+        return PythonUniConstraintStream(self.delegate.ifNotExistsOtherIncludingUnassigned(item_type,
                                                                                          extract_joiners(joiners,
                                                                                                          self.a_type,
                                                                                                          item_type)),
                                          self.package, self.a_type)
-
-    ifNotExistsOtherIncludingNullVars = if_not_exists_other_including_null_vars
 
     @overload
     def group_by(self, key_mapping: Callable[[A], A_]) -> 'PythonUniConstraintStream[A_]':
@@ -950,8 +878,6 @@ class PythonUniConstraintStream(Generic[A]):
         """
         return perform_group_by(self.delegate, self.package, args, self.a_type)
 
-    groupBy = group_by
-
     @overload
     def map(self, mapping_function: Callable[[A], A_]) -> 'PythonUniConstraintStream[A_]':
         ...
@@ -1046,8 +972,6 @@ class PythonUniConstraintStream(Generic[A]):
         translated_function = function_cast(flattening_function, self.a_type)
         return PythonUniConstraintStream(self.delegate.flattenLast(translated_function), self.package,
                                          JClass('java.lang.Object'))
-
-    flattenLast = flatten_last
 
     def distinct(self) -> 'PythonUniConstraintStream[A]':
         """Transforms the stream in such a way that all the tuples going through it are distinct.
@@ -1151,27 +1075,17 @@ class PythonUniConstraintStream(Generic[A]):
     def penalize_long(self, *args) -> 'Constraint':
         raise NotImplementedError
 
-    penalizeLong = penalize_long
-
     def penalize_big_decimal(self, *args) -> 'Constraint':
         raise NotImplementedError
-
-    penalizeBigDecimal = penalize_big_decimal
 
     def penalize_configurable(self, *args) -> 'Constraint':
         raise NotImplementedError
 
-    penalizeConfigurable = penalize_configurable
-
     def penalize_configurable_long(self, *args) -> 'Constraint':
         raise NotImplementedError
 
-    penalizeConfigurableLong = penalize_configurable_long
-
     def penalize_configurable_big_decimal(self, *args) -> 'Constraint':
         raise NotImplementedError
-
-    penalizeConfigurableBigDecimal = penalize_configurable_big_decimal
 
     @overload
     def reward(self, constraint_name: str, constraint_weight: 'Score') -> \
@@ -1226,27 +1140,17 @@ class PythonUniConstraintStream(Generic[A]):
     def reward_long(self, *args) -> 'Constraint':
         raise NotImplementedError
 
-    rewardLong = reward_long
-
     def reward_big_decimal(self, *args) -> 'Constraint':
         raise NotImplementedError
-
-    rewardBigDecimal = reward_big_decimal
 
     def reward_configurable(self, *args) -> 'Constraint':
         raise NotImplementedError
 
-    rewardConfigurable = reward_configurable
-
     def reward_configurable_long(self, *args) -> 'Constraint':
         raise NotImplementedError
 
-    rewardConfigurableLong = reward_configurable_long
-
     def reward_configurable_big_decimal(self, *args) -> 'Constraint':
         raise NotImplementedError
-
-    rewardConfigurableBigDecimal = reward_configurable_big_decimal
 
     @overload
     def impact(self, constraint_name: str, constraint_weight: 'Score') -> \
@@ -1303,27 +1207,17 @@ class PythonUniConstraintStream(Generic[A]):
     def impact_long(self, *args) -> 'Constraint':
         raise NotImplementedError
 
-    impactLong = impact_long
-
     def impact_big_decimal(self, *args) -> 'Constraint':
         raise NotImplementedError
-
-    impactBigDecimal = impact_big_decimal
 
     def impact_configurable(self, *args) -> 'Constraint':
         raise NotImplementedError
 
-    impactConfigurable = impact_configurable
-
     def impact_configurable_long(self, *args) -> 'Constraint':
         raise NotImplementedError
 
-    impactConfigurableLong = impact_configurable_long
-
     def impact_configurable_big_decimal(self, *args) -> 'Constraint':
         raise NotImplementedError
-
-    impactConfigurableBigDecimal = impact_configurable_big_decimal
 
 
 class PythonBiConstraintStream(Generic[A, B]):
@@ -1345,8 +1239,6 @@ class PythonBiConstraintStream(Generic[A, B]):
 
     def get_constraint_factory(self):
         return PythonConstraintFactory(self.delegate.getConstraintFactory())
-
-    getConstraintFactory = get_constraint_factory
 
     def filter(self, predicate: Callable[[A,B], bool]) -> 'PythonBiConstraintStream[A,B]':
         """Exhaustively test each fact against the predicate and match if the predicate returns True.
@@ -1395,9 +1287,7 @@ class PythonBiConstraintStream(Generic[A, B]):
                                                                                self.b_type, item_type)),
                                         self.package, self.a_type, self.b_type)
 
-    ifExists = if_exists
-
-    def if_exists_including_null_vars(self, item_type: Type[C_], *joiners: 'TriJoiner[A, B, C_]') ->\
+    def if_exists_including_unassigned(self, item_type: Type[C_], *joiners: 'TriJoiner[A, B, C_]') ->\
             'PythonBiConstraintStream[A,B]':
         """Create a new BiConstraintStream for every A, B where C exists that satisfy all specified joiners.
 
@@ -1408,14 +1298,12 @@ class PythonBiConstraintStream(Generic[A, B]):
         :return:
         """
         item_type = get_class(item_type)
-        return PythonBiConstraintStream(self.delegate.ifExistsIncludingNullVars(item_type, extract_joiners(joiners,
+        return PythonBiConstraintStream(self.delegate.ifExistsIncludingUnassigned(item_type, extract_joiners(joiners,
                                                                                                            self.a_type,
                                                                                                            self.b_type,
                                                                                                            item_type)),
                                         self.package,
                                         self.a_type, self.b_type)
-
-    ifExistsIncludingNullVars = if_exists_including_null_vars
 
     def if_not_exists(self, item_type: Type[C_], *joiners: 'TriJoiner[A, B, C_]') ->\
             'PythonBiConstraintStream[A,B]':
@@ -1433,9 +1321,7 @@ class PythonBiConstraintStream(Generic[A, B]):
                                                                                              self.b_type, item_type)),
                                         self.package, self.a_type, self.b_type)
 
-    ifNotExists = if_not_exists
-
-    def if_not_exists_including_null_vars(self, item_type: Type[C_], *joiners: 'TriJoiner[A, B, C_]') -> \
+    def if_not_exists_including_unassigned(self, item_type: Type[C_], *joiners: 'TriJoiner[A, B, C_]') -> \
             'PythonBiConstraintStream[A,B]':
         """Create a new BiConstraintStream for every A, B, where there does not exist a C where all specified joiners
         are satisfied.
@@ -1447,14 +1333,12 @@ class PythonBiConstraintStream(Generic[A, B]):
         :return:
         """
         item_type = get_class(item_type)
-        return PythonBiConstraintStream(self.delegate.ifNotExistsIncludingNullVars(item_type,
+        return PythonBiConstraintStream(self.delegate.ifNotExistsIncludingUnassigned(item_type,
                                                                                    extract_joiners(joiners,
                                                                                                    self.a_type,
                                                                                                    self.b_type,
                                                                                                    item_type)),
                                         self.package, self.a_type, self.b_type)
-
-    ifNotExistsIncludingNullVars = if_not_exists_including_null_vars
 
     @overload
     def group_by(self, key_mapping: Callable[[A, B], A_]) -> 'PythonUniConstraintStream[A_]':
@@ -1578,8 +1462,6 @@ class PythonBiConstraintStream(Generic[A, B]):
         """
         return perform_group_by(self.delegate, self.package, args, self.a_type, self.b_type)
 
-    groupBy = group_by
-
     @overload
     def map(self, mapping_function: Callable[[A, B], A_]) -> 'PythonUniConstraintStream[A_]':
         ...
@@ -1668,8 +1550,6 @@ class PythonBiConstraintStream(Generic[A, B]):
         translated_function = function_cast(flattening_function, self.b_type)
         return PythonBiConstraintStream(self.delegate.flattenLast(translated_function), self.package,
                                         self.a_type, JClass('java.lang.Object'))
-
-    flattenLast = flatten_last
 
     def distinct(self) -> 'PythonBiConstraintStream[A,B]':
         """Transforms the stream in such a way that all the tuples going through it are distinct.
@@ -1775,27 +1655,17 @@ class PythonBiConstraintStream(Generic[A, B]):
     def penalize_long(self, *args) -> 'Constraint':
         raise NotImplementedError
 
-    penalizeLong = penalize_long
-
     def penalize_big_decimal(self, *args) -> 'Constraint':
         raise NotImplementedError
-
-    penalizeBigDecimal = penalize_big_decimal
 
     def penalize_configurable(self, *args) -> 'Constraint':
         raise NotImplementedError
 
-    penalizeConfigurable = penalize_configurable
-
     def penalize_configurable_long(self, *args) -> 'Constraint':
         raise NotImplementedError
 
-    penalizeConfigurableLong = penalize_configurable_long
-
     def penalize_configurable_big_decimal(self, *args) -> 'Constraint':
         raise NotImplementedError
-
-    penalizeConfigurableBigDecimal = penalize_configurable_big_decimal
 
     @overload
     def reward(self, constraint_name: str, constraint_weight: 'Score') -> \
@@ -1851,27 +1721,17 @@ class PythonBiConstraintStream(Generic[A, B]):
     def reward_long(self, *args) -> 'Constraint':
         raise NotImplementedError
 
-    rewardLong = reward_long
-
     def reward_big_decimal(self, *args) -> 'Constraint':
         raise NotImplementedError
-
-    rewardBigDecimal = reward_big_decimal
 
     def reward_configurable(self, *args) -> 'Constraint':
         raise NotImplementedError
 
-    rewardConfigurable = reward_configurable
-
     def reward_configurable_long(self, *args) -> 'Constraint':
         raise NotImplementedError
 
-    rewardConfigurableLong = reward_configurable_long
-
     def reward_configurable_big_decimal(self, *args) -> 'Constraint':
         raise NotImplementedError
-
-    rewardConfigurableBigDecimal = reward_configurable_big_decimal
 
     @overload
     def impact(self, constraint_name: str, constraint_weight: 'Score') -> \
@@ -1929,27 +1789,17 @@ class PythonBiConstraintStream(Generic[A, B]):
     def impact_long(self, *args) -> 'Constraint':
         raise NotImplementedError
 
-    impactLong = impact_long
-
     def impact_big_decimal(self, *args) -> 'Constraint':
         raise NotImplementedError
-
-    impactBigDecimal = impact_big_decimal
 
     def impact_configurable(self, *args) -> 'Constraint':
         raise NotImplementedError
 
-    impactConfigurable = impact_configurable
-
     def impact_configurable_long(self, *args) -> 'Constraint':
         raise NotImplementedError
 
-    impactConfigurableLong = impact_configurable_long
-
     def impact_configurable_big_decimal(self, *args) -> 'Constraint':
         raise NotImplementedError
-
-    impactConfigurableBigDecimal = impact_configurable_big_decimal
 
 
 class PythonTriConstraintStream(Generic[A, B, C]):
@@ -1974,8 +1824,6 @@ class PythonTriConstraintStream(Generic[A, B, C]):
 
     def get_constraint_factory(self):
         return PythonConstraintFactory(self.delegate.getConstraintFactory())
-
-    getConstraintFactory = get_constraint_factory
 
     def filter(self, predicate: Callable[[A, B, C], bool]) -> 'PythonTriConstraintStream[A,B,C]':
         """Exhaustively test each fact against the predicate and match if the predicate returns True.
@@ -2026,9 +1874,7 @@ class PythonTriConstraintStream(Generic[A, B, C]):
                                                                                            item_type)), self.package,
                                          self.a_type, self.b_type, self.c_type)
 
-    ifExists = if_exists
-
-    def if_exists_including_null_vars(self, item_type: Type[D_], *joiners: 'QuadJoiner[A, B, C, D_]') ->\
+    def if_exists_including_unassigned(self, item_type: Type[D_], *joiners: 'QuadJoiner[A, B, C, D_]') ->\
             'PythonTriConstraintStream[A,B,C]':
         """Create a new TriConstraintStream for every A, B where D exists that satisfy all specified joiners.
 
@@ -2039,14 +1885,12 @@ class PythonTriConstraintStream(Generic[A, B, C]):
         :return:
         """
         item_type = get_class(item_type)
-        return PythonTriConstraintStream(self.delegate.ifExistsIncludingNullVars(item_type, extract_joiners(joiners,
+        return PythonTriConstraintStream(self.delegate.ifExistsIncludingUnassigned(item_type, extract_joiners(joiners,
                                                                                                             self.a_type,
                                                                                                             self.b_type,
                                                                                                             self.c_type,
                                                                                                             item_type)),
                                          self.package, self.a_type, self.b_type, self.c_type)
-
-    ifExistsIncludingNullVars = if_exists_including_null_vars
 
     def if_not_exists(self, item_type: Type[D_], *joiners: 'QuadJoiner[A, B, C, D_]') ->\
             'PythonTriConstraintStream[A,B,C]':
@@ -2067,9 +1911,7 @@ class PythonTriConstraintStream(Generic[A, B, C]):
                                                                                               item_type)),
                                          self.package, self.a_type, self.b_type, self.c_type)
 
-    ifNotExists = if_not_exists
-
-    def if_not_exists_including_null_vars(self, item_type: Type[D_], *joiners: 'QuadJoiner[A, B, C, D_]') -> \
+    def if_not_exists_including_unassigned(self, item_type: Type[D_], *joiners: 'QuadJoiner[A, B, C, D_]') -> \
             'PythonTriConstraintStream[A,B,C]':
         """Create a new TriConstraintStream for every A, B, C where there does not exist a D where all specified joiners
         are satisfied.
@@ -2081,15 +1923,13 @@ class PythonTriConstraintStream(Generic[A, B, C]):
         :return:
         """
         item_type = get_class(item_type)
-        return PythonTriConstraintStream(self.delegate.ifNotExistsIncludingNullVars(item_type,
+        return PythonTriConstraintStream(self.delegate.ifNotExistsIncludingUnassigned(item_type,
                                                                                     extract_joiners(joiners,
                                                                                                     self.a_type,
                                                                                                     self.b_type,
                                                                                                     self.c_type,
                                                                                                     item_type)),
                                          self.package, self.a_type, self.b_type, self.c_type)
-
-    ifNotExistsIncludingNullVars = if_not_exists_including_null_vars
 
     @overload
     def group_by(self, key_mapping: Callable[[A, B, C], A_]) -> 'PythonUniConstraintStream[A_]':
@@ -2215,8 +2055,6 @@ class PythonTriConstraintStream(Generic[A, B, C]):
         """
         return perform_group_by(self.delegate, self.package, args, self.a_type, self.b_type, self.c_type)
 
-    groupBy = group_by
-
     @overload
     def map(self, mapping_function: Callable[[A, B, C], A_]) -> 'PythonUniConstraintStream[A_]':
         ...
@@ -2288,8 +2126,6 @@ class PythonTriConstraintStream(Generic[A, B, C]):
         translated_function = function_cast(flattening_function, self.c_type)
         return PythonTriConstraintStream(self.delegate.flattenLast(translated_function), self.package,
                                          self.a_type, self.b_type, JClass('java.lang.Object'))
-
-    flattenLast = flatten_last
 
     def distinct(self) -> 'PythonTriConstraintStream[A, B, C]':
         """Transforms the stream in such a way that all the tuples going through it are distinct.
@@ -2398,27 +2234,17 @@ class PythonTriConstraintStream(Generic[A, B, C]):
     def penalize_long(self, *args) -> 'Constraint':
         raise NotImplementedError
 
-    penalizeLong = penalize_long
-
     def penalize_big_decimal(self, *args) -> 'Constraint':
         raise NotImplementedError
-
-    penalizeBigDecimal = penalize_big_decimal
 
     def penalize_configurable(self, *args) -> 'Constraint':
         raise NotImplementedError
 
-    penalizeConfigurable = penalize_configurable
-
     def penalize_configurable_long(self, *args) -> 'Constraint':
         raise NotImplementedError
 
-    penalizeConfigurableLong = penalize_configurable_long
-
     def penalize_configurable_big_decimal(self, *args) -> 'Constraint':
         raise NotImplementedError
-
-    penalizeConfigurableBigDecimal = penalize_configurable_big_decimal
 
     @overload
     def reward(self, constraint_name: str, constraint_weight: 'Score') -> \
@@ -2475,27 +2301,17 @@ class PythonTriConstraintStream(Generic[A, B, C]):
     def reward_long(self, *args) -> 'Constraint':
         raise NotImplementedError
 
-    rewardLong = reward_long
-
     def reward_big_decimal(self, *args) -> 'Constraint':
         raise NotImplementedError
-
-    rewardBigDecimal = reward_big_decimal
 
     def reward_configurable(self, *args) -> 'Constraint':
         raise NotImplementedError
 
-    rewardConfigurable = reward_configurable
-
     def reward_configurable_long(self, *args) -> 'Constraint':
         raise NotImplementedError
 
-    rewardConfigurableLong = reward_configurable_long
-
     def reward_configurable_big_decimal(self, *args) -> 'Constraint':
         raise NotImplementedError
-
-    rewardConfigurableBigDecimal = reward_configurable_big_decimal
 
     @overload
     def impact(self, constraint_name: str, constraint_weight: 'Score') -> \
@@ -2554,27 +2370,17 @@ class PythonTriConstraintStream(Generic[A, B, C]):
     def impact_long(self, *args) -> 'Constraint':
         raise NotImplementedError
 
-    impactLong = impact_long
-
     def impact_big_decimal(self, *args) -> 'Constraint':
         raise NotImplementedError
-
-    impactBigDecimal = impact_big_decimal
 
     def impact_configurable(self, *args) -> 'Constraint':
         raise NotImplementedError
 
-    impactConfigurable = impact_configurable
-
     def impact_configurable_long(self, *args) -> 'Constraint':
         raise NotImplementedError
 
-    impactConfigurableLong = impact_configurable_long
-
     def impact_configurable_big_decimal(self, *args) -> 'Constraint':
         raise NotImplementedError
-
-    impactConfigurableBigDecimal = impact_configurable_big_decimal
 
 
 class PythonQuadConstraintStream(Generic[A, B, C, D]):
@@ -2601,8 +2407,6 @@ class PythonQuadConstraintStream(Generic[A, B, C, D]):
 
     def get_constraint_factory(self):
         return PythonConstraintFactory(self.delegate.getConstraintFactory())
-
-    getConstraintFactory = get_constraint_factory
 
     def filter(self, predicate: Callable[[A,B,C,D], bool]) -> 'PythonQuadConstraintStream[A,B,C,D]':
         """Exhaustively test each fact against the predicate and match if the predicate returns True.
@@ -2634,9 +2438,7 @@ class PythonQuadConstraintStream(Generic[A, B, C, D]):
                                                                                             item_type)),
                                           self.package, self.a_type, self.b_type, self.c_type, self.d_type)
 
-    ifExists = if_exists
-
-    def if_exists_including_null_vars(self, item_type: Type[E_], *joiners: 'PentaJoiner[A, B, C, D, E_]') ->\
+    def if_exists_including_unassigned(self, item_type: Type[E_], *joiners: 'PentaJoiner[A, B, C, D, E_]') ->\
             'PythonQuadConstraintStream[A,B,C,D]':
         """Create a new QuadConstraintStream for every A, B, C, D where E exists that satisfy all specified joiners.
 
@@ -2647,7 +2449,7 @@ class PythonQuadConstraintStream(Generic[A, B, C, D]):
         :return:
         """
         item_type = get_class(item_type)
-        return PythonQuadConstraintStream(self.delegate.ifExistsIncludingNullVars(item_type,
+        return PythonQuadConstraintStream(self.delegate.ifExistsIncludingUnassigned(item_type,
                                                                                   extract_joiners(joiners,
                                                                                                   self.a_type,
                                                                                                   self.b_type,
@@ -2655,8 +2457,6 @@ class PythonQuadConstraintStream(Generic[A, B, C, D]):
                                                                                                   self.d_type,
                                                                                                   item_type)),
                                           self.package, self.a_type, self.b_type, self.c_type, self.d_type)
-
-    ifExistsIncludingNullVars = if_exists_including_null_vars
 
     def if_not_exists(self, item_type: Type[E_], *joiners: 'PentaJoiner[A, B, C, D, E_]') ->\
             'PythonQuadConstraintStream[A,B,C,D]':
@@ -2678,9 +2478,7 @@ class PythonQuadConstraintStream(Generic[A, B, C, D]):
                                                                                                item_type)),
                                           self.package, self.a_type, self.b_type, self.c_type, self.d_type)
 
-    ifNotExists = if_not_exists
-
-    def if_not_exists_including_null_vars(self, item_type: Type[E_], *joiners: 'PentaJoiner[A, B, C, D, E_]') -> \
+    def if_not_exists_including_unassigned(self, item_type: Type[E_], *joiners: 'PentaJoiner[A, B, C, D, E_]') -> \
             'PythonQuadConstraintStream[A,B,C,D]':
         """Create a new QuadConstraintStream for every A, B, C, D where there does not exist an E where all specified
         joiners are satisfied.
@@ -2692,7 +2490,7 @@ class PythonQuadConstraintStream(Generic[A, B, C, D]):
         :return:
         """
         item_type = get_class(item_type)
-        return PythonQuadConstraintStream(self.delegate.ifNotExistsIncludingNullVars(item_type,
+        return PythonQuadConstraintStream(self.delegate.ifNotExistsIncludingUnassigned(item_type,
                                                                                      extract_joiners(joiners,
                                                                                                      self.a_type,
                                                                                                      self.b_type,
@@ -2700,8 +2498,6 @@ class PythonQuadConstraintStream(Generic[A, B, C, D]):
                                                                                                      self.d_type,
                                                                                                      item_type)),
                                           self.package, self.a_type, self.b_type, self.c_type, self.d_type)
-
-    ifNotExistsIncludingNullVars = if_not_exists_including_null_vars
 
     @overload
     def group_by(self, key_mapping: Callable[[A, B, C, D], A_]) -> 'PythonUniConstraintStream[A_]':
@@ -2827,8 +2623,6 @@ class PythonQuadConstraintStream(Generic[A, B, C, D]):
         """
         return perform_group_by(self.delegate, self.package, args, self.a_type, self.b_type, self.c_type, self.d_type)
 
-    groupBy = group_by
-
     @overload
     def map(self, mapping_function: Callable[[A, B, C, D], A_]) -> 'PythonUniConstraintStream[A_]':
         ...
@@ -2887,8 +2681,6 @@ class PythonQuadConstraintStream(Generic[A, B, C, D]):
         translated_function = function_cast(flattening_function, self.d_type)
         return PythonQuadConstraintStream(self.delegate.flattenLast(translated_function), self.package,
                                           self.a_type, self.b_type, self.c_type, JClass('java.lang.Object'))
-
-    flattenLast = flatten_last
 
     def distinct(self) -> 'PythonQuadConstraintStream[A,B,C,D]':
         """Transforms the stream in such a way that all the tuples going through it are distinct.
@@ -2996,27 +2788,17 @@ class PythonQuadConstraintStream(Generic[A, B, C, D]):
     def penalize_long(self, *args) -> 'Constraint':
         raise NotImplementedError
 
-    penalizeLong = penalize_long
-
     def penalize_big_decimal(self, *args) -> 'Constraint':
         raise NotImplementedError
-
-    penalizeBigDecimal = penalize_big_decimal
 
     def penalize_configurable(self, *args) -> 'Constraint':
         raise NotImplementedError
 
-    penalizeConfigurable = penalize_configurable
-
     def penalize_configurable_long(self, *args) -> 'Constraint':
         raise NotImplementedError
 
-    penalizeConfigurableLong = penalize_configurable_long
-
     def penalize_configurable_big_decimal(self, *args) -> 'Constraint':
         raise NotImplementedError
-
-    penalizeConfigurableBigDecimal = penalize_configurable_big_decimal
 
     @overload
     def reward(self, constraint_name: str, constraint_weight: 'Score') -> \
@@ -3073,27 +2855,17 @@ class PythonQuadConstraintStream(Generic[A, B, C, D]):
     def reward_long(self, *args) -> 'Constraint':
         raise NotImplementedError
 
-    rewardLong = reward_long
-
     def reward_big_decimal(self, *args) -> 'Constraint':
         raise NotImplementedError
-
-    rewardBigDecimal = reward_big_decimal
 
     def reward_configurable(self, *args) -> 'Constraint':
         raise NotImplementedError
 
-    rewardConfigurable = reward_configurable
-
     def reward_configurable_long(self, *args) -> 'Constraint':
         raise NotImplementedError
 
-    rewardConfigurableLong = reward_configurable_long
-
     def reward_configurable_big_decimal(self, *args) -> 'Constraint':
         raise NotImplementedError
-
-    rewardConfigurableBigDecimal = reward_configurable_big_decimal
 
     @overload
     def impact(self, constraint_name: str, constraint_weight: 'Score') -> \
@@ -3152,24 +2924,14 @@ class PythonQuadConstraintStream(Generic[A, B, C, D]):
     def impact_long(self, *args) -> 'Constraint':
         raise NotImplementedError
 
-    impactLong = impact_long
-
     def impact_big_decimal(self, *args) -> 'Constraint':
         raise NotImplementedError
-
-    impactBigDecimal = impact_big_decimal
 
     def impact_configurable(self, *args) -> 'Constraint':
         raise NotImplementedError
 
-    impactConfigurable = impact_configurable
-
     def impact_configurable_long(self, *args) -> 'Constraint':
         raise NotImplementedError
 
-    impactConfigurableLong = impact_configurable_long
-
     def impact_configurable_big_decimal(self, *args) -> 'Constraint':
         raise NotImplementedError
-
-    impactConfigurableBigDecimal = impact_configurable_big_decimal

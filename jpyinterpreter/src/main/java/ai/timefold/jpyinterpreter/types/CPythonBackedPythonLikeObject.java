@@ -1,16 +1,22 @@
 package ai.timefold.jpyinterpreter.types;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import ai.timefold.jpyinterpreter.PythonLikeObject;
 import ai.timefold.jpyinterpreter.types.numeric.PythonInteger;
 import ai.timefold.jpyinterpreter.types.wrappers.OpaquePythonReference;
+import ai.timefold.jpyinterpreter.util.ConcurrentWeakIdentityHashMap;
 
 public class CPythonBackedPythonLikeObject extends AbstractPythonLikeObject implements PythonLikeFunction {
     public static final PythonLikeType CPYTHON_BACKED_OBJECT_TYPE =
             new PythonLikeType("object", CPythonBackedPythonLikeObject.class);
+
+    private static final Set<CPythonBackedPythonLikeObject> $hasReferenceSet =
+            Collections.newSetFromMap(new ConcurrentWeakIdentityHashMap<>());
 
     public OpaquePythonReference $cpythonReference;
 
@@ -65,10 +71,18 @@ public class CPythonBackedPythonLikeObject extends AbstractPythonLikeObject impl
         this.$instanceMap = $instanceMap;
     }
 
+    public void $markValidPythonReference() {
+        $hasReferenceSet.add(this);
+    }
+
+    public boolean $shouldCreateNewInstance() {
+        return $cpythonReference == null || $hasReferenceSet.add(this);
+    }
+
     public void $readFieldsFromCPythonReference() {
     }
 
-    public void $writeFieldsToCPythonReference() {
+    public void $writeFieldsToCPythonReference(OpaquePythonReference cloneMap) {
     }
 
     @Override

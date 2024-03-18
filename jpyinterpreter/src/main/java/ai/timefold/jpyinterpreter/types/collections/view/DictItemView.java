@@ -28,7 +28,7 @@ import ai.timefold.jpyinterpreter.util.IteratorUtils;
 public class DictItemView extends AbstractPythonLikeObject {
     public final static PythonLikeType $TYPE = BuiltinTypes.DICT_ITEM_VIEW_TYPE;
 
-    final PythonLikeDict mapping;
+    final PythonLikeDict<PythonLikeObject, PythonLikeObject> mapping;
     final Set<Map.Entry<PythonLikeObject, PythonLikeObject>> entrySet;
 
     static {
@@ -115,7 +115,7 @@ public class DictItemView extends AbstractPythonLikeObject {
 
     public PythonIterator<PythonLikeObject> getReversedItemIterator() {
         return new PythonIterator<>(IteratorUtils.iteratorMap(mapping.reversed(),
-                key -> PythonLikeTuple.fromItems(key, mapping.delegate.get(key))));
+                key -> PythonLikeTuple.fromItems(key, (PythonLikeObject) mapping.delegate.get(key))));
     }
 
     public PythonBoolean isDisjoint(DictItemView other) {
@@ -163,7 +163,7 @@ public class DictItemView extends AbstractPythonLikeObject {
         PythonLikeSet out = new PythonLikeSet();
         out.delegate.addAll(getEntriesAsTuples());
         other.getEntriesAsTuples().stream() // for each item in other
-                .filter(Predicate.not(out.delegate::add)) // add each item
+                .filter(Predicate.not(item -> out.delegate.add(item))) // add each item
                 .forEach(out.delegate::remove); // add return false iff item already in set, so this remove
         // all items in both this and other
         return out;

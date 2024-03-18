@@ -6,25 +6,20 @@ import timefold.solver.score
 import timefold.solver.config
 import timefold.solver.constraint
 
-
-@timefold.solver.planning_entity
-class Entity:
-    def __init__(self, code, value=None):
-        self.code = code
-        self.value = value
-
-    @timefold.solver.planning_variable(str, value_range_provider_refs=['value_range'])
-    def get_value(self):
-        return self.value
-
-    def set_value(self, value):
-        self.value = value
+from dataclasses import dataclass, field
+from typing import Annotated, List
 
 
-@timefold.solver.problem_fact
 class Value:
     def __init__(self, code):
         self.code = code
+
+
+@timefold.solver.planning_entity
+@dataclass
+class Entity:
+    code: str
+    value: Annotated[str, timefold.solver.PlanningVariable] = field(default=None)
 
 
 @timefold.solver.constraint_provider
@@ -40,35 +35,18 @@ def my_constraints(constraint_factory: timefold.solver.constraint.ConstraintFact
 
 @timefold.solver.planning_solution
 class Solution:
-    def __init__(self, entity, value, value_range, score=None):
-        self.entity = entity
-        self.value = value
-        self.value_range = value_range
-        self.score = score
+    entity: Annotated[Entity, timefold.solver.PlanningEntityProperty]
+    value: Annotated[Value, timefold.solver.ProblemFactProperty]
+    value_range: Annotated[List[str], timefold.solver.ValueRangeProvider]
+    score: Annotated[timefold.solver.score.SimpleScore, timefold.solver.PlanningScore]
 
-    @timefold.solver.planning_entity_property(Entity)
-    def get_entity(self):
-        return self.entity
 
-    @timefold.solver.problem_fact_property(Value)
-    def get_value(self):
-        return self.value
-
-    @timefold.solver.problem_fact_collection_property(str)
-    @timefold.solver.value_range_provider(range_id='value_range')
-    def get_value_range(self):
-        return self.value_range
-
-    @timefold.solver.planning_score(timefold.solver.score.SimpleScore)
-    def get_score(self) -> timefold.solver.score.SimpleScore:
-        return self.score
-
-    def set_score(self, score):
-        self.score = score
+def get_java_solver_config(path: pathlib.Path):
+    return timefold.solver.SolverConfig.create_from_xml_resource(path)._to_java_solver_config()
 
 
 def test_load_from_solver_config_file():
-    solver_config = timefold.solver.solver_config_create_from_xml_file(pathlib.Path('tests', 'solverConfig-simple.xml'))
+    solver_config = get_java_solver_config(pathlib.Path('tests', 'solverConfig-simple.xml'))
     assert solver_config.getSolutionClass() == timefold.solver.get_class(Solution)
     entity_class_list = solver_config.getEntityClassList()
     assert entity_class_list.size() == 1
@@ -84,14 +62,14 @@ def test_reload_from_solver_config_file():
         ...
 
     RedefinedSolution1 = RedefinedSolution
-    solver_config_1 = timefold.solver.solver_config_create_from_xml_file(pathlib.Path('tests', 'solverConfig-redefined.xml'))
+    solver_config_1 = get_java_solver_config(pathlib.Path('tests', 'solverConfig-redefined.xml'))
 
     @timefold.solver.planning_solution
     class RedefinedSolution:
         ...
 
     RedefinedSolution2 = RedefinedSolution
-    solver_config_2 = timefold.solver.solver_config_create_from_xml_file(pathlib.Path('tests', 'solverConfig-redefined.xml'))
+    solver_config_2 = get_java_solver_config(pathlib.Path('tests', 'solverConfig-redefined.xml'))
 
     assert solver_config_1.getSolutionClass() == timefold.solver.get_class(RedefinedSolution1)
     assert solver_config_2.getSolutionClass() == timefold.solver.get_class(RedefinedSolution2)
@@ -101,6 +79,6 @@ def test_cannot_find_solver_config_file():
     from java.lang import Thread
     current_thread = Thread.currentThread()
     thread_class_loader = current_thread.getContextClassLoader()
-    with pytest.raises(FileNotFoundError, match=re.escape("Unable to find SolverConfig file (does-not-exist.xml).")):
-        timefold.solver.solver_config_create_from_xml_file(pathlib.Path('does-not-exist.xml'))
+    with pytest.raises(FileNotFoundError, match=re.escape("The solverConfigFile (does-not-exist.xml) was not found.")):
+        get_java_solver_config(pathlib.Path('does-not-exist.xml'))
     assert current_thread.getContextClassLoader() == thread_class_loader

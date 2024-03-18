@@ -3,62 +3,40 @@ import timefold.solver.score
 import timefold.solver.config
 import timefold.solver.constraint
 
+from dataclasses import dataclass, field
+from typing import Annotated, List
 
-@timefold.solver.problem_fact
+@dataclass
 class Value:
-    def __init__(self, number):
-        self.number = number
+    number: int
 
 
 @timefold.solver.planning_entity
+@dataclass
 class Entity:
-    def __init__(self, code, value=None):
-        self.code = code
-        self.value = value
-
-    @timefold.solver.planning_variable(Value, ['value_range'])
-    def get_value(self):
-        return self.value
-
-    def set_value(self, value):
-        self.value = value
+    code: str
+    value: Annotated[Value, timefold.solver.PlanningVariable] = field(default=None)
 
 
 @timefold.solver.planning_solution
+@dataclass
 class Solution:
-    def __init__(self, entity_list, value_list, score=None):
-        self.entity_list = entity_list
-        self.value_list = value_list
-        self.score = score
-
-    @timefold.solver.planning_entity_collection_property(Entity)
-    def get_entity_list(self):
-        return self.entity_list
-
-    def set_entity_list(self, entity_list):
-        self.entity_list = entity_list
-
-    @timefold.solver.problem_fact_collection_property(Value)
-    @timefold.solver.value_range_provider('value_range')
-    def get_value_list(self):
-        return self.value_list
-
-    def set_value_list(self, value_list):
-        self.value_list = value_list
-
-    @timefold.solver.planning_score(timefold.solver.score.SimpleScore)
-    def get_score(self):
-        return self.score
-
-    def set_score(self, score):
-        self.score = score
+    entity_list: Annotated[List[Entity], timefold.solver.PlanningEntityCollectionProperty]
+    value_list: Annotated[List[Value],
+                          timefold.solver.ProblemFactCollectionProperty,
+                          timefold.solver.ValueRangeProvider]
+    score: Annotated[timefold.solver.score.SimpleScore,
+                     timefold.solver.PlanningScore] = field(default=None)
 
 
-def create_score_manager(constraint_provider):
-    return timefold.solver.score_manager_create(timefold.solver.solver_factory_create(timefold.solver.config.solver.SolverConfig()
-                 .withSolutionClass(Solution)
-                 .withEntityClasses(Entity)
-                 .withConstraintProviderClass(constraint_provider)))
+def create_score_manager(constraint_provider) -> timefold.solver.SolutionManager:
+    return timefold.solver.SolutionManager.create(timefold.solver.SolverFactory.create(
+        timefold.solver.config.SolverConfig(solution_class=Solution,
+                                            entity_class_list=[Entity],
+                                            score_director_factory_config=
+                                            timefold.solver.config.ScoreDirectorFactoryConfig(
+                                                constraint_provider_function=constraint_provider
+                                            ))))
 
 
 def test_min():
@@ -79,18 +57,18 @@ def test_min():
     value_2 = Value(2)
 
     problem = Solution([entity_a, entity_b], [value_1, value_2])
-    entity_a.set_value(value_1)
-    entity_b.set_value(value_1)
+    entity_a.value = value_1
+    entity_b.value = value_1
 
-    assert score_manager.explainScore(problem).getScore() == timefold.solver.score.SimpleScore.of(1)
+    assert score_manager.explain(problem).get_score() == timefold.solver.score.SimpleScore.of(1)
 
-    entity_a.set_value(value_2)
+    entity_a.value = value_2
 
-    assert score_manager.explainScore(problem).getScore() == timefold.solver.score.SimpleScore.of(1)
+    assert score_manager.explain(problem).get_score() == timefold.solver.score.SimpleScore.of(1)
 
-    entity_b.set_value(value_2)
+    entity_b.value = value_2
 
-    assert score_manager.explainScore(problem).getScore() == timefold.solver.score.SimpleScore.of(2)
+    assert score_manager.explain(problem).get_score() == timefold.solver.score.SimpleScore.of(2)
 
 
 def test_max():
@@ -111,18 +89,18 @@ def test_max():
     value_2 = Value(2)
 
     problem = Solution([entity_a, entity_b], [value_1, value_2])
-    entity_a.set_value(value_1)
-    entity_b.set_value(value_1)
+    entity_a.value = value_1
+    entity_b.value = value_1
 
-    assert score_manager.explainScore(problem).getScore() == timefold.solver.score.SimpleScore.of(1)
+    assert score_manager.explain(problem).get_score() == timefold.solver.score.SimpleScore.of(1)
 
-    entity_a.set_value(value_2)
+    entity_a.value = value_2
 
-    assert score_manager.explainScore(problem).getScore() == timefold.solver.score.SimpleScore.of(2)
+    assert score_manager.explain(problem).get_score() == timefold.solver.score.SimpleScore.of(2)
 
-    entity_b.set_value(value_2)
+    entity_b.value = value_2
 
-    assert score_manager.explainScore(problem).getScore() == timefold.solver.score.SimpleScore.of(2)
+    assert score_manager.explain(problem).get_score() == timefold.solver.score.SimpleScore.of(2)
 
 
 def test_sum():
@@ -143,18 +121,18 @@ def test_sum():
     value_2 = Value(2)
 
     problem = Solution([entity_a, entity_b], [value_1, value_2])
-    entity_a.set_value(value_1)
-    entity_b.set_value(value_1)
+    entity_a.value = value_1
+    entity_b.value = value_1
 
-    assert score_manager.explainScore(problem).getScore() == timefold.solver.score.SimpleScore.of(2)
+    assert score_manager.explain(problem).get_score() == timefold.solver.score.SimpleScore.of(2)
 
-    entity_a.set_value(value_2)
+    entity_a.value = value_2
 
-    assert score_manager.explainScore(problem).getScore() == timefold.solver.score.SimpleScore.of(3)
+    assert score_manager.explain(problem).get_score() == timefold.solver.score.SimpleScore.of(3)
 
-    entity_b.set_value(value_2)
+    entity_b.value = value_2
 
-    assert score_manager.explainScore(problem).getScore() == timefold.solver.score.SimpleScore.of(4)
+    assert score_manager.explain(problem).get_score() == timefold.solver.score.SimpleScore.of(4)
 
 
 def test_average():
@@ -175,18 +153,18 @@ def test_average():
     value_2 = Value(2)
 
     problem = Solution([entity_a, entity_b], [value_1, value_2])
-    entity_a.set_value(value_1)
-    entity_b.set_value(value_1)
+    entity_a.value = value_1
+    entity_b.value = value_1
 
-    assert score_manager.explainScore(problem).getScore() == timefold.solver.score.SimpleScore.of(10)
+    assert score_manager.explain(problem).get_score() == timefold.solver.score.SimpleScore.of(10)
 
-    entity_a.set_value(value_2)
+    entity_a.value = value_2
 
-    assert score_manager.explainScore(problem).getScore() == timefold.solver.score.SimpleScore.of(15)
+    assert score_manager.explain(problem).get_score() == timefold.solver.score.SimpleScore.of(15)
 
-    entity_b.set_value(value_2)
+    entity_b.value = value_2
 
-    assert score_manager.explainScore(problem).getScore() == timefold.solver.score.SimpleScore.of(20)
+    assert score_manager.explain(problem).get_score() == timefold.solver.score.SimpleScore.of(20)
 
 
 def test_count():
@@ -209,11 +187,11 @@ def test_count():
     value_2 = Value(2)
 
     problem = Solution([entity_a1, entity_a2, entity_b], [value_1, value_2])
-    entity_a1.set_value(value_1)
-    entity_a2.set_value(value_1)
-    entity_b.set_value(value_1)
+    entity_a1.value = value_1
+    entity_a2.value = value_1
+    entity_b.value = value_1
 
-    assert score_manager.explainScore(problem).getScore() == timefold.solver.score.SimpleScore.of(2)
+    assert score_manager.explain(problem).get_score() == timefold.solver.score.SimpleScore.of(2)
 
 
 def test_count_distinct():
@@ -234,18 +212,18 @@ def test_count_distinct():
     value_2 = Value(2)
 
     problem = Solution([entity_a, entity_b], [value_1, value_2])
-    entity_a.set_value(value_1)
-    entity_b.set_value(value_1)
+    entity_a.value = value_1
+    entity_b.value = value_1
 
-    assert score_manager.explainScore(problem).getScore() == timefold.solver.score.SimpleScore.of(1)
+    assert score_manager.explain(problem).get_score() == timefold.solver.score.SimpleScore.of(1)
 
-    entity_b.set_value(value_2)
+    entity_b.value = value_2
 
-    assert score_manager.explainScore(problem).getScore() == timefold.solver.score.SimpleScore.of(2)
+    assert score_manager.explain(problem).get_score() == timefold.solver.score.SimpleScore.of(2)
 
-    entity_a.set_value(value_2)
+    entity_a.value = value_2
 
-    assert score_manager.explainScore(problem).getScore() == timefold.solver.score.SimpleScore.of(1)
+    assert score_manager.explain(problem).get_score() == timefold.solver.score.SimpleScore.of(1)
 
 
 def test_to_consecutive_sequences():
@@ -282,29 +260,29 @@ def test_to_consecutive_sequences():
                        [value_1, value_2, value_3, value_4, value_5,
                         value_6, value_7, value_8, value_9])
 
-    entity_a.set_value(value_1)
-    entity_b.set_value(value_3)
-    entity_c.set_value(value_5)
-    entity_d.set_value(value_7)
-    entity_e.set_value(value_9)
+    entity_a.value = value_1
+    entity_b.value = value_3
+    entity_c.value = value_5
+    entity_d.value = value_7
+    entity_e.value = value_9
 
-    assert score_manager.explainScore(problem).getScore().score() == 5
+    assert score_manager.explain(problem).get_score().score() == 5
 
-    entity_a.set_value(value_1)
-    entity_b.set_value(value_2)
-    entity_c.set_value(value_3)
-    entity_d.set_value(value_4)
-    entity_e.set_value(value_5)
+    entity_a.value = value_1
+    entity_b.value = value_2
+    entity_c.value = value_3
+    entity_d.value = value_4
+    entity_e.value = value_5
 
-    assert score_manager.explainScore(problem).getScore().score() == 25
+    assert score_manager.explain(problem).get_score().score() == 25
 
-    entity_a.set_value(value_1)
-    entity_b.set_value(value_2)
-    entity_c.set_value(value_3)
-    entity_d.set_value(value_5)
-    entity_e.set_value(value_6)
+    entity_a.value = value_1
+    entity_b.value = value_2
+    entity_c.value = value_3
+    entity_d.value = value_5
+    entity_e.value = value_6
 
-    assert score_manager.explainScore(problem).getScore().score() == 13
+    assert score_manager.explain(problem).get_score().score() == 13
 
 
 def test_to_list():
@@ -325,18 +303,18 @@ def test_to_list():
     value_2 = Value(2)
 
     problem = Solution([entity_a, entity_b], [value_1, value_2])
-    entity_a.set_value(value_1)
-    entity_b.set_value(value_1)
+    entity_a.value = value_1
+    entity_b.value = value_1
 
-    assert score_manager.explainScore(problem).getScore() == timefold.solver.score.SimpleScore.of(2)
+    assert score_manager.explain(problem).get_score() == timefold.solver.score.SimpleScore.of(2)
 
-    entity_b.set_value(value_2)
+    entity_b.value = value_2
 
-    assert score_manager.explainScore(problem).getScore() == timefold.solver.score.SimpleScore.of(2)
+    assert score_manager.explain(problem).get_score() == timefold.solver.score.SimpleScore.of(2)
 
-    entity_a.set_value(value_2)
+    entity_a.value = value_2
 
-    assert score_manager.explainScore(problem).getScore() == timefold.solver.score.SimpleScore.of(2)
+    assert score_manager.explain(problem).get_score() == timefold.solver.score.SimpleScore.of(2)
 
 
 def test_to_set():
@@ -357,18 +335,18 @@ def test_to_set():
     value_2 = Value(2)
 
     problem = Solution([entity_a, entity_b], [value_1, value_2])
-    entity_a.set_value(value_1)
-    entity_b.set_value(value_1)
+    entity_a.value = value_1
+    entity_b.value = value_1
 
-    assert score_manager.explainScore(problem).getScore() == timefold.solver.score.SimpleScore.of(1)
+    assert score_manager.explain(problem).get_score() == timefold.solver.score.SimpleScore.of(1)
 
-    entity_b.set_value(value_2)
+    entity_b.value = value_2
 
-    assert score_manager.explainScore(problem).getScore() == timefold.solver.score.SimpleScore.of(2)
+    assert score_manager.explain(problem).get_score() == timefold.solver.score.SimpleScore.of(2)
 
-    entity_a.set_value(value_2)
+    entity_a.value = value_2
 
-    assert score_manager.explainScore(problem).getScore() == timefold.solver.score.SimpleScore.of(1)
+    assert score_manager.explain(problem).get_score() == timefold.solver.score.SimpleScore.of(1)
 
 
 def test_to_map():
@@ -390,18 +368,18 @@ def test_to_map():
     value_2 = Value(2)
 
     problem = Solution([entity_a, entity_b], [value_1, value_2])
-    entity_a.set_value(value_1)
-    entity_b.set_value(value_1)
+    entity_a.value = value_1
+    entity_b.value = value_1
 
-    assert score_manager.explainScore(problem).getScore() == timefold.solver.score.SimpleScore.of(1)
+    assert score_manager.explain(problem).get_score() == timefold.solver.score.SimpleScore.of(1)
 
-    entity_b.set_value(value_2)
+    entity_b.value = value_2
 
-    assert score_manager.explainScore(problem).getScore() == timefold.solver.score.SimpleScore.of(2)
+    assert score_manager.explain(problem).get_score() == timefold.solver.score.SimpleScore.of(2)
 
-    entity_a.set_value(value_2)
+    entity_a.value = value_2
 
-    assert score_manager.explainScore(problem).getScore() == timefold.solver.score.SimpleScore.of(0)
+    assert score_manager.explain(problem).get_score() == timefold.solver.score.SimpleScore.of(0)
 
 
 def test_to_sorted_set():
@@ -422,18 +400,18 @@ def test_to_sorted_set():
     value_2 = Value(2)
 
     problem = Solution([entity_a, entity_b], [value_1, value_2])
-    entity_a.set_value(value_1)
-    entity_b.set_value(value_1)
+    entity_a.value = value_1
+    entity_b.value = value_1
 
-    assert score_manager.explainScore(problem).getScore() == timefold.solver.score.SimpleScore.of(1)
+    assert score_manager.explain(problem).get_score() == timefold.solver.score.SimpleScore.of(1)
 
-    entity_b.set_value(value_2)
+    entity_b.value = value_2
 
-    assert score_manager.explainScore(problem).getScore() == timefold.solver.score.SimpleScore.of(1)
+    assert score_manager.explain(problem).get_score() == timefold.solver.score.SimpleScore.of(1)
 
-    entity_a.set_value(value_2)
+    entity_a.value = value_2
 
-    assert score_manager.explainScore(problem).getScore() == timefold.solver.score.SimpleScore.of(2)
+    assert score_manager.explain(problem).get_score() == timefold.solver.score.SimpleScore.of(2)
 
 
 def test_to_sorted_map():
@@ -455,22 +433,22 @@ def test_to_sorted_map():
     value_2 = Value(2)
 
     problem = Solution([entity_a, entity_b], [value_1, value_2])
-    entity_a.set_value(value_1)
-    entity_b.set_value(value_1)
+    entity_a.value = value_1
+    entity_b.value = value_1
 
-    assert score_manager.explainScore(problem).getScore() == timefold.solver.score.SimpleScore.of(1)
+    assert score_manager.explain(problem).get_score() == timefold.solver.score.SimpleScore.of(1)
 
-    entity_b.set_value(value_2)
+    entity_b.value = value_2
 
-    assert score_manager.explainScore(problem).getScore() == timefold.solver.score.SimpleScore.of(0)
+    assert score_manager.explain(problem).get_score() == timefold.solver.score.SimpleScore.of(0)
 
-    entity_a.set_value(value_2)
+    entity_a.value = value_2
 
-    assert score_manager.explainScore(problem).getScore() == timefold.solver.score.SimpleScore.of(0)
+    assert score_manager.explain(problem).get_score() == timefold.solver.score.SimpleScore.of(0)
 
-    entity_b.set_value(value_1)
+    entity_b.value = value_1
 
-    assert score_manager.explainScore(problem).getScore() == timefold.solver.score.SimpleScore.of(2)
+    assert score_manager.explain(problem).get_score() == timefold.solver.score.SimpleScore.of(2)
 
 
 def test_conditionally():
@@ -493,11 +471,11 @@ def test_conditionally():
     value_2 = Value(2)
 
     problem = Solution([entity_a1, entity_a2, entity_b], [value_1, value_2])
-    entity_a1.set_value(value_1)
-    entity_a2.set_value(value_1)
-    entity_b.set_value(value_1)
+    entity_a1.value = value_1
+    entity_a2.value = value_1
+    entity_b.value = value_1
 
-    assert score_manager.explainScore(problem).getScore() == timefold.solver.score.SimpleScore.of(2)
+    assert score_manager.explain(problem).get_score() == timefold.solver.score.SimpleScore.of(2)
 
 
 def test_compose():
@@ -523,18 +501,18 @@ def test_compose():
     value_2 = Value(2)
 
     problem = Solution([entity_a, entity_b], [value_1, value_2])
-    entity_a.set_value(value_1)
-    entity_b.set_value(value_1)
+    entity_a.value = value_1
+    entity_b.value = value_1
 
-    assert score_manager.explainScore(problem).getScore() == timefold.solver.score.SimpleScore.of(11)
+    assert score_manager.explain(problem).get_score() == timefold.solver.score.SimpleScore.of(11)
 
-    entity_a.set_value(value_2)
+    entity_a.value = value_2
 
-    assert score_manager.explainScore(problem).getScore() == timefold.solver.score.SimpleScore.of(21)
+    assert score_manager.explain(problem).get_score() == timefold.solver.score.SimpleScore.of(21)
 
-    entity_b.set_value(value_2)
+    entity_b.value = value_2
 
-    assert score_manager.explainScore(problem).getScore() == timefold.solver.score.SimpleScore.of(22)
+    assert score_manager.explain(problem).get_score() == timefold.solver.score.SimpleScore.of(22)
 
 def test_collect_and_then():
     @timefold.solver.constraint_provider
@@ -557,18 +535,18 @@ def test_collect_and_then():
     value_2 = Value(2)
 
     problem = Solution([entity_a, entity_b], [value_1, value_2])
-    entity_a.set_value(value_1)
-    entity_b.set_value(value_1)
+    entity_a.value = value_1
+    entity_b.value = value_1
 
-    assert score_manager.explainScore(problem).getScore() == timefold.solver.score.SimpleScore.of(2)
+    assert score_manager.explain(problem).get_score() == timefold.solver.score.SimpleScore.of(2)
 
-    entity_a.set_value(value_2)
+    entity_a.value = value_2
 
-    assert score_manager.explainScore(problem).getScore() == timefold.solver.score.SimpleScore.of(2)
+    assert score_manager.explain(problem).get_score() == timefold.solver.score.SimpleScore.of(2)
 
-    entity_b.set_value(value_2)
+    entity_b.value = value_2
 
-    assert score_manager.explainScore(problem).getScore() == timefold.solver.score.SimpleScore.of(4)
+    assert score_manager.explain(problem).get_score() == timefold.solver.score.SimpleScore.of(4)
 
 
 def test_flatten_last():
@@ -588,6 +566,6 @@ def test_flatten_last():
     value_1 = Value(1)
 
     problem = Solution([entity_a], [value_1])
-    entity_a.set_value(value_1)
+    entity_a.value = value_1
 
-    assert score_manager.explainScore(problem).getScore() == timefold.solver.score.SimpleScore.of(3)
+    assert score_manager.explain(problem).get_score() == timefold.solver.score.SimpleScore.of(3)

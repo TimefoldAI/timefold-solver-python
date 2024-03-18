@@ -1,372 +1,363 @@
-import pathlib
-import threading
-
-from jpype.types import *
-from jpype import JImplements, JImplementationFor, JOverride
-from typing import TypeVar, Generic, Callable, Union, TYPE_CHECKING
-from types import FunctionType
-from uuid import uuid1 as _uuid1
-from .timefold_java_interop import _setup_solver_run, _cleanup_solver_run, _unwrap_java_object, \
-    solver_run_id_to_refs as _solver_run_id_to_refs, get_class, \
-    class_identifier_to_java_class_map as _class_identifier_to_java_class_map
+from typing import TypeVar, Union, TYPE_CHECKING, Generic, Callable, List
+from .timefold_java_interop import get_class
+from .config import SolverConfig
+from datetime import timedelta
+from jpype import JClass, JImplements, JOverride
+from dataclasses import dataclass
+from enum import Enum, auto as auto_enum
 
 if TYPE_CHECKING:
     # These imports require a JVM to be running, so only import if type checking
-    from ai.timefold.solver.core.config.solver import SolverConfig as _SolverConfig
-    from ai.timefold.solver.core.api.solver import SolverFactory as _SolverFactory, SolverManager as _SolverManager,\
-        SolverJob as _SolverJob, SolverStatus as _SolverStatus, SolverJobBuilder as _SolverJobBuilder
-    from ai.timefold.solver.core.api.score import ScoreManager as _ScoreManager
+    from .score import Score
+    from ai.timefold.solver.core.config.solver import SolverConfig as _JavaSolverConfig
+    from ai.timefold.solver.core.api.solver import (SolverFactory as _JavaSolverFactory,
+                                                    SolverManager as _JavaSolverManager,
+                                                    SolverJob as _JavaSolverJob,
+                                                    SolverJobBuilder as _JavaSolverJobBuilder,
+                                                    SolutionManager as _JavaSolutionManager,
+                                                    Solver as _JavaSolver)
+    from ai.timefold.solver.core.api.score import ScoreExplanation as _JavaScoreExplanation
+    from ai.timefold.solver.core.api.score.analysis import ScoreAnalysis as _JavaScoreAnalysis
 
 Solution_ = TypeVar('Solution_')
 ProblemId_ = TypeVar('ProblemId_')
 
 
-def await_best_solution_from_solver_job(solver_job: '_SolverJob', problem_id, exception_handler):
-    try:
-        solver_job.getFinalBestSolution()
-    except Exception as e:
-        exception_handler(problem_id, e)
-        raise e
+class SolverStatus(Enum):
+    NOT_SOLVING = auto_enum()
+    SOLVING_SCHEDULED = auto_enum()
+    SOLVING_ACTIVE = auto_enum()
+
+    @staticmethod
+    def _from_java_enum(enum_value):
+        return getattr(SolverStatus, enum_value.name())
 
 
-def create_python_thread_for_solver_job(solver_job: '_SolverJob', problem_id, exception_handler):
-    threading.Thread(target=await_best_solution_from_solver_job, args=(solver_job, problem_id, exception_handler)).start()
+class SolverJob:
+    _delegate: '_JavaSolverJob'
+
+    def __init__(self, delegate: '_JavaSolverJob'):
+        self._delegate = delegate
+
+    def get_problem_id(self):
+        from jpyinterpreter import unwrap_python_like_object
+        return unwrap_python_like_object(self._delegate.getProblemId())
+
+    def get_solver_status(self):
+        return SolverStatus._from_java_enum(self._delegate.getSolverStatus())
+
+    def get_solving_duration(self) -> timedelta:
+        return timedelta(milliseconds=self._delegate.getSolvingDuration().toMillis())
+
+    def get_final_best_solution(self):
+        from jpyinterpreter import unwrap_python_like_object
+        return unwrap_python_like_object(self._delegate.getFinalBestSolution())
+
+    def terminate_early(self):
+        self._delegate.terminateEarly()
+
+    def is_terminated_early(self) -> bool:
+        return self._delegate.isTerminatedEarly()
+
+    def add_problem_change(self, problem_change):
+        # TODO
+        raise NotImplementedError
 
 
-@JImplements('ai.timefold.solver.core.api.solver.SolverManager', deferred=True)
-class _PythonSolverManager(Generic[Solution_, ProblemId_]):
-    def __init__(self, solver_config: '_SolverConfig'):
-        from ai.timefold.solver.python import PythonSolver  # noqa
-        from ai.timefold.solver.core.api.solver import SolverManager
-        self.delegate = SolverManager.create(solver_config)
-        self.problem_id_to_solver_run_ref_list = dict()
-        self.only_use_java_setters = PythonSolver.onlyUseJavaSetters
+class SolverJobBuilder:
+    _delegate: '_JavaSolverJobBuilder'
 
-    def _timefold_debug_get_solver_runs_dicts(self):
-        """
-        Internal method used for testing; do not use
-        """
-        return {
-            'solver_run_id_to_refs': _solver_run_id_to_refs
-        }
+    def __init__(self, delegate: '_JavaSolverJobBuilder'):
+        self._delegate = delegate
 
-    def _get_problem_getter_and_cleanup(self, problem_id, the_problem):
-        from ai.timefold.solver.python import PythonSolver # noqa
+    def with_problem_id(self, problem_id) -> 'SolverJobBuilder':
+        from jpyinterpreter import convert_to_java_python_like_object
+        return SolverJobBuilder(self._delegate.withProblemId(convert_to_java_python_like_object(problem_id)))
 
-        problem_function = the_problem
-        if not callable(problem_function):
-            def the_problem_function(the_problem_id):
-                return the_problem
-            problem_function = the_problem_function
+    def with_problem(self, problem) -> 'SolverJobBuilder':
+        from jpyinterpreter import convert_to_java_python_like_object
+        return SolverJobBuilder(self._delegate.withProblem(convert_to_java_python_like_object(problem)))
 
-        def problem_getter(the_problem_id):
-            from copy import copy
-            problem = copy(problem_function(the_problem_id))
-            solver_run_id = (id(self), the_problem_id)
-            problem._timefold_solver_run_id = solver_run_id
-            self.problem_id_to_solver_run_ref_list[the_problem_id] = [problem, problem]
-            _setup_solver_run(solver_run_id, self.problem_id_to_solver_run_ref_list[the_problem_id])
-            PythonSolver.onlyUseJavaSetters = self.only_use_java_setters
-            wrapped_problem = PythonSolver.wrapProblem(get_class(type(problem)), problem)
-            return wrapped_problem
+    def with_config_override(self, config_override) -> 'SolverJobBuilder':
+        # TODO: Create wrapper object for config override
+        raise NotImplementedError
 
-        def cleanup():
-            solver_run_id = (id(self), problem_id)
-            _cleanup_solver_run(solver_run_id)
-            del self.problem_id_to_solver_run_ref_list[problem_id]
+    def with_problem_finder(self, problem_finder) -> 'SolverJobBuilder':
+        from java.util.function import Function
+        from jpyinterpreter import convert_to_java_python_like_object, unwrap_python_like_object
+        java_finder = Function @ (lambda problem_id: convert_to_java_python_like_object(
+            problem_finder(unwrap_python_like_object(problem_id))))
+        return SolverJobBuilder(self._delegate.withProblemFinder(java_finder))
 
-        return problem_getter, cleanup
+    def with_best_solution_consumer(self, best_solution_consumer) -> 'SolverJobBuilder':
+        from java.util.function import Consumer
+        from jpyinterpreter import unwrap_python_like_object
 
-    def _wrap_final_best_solution_and_exception_handler(self, cleanup, final_best_solution_consumer, exception_handler):
-        def wrapped_final_best_solution_consumer(best_solution):
-            if final_best_solution_consumer is not None:
-                final_best_solution_consumer(_unwrap_java_object(best_solution))
-            cleanup()
+        java_consumer = Consumer @ (lambda solution: best_solution_consumer(unwrap_python_like_object(solution)))
+        return SolverJobBuilder(self._delegate.withBestSolutionConsumer(java_consumer))
 
-        def wrapped_exception_handler(problem_id, exception):
-            if exception_handler is not None:
-                exception_handler(problem_id, exception)
-            cleanup()
-        return wrapped_final_best_solution_consumer, wrapped_exception_handler
+    def with_final_best_solution_consumer(self, final_best_solution_consumer) -> 'SolverJobBuilder':
+        from java.util.function import Consumer
+        from jpyinterpreter import unwrap_python_like_object
 
-    @JOverride
-    def addProblemChange(self, problem_id, problem_change):
-        self.delegate.addProblemChange(problem_id, problem_change)
+        java_consumer = Consumer @ (lambda solution: final_best_solution_consumer(unwrap_python_like_object(solution)))
+        return SolverJobBuilder(
+            self._delegate.withFinalBestSolutionConsumer(java_consumer))
 
-    @JOverride
-    def solve(self, problem_id: ProblemId_, problem: Union[Solution_, Callable[[ProblemId_], Solution_]],
-              final_best_solution_consumer: Callable[[Solution_], None] = None,
-              exception_handler: Callable[[ProblemId_, JException], None] = None) -> \
-            '_SolverJob[Solution_, ProblemId_]':
-        problem_getter, cleanup = self._get_problem_getter_and_cleanup(problem_id, problem)
-        wrapped_final_best_solution_consumer, wrapped_exception_handler = \
-            self._wrap_final_best_solution_and_exception_handler(cleanup, final_best_solution_consumer,
-                                                                 exception_handler)
+    def with_exception_handler(self, exception_handler) -> 'SolverJobBuilder':
+        from java.util.function import BiConsumer
+        from jpyinterpreter import unwrap_python_like_object
 
-        solver_job = self.delegate.solve(problem_id, problem_getter, wrapped_final_best_solution_consumer,
-                                         wrapped_exception_handler)
-        create_python_thread_for_solver_job(solver_job, problem_id,
-                                            exception_handler if exception_handler is not None else lambda _1, _2: None)
-        return solver_job
+        java_consumer = BiConsumer @ (lambda problem_id, error: exception_handler(unwrap_python_like_object(problem_id),
+                                                                                  error))
+        return SolverJobBuilder(
+            self._delegate.withExceptionHandler(java_consumer))
 
-    @JOverride
-    def solveAndListen(self, problem_id: ProblemId_, problem: Union[Solution_, Callable[[ProblemId_], Solution_]],
-                       best_solution_consumer: Callable[[Solution_], None],
-                       final_best_solution_consumer: Callable[[Solution_], None] = None,
-                       exception_handler: Callable[[ProblemId_, JException], None] = None) -> \
-            '_SolverJob[Solution_, ProblemId_]':
-        problem_getter, cleanup = self._get_problem_getter_and_cleanup(problem_id, problem)
-        wrapped_final_best_solution_consumer, wrapped_exception_handler = \
-            self._wrap_final_best_solution_and_exception_handler(cleanup, final_best_solution_consumer,
-                                                                 exception_handler)
+    def run(self) -> SolverJob:
+        return SolverJob(self._delegate.run())
 
-        def wrapped_best_solution_consumer(best_solution):
-            best_solution_consumer(_unwrap_java_object(best_solution))
 
-        solver_job = self.delegate.solveAndListen(problem_id, problem_getter, wrapped_best_solution_consumer,
-                                                  wrapped_final_best_solution_consumer,
-                                                  wrapped_exception_handler)
+class SolverManager:
+    _delegate: '_JavaSolverManager'
 
-        create_python_thread_for_solver_job(solver_job, problem_id,
-                                            exception_handler if exception_handler is not None else lambda _1, _2: None)
-        return solver_job
+    def __init__(self, delegate: '_JavaSolverManager'):
+        self._delegate = delegate
 
-    @JOverride
-    def solveBuilder(self) -> '_SolverJobBuilder':
-        # TODO: @JImplementationFor(SolverJobBuilder)
-        return self.delegate.solveBuilder()
+    @staticmethod
+    def create(solver_factory: 'SolverFactory'):
+        from ai.timefold.solver.core.api.solver import SolverManager as JavaSolverManager
+        return SolverManager(JavaSolverManager.create(solver_factory._delegate))  # noqa
 
-    @JOverride
-    def getSolverStatus(self, problem_id: ProblemId_) -> '_SolverStatus':
-        return self.delegate.getSolverStatus(problem_id)
+    def solve(self, problem_id, problem, final_best_solution_listener=None):
+        builder = (self.solve_builder()
+                   .with_problem_id(problem_id)
+                   .with_problem(problem))
 
-    @JOverride
-    def terminateEarly(self, problem_id: ProblemId_):
-        return self.delegate.terminateEarly(problem_id)
+        if final_best_solution_listener is not None:
+            builder = builder.with_final_best_solution_consumer(final_best_solution_listener)
 
-    @JOverride
+        return builder.run()
+
+    def solve_and_listen(self, problem_id, problem, listener):
+        return (self.solve_builder()
+                .with_problem_id(problem_id)
+                .with_problem(problem)
+                .with_best_solution_consumer(listener)
+                .run())
+
+    def solve_builder(self) -> SolverJobBuilder:
+        return SolverJobBuilder(self._delegate.solveBuilder())
+
+    def get_solver_status(self, problem_id):
+        from jpyinterpreter import convert_to_java_python_like_object
+        return SolverStatus._from_java_enum(self._delegate.getSolverStatus(
+            convert_to_java_python_like_object(problem_id)))
+
+    def terminate_early(self, problem_id):
+        from jpyinterpreter import convert_to_java_python_like_object
+        self._delegate.terminateEarly(convert_to_java_python_like_object(problem_id))
+
+    def add_problem_change(self, problem_id, problem_change):
+        # TODO
+        raise NotImplementedError
+
     def close(self):
-        return self.delegate.close()
+        self._delegate.close()
 
     def __enter__(self):
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.close()
+        self._delegate.close()
 
 
-@JImplementationFor('ai.timefold.solver.core.api.score.ScoreExplanation')
-class _PythonScoreExplanation:
-    @JOverride(sticky=True, rename='_java_getSolution')
-    def getSolution(self):
-        return _unwrap_java_object(self._java_getSolution())
+class SolutionManager:
+    _delegate: '_JavaSolutionManager'
+
+    def __init__(self, delegate: '_JavaSolutionManager'):
+        self._delegate = delegate
+
+    @staticmethod
+    def create(solver_factory: 'SolverFactory'):
+        from ai.timefold.solver.core.api.solver import SolutionManager as JavaSolutionManager
+        return SolutionManager(JavaSolutionManager.create(solver_factory._delegate))
+
+    def update(self, solution, solution_update_policy=None) -> 'Score':
+        #  TODO handle solution_update_policy
+        from jpyinterpreter import convert_to_java_python_like_object, update_python_object_from_java
+        java_solution = convert_to_java_python_like_object(solution)
+        out = self._delegate.update(java_solution)
+        update_python_object_from_java(java_solution)
+        return out
+
+    def analyze(self, solution, score_analysis_fetch_policy=None, solution_update_policy=None) -> 'ScoreAnalysis':
+        #  TODO handle policies
+        from jpyinterpreter import convert_to_java_python_like_object
+        return ScoreAnalysis(self._delegate.analyze(convert_to_java_python_like_object(solution)))
+
+    def explain(self, solution, solution_update_policy=None) -> 'ScoreExplanation':
+        #  TODO handle policies
+        from jpyinterpreter import convert_to_java_python_like_object
+        return ScoreExplanation(self._delegate.explain(convert_to_java_python_like_object(solution)))
+
+    def recommend_fit(self, solution, entity_or_element, proposition_function, score_analysis_fetch_policy=None):
+        #  TODO
+        raise NotImplementedError
 
 
-@JImplementationFor('ai.timefold.solver.core.api.score.ScoreManager')
-class _PythonScoreManager:
-    def _wrap_call(self, function, problem):
-        from ai.timefold.solver.python import PythonSolver  # noqa
+class ScoreExplanation:
+    _delegate: '_JavaScoreExplanation'
 
-        # No solution cloning happens in ScoreManager
-        # so we don't need to clone the problem and set run id.
-        solver_run_id = (id(self), id(problem), _uuid1())
-        solver_run_ref_list = [problem, problem]
-        wrapped_problem = PythonSolver.wrapProblem(get_class(type(problem)), problem)
-        _setup_solver_run(solver_run_id, solver_run_ref_list)
+    def __init__(self, delegate: '_JavaScoreExplanation'):
+        self._delegate = delegate
+
+    def get_constraint_match_total_map(self):
+        # TODO python-ify the returned map
+        return self._delegate.getConstraintMatchTotalMap()
+
+    def get_indictment_map(self):
+        # TODO
+        raise NotImplementedError
+
+    def get_justification_list(self, justification_type=None):
+        # TODO
+        raise NotImplementedError
+
+    def get_score(self) -> 'Score':
+        return self._delegate.getScore()
+
+    def get_solution(self):
+        from jpyinterpreter import unwrap_python_like_object
+        return unwrap_python_like_object(self._delegate.getSolution())
+
+    def get_summary(self) -> str:
+        return self._delegate.getSummary()
+
+
+class ScoreAnalysis:
+    _delegate: '_JavaScoreAnalysis'
+
+    def __init__(self, delegate: '_JavaScoreAnalysis'):
+        self._delegate = delegate
+
+    @property
+    def score(self) -> 'Score':
+        return self._delegate.score()
+
+    @property
+    def constraint_map(self):
+        # TODO
+        raise NotImplementedError
+
+    @property
+    def constraint_analyses(self):
+        # TODO
+        raise NotImplementedError
+
+
+class SolverFactory:
+    _delegate: '_JavaSolverFactory'
+    _solution_class: JClass
+
+    def __init__(self, delegate: '_JavaSolverFactory', solution_class: JClass):
+        self._delegate = delegate
+        self._solution_class = solution_class
+
+    @staticmethod
+    def create(solver_config: SolverConfig):
+        from ai.timefold.solver.core.api.solver import SolverFactory as JavaSolverFactory
+        solver_config = solver_config._to_java_solver_config()
+        delegate = JavaSolverFactory.create(solver_config)  # noqa
+        return SolverFactory(delegate, solver_config.getSolutionClass())  # noqa
+
+    def build_solver(self):
+        return Solver(self._delegate.buildSolver(), self._solution_class)
+
+
+@dataclass
+class BestSolutionChangedEvent(Generic[Solution_]):
+    new_best_score: 'Score'
+    new_best_solution: Solution_
+    is_every_problem_change_processed: bool
+    time_spent: timedelta
+
+
+class Solver(Generic[Solution_]):
+    _delegate: '_JavaSolver'
+    _solution_class: JClass
+    _has_event_listener: bool
+    _event_listener_list: List[Callable[[BestSolutionChangedEvent[Solution_]], None]]
+
+    def __init__(self, delegate: '_JavaSolver', solution_class: JClass):
+        self._delegate = delegate
+        self._solution_class = solution_class
+        self._has_event_listener = False
+        self._event_listener_list = []
+
+    def solve(self, problem: Solution_):
+        from java.lang import Exception as JavaException
+        from ai.timefold.jpyinterpreter.types.errors import PythonBaseException
+        from jpyinterpreter import convert_to_java_python_like_object, unwrap_python_like_object
+        java_problem = convert_to_java_python_like_object(problem)
+        if not self._solution_class.isInstance(java_problem):
+            raise ValueError(
+                f'The problem ({problem}) is not an instance of the @planning_solution class ({self._solution_class})'
+            )
         try:
-            return function(wrapped_problem)
-        except JException as e:
-            error_message = f'An error occurred when getting the score. This can occur when functions take the ' \
-                            f'wrong number of parameters (ex: a setter that does not take exactly one parameter) or ' \
-                            f'by a function returning an incompatible return type (ex: returning a str in a filter, ' \
-                            f'which expects a bool). This can also occur when an exception is raised when evaluating ' \
-                            f'constraints/getters/setters.'
-            raise RuntimeError(error_message) from e
-        finally:
-            _cleanup_solver_run(solver_run_id)
+            java_solution = self._delegate.solve(java_problem)
+        except PythonBaseException as e:
+            python_error = unwrap_python_like_object(e)
+            raise RuntimeError(f'Solving failed due to an error: {e.getMessage()}.\n'
+                               f'Java stack trace: {e.stacktrace()}') from python_error
+        except JavaException as e:
+            raise RuntimeError(f'Solving failed due to an error: {e.getMessage()}.\n'
+                               f'Java stack trace: {e.stacktrace()}') from e
+        return unwrap_python_like_object(java_solution)
 
-    @JOverride(sticky=True, rename='_java_updateScore')
-    def updateScore(self, solution):
-        score = self._wrap_call(lambda wrapped_solution: self._java_updateScore(wrapped_solution), solution)
-        for attr in dir(solution):
-            if hasattr(getattr(solution, attr), '__timefold_annotation_PlanningScore'):
-                setter = f'set{attr[3:]}'
-                getattr(solution, setter)(score)
-                break
-        return score
+    def is_solving(self) -> bool:
+        return self._delegate.isSolving()
 
-    @JOverride(sticky=True, rename='_java_getSummary')
-    def getSummary(self, solution):
-        return self._wrap_call(lambda wrapped_solution: self._java_getSummary(wrapped_solution), solution)
+    def terminate_early(self) -> bool:
+        return self._delegate.terminateEarly()
 
-    @JOverride(sticky=True, rename='_java_explainScore')
-    def explainScore(self, solution):
-        return self._wrap_call(lambda wrapped_solution: self._java_explainScore(wrapped_solution), solution)
+    def is_terminate_early(self) -> bool:
+        return self._delegate.isTerminateEarly()
 
+    def add_problem_change(self, problem_change):
+        pass  # TODO
 
-def _wrap_object(object_to_wrap, instance_map, update_function):
-    from ai.timefold.solver.python import PythonSolver, PythonWrapperGenerator  # noqa
-    maybe_object = instance_map.get(id(object_to_wrap))
-    if maybe_object is not None:
-        return maybe_object
-    if isinstance(object_to_wrap, int):
-        return PythonWrapperGenerator.wrapInt(object_to_wrap)
-    elif isinstance(object_to_wrap, bool):
-        return PythonWrapperGenerator.wrapBoolean(object_to_wrap)
-    object_class = get_class(type(object_to_wrap))
-    return PythonWrapperGenerator.wrap(object_class, object_to_wrap, instance_map, update_function)
+    def add_problem_changes(self, problem_changes):
+        pass  # TODO
 
+    def is_every_problem_change_processed(self) -> bool:
+        return self._delegate.isEveryProblemChangeProcessed()
 
-_problem_change_director_to_instance_dict = dict()
-_problem_change_director_to_update_function = dict()
+    def add_event_listener(self, event_listener: Callable[[BestSolutionChangedEvent[Solution_]], None]):
+        from ai.timefold.solver.core.api.solver.event import SolverEventListener
+        event_listener_list = self._event_listener_list
+        if not self._has_event_listener:
+            @JImplements(SolverEventListener)
+            class EventListener:
+                @JOverride
+                def bestSolutionChanged(self, event):
+                    from jpyinterpreter import unwrap_python_like_object
+                    nonlocal event_listener_list
+                    event = BestSolutionChangedEvent(
+                        new_best_score=event.getNewBestScore(),
+                        new_best_solution=unwrap_python_like_object(event.getNewBestSolution()),
+                        is_every_problem_change_processed=event.isEveryProblemChangeProcessed(),
+                        time_spent=timedelta(milliseconds=event.getTimeMillisSpent())
+                    )
+                    for listener in event_listener_list:
+                        listener(event)
 
+            self._has_event_listener = True
+            self._delegate.addEventListener(EventListener())  # noqa
 
-@JImplementationFor('ai.timefold.solver.core.api.solver.change.ProblemChangeDirector')
-class _PythonProblemChangeDirector:
-    def _set_instance_map(self, run_id, instance_map):
-        global _problem_change_director_to_instance_dict
-        _problem_change_director_to_instance_dict[run_id] = instance_map
+        event_listener_list.append(event_listener)
 
-    def _unset_instance_map(self, run_id):
-        global _problem_change_director_to_instance_dict
-        del _problem_change_director_to_instance_dict[run_id]
-
-    def _set_update_function(self, run_id, update_function):
-        global _problem_change_director_to_update_function
-        _problem_change_director_to_update_function[run_id] = update_function
-
-    def _unset_update_function(self, run_id):
-        global _problem_change_director_to_update_function
-        del _problem_change_director_to_update_function[run_id]
-
-    @JOverride(sticky=True, rename='_java_addEntity')
-    def addEntity(self, entity, entityConsumer):
-        global _problem_change_director_to_instance_dict
-        global _problem_change_director_to_update_function
-        instance_map = _problem_change_director_to_instance_dict[id(self)]
-        update_function = _problem_change_director_to_update_function[id(self)]
-        self._java_addEntity(_wrap_object(entity, instance_map, update_function), entityConsumer)
-
-    @JOverride(sticky=True, rename='_java_addProblemFact')
-    def addProblemFact(self, problemFact, problemFactConsumer):
-        global _problem_change_director_to_instance_dict
-        global _problem_change_director_to_update_function
-        instance_map = _problem_change_director_to_instance_dict[id(self)]
-        update_function = _problem_change_director_to_update_function[id(self)]
-        self._java_addProblemFact(_wrap_object(problemFact, instance_map, update_function), problemFactConsumer)
-
-    @JOverride(sticky=True, rename='_java_changeProblemProperty')
-    def changeProblemProperty(self, problemFactOrEntity, problemFactOrEntityConsumer):
-        global _problem_change_director_to_instance_dict
-        global _problem_change_director_to_update_function
-        instance_map = _problem_change_director_to_instance_dict[id(self)]
-        update_function = _problem_change_director_to_update_function[id(self)]
-        self._java_changeProblemProperty(_wrap_object(problemFactOrEntity, instance_map, update_function), problemFactOrEntityConsumer)
-
-    @JOverride(sticky=True, rename='_java_changeVariable')
-    def changeVariable(self, entity, variableName, entityConsumer):
-        global _problem_change_director_to_instance_dict
-        global _problem_change_director_to_update_function
-        instance_map = _problem_change_director_to_instance_dict[id(self)]
-        update_function = _problem_change_director_to_update_function[id(self)]
-        self._java_changeVariable(_wrap_object(entity, instance_map, update_function), variableName, entityConsumer)
-
-    @JOverride(sticky=True, rename='_java_lookUpWorkingObject')
-    def lookUpWorkingObject(self, externalObject):
-        global _problem_change_director_to_instance_dict
-        global _problem_change_director_to_update_function
-        instance_map = _problem_change_director_to_instance_dict[id(self)]
-        update_function = _problem_change_director_to_update_function[id(self)]
-        return self._java_lookUpWorkingObject(_wrap_object(externalObject, instance_map, update_function))
-
-    @JOverride(sticky=True, rename='_java_lookUpWorkingObjectOrFail')
-    def lookUpWorkingObjectOrFail(self, externalObject):
-        global _problem_change_director_to_instance_dict
-        global _problem_change_director_to_update_function
-        instance_map = _problem_change_director_to_instance_dict[id(self)]
-        update_function = _problem_change_director_to_update_function[id(self)]
-        return self._java_lookUpWorkingObjectOrFail(_wrap_object(externalObject, instance_map, update_function))
-
-    @JOverride(sticky=True, rename='_java_removeEntity')
-    def removeEntity(self, entity, entityConsumer):
-        global _problem_change_director_to_instance_dict
-        global _problem_change_director_to_update_function
-        instance_map = _problem_change_director_to_instance_dict[id(self)]
-        update_function = _problem_change_director_to_update_function[id(self)]
-        self._java_removeEntity(_wrap_object(entity, instance_map, update_function), entityConsumer)
-
-    @JOverride(sticky=True, rename='_java_removeProblemFact')
-    def removeProblemFact(self, problemFact, problemFactConsumer):
-        global _problem_change_director_to_instance_dict
-        global _problem_change_director_to_update_function
-        instance_map = _problem_change_director_to_instance_dict[id(self)]
-        update_function = _problem_change_director_to_update_function[id(self)]
-        self._java_removeProblemFact(_wrap_object(problemFact, instance_map, update_function), problemFactConsumer)
-
-
-@JImplementationFor('ai.timefold.solver.core.api.score.director.ScoreDirector')
-class _PythonScoreDirector:
-    @JOverride(sticky=True, rename='_java_afterVariableChanged')
-    def afterVariableChanged(self, entity, variable_name):
-        entity._timefold_change_variable(variable_name)
-        self._java_afterVariableChanged(entity, variable_name)
-
-
-def solver_config_create_from_xml_file(solver_config_path: pathlib.Path) -> '_SolverConfig':
-    """Loads a SolverConfig from the given file.
-
-    :param solver_config_path: The path to the file
-    :return: A new SolverConfig generated from the file at path
-    """
-    from java.lang import Thread, IllegalArgumentException
-    from ai.timefold.solver.python import PythonWrapperGenerator  # noqa
-    from ai.timefold.solver.core.config.solver import SolverConfig
-    class_loader = PythonWrapperGenerator.getClassLoaderForAliasMap(_class_identifier_to_java_class_map)
-    current_thread = Thread.currentThread()
-    thread_class_loader = current_thread.getContextClassLoader()
-    try:
-        current_thread.setContextClassLoader(class_loader)
-        solver_config = SolverConfig.createFromXmlFile(solver_config_path)
-    except IllegalArgumentException as e:
-        raise FileNotFoundError(f'Unable to find SolverConfig file ({solver_config_path}).') from e
-    finally:
-        current_thread.setContextClassLoader(thread_class_loader)
-    return solver_config
-
-
-def solver_manager_create(solver_config: '_SolverConfig') -> '_SolverManager':
-    """Creates a new SolverManager, which can be used to solve problems asynchronously (ex: Web requests).
-
-    :param solver_config: The solver configuration used in the SolverManager
-    :return: A SolverManager that can be used to solve problems asynchronously.
-    :rtype: SolverManager
-    """
-    return _PythonSolverManager(solver_config)
-
-
-def score_manager_create(solver_builder: Union['_SolverFactory', '_SolverManager']) -> '_ScoreManager':
-    """Creates a new SolverManager, which can be used to solve problems asynchronously (ex: Web requests).
-
-    :param solver_builder: A SolverFactory or SolverManager which will be used to create the ScoreManager
-    :return: A ScoreManager that can be used to update, explain, or get the score of a solution.
-    :rtype: ScoreManager
-    """
-    from ai.timefold.solver.core.api.score import ScoreManager
-    if isinstance(solver_builder, _PythonSolverManager):
-        #  ScoreManager.create(SolverManager) uses an implementation specific method and expects a DefaultSolverManager
-        return ScoreManager.create(solver_builder.delegate)
-    return ScoreManager.create(solver_builder)
-
-
-def solver_factory_create(solver_config: '_SolverConfig') -> '_SolverFactory':
-    """Creates a new SolverFactory, which can be used to create Solvers.
-
-    :param solver_config: The solver configuration used in the SolverFactory
-    :return: A SolverFactory that can be used to create Solvers.
-    :rtype: SolverFactory
-    """
-    from ai.timefold.solver.core.api.solver import SolverFactory
-    return SolverFactory.create(solver_config)
+    def remove_event_listener(self, event_listener):
+        self._event_listener_list.remove(event_listener)
 
 
 def compose_constraint_id(solution_type_or_package: Union[type, str], constraint_name: str) -> str:
@@ -382,52 +373,3 @@ def compose_constraint_id(solution_type_or_package: Union[type, str], constraint
     if not isinstance(solution_type_or_package, str):
         package = get_class(solution_type_or_package).getPackage().getName()
     return f'{package}/{constraint_name}'
-
-
-@JImplementationFor('ai.timefold.solver.core.api.solver.Solver')
-class _PythonSolver:
-    def __jclass_init__(self):
-        pass
-
-    @staticmethod
-    def _timefold_debug_get_solver_runs_dicts():
-        """
-        Internal method used for testing; do not use
-        """
-        return {
-            'solver_run_id_to_refs': _solver_run_id_to_refs,
-        }
-
-    @JOverride(sticky=True, rename='_java_solve')
-    def solve(self, problem):
-        from ai.timefold.solver.python import PythonSolver  # noqa
-        from jpype import JException
-        from copy import copy
-
-        if problem is None:
-            raise ValueError(f'A problem was not passed to solve (parameter problem was ({problem})). Maybe '
-                             f'pass an instance of a class annotated with @planning_solution to solve?')
-
-        if not hasattr(type(problem), '__timefold_is_planning_solution'):
-            raise ValueError(f'The problem ({problem}) is not an instance of a @planning_solution class. Maybe '
-                             f'decorate the problem class ({type(problem)}) with @planning_solution?')
-
-        problem = copy(problem)
-        solver_run_id = (id(self), id(problem), _uuid1())
-        solver_run_ref_list = [problem, problem]
-        object_class = get_class(type(problem))
-        problem._timefold_solver_run_id = solver_run_id
-
-        wrapped_problem = PythonSolver.wrapProblem(object_class, problem)
-        _setup_solver_run(solver_run_id, solver_run_ref_list)
-        try:
-            return _unwrap_java_object(self._java_solve(wrapped_problem))
-        except JException as e:
-            error_message = f'An error occurred during solving. This can occur when functions take the wrong number '\
-                            f'of parameters (ex: a setter that does not take exactly one parameter) or by ' \
-                            f'a function returning an incompatible return type (ex: returning a str in a filter, ' \
-                            f'which expects a bool). This can also occur when an exception is raised when evaluating ' \
-                            f'constraints/getters/setters.'
-            raise RuntimeError(error_message) from e
-        finally:
-            _cleanup_solver_run(solver_run_id)

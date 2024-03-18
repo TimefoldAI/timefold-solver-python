@@ -15,6 +15,7 @@ import ai.timefold.jpyinterpreter.types.PythonLikeType;
 import ai.timefold.jpyinterpreter.types.PythonNone;
 import ai.timefold.jpyinterpreter.types.PythonString;
 import ai.timefold.jpyinterpreter.types.errors.AttributeError;
+import ai.timefold.jpyinterpreter.types.wrappers.JavaObjectWrapper;
 
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
@@ -39,10 +40,10 @@ public class ObjectImplementor {
         if (maybeFieldDescriptor.isPresent()) {
             FieldDescriptor fieldDescriptor = maybeFieldDescriptor.get();
             if (fieldDescriptor.isTrueFieldDescriptor()) {
-                methodVisitor.visitTypeInsn(Opcodes.CHECKCAST, fieldDescriptor.getDeclaringClassInternalName());
-                methodVisitor.visitFieldInsn(Opcodes.GETFIELD, fieldDescriptor.getDeclaringClassInternalName(),
-                        fieldDescriptor.getJavaFieldName(),
-                        fieldDescriptor.getJavaFieldTypeDescriptor());
+                methodVisitor.visitTypeInsn(Opcodes.CHECKCAST, fieldDescriptor.declaringClassInternalName());
+                methodVisitor.visitFieldInsn(Opcodes.GETFIELD, fieldDescriptor.declaringClassInternalName(),
+                        fieldDescriptor.javaFieldName(),
+                        fieldDescriptor.javaFieldTypeDescriptor());
 
                 // Check if field is null. If it is null, then it was deleted, so we should raise an AttributeError
                 methodVisitor.visitInsn(Opcodes.DUP);
@@ -55,7 +56,7 @@ public class ObjectImplementor {
                 methodVisitor.visitTypeInsn(Opcodes.NEW, Type.getInternalName(AttributeError.class));
                 methodVisitor.visitInsn(Opcodes.DUP);
 
-                if (fieldDescriptor.getFieldPythonLikeType().isInstance(PythonNone.INSTANCE)) {
+                if (fieldDescriptor.fieldPythonLikeType().isInstance(PythonNone.INSTANCE)) {
                     methodVisitor.visitLdcInsn("'" + tosType.getTypeName() + "' object has no attribute '" + name + "'.");
                 } else {
                     // None cannot be assigned to the field, meaning it will delete the attribute instead
@@ -71,6 +72,15 @@ public class ObjectImplementor {
                 methodVisitor.visitInsn(Opcodes.ATHROW);
 
                 // The attribute was not null
+                if (fieldDescriptor.isJavaType()) {
+                    // Need to wrap the object with JavaObjectWrapper
+                    methodVisitor.visitTypeInsn(Opcodes.NEW, Type.getInternalName(JavaObjectWrapper.class));
+                    methodVisitor.visitInsn(Opcodes.DUP_X1);
+                    methodVisitor.visitInsn(Opcodes.DUP_X1);
+                    methodVisitor.visitInsn(Opcodes.POP);
+                    methodVisitor.visitMethodInsn(Opcodes.INVOKESPECIAL, Type.getInternalName(JavaObjectWrapper.class),
+                            "<init>", Type.getMethodDescriptor(Type.VOID_TYPE, Type.getType(Object.class)), false);
+                }
                 methodVisitor.visitLabel(ifNotNull);
             } else {
                 // It a false field descriptor, which means TOS is a type and this is a field for a method
@@ -103,11 +113,11 @@ public class ObjectImplementor {
         Optional<FieldDescriptor> maybeFieldDescriptor = tosType.getInstanceFieldDescriptor(name);
         if (maybeFieldDescriptor.isPresent()) {
             FieldDescriptor fieldDescriptor = maybeFieldDescriptor.get();
-            methodVisitor.visitTypeInsn(Opcodes.CHECKCAST, fieldDescriptor.getDeclaringClassInternalName());
+            methodVisitor.visitTypeInsn(Opcodes.CHECKCAST, fieldDescriptor.declaringClassInternalName());
             methodVisitor.visitInsn(Opcodes.ACONST_NULL);
-            methodVisitor.visitFieldInsn(Opcodes.PUTFIELD, fieldDescriptor.getDeclaringClassInternalName(),
-                    fieldDescriptor.getJavaFieldName(),
-                    fieldDescriptor.getJavaFieldTypeDescriptor());
+            methodVisitor.visitFieldInsn(Opcodes.PUTFIELD, fieldDescriptor.declaringClassInternalName(),
+                    fieldDescriptor.javaFieldName(),
+                    fieldDescriptor.javaFieldTypeDescriptor());
         } else {
             PythonConstantsImplementor.loadName(methodVisitor, className, instruction.arg());
             DunderOperatorImplementor.binaryOperator(methodVisitor,
@@ -127,12 +137,20 @@ public class ObjectImplementor {
         Optional<FieldDescriptor> maybeFieldDescriptor = tosType.getInstanceFieldDescriptor(name);
         if (maybeFieldDescriptor.isPresent()) {
             FieldDescriptor fieldDescriptor = maybeFieldDescriptor.get();
-            methodVisitor.visitTypeInsn(Opcodes.CHECKCAST, fieldDescriptor.getDeclaringClassInternalName());
+            methodVisitor.visitTypeInsn(Opcodes.CHECKCAST, fieldDescriptor.declaringClassInternalName());
             StackManipulationImplementor.swap(methodVisitor);
-            methodVisitor.visitTypeInsn(Opcodes.CHECKCAST, fieldDescriptor.getFieldPythonLikeType().getJavaTypeInternalName());
-            methodVisitor.visitFieldInsn(Opcodes.PUTFIELD, fieldDescriptor.getDeclaringClassInternalName(),
-                    fieldDescriptor.getJavaFieldName(),
-                    fieldDescriptor.getJavaFieldTypeDescriptor());
+            methodVisitor.visitTypeInsn(Opcodes.CHECKCAST, fieldDescriptor.fieldPythonLikeType().getJavaTypeInternalName());
+            if (fieldDescriptor.isJavaType()) {
+                // Need to unwrap the object
+                methodVisitor.visitTypeInsn(Opcodes.CHECKCAST, Type.getInternalName(JavaObjectWrapper.class));
+                methodVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, Type.getInternalName(JavaObjectWrapper.class),
+                        "getWrappedObject", Type.getMethodDescriptor(Type.getType(Object.class)), false);
+                methodVisitor.visitTypeInsn(Opcodes.CHECKCAST,
+                        Type.getType(fieldDescriptor.javaFieldTypeDescriptor()).getInternalName());
+            }
+            methodVisitor.visitFieldInsn(Opcodes.PUTFIELD, fieldDescriptor.declaringClassInternalName(),
+                    fieldDescriptor.javaFieldName(),
+                    fieldDescriptor.javaFieldTypeDescriptor());
         } else {
             StackManipulationImplementor.swap(methodVisitor);
             PythonConstantsImplementor.loadName(methodVisitor, className, instruction.arg());

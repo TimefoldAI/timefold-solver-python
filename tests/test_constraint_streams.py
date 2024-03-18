@@ -1,5 +1,7 @@
 import inspect
 import re
+from dataclasses import dataclass, field
+from typing import Annotated, List
 import timefold.solver
 import timefold.solver.score
 import timefold.solver.config
@@ -13,61 +15,37 @@ from ai.timefold.solver.core.api.score.stream.bi import BiConstraintStream as Ja
 from ai.timefold.solver.core.api.score.stream.tri import TriConstraintStream as JavaTriConstraintStream
 from ai.timefold.solver.core.api.score.stream.quad import QuadConstraintStream as JavaQuadConstraintStream
 
-@timefold.solver.problem_fact
+@dataclass
 class Value:
     def __init__(self, number):
         self.number = number
 
 
 @timefold.solver.planning_entity
+@dataclass
 class Entity:
-    def __init__(self, code, value=None):
-        self.code = code
-        self.value = value
-
-    @timefold.solver.planning_variable(Value, ['value_range'])
-    def get_value(self):
-        return self.value
-
-    def set_value(self, value):
-        self.value = value
+    code: str
+    value: Annotated[Value, timefold.solver.PlanningVariable] = field(default=None)
 
 
 @timefold.solver.planning_solution
+@dataclass
 class Solution:
-    def __init__(self, entity_list, value_list, score=None):
-        self.entity_list = entity_list
-        self.value_list = value_list
-        self.score = score
-
-    @timefold.solver.planning_entity_collection_property(Entity)
-    def get_entity_list(self):
-        return self.entity_list
-
-    def set_entity_list(self, entity_list):
-        self.entity_list = entity_list
-
-    @timefold.solver.problem_fact_collection_property(Value)
-    @timefold.solver.value_range_provider('value_range')
-    def get_value_list(self):
-        return self.value_list
-
-    def set_value_list(self, value_list):
-        self.value_list = value_list
-
-    @timefold.solver.planning_score(timefold.solver.score.SimpleScore)
-    def get_score(self):
-        return self.score
-
-    def set_score(self, score):
-        self.score = score
+    entity_list: Annotated[List[Entity], timefold.solver.PlanningEntityCollectionProperty]
+    value_list: Annotated[List[Value],
+                          timefold.solver.ProblemFactCollectionProperty,
+                          timefold.solver.ValueRangeProvider]
+    score: Annotated[timefold.solver.score.SimpleScore, timefold.solver.PlanningScore] = field(default=None)
 
 
 def create_score_manager(constraint_provider):
-    return timefold.solver.score_manager_create(timefold.solver.solver_factory_create(timefold.solver.config.solver.SolverConfig()
-                                                                                      .withSolutionClass(Solution)
-                                                                                      .withEntityClasses(Entity)
-                                                                                      .withConstraintProviderClass(constraint_provider)))
+    return timefold.solver.SolutionManager.create(timefold.solver.SolverFactory.create(
+        timefold.solver.config.SolverConfig(solution_class=Solution,
+                                            entity_class_list=[Entity],
+                                            score_director_factory_config=
+                                            timefold.solver.config.ScoreDirectorFactoryConfig(
+                                                constraint_provider_function=constraint_provider
+                                            ))))
 
 
 def test_for_each():
@@ -85,15 +63,15 @@ def test_for_each():
 
     problem = Solution([entity_a, entity_b], [value_1])
 
-    assert score_manager.explainScore(problem).getScore().score() == 0
+    assert score_manager.explain(problem).get_score().score() == 0
 
-    entity_a.set_value(value_1)
+    entity_a.value = value_1
 
-    assert score_manager.explainScore(problem).getScore().score() == 1
+    assert score_manager.explain(problem).get_score().score() == 1
 
-    entity_b.set_value(value_1)
+    entity_b.value = value_1
 
-    assert score_manager.explainScore(problem).getScore().score() == 2
+    assert score_manager.explain(problem).get_score().score() == 2
 
 
 def test_filter_uni():
@@ -114,16 +92,16 @@ def test_filter_uni():
 
     problem = Solution([entity_a, entity_b], [value_1, value_2])
 
-    assert score_manager.explainScore(problem).getScore().score() == 0
-    entity_a.set_value(value_1)
+    assert score_manager.explain(problem).get_score().score() == 0
+    entity_a.value = value_1
 
-    assert score_manager.explainScore(problem).getScore().score() == 1
+    assert score_manager.explain(problem).get_score().score() == 1
 
-    entity_b.set_value(value_2)
-    assert score_manager.explainScore(problem).getScore().score() == 1
+    entity_b.value = value_2
+    assert score_manager.explain(problem).get_score().score() == 1
 
-    entity_b.set_value(value_1)
-    assert score_manager.explainScore(problem).getScore().score() == 2
+    entity_b.value = value_1
+    assert score_manager.explain(problem).get_score().score() == 2
 
 
 def test_filter_bi():
@@ -145,16 +123,16 @@ def test_filter_bi():
 
     problem = Solution([entity_a, entity_b], [value_1, value_2])
 
-    assert score_manager.explainScore(problem).getScore().score() == 0
-    entity_a.set_value(value_1)
+    assert score_manager.explain(problem).get_score().score() == 0
+    entity_a.value = value_1
 
-    assert score_manager.explainScore(problem).getScore().score() == 0
+    assert score_manager.explain(problem).get_score().score() == 0
 
-    entity_b.set_value(value_1)
-    assert score_manager.explainScore(problem).getScore().score() == 0
+    entity_b.value = value_1
+    assert score_manager.explain(problem).get_score().score() == 0
 
-    entity_b.set_value(value_2)
-    assert score_manager.explainScore(problem).getScore().score() == 1
+    entity_b.value = value_2
+    assert score_manager.explain(problem).get_score().score() == 1
 
 
 def test_filter_tri():
@@ -179,19 +157,19 @@ def test_filter_tri():
 
     problem = Solution([entity_a, entity_b, entity_c], [value_1, value_2, value_3])
 
-    assert score_manager.explainScore(problem).getScore().score() == 0
-    entity_a.set_value(value_1)
+    assert score_manager.explain(problem).get_score().score() == 0
+    entity_a.value = value_1
 
-    assert score_manager.explainScore(problem).getScore().score() == 0
+    assert score_manager.explain(problem).get_score().score() == 0
 
-    entity_b.set_value(value_2)
-    assert score_manager.explainScore(problem).getScore().score() == 0
+    entity_b.value = value_2
+    assert score_manager.explain(problem).get_score().score() == 0
 
-    entity_c.set_value(value_1)
-    assert score_manager.explainScore(problem).getScore().score() == 0
+    entity_c.value = value_1
+    assert score_manager.explain(problem).get_score().score() == 0
 
-    entity_c.set_value(value_3)
-    assert score_manager.explainScore(problem).getScore().score() == 1
+    entity_c.value = value_3
+    assert score_manager.explain(problem).get_score().score() == 1
 
 
 def test_filter_quad():
@@ -220,22 +198,22 @@ def test_filter_quad():
 
     problem = Solution([entity_a, entity_b, entity_c, entity_d], [value_1, value_2, value_3, value_4])
 
-    assert score_manager.explainScore(problem).getScore().score() == 0
-    entity_a.set_value(value_1)
+    assert score_manager.explain(problem).get_score().score() == 0
+    entity_a.value = value_1
 
-    assert score_manager.explainScore(problem).getScore().score() == 0
+    assert score_manager.explain(problem).get_score().score() == 0
 
-    entity_b.set_value(value_2)
-    assert score_manager.explainScore(problem).getScore().score() == 0
+    entity_b.value = value_2
+    assert score_manager.explain(problem).get_score().score() == 0
 
-    entity_c.set_value(value_3)
-    assert score_manager.explainScore(problem).getScore().score() == 0
+    entity_c.value = value_3
+    assert score_manager.explain(problem).get_score().score() == 0
 
-    entity_d.set_value(value_1)
-    assert score_manager.explainScore(problem).getScore().score() == 0
+    entity_d.value = value_1
+    assert score_manager.explain(problem).get_score().score() == 0
 
-    entity_d.set_value(value_4)
-    assert score_manager.explainScore(problem).getScore().score() == 1
+    entity_d.value = value_4
+    assert score_manager.explain(problem).get_score().score() == 1
 
 
 def test_join_uni():
@@ -244,7 +222,7 @@ def test_join_uni():
         return [
             constraint_factory.for_each(Entity)
             .join(Entity, timefold.solver.constraint.Joiners.equal(lambda entity: entity.code))
-            .filter(lambda e1, e2: e1 != e2)
+            .filter(lambda e1, e2: e1 is not e2)
             .reward('Count', timefold.solver.score.SimpleScore.ONE, lambda e1, e2: e1.value.number * e2.value.number)
         ]
     score_manager = create_score_manager(define_constraints)
@@ -258,24 +236,24 @@ def test_join_uni():
 
     problem = Solution([entity_a1, entity_a2, entity_b1, entity_b2], [value_1, value_2])
 
-    entity_a1.set_value(value_1)
+    entity_a1.value = value_1
 
-    assert score_manager.explainScore(problem).getScore().score() == 0
+    assert score_manager.explain(problem).get_score().score() == 0
 
-    entity_a1.set_value(value_1)
-    entity_a2.set_value(value_1)
+    entity_a1.value = value_1
+    entity_a2.value = value_1
 
-    entity_b1.set_value(value_2)
-    entity_b2.set_value(value_2)
+    entity_b1.value = value_2
+    entity_b2.value = value_2
 
     # 1 * 1 + 1 * 1 + 2 * 2 + 2 * 2
-    assert score_manager.explainScore(problem).getScore().score() == 10
+    assert score_manager.explain(problem).get_score().score() == 10
 
-    entity_a1.set_value(value_2)
-    entity_b1.set_value(value_1)
+    entity_a1.value = value_2
+    entity_b1.value = value_1
 
     # 1 * 2 + 1 * 2 + 1 * 2 + 1 * 2
-    assert score_manager.explainScore(problem).getScore().score() == 8
+    assert score_manager.explain(problem).get_score().score() == 8
 
 
 def test_map():
@@ -296,19 +274,19 @@ def test_map():
 
     problem = Solution([entity_a, entity_b], [value_1, value_2])
 
-    assert score_manager.explainScore(problem).getScore().score() == 0
+    assert score_manager.explain(problem).get_score().score() == 0
 
-    entity_a.set_value(value_1)
+    entity_a.value = value_1
 
-    assert score_manager.explainScore(problem).getScore().score() == 1
+    assert score_manager.explain(problem).get_score().score() == 1
 
-    entity_b.set_value(value_1)
+    entity_b.value = value_1
 
-    assert score_manager.explainScore(problem).getScore().score() == 2
+    assert score_manager.explain(problem).get_score().score() == 2
 
-    entity_b.set_value(value_2)
+    entity_b.value = value_2
 
-    assert score_manager.explainScore(problem).getScore().score() == 3
+    assert score_manager.explain(problem).get_score().score() == 3
 
 
 def test_multi_map():
@@ -329,19 +307,19 @@ def test_multi_map():
 
     problem = Solution([entity_a, entity_b], [value_1, value_2])
 
-    assert score_manager.explainScore(problem).getScore().score() == 0
+    assert score_manager.explain(problem).get_score().score() == 0
 
-    entity_a.set_value(value_1)
+    entity_a.value = value_1
 
-    assert score_manager.explainScore(problem).getScore().score() == 11
+    assert score_manager.explain(problem).get_score().score() == 11
 
-    entity_b.set_value(value_1)
+    entity_b.value = value_1
 
-    assert score_manager.explainScore(problem).getScore().score() == 23
+    assert score_manager.explain(problem).get_score().score() == 23
 
-    entity_b.set_value(value_2)
+    entity_b.value = value_2
 
-    assert score_manager.explainScore(problem).getScore().score() == 33
+    assert score_manager.explain(problem).get_score().score() == 33
 
 
 def test_expand():
@@ -362,19 +340,19 @@ def test_expand():
 
     problem = Solution([entity_a, entity_b], [value_1, value_2])
 
-    assert score_manager.explainScore(problem).getScore().score() == 0
+    assert score_manager.explain(problem).get_score().score() == 0
 
-    entity_a.set_value(value_1)
+    entity_a.value = value_1
 
-    assert score_manager.explainScore(problem).getScore().score() == 1
+    assert score_manager.explain(problem).get_score().score() == 1
 
-    entity_b.set_value(value_1)
+    entity_b.value = value_1
 
-    assert score_manager.explainScore(problem).getScore().score() == 2
+    assert score_manager.explain(problem).get_score().score() == 2
 
-    entity_b.set_value(value_2)
+    entity_b.value = value_2
 
-    assert score_manager.explainScore(problem).getScore().score() == 3
+    assert score_manager.explain(problem).get_score().score() == 3
 
 
 def test_multi_expand():
@@ -395,19 +373,19 @@ def test_multi_expand():
 
     problem = Solution([entity_a, entity_b], [value_1, value_2])
 
-    assert score_manager.explainScore(problem).getScore().score() == 0
+    assert score_manager.explain(problem).get_score().score() == 0
 
-    entity_a.set_value(value_1)
+    entity_a.value = value_1
 
-    assert score_manager.explainScore(problem).getScore().score() == 11
+    assert score_manager.explain(problem).get_score().score() == 11
 
-    entity_b.set_value(value_1)
+    entity_b.value = value_1
 
-    assert score_manager.explainScore(problem).getScore().score() == 23
+    assert score_manager.explain(problem).get_score().score() == 23
 
-    entity_b.set_value(value_2)
+    entity_b.value = value_2
 
-    assert score_manager.explainScore(problem).getScore().score() == 33
+    assert score_manager.explain(problem).get_score().score() == 33
 
 
 def test_concat():
@@ -430,19 +408,19 @@ def test_concat():
 
     problem = Solution([entity_a, entity_b], [value_1, value_2, value_3])
 
-    assert score_manager.explainScore(problem).getScore().score() == 0
+    assert score_manager.explain(problem).get_score().score() == 0
 
-    entity_a.set_value(value_1)
+    entity_a.value = value_1
 
-    assert score_manager.explainScore(problem).getScore().score() == 1
+    assert score_manager.explain(problem).get_score().score() == 1
 
-    entity_b.set_value(value_2)
+    entity_b.value = value_2
 
-    assert score_manager.explainScore(problem).getScore().score() == 2
+    assert score_manager.explain(problem).get_score().score() == 2
 
-    entity_b.set_value(value_3)
+    entity_b.value = value_3
 
-    assert score_manager.explainScore(problem).getScore().score() == 1
+    assert score_manager.explain(problem).get_score().score() == 1
 
 
 ignored_python_functions = {
@@ -463,52 +441,16 @@ ignored_java_functions = {
     'countLongQuad',
     'countLongTri',
     '_handler',  # JPype handler field should be ignored
+    # These methods are deprecated
+    'from_',
+    'fromUnfiltered',
+    'fromUniquePair',
+    'forEachIncludingNullVars',
+    'ifExistsIncludingNullVars',
+    'ifNotExistsIncludingNullVars',
+    'ifExistsOtherIncludingNullVars',
+    'ifNotExistsOtherIncludingNullVars',
 }
-
-def test_camel_case_for_all_snake_case_methods():
-    for class_type in (UniConstraintStream, BiConstraintStream, TriConstraintStream, QuadConstraintStream, Joiners,
-                       ConstraintCollectors, ConstraintFactory):
-        missing = []
-        incorrect = []
-        for function in inspect.getmembers(class_type, inspect.isfunction):
-            # split underscore using split
-            function_name = function[0]
-            if function_name in ignored_python_functions:
-                continue
-            function_name_parts = function_name.split('_')
-
-            # joining result
-            camel_case_name = function_name_parts[0] + ''.join(ele.title() for ele in function_name_parts[1:])
-            if not hasattr(class_type, camel_case_name):
-                missing.append(camel_case_name)
-            if getattr(class_type, camel_case_name) is not function[1]:
-                incorrect.append(function)
-
-        assert len(missing) == 0
-        assert len(incorrect) == 0
-
-
-def test_snake_case_for_all_camel_case_methods():
-    for class_type in (UniConstraintStream, BiConstraintStream, TriConstraintStream, QuadConstraintStream, Joiners,
-                       ConstraintCollectors, ConstraintFactory):
-        missing = []
-        incorrect = []
-        for function in inspect.getmembers(class_type, inspect.isfunction):
-            # split underscore using split
-            function_name = function[0]
-            if function_name in ignored_python_functions:
-                continue
-            snake_case_name = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', function_name)
-            # change h_t_t_p -> http
-            snake_case_name = re.sub('([a-z0-9])([A-Z])', r'\1_\2', snake_case_name).lower()
-
-            if not hasattr(class_type, snake_case_name):
-                missing.append(snake_case_name)
-            if getattr(class_type, snake_case_name) is not function[1]:
-                incorrect.append(function)
-
-        assert len(missing) == 0
-        assert len(incorrect) == 0
 
 
 def test_has_all_methods():
@@ -528,7 +470,11 @@ def test_has_all_methods():
                                                                                'BigDecimal', 'Period')):
                 continue  # Python only has a single integer type (= BigInteger) and does not support Java Durations
                           # or Period
-            if not hasattr(python_type, function_name):
-                missing.append(function_name)
 
-        assert len(missing) == 0
+            snake_case_name = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', function_name)
+            # change h_t_t_p -> http
+            snake_case_name = re.sub('([a-z0-9])([A-Z])', r'\1_\2', snake_case_name).lower()
+            if not hasattr(python_type, snake_case_name):
+                missing.append(snake_case_name)
+
+        assert missing == []

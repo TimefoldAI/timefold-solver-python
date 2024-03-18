@@ -19,6 +19,7 @@ import ai.timefold.jpyinterpreter.types.AbstractPythonLikeObject;
 import ai.timefold.jpyinterpreter.types.BuiltinTypes;
 import ai.timefold.jpyinterpreter.types.PythonLikeType;
 import ai.timefold.jpyinterpreter.types.PythonNone;
+import ai.timefold.jpyinterpreter.types.PythonString;
 import ai.timefold.jpyinterpreter.types.collections.view.DictItemView;
 import ai.timefold.jpyinterpreter.types.collections.view.DictKeyView;
 import ai.timefold.jpyinterpreter.types.collections.view.DictValueView;
@@ -27,13 +28,16 @@ import ai.timefold.jpyinterpreter.types.errors.lookup.KeyError;
 import ai.timefold.jpyinterpreter.types.numeric.PythonBoolean;
 import ai.timefold.jpyinterpreter.types.numeric.PythonInteger;
 import ai.timefold.jpyinterpreter.util.JavaStringMapMirror;
+import ai.timefold.solver.core.impl.domain.solution.cloner.PlanningCloneable;
 
 import org.apache.commons.collections4.OrderedMap;
 import org.apache.commons.collections4.map.LinkedMap;
 
-public class PythonLikeDict extends AbstractPythonLikeObject
-        implements Map<PythonLikeObject, PythonLikeObject>, Iterable<PythonLikeObject> {
-    public final OrderedMap<PythonLikeObject, PythonLikeObject> delegate;
+public class PythonLikeDict<K extends PythonLikeObject, V extends PythonLikeObject> extends AbstractPythonLikeObject
+        implements Map<K, V>,
+        PlanningCloneable<PythonLikeDict<K, V>>,
+        Iterable<PythonLikeObject> {
+    public final OrderedMap delegate;
 
     static {
         PythonOverloadImplementor.deferDispatchesFor(PythonLikeDict::registerMethods);
@@ -122,18 +126,26 @@ public class PythonLikeDict extends AbstractPythonLikeObject
         delegate = source;
     }
 
-    public static PythonLikeDict mirror(Map<String, PythonLikeObject> globals) {
-        return new PythonLikeDict(new JavaStringMapMirror(globals));
+    @Override
+    public PythonLikeDict<K, V> createNewInstance() {
+        return new PythonLikeDict<>();
+    }
+
+    public static PythonLikeDict<PythonString, PythonLikeObject> mirror(Map<String, PythonLikeObject> globals) {
+        return new PythonLikeDict<>(new JavaStringMapMirror(globals));
     }
 
     public PythonLikeTuple toFlattenKeyValueTuple() {
-        return PythonLikeTuple.fromItems(delegate.entrySet().stream()
-                .flatMap(entry -> Stream.of(entry.getKey(), entry.getValue()))
+        return PythonLikeTuple.fromItems((PythonLikeObject[]) delegate.entrySet().stream()
+                .flatMap(entry -> {
+                    var mapEntry = (Map.Entry<K, V>) entry;
+                    return Stream.of(mapEntry.getKey(), mapEntry.getValue());
+                })
                 .toArray(PythonLikeObject[]::new));
     }
 
-    public PythonLikeDict copy() {
-        return new PythonLikeDict(new LinkedMap<>(delegate));
+    public PythonLikeDict<K, V> copy() {
+        return new PythonLikeDict<>(new LinkedMap<>(delegate));
     }
 
     public PythonLikeDict concatToNew(PythonLikeDict other) {
@@ -157,7 +169,7 @@ public class PythonLikeDict extends AbstractPythonLikeObject
     }
 
     public PythonLikeObject getItemOrError(PythonLikeObject key) {
-        PythonLikeObject out = delegate.get(key);
+        PythonLikeObject out = (PythonLikeObject) delegate.get(key);
         if (out == null) {
             throw new KeyError(key.toString());
         }
@@ -165,7 +177,7 @@ public class PythonLikeDict extends AbstractPythonLikeObject
     }
 
     public PythonLikeObject getItemOrNone(PythonLikeObject key) {
-        PythonLikeObject out = delegate.get(key);
+        var out = (PythonLikeObject) delegate.get(key);
         if (out == null) {
             return PythonNone.INSTANCE;
         }
@@ -173,7 +185,7 @@ public class PythonLikeDict extends AbstractPythonLikeObject
     }
 
     public PythonLikeObject getItemOrDefault(PythonLikeObject key, PythonLikeObject defaultValue) {
-        PythonLikeObject out = delegate.get(key);
+        PythonLikeObject out = (PythonLikeObject) delegate.get(key);
         if (out == null) {
             return defaultValue;
         }
@@ -210,7 +222,7 @@ public class PythonLikeDict extends AbstractPythonLikeObject
     }
 
     public PythonLikeObject popItemOrError(PythonLikeObject key) {
-        PythonLikeObject out = delegate.remove(key);
+        var out = (PythonLikeObject) delegate.remove(key);
         if (out == null) {
             throw new KeyError(key.toString());
         }
@@ -218,7 +230,7 @@ public class PythonLikeDict extends AbstractPythonLikeObject
     }
 
     public PythonLikeObject popItemOrDefault(PythonLikeObject key, PythonLikeObject defaultValue) {
-        PythonLikeObject out = delegate.remove(key);
+        var out = (PythonLikeObject) delegate.remove(key);
         if (out == null) {
             return defaultValue;
         }
@@ -230,8 +242,8 @@ public class PythonLikeDict extends AbstractPythonLikeObject
             throw new KeyError("popitem(): dictionary is empty");
         }
 
-        PythonLikeObject lastKey = delegate.lastKey();
-        return PythonLikeTuple.fromItems(lastKey, delegate.remove(lastKey));
+        var lastKey = (K) delegate.lastKey();
+        return PythonLikeTuple.fromItems(lastKey, (V) delegate.remove(lastKey));
     }
 
     public PythonIterator<PythonLikeObject> reversed() {
@@ -239,7 +251,7 @@ public class PythonLikeDict extends AbstractPythonLikeObject
             return new PythonIterator<>(Collections.emptyIterator());
         }
 
-        final PythonLikeObject lastKey = delegate.lastKey();
+        final var lastKey = (PythonLikeObject) delegate.lastKey();
         return new PythonIterator<>(new Iterator<>() {
             PythonLikeObject current = lastKey;
 
@@ -250,15 +262,15 @@ public class PythonLikeDict extends AbstractPythonLikeObject
 
             @Override
             public PythonLikeObject next() {
-                PythonLikeObject out = current;
-                current = delegate.previousKey(current);
+                var out = current;
+                current = (PythonLikeObject) delegate.previousKey(current);
                 return out;
             }
         });
     }
 
     public PythonLikeObject setIfAbsent(PythonLikeObject key) {
-        PythonLikeObject value = delegate.get(key);
+        var value = (PythonLikeObject) delegate.get(key);
         if (value != null) {
             return value;
         }
@@ -267,7 +279,7 @@ public class PythonLikeDict extends AbstractPythonLikeObject
     }
 
     public PythonLikeObject setIfAbsent(PythonLikeObject key, PythonLikeObject defaultValue) {
-        PythonLikeObject value = delegate.get(key);
+        var value = (V) delegate.get(key);
         if (value != null) {
             return value;
         }
@@ -296,14 +308,14 @@ public class PythonLikeDict extends AbstractPythonLikeObject
         return new DictValueView(this);
     }
 
-    public PythonLikeDict binaryOr(PythonLikeDict other) {
-        PythonLikeDict out = new PythonLikeDict();
+    public PythonLikeDict<K, V> binaryOr(PythonLikeDict<K, V> other) {
+        var out = new PythonLikeDict<K, V>();
         out.delegate.putAll(delegate);
         out.delegate.putAll(other.delegate);
         return out;
     }
 
-    public PythonLikeDict binaryInplaceOr(PythonLikeDict other) {
+    public PythonLikeDict<K, V> binaryInplaceOr(PythonLikeDict<K, V> other) {
         delegate.putAll(other.delegate);
         return this;
     }
@@ -329,22 +341,22 @@ public class PythonLikeDict extends AbstractPythonLikeObject
     }
 
     @Override
-    public PythonLikeObject get(Object key) {
-        return delegate.get(key);
+    public V get(Object key) {
+        return (V) delegate.get(key);
     }
 
     @Override
     public PythonLikeObject put(PythonLikeObject key, PythonLikeObject value) {
-        return delegate.put(key, value);
+        return (PythonLikeObject) delegate.put(key, value);
     }
 
     @Override
-    public PythonLikeObject remove(Object o) {
-        return delegate.remove(o);
+    public V remove(Object o) {
+        return (V) delegate.remove(o);
     }
 
     @Override
-    public void putAll(Map<? extends PythonLikeObject, ? extends PythonLikeObject> map) {
+    public void putAll(Map<? extends K, ? extends V> map) {
         delegate.putAll(map);
     }
 
@@ -354,17 +366,17 @@ public class PythonLikeDict extends AbstractPythonLikeObject
     }
 
     @Override
-    public Set<PythonLikeObject> keySet() {
+    public Set<K> keySet() {
         return delegate.keySet();
     }
 
     @Override
-    public Collection<PythonLikeObject> values() {
+    public Collection<V> values() {
         return delegate.values();
     }
 
     @Override
-    public Set<Entry<PythonLikeObject, PythonLikeObject>> entrySet() {
+    public Set<Entry<K, V>> entrySet() {
         return delegate.entrySet();
     }
 

@@ -222,23 +222,23 @@ def _convert_function_to_class(jcls, function_obj):
 # Jpype convert int to primitive, but not to their wrappers, so add implicit conversion to wrappers
 @JConversion('java.lang.Integer', exact=int)
 def _convert_to_integer(jcls, obj):
-    from ai.timefold.solver.python import PythonWrapperGenerator  # noqa
-    return PythonWrapperGenerator.wrapInt(obj)
+    from java.lang import Integer
+    return Integer @ JInt(obj)
 
 
 @JConversion('java.lang.Long', exact=int)
 def _convert_to_long(jcls, obj):
-    from ai.timefold.solver.python import PythonWrapperGenerator  # noqa
-    return PythonWrapperGenerator.wrapLong(obj)
+    from java.lang import Long
+    return Long @ JLong(obj)
 
 
 @JConversion('java.lang.Short', exact=int)
 def _convert_to_short(jcls, obj):
-    from ai.timefold.solver.python import PythonWrapperGenerator  # noqa
-    return PythonWrapperGenerator.wrapShort(obj)
+    from java.lang import Short
+    return Short @ JShort(obj)
 
 
 @JConversion('java.lang.Byte', exact=int)
 def _convert_to_byte(jcls, obj):
-    from ai.timefold.solver.python import PythonWrapperGenerator  # noqa
-    return PythonWrapperGenerator.wrapByte(obj)
+    from java.lang import Byte
+    return Byte @ JByte(obj)

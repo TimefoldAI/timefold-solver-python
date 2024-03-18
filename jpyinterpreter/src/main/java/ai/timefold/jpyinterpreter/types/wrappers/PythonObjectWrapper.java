@@ -42,7 +42,7 @@ public class PythonObjectWrapper extends CPythonBackedPythonLikeObject
     @Override
     public void $setAttribute(String attributeName, PythonLikeObject value) {
         cachedAttributeMap.put(attributeName, value);
-        CPythonBackedPythonInterpreter.setAttributeOnPythonReference($cpythonReference, attributeName, value);
+        CPythonBackedPythonInterpreter.setAttributeOnPythonReference($cpythonReference, null, attributeName, value);
     }
 
     @Override

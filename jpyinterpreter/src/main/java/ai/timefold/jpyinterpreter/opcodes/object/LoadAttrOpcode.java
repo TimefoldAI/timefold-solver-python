@@ -20,7 +20,7 @@ public class LoadAttrOpcode extends AbstractOpcode {
         PythonLikeType tosType = stackMetadata.getTOSType();
         return tosType.getInstanceFieldDescriptor(functionMetadata.pythonCompiledFunction.co_names.get(instruction.arg()))
                 .map(fieldDescriptor -> stackMetadata.pop()
-                        .push(ValueSourceInfo.of(this, fieldDescriptor.getFieldPythonLikeType(),
+                        .push(ValueSourceInfo.of(this, fieldDescriptor.fieldPythonLikeType(),
                                 stackMetadata.getValueSourcesUpToStackIndex(1))))
                 .orElseGet(() -> stackMetadata.pop().push(ValueSourceInfo.of(this, BuiltinTypes.BASE_TYPE,
                         stackMetadata.getValueSourcesUpToStackIndex(1))));

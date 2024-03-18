@@ -26,8 +26,11 @@ import ai.timefold.jpyinterpreter.types.errors.ValueError;
 import ai.timefold.jpyinterpreter.types.errors.lookup.IndexError;
 import ai.timefold.jpyinterpreter.types.numeric.PythonBoolean;
 import ai.timefold.jpyinterpreter.types.numeric.PythonInteger;
+import ai.timefold.solver.core.impl.domain.solution.cloner.PlanningCloneable;
 
-public class PythonLikeList<T> extends AbstractPythonLikeObject implements List<T>, RandomAccess {
+public class PythonLikeList<T> extends AbstractPythonLikeObject implements List<T>,
+        PlanningCloneable<PythonLikeList<T>>,
+        RandomAccess {
     final List delegate;
     private int remainderToAdd;
 
@@ -122,6 +125,11 @@ public class PythonLikeList<T> extends AbstractPythonLikeObject implements List<
         super(BuiltinTypes.LIST_TYPE);
         this.delegate = delegate;
         remainderToAdd = 0;
+    }
+
+    @Override
+    public PythonLikeList<T> createNewInstance() {
+        return new PythonLikeList<>();
     }
 
     // Required for bytecode generation

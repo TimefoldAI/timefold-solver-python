@@ -17,17 +17,23 @@ import ai.timefold.jpyinterpreter.PythonUnaryOperator;
 import ai.timefold.jpyinterpreter.builtins.UnaryDunderBuiltin;
 import ai.timefold.jpyinterpreter.types.AbstractPythonLikeObject;
 import ai.timefold.jpyinterpreter.types.BuiltinTypes;
+import ai.timefold.jpyinterpreter.types.PythonLikeComparable;
 import ai.timefold.jpyinterpreter.types.PythonLikeType;
 import ai.timefold.jpyinterpreter.types.PythonSlice;
+import ai.timefold.jpyinterpreter.types.errors.TypeError;
 import ai.timefold.jpyinterpreter.types.errors.ValueError;
 import ai.timefold.jpyinterpreter.types.errors.lookup.IndexError;
 import ai.timefold.jpyinterpreter.types.numeric.PythonBoolean;
 import ai.timefold.jpyinterpreter.types.numeric.PythonInteger;
+import ai.timefold.solver.core.impl.domain.solution.cloner.PlanningCloneable;
 
-public class PythonLikeTuple extends AbstractPythonLikeObject implements List<PythonLikeObject>, RandomAccess {
+public class PythonLikeTuple<T extends PythonLikeObject> extends AbstractPythonLikeObject implements List<T>,
+        PlanningCloneable<PythonLikeTuple<T>>,
+        PythonLikeComparable<PythonLikeTuple>,
+        RandomAccess {
     public static PythonLikeTuple EMPTY = PythonLikeTuple.fromList(List.of());
 
-    final List<PythonLikeObject> delegate;
+    final List delegate;
     private int remainderToAdd;
 
     static {
@@ -70,6 +76,9 @@ public class PythonLikeTuple extends AbstractPythonLikeObject implements List<Py
         BuiltinTypes.TUPLE_TYPE.addBinaryMethod(PythonBinaryOperator.CONTAINS,
                 PythonLikeTuple.class.getMethod("containsItem", PythonLikeObject.class));
 
+        // Comparisons
+        PythonLikeComparable.setup(BuiltinTypes.TUPLE_TYPE);
+
         // Other
         BuiltinTypes.TUPLE_TYPE.addMethod("index", PythonLikeTuple.class.getMethod("index", PythonLikeObject.class));
         BuiltinTypes.TUPLE_TYPE.addMethod("index",
@@ -94,6 +103,11 @@ public class PythonLikeTuple extends AbstractPythonLikeObject implements List<Py
         for (int i = 0; i < size; i++) {
             delegate.add(null);
         }
+    }
+
+    @Override
+    public PythonLikeTuple<T> createNewInstance() {
+        return new PythonLikeTuple<>();
     }
 
     public static PythonLikeTuple fromItems(PythonLikeObject... items) {
@@ -151,8 +165,8 @@ public class PythonLikeTuple extends AbstractPythonLikeObject implements List<Py
         return PythonBoolean.valueOf(delegate.contains(item));
     }
 
-    public PythonIterator getIterator() {
-        return new PythonIterator(delegate.iterator());
+    public PythonIterator<T> getIterator() {
+        return new PythonIterator<T>(delegate.iterator());
     }
 
     public PythonIterator getReversedIterator() {
@@ -182,7 +196,7 @@ public class PythonLikeTuple extends AbstractPythonLikeObject implements List<Py
             throw new IndexError("list index out of range");
         }
 
-        return delegate.get(indexAsInt);
+        return (PythonLikeObject) delegate.get(indexAsInt);
     }
 
     public PythonLikeTuple getSlice(PythonSlice slice) {
@@ -191,7 +205,7 @@ public class PythonLikeTuple extends AbstractPythonLikeObject implements List<Py
         PythonLikeTuple out = new PythonLikeTuple();
 
         slice.iterate(length, (i, processed) -> {
-            out.add(delegate.get(i));
+            out.add((PythonLikeObject) delegate.get(i));
         });
 
         return out;
@@ -199,7 +213,7 @@ public class PythonLikeTuple extends AbstractPythonLikeObject implements List<Py
 
     public PythonInteger count(PythonLikeObject search) {
         long count = 0;
-        for (PythonLikeObject x : delegate) {
+        for (var x : delegate) {
             if (Objects.equals(search, x)) {
                 count++;
             }
@@ -274,7 +288,7 @@ public class PythonLikeTuple extends AbstractPythonLikeObject implements List<Py
     }
 
     @Override
-    public Iterator<PythonLikeObject> iterator() {
+    public Iterator<T> iterator() {
         return delegate.iterator();
     }
 
@@ -285,7 +299,7 @@ public class PythonLikeTuple extends AbstractPythonLikeObject implements List<Py
 
     @Override
     public <T> T[] toArray(T[] ts) {
-        return delegate.toArray(ts);
+        return (T[]) delegate.toArray(ts);
     }
 
     @Override
@@ -304,12 +318,12 @@ public class PythonLikeTuple extends AbstractPythonLikeObject implements List<Py
     }
 
     @Override
-    public boolean addAll(Collection<? extends PythonLikeObject> collection) {
+    public boolean addAll(Collection<? extends T> collection) {
         return delegate.addAll(collection);
     }
 
     @Override
-    public boolean addAll(int i, Collection<? extends PythonLikeObject> collection) {
+    public boolean addAll(int i, Collection<? extends T> collection) {
         return delegate.addAll(i, collection);
     }
 
@@ -329,13 +343,13 @@ public class PythonLikeTuple extends AbstractPythonLikeObject implements List<Py
     }
 
     @Override
-    public PythonLikeObject get(int i) {
-        return delegate.get(i);
+    public T get(int i) {
+        return (T) delegate.get(i);
     }
 
     @Override
-    public PythonLikeObject set(int i, PythonLikeObject pythonLikeObject) {
-        return delegate.set(i, pythonLikeObject);
+    public T set(int i, T pythonLikeObject) {
+        return (T) delegate.set(i, pythonLikeObject);
     }
 
     @Override
@@ -344,8 +358,8 @@ public class PythonLikeTuple extends AbstractPythonLikeObject implements List<Py
     }
 
     @Override
-    public PythonLikeObject remove(int i) {
-        return delegate.remove(i);
+    public T remove(int i) {
+        return (T) delegate.remove(i);
     }
 
     @Override
@@ -359,17 +373,17 @@ public class PythonLikeTuple extends AbstractPythonLikeObject implements List<Py
     }
 
     @Override
-    public ListIterator<PythonLikeObject> listIterator() {
+    public ListIterator<T> listIterator() {
         return delegate.listIterator();
     }
 
     @Override
-    public ListIterator<PythonLikeObject> listIterator(int i) {
+    public ListIterator<T> listIterator(int i) {
         return delegate.listIterator(i);
     }
 
     @Override
-    public List<PythonLikeObject> subList(int i, int i1) {
+    public List<T> subList(int i, int i1) {
         return delegate.subList(i, i1);
     }
 
@@ -389,6 +403,33 @@ public class PythonLikeTuple extends AbstractPythonLikeObject implements List<Py
             return true;
         }
         return false;
+    }
+
+    @Override
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    public int compareTo(PythonLikeTuple other) {
+        int ownLength = delegate.size();
+        int otherLength = other.size();
+        int commonLength = Math.min(ownLength, otherLength);
+        for (int i = 0; i < commonLength; i++) {
+            Object ownItem = delegate.get(i);
+            Object otherItem = other.delegate.get(i);
+            if (ownItem instanceof Comparable ownComparable) {
+                if (otherItem instanceof Comparable otherComparable) {
+                    int result = ownComparable.compareTo(otherComparable);
+                    if (result != 0) {
+                        return result;
+                    }
+                } else {
+                    throw new TypeError("Tuple %s does not support comparisons since item (%s) at index (%d) is not comparable."
+                            .formatted(other, otherItem, i));
+                }
+            } else {
+                throw new TypeError("Tuple %s does not support comparisons since item (%s) at index (%d) is not comparable."
+                        .formatted(this, ownItem, i));
+            }
+        }
+        return ownLength - otherLength;
     }
 
     @Override

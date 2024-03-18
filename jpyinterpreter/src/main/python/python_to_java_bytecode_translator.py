@@ -7,9 +7,11 @@ import abc
 from dataclasses import dataclass
 from types import FunctionType
 from typing import TypeVar, Any, List, Tuple, Dict, Union, Annotated, Type, Callable, \
-    get_origin, get_args, get_type_hints
-
+    get_origin, get_args, get_type_hints, TYPE_CHECKING
 from jpype import JInt, JLong, JDouble, JBoolean, JProxy, JClass, JArray
+
+if TYPE_CHECKING:
+    from java.util import IdentityHashMap
 
 MINIMUM_SUPPORTED_PYTHON_VERSION = (3, 9)
 MAXIMUM_SUPPORTED_PYTHON_VERSION = (3, 11)
@@ -27,6 +29,9 @@ function_interface_pair_to_class = dict()
 class JavaAnnotation:
     annotation_type: JClass
     annotation_values: Dict[str, Any]
+
+    def __hash__(self):
+        return 0
 
 
 T = TypeVar('T')
@@ -222,7 +227,7 @@ class CodeWrapper:
 
 def convert_object_to_java_python_like_object(value, instance_map=None):
     import datetime
-    from java.lang import Object
+    from java.lang import Object, ClassNotFoundException
     from java.util import HashMap
     from ai.timefold.jpyinterpreter import CPythonBackedPythonInterpreter
     from ai.timefold.jpyinterpreter.types import PythonLikeType, AbstractPythonLikeObject, CPythonBackedPythonLikeObject
@@ -236,6 +241,8 @@ def convert_object_to_java_python_like_object(value, instance_map=None):
         out = JavaObjectWrapper(value)
         put_in_instance_map(instance_map, value, out)
         return out
+    if isinstance(value, JavaAnnotation):
+        return None
     elif isinstance(value, datetime.datetime):
         out = PythonDateTime.of(value.year, value.month, value.day, value.hour, value.minute, value.second,
                                 value.microsecond, value.tzname(), value.fold)
@@ -281,8 +288,15 @@ def convert_object_to_java_python_like_object(value, instance_map=None):
         java_type = type_to_compiled_java_class[type(value)]
         if isinstance(java_type, CPythonType):
             return None
-        java_class = java_type.getJavaClass()
+        try:
+            java_class = java_type.getJavaClass()
+        except ClassNotFoundException:
+            # Class is currently being generated
+            return None
         out = java_class.getConstructor(PythonLikeType).newInstance(java_type)
+        if isinstance(out, CPythonBackedPythonLikeObject):
+            # Mark the item as created from python
+            getattr(out, '$markValidPythonReference')()
         put_in_instance_map(instance_map, value, out)
         CPythonBackedPythonInterpreter.updateJavaObjectFromPythonObject(out,
                                                                         JProxy(OpaquePythonReference, inst=value,
@@ -314,6 +328,9 @@ def convert_object_to_java_python_like_object(value, instance_map=None):
                 return None
             java_class = java_type.getJavaClass()
             out = java_class.getConstructor(PythonLikeType).newInstance(java_type)
+            if isinstance(out, CPythonBackedPythonLikeObject):
+                # Mark the item as created from python
+                getattr(out, '$markValidPythonReference')()
             put_in_instance_map(instance_map, value, out)
             CPythonBackedPythonInterpreter.updateJavaObjectFromPythonObject(out,
                                                                             JProxy(OpaquePythonReference, inst=value,
@@ -472,9 +489,27 @@ def convert_to_java_python_like_object(value, instance_map=None):
         return out
 
 
-def unwrap_python_like_object(python_like_object, default=NotImplementedError):
+@dataclass
+class PythonCloneMap:
+    java_object_to_clone_id: 'IdentityHashMap'
+    clone_id_to_python_object: dict
+
+    def add_clone(self, java_object, python_object):
+        object_id = self.java_object_to_clone_id.size()
+        self.java_object_to_clone_id[java_object] = object_id
+        self.clone_id_to_python_object[object_id] = python_object
+        return python_object
+
+    def has_clone(self, java_object):
+        return self.java_object_to_clone_id.containsKey(java_object)
+
+    def get_clone(self, java_object):
+        return self.clone_id_to_python_object[self.java_object_to_clone_id.get(java_object)]
+
+
+def unwrap_python_like_object(python_like_object, clone_map=None, default=NotImplementedError):
     from ai.timefold.jpyinterpreter import PythonLikeObject
-    from java.util import List, Map, Set, Iterator
+    from java.util import List, Map, Set, Iterator, IdentityHashMap
     from ai.timefold.jpyinterpreter.types import PythonString, PythonBytes, PythonByteArray, PythonNone, \
         PythonModule, PythonSlice, PythonRange, CPythonBackedPythonLikeObject, PythonLikeType, PythonLikeGenericType, \
         NotImplemented as JavaNotImplemented, PythonCell
@@ -485,62 +520,77 @@ def unwrap_python_like_object(python_like_object, default=NotImplementedError):
         OpaquePythonReference
     from types import CellType
 
+    if clone_map is None:
+        clone_map = PythonCloneMap(IdentityHashMap(), dict())
+
+    if clone_map.has_clone(python_like_object):
+        return clone_map.get_clone(python_like_object)
+
     if isinstance(python_like_object, (PythonObjectWrapper, JavaObjectWrapper)):
         out = python_like_object.getWrappedObject()
-        return out
+        return clone_map.add_clone(python_like_object, out)
     elif isinstance(python_like_object, PythonNone):
-        return None
+        return clone_map.add_clone(python_like_object, None)
     elif isinstance(python_like_object, JavaNotImplemented):
-        return NotImplemented
+        return clone_map.add_clone(python_like_object, NotImplemented)
     elif isinstance(python_like_object, PythonFloat):
-        return float(python_like_object.getValue())
+        return clone_map.add_clone(python_like_object, float(python_like_object.getValue()))
     elif isinstance(python_like_object, PythonString):
-        return python_like_object.getValue()
+        return clone_map.add_clone(python_like_object, python_like_object.getValue())
     elif isinstance(python_like_object, PythonBytes):
-        return bytes(unwrap_python_like_object(python_like_object.asIntTuple()))
+        return clone_map.add_clone(python_like_object,
+                                   bytes(unwrap_python_like_object(python_like_object.asIntTuple(),
+                                                                   clone_map, default)))
     elif isinstance(python_like_object, PythonByteArray):
-        return bytearray(unwrap_python_like_object(python_like_object.asIntTuple()))
+        return clone_map.add_clone(python_like_object, bytearray(unwrap_python_like_object(
+            python_like_object.asIntTuple(), clone_map, default)))
     elif isinstance(python_like_object, PythonBoolean):
-        return python_like_object == PythonBoolean.TRUE
+        return clone_map.add_clone(python_like_object, python_like_object == PythonBoolean.TRUE)
     elif isinstance(python_like_object, PythonInteger):
-        return int(python_like_object.getValue().toString(16), 16)
+        return clone_map.add_clone(python_like_object, int(python_like_object.getValue().toString(16), 16))
     elif isinstance(python_like_object, PythonComplex):
-        real = unwrap_python_like_object(python_like_object.getReal())
-        imaginary = unwrap_python_like_object(python_like_object.getImaginary())
-        return complex(real, imaginary)
+        real = unwrap_python_like_object(python_like_object.getReal(), clone_map, default)
+        imaginary = unwrap_python_like_object(python_like_object.getImaginary(), clone_map, default)
+        return clone_map.add_clone(python_like_object, complex(real, imaginary))
     elif isinstance(python_like_object, (PythonLikeTuple, tuple)):
         out = []
         for item in python_like_object:
-            out.append(unwrap_python_like_object(item, default))
-        return tuple(out)
+            out.append(unwrap_python_like_object(item, clone_map, default))
+        return clone_map.add_clone(python_like_object, tuple(out))
     elif isinstance(python_like_object, List):
         out = []
+        clone_map.add_clone(python_like_object, out)
         for item in python_like_object:
-            out.append(unwrap_python_like_object(item, default))
+            out.append(unwrap_python_like_object(item, clone_map, default))
         return out
     elif isinstance(python_like_object, Set):
         out = set()
+        if not isinstance(python_like_object, PythonLikeFrozenSet):
+            clone_map.add_clone(python_like_object, out)
+
         for item in python_like_object:
-            out.add(unwrap_python_like_object(item, default))
+            out.add(unwrap_python_like_object(item, clone_map, default))
 
         if isinstance(python_like_object, PythonLikeFrozenSet):
-            return frozenset(out)
+            return clone_map.add_clone(python_like_object, frozenset(out))
 
         return out
     elif isinstance(python_like_object, Map):
         out = dict()
+        clone_map.add_clone(python_like_object, out)
         for entry in python_like_object.entrySet():
-            out[unwrap_python_like_object(entry.getKey(), default)] = unwrap_python_like_object(entry.getValue(),
-                                                                                                default)
+            out[unwrap_python_like_object(entry.getKey(), clone_map, default)] = (
+                unwrap_python_like_object(entry.getValue(), clone_map, default))
         return out
     elif isinstance(python_like_object, PythonSlice):
-        return slice(unwrap_python_like_object(python_like_object.start),
-                     unwrap_python_like_object(python_like_object.stop),
-                     unwrap_python_like_object(python_like_object.step))
+        return clone_map.add_clone(python_like_object, slice(
+                     unwrap_python_like_object(python_like_object.start, clone_map, default),
+                     unwrap_python_like_object(python_like_object.stop, clone_map, default),
+                     unwrap_python_like_object(python_like_object.step, clone_map, default)))
     elif isinstance(python_like_object, PythonRange):
-        return range(unwrap_python_like_object(python_like_object.start),
-                     unwrap_python_like_object(python_like_object.stop),
-                     unwrap_python_like_object(python_like_object.step))
+        return clone_map.add_clone(python_like_object, range(unwrap_python_like_object(python_like_object.start, clone_map, default),
+                     unwrap_python_like_object(python_like_object.stop, clone_map, default),
+                     unwrap_python_like_object(python_like_object.step, clone_map, default)))
     elif isinstance(python_like_object, Iterator):
         class JavaIterator:
             def __init__(self, iterator):
@@ -554,65 +604,74 @@ def unwrap_python_like_object(python_like_object, default=NotImplementedError):
                     if not self.iterator.hasNext():
                         raise StopIteration()
                     else:
-                        return unwrap_python_like_object(self.iterator.next())
+                        return unwrap_python_like_object(self.iterator.next(), clone_map, default)
                 except StopIteration:
                     raise
                 except Exception as e:
-                    raise unwrap_python_like_object(e)
+                    raise unwrap_python_like_object(e, clone_map, default)
 
             def send(self, sent):
                 try:
-                    return unwrap_python_like_object(self.iterator.send(convert_to_java_python_like_object(sent)))
+                    return unwrap_python_like_object(self.iterator.send(convert_to_java_python_like_object(sent)),
+                                                     clone_map,
+                                                     default)
                 except Exception as e:
-                    raise unwrap_python_like_object(e)
+                    raise unwrap_python_like_object(e, clone_map, default)
 
             def throw(self, thrown):
                 try:
                     return unwrap_python_like_object(
-                        self.iterator.throwValue(convert_to_java_python_like_object(thrown)))
+                        self.iterator.throwValue(convert_to_java_python_like_object(thrown)),
+                        clone_map, default)
                 except Exception as e:
-                    raise unwrap_python_like_object(e)
+                    raise unwrap_python_like_object(e, clone_map, default)
 
-        return JavaIterator(python_like_object)
+        return clone_map.add_clone(python_like_object, JavaIterator(python_like_object))
     elif isinstance(python_like_object, PythonCell):
         out = CellType()
-        out.cell_contents = python_like_object.cellValue
+        clone_map.add_clone(python_like_object, out)
+        out.cell_contents = unwrap_python_like_object(python_like_object.cellValue, clone_map, default)
         return out
     elif isinstance(python_like_object, PythonModule):
-        return python_like_object.getPythonReference()
+        return clone_map.add_clone(python_like_object, python_like_object.getPythonReference())
     elif isinstance(python_like_object, CPythonBackedPythonLikeObject):
-        maybe_python_reference = getattr(python_like_object, '$cpythonReference')
-        if maybe_python_reference is not None:
-            return maybe_python_reference
-        # does not have an existing python reference
-        maybe_cpython_type = getattr(python_like_object, "$CPYTHON_TYPE")
-        if isinstance(maybe_cpython_type, CPythonType):
-            out = object.__new__(maybe_cpython_type.getPythonReference())
-            setattr(python_like_object, '$cpythonReference', JProxy(OpaquePythonReference, inst=out, convert=True))
-            setattr(python_like_object, '$cpythonId', PythonInteger.valueOf(JLong(id(out))))
-            getattr(python_like_object, '$writeFieldsToCPythonReference')()
+        if getattr(python_like_object, '$shouldCreateNewInstance')():
+            maybe_cpython_type = getattr(python_like_object, "$CPYTHON_TYPE")
+            if isinstance(maybe_cpython_type, CPythonType):
+                out = object.__new__(maybe_cpython_type.getPythonReference())
+                setattr(python_like_object, '$cpythonReference', JProxy(OpaquePythonReference, inst=out, convert=True))
+                setattr(python_like_object, '$cpythonId', PythonInteger.valueOf(JLong(id(out))))
+            else:
+                out = None
+        else:
+            out = getattr(python_like_object, '$cpythonReference')
+
+        if out is not None:
+            clone_map.add_clone(python_like_object, out)
+            update_python_object_from_java(python_like_object, clone_map)
             return out
     elif isinstance(python_like_object, Exception):
         try:
             exception_name = getattr(python_like_object, '$TYPE').getTypeName()
             exception_python_type = getattr(builtins, exception_name)
-            args = unwrap_python_like_object(getattr(python_like_object, '$getArgs')())
-            return exception_python_type(*args)
+            args = unwrap_python_like_object(getattr(python_like_object, '$getArgs')(),
+                                             clone_map, default)
+            return clone_map.add_clone(python_like_object, exception_python_type(*args))
         except AttributeError:
-            return TranslatedJavaSystemError(python_like_object)
+            return clone_map.add_clone(python_like_object, TranslatedJavaSystemError(python_like_object))
     elif isinstance(python_like_object, PythonLikeType):
         if python_like_object.getClass() == PythonLikeGenericType:
-            return type
+            return clone_map.add_clone(python_like_object, type)
 
         for (key, value) in type_to_compiled_java_class.items():
             if value == python_like_object:
-                return key
+                return clone_map.add_clone(python_like_object, key)
         else:
             raise KeyError(f'Cannot find corresponding Python type for Java class {python_like_object.getClass().getName()}')
     elif not isinstance(python_like_object, PythonLikeObject):
-        return python_like_object
+        return clone_map.add_clone(python_like_object, python_like_object)
     else:
-        out = unwrap_python_like_builtin_module_object(python_like_object)
+        out = unwrap_python_like_builtin_module_object(python_like_object, clone_map, default)
         if out is not None:
             return out
 
@@ -621,43 +680,62 @@ def unwrap_python_like_object(python_like_object, default=NotImplementedError):
         return default
 
 
-def unwrap_python_like_builtin_module_object(python_like_object):
+def update_python_object_from_java(java_object, clone_map=None):
+    from java.util import IdentityHashMap
+    from ai.timefold.jpyinterpreter.types.wrappers import OpaquePythonReference
+    if clone_map is None:
+        clone_map = PythonCloneMap(IdentityHashMap(), dict())
+
+    try:
+        getattr(java_object, '$writeFieldsToCPythonReference')(JProxy(OpaquePythonReference,
+                                                                             inst=clone_map,
+                                                                             convert=True))
+    except TypeError:
+        # The Python Object is immutable; so no changes from Java
+        pass
+
+
+def unwrap_python_like_builtin_module_object(python_like_object, clone_map, default=NotImplementedError):
+    from java.util import IdentityHashMap
     from ai.timefold.jpyinterpreter.types.datetime import PythonDate, PythonTime, PythonDateTime, PythonTimeDelta
     import datetime
 
+    if clone_map is None:
+        clone_map = PythonCloneMap(IdentityHashMap(), dict())
+
     if isinstance(python_like_object, PythonDateTime):
-        return datetime.datetime(unwrap_python_like_object(python_like_object.year),
-                                 unwrap_python_like_object(python_like_object.month),
-                                 unwrap_python_like_object(python_like_object.day),
-                                 unwrap_python_like_object(python_like_object.hour),
-                                 unwrap_python_like_object(python_like_object.minute),
-                                 unwrap_python_like_object(python_like_object.second),
-                                 unwrap_python_like_object(python_like_object.microsecond),
+        return clone_map.add_clone(python_like_object, datetime.datetime(unwrap_python_like_object(python_like_object.year, clone_map, default),
+                                 unwrap_python_like_object(python_like_object.month, clone_map, default),
+                                 unwrap_python_like_object(python_like_object.day, clone_map, default),
+                                 unwrap_python_like_object(python_like_object.hour, clone_map, default),
+                                 unwrap_python_like_object(python_like_object.minute, clone_map, default),
+                                 unwrap_python_like_object(python_like_object.second, clone_map, default),
+                                 unwrap_python_like_object(python_like_object.microsecond, clone_map, default),
                                  tzinfo=None,  # TODO: Support timezones
-                                 fold=unwrap_python_like_object(python_like_object.fold))
+                                 fold=unwrap_python_like_object(python_like_object.fold, clone_map, default)))
 
     if isinstance(python_like_object, PythonDate):
-        return datetime.date(unwrap_python_like_object(python_like_object.year),
-                             unwrap_python_like_object(python_like_object.month),
-                             unwrap_python_like_object(python_like_object.day))
+        return clone_map.add_clone(python_like_object, datetime.date(unwrap_python_like_object(python_like_object.year, clone_map, default),
+                             unwrap_python_like_object(python_like_object.month, clone_map, default),
+                             unwrap_python_like_object(python_like_object.day, clone_map, default)))
 
     if isinstance(python_like_object, PythonTime):
-        return datetime.time(unwrap_python_like_object(python_like_object.hour),
-                             unwrap_python_like_object(python_like_object.minute),
-                             unwrap_python_like_object(python_like_object.second),
-                             unwrap_python_like_object(python_like_object.microsecond),
+        return clone_map.add_clone(python_like_object, datetime.time(unwrap_python_like_object(python_like_object.hour, clone_map, default),
+                             unwrap_python_like_object(python_like_object.minute, clone_map, default),
+                             unwrap_python_like_object(python_like_object.second, clone_map, default),
+                             unwrap_python_like_object(python_like_object.microsecond, clone_map, default),
                              tzinfo=None,  # TODO: Support timezones
-                             fold=unwrap_python_like_object(python_like_object.fold))
+                             fold=unwrap_python_like_object(python_like_object.fold, clone_map, default)))
 
     if isinstance(python_like_object, PythonTimeDelta):
-        return datetime.timedelta(unwrap_python_like_object(python_like_object.days),
-                                  unwrap_python_like_object(python_like_object.seconds),
-                                  unwrap_python_like_object(python_like_object.microseconds))
+        return clone_map.add_clone(python_like_object, datetime.timedelta(unwrap_python_like_object(python_like_object.days, clone_map, default),
+                                  unwrap_python_like_object(python_like_object.seconds, clone_map, default),
+                                  unwrap_python_like_object(python_like_object.microseconds, clone_map, default)))
 
     return None
 
 def get_java_type_for_python_type(the_type):
-    from ai.timefold.jpyinterpreter.types import PythonLikeType
+    from ai.timefold.jpyinterpreter.types import BuiltinTypes
     global type_to_compiled_java_class
 
     if isinstance(the_type, type):
@@ -675,11 +753,11 @@ def get_java_type_for_python_type(the_type):
             maybe_type = globals()[the_type]
             if isinstance(maybe_type, type):
                 return get_java_type_for_python_type(maybe_type)
-            return PythonLikeType.getBaseType()
+            return BuiltinTypes.BASE_TYPE
         except:
-            return PythonLikeType.getBaseType()
+            return BuiltinTypes.BASE_TYPE
     # return base type, since users could use something like 1
-    return PythonLikeType.getBaseType()
+    return BuiltinTypes.BASE_TYPE
 
 
 def get_default_args(func):
@@ -692,10 +770,8 @@ def get_default_args(func):
 
 
 def copy_type_annotations(hinted_object, default_args, vargs_name, kwargs_name):
-    from java.util import List, HashMap
-    from java.lang import Class as JavaClass
+    from java.util import HashMap, Collections
     from ai.timefold.jpyinterpreter import TypeHint
-    from ai.timefold.jpyinterpreter.types.wrappers import OpaquePythonReference, JavaObjectWrapper, CPythonType # noqa
 
     global type_to_compiled_java_class
 
@@ -712,7 +788,7 @@ def copy_type_annotations(hinted_object, default_args, vargs_name, kwargs_name):
             out.put(name, TypeHint.withoutAnnotations(type_to_compiled_java_class[dict]))
             continue
         hint_type = type_hint
-        hint_annotations = List.of()
+        hint_annotations = Collections.emptyList()
         if get_origin(type_hint) is Annotated:
             hint_type = get_args(type_hint)[0]
             hint_annotations = get_java_annotations(type_hint.__metadata__)
@@ -720,18 +796,42 @@ def copy_type_annotations(hinted_object, default_args, vargs_name, kwargs_name):
         if name in default_args:
             hint_type = Union[hint_type, type(default_args[name])]
 
-        java_type = None
-        if hint_type in type_to_compiled_java_class:
-            java_type = type_to_compiled_java_class[hint_type]
+        java_type_hint = get_java_type_hint(hint_type)
+        out.put(name, java_type_hint.addAnnotations(hint_annotations))
+
+    return out
+
+
+def get_java_type_hint(hint_type):
+    from typing import get_args as get_generic_args
+    from java.lang import Class as JavaClass
+    from java.util import Collections
+    from ai.timefold.jpyinterpreter import TypeHint
+    from ai.timefold.jpyinterpreter.types import BuiltinTypes
+    from ai.timefold.jpyinterpreter.types.wrappers import JavaObjectWrapper
+    origin_type = get_origin(hint_type)
+    if origin_type is None:
+        # Happens for Callable[[parameter_types], return_type]
+        if isinstance(hint_type, list) or isinstance(hint_type, tuple):
+            return TypeHint(BuiltinTypes.BASE_TYPE, Collections.emptyList())
+        # Not a generic type
+        elif hint_type in type_to_compiled_java_class:
+            return TypeHint(type_to_compiled_java_class[hint_type], Collections.emptyList())
         elif isinstance(hint_type, (JClass, JavaClass)):
             java_type = JavaObjectWrapper.getPythonTypeForClass(hint_type)
             type_to_compiled_java_class[hint_type] = java_type
+            return TypeHint(java_type, Collections.emptyList())
         elif isinstance(hint_type, (type, str)):
-            java_type = get_java_type_for_python_type(hint_type)
+            return TypeHint(get_java_type_for_python_type(hint_type), Collections.emptyList())
+        else:
+            return TypeHint(BuiltinTypes.BASE_TYPE, Collections.emptyList())
 
-        if java_type is not None:
-            out.put(name, TypeHint(java_type, hint_annotations))
-    return out
+    origin_type_hint = get_java_type_hint(origin_type)
+    generic_args = get_generic_args(hint_type)
+    generic_arg_type_hint_array = JArray(TypeHint)(len(generic_args))
+    for i in range(len(generic_args)):
+        generic_arg_type_hint_array[i] = get_java_type_hint(generic_args[i])
+    return TypeHint(origin_type_hint.type(), Collections.emptyList(), generic_arg_type_hint_array)
 
 
 def get_java_annotations(annotated_metadata: List[Any]):
@@ -739,7 +839,14 @@ def get_java_annotations(annotated_metadata: List[Any]):
     out = ArrayList()
     for metadata in annotated_metadata:
         if not isinstance(metadata, JavaAnnotation):
-            continue
+            if isinstance(metadata, type) and issubclass(metadata, JavaAnnotation):
+                try:
+                    metadata = metadata()
+                except TypeError as e:
+                    raise ValueError(f'The annotation class {metadata.__name__} has required attributes.'
+                                     f'Create an instance using {metadata.__name__}(...).') from e
+            else:
+                continue
         out.add(convert_java_annotation(metadata))
     return out
 
@@ -753,12 +860,16 @@ def convert_java_annotation(java_annotation: JavaAnnotation):
         attribute_type = annotation_method.getReturnType()
         java_attribute_value = convert_annotation_value(java_annotation.annotation_type, attribute_type,
                                                         attribute_name, attribute_value)
-        annotation_values.put(attribute_name, java_attribute_value)
+        if java_attribute_value is not None:
+            annotation_values.put(attribute_name, java_attribute_value)
     return AnnotationMetadata(java_annotation.annotation_type.class_, annotation_values)
 
 
 def convert_annotation_value(annotation_type: JClass, attribute_type: JClass, attribute_name: str, attribute_value: Any):
     from jpype import JBoolean, JByte, JChar, JShort, JInt, JLong, JFloat, JDouble, JString, JArray
+
+    if attribute_value is None:
+        return None
     # See 9.6.1 of the Java spec for possible element values of annotations
     if attribute_type == JClass('boolean').class_:
         return JBoolean(attribute_value)
@@ -779,12 +890,21 @@ def convert_annotation_value(annotation_type: JClass, attribute_type: JClass, at
     elif attribute_type == JClass('java.lang.String').class_:
         return JString(attribute_value)
     elif attribute_type == JClass('java.lang.Class').class_:
-        if isinstance(attribute_value, type):
+        if isinstance(attribute_value, JClass('java.lang.Class')):
+            return attribute_value
+        elif isinstance(attribute_value, type):
             return get_java_type_for_python_type(attribute_type)
         elif isinstance(attribute_value, FunctionType):
-            generic_type = annotation_type.class_.getDeclaredMethod(attribute_name).getGenericReturnType()
-            function_type_and_generic_args = resolve_java_function_type_as_tuple(generic_type)
-            return translate_python_bytecode_to_java_bytecode(attribute_value, *function_type_and_generic_args)
+            method = annotation_type.class_.getDeclaredMethod(attribute_name)
+            generic_type = method.getGenericReturnType()
+            try:
+                function_type_and_generic_args = resolve_java_function_type_as_tuple(generic_type)
+                instance = translate_python_bytecode_to_java_bytecode(attribute_value, *function_type_and_generic_args)
+                return generate_proxy_class_for_translated_function(function_type_and_generic_args[0], instance)
+            except ValueError:
+                raw_type = resolve_raw_type(generic_type.getActualTypeArguments()[0])
+                instance = translate_python_bytecode_to_java_bytecode(attribute_value, raw_type)
+                return generate_proxy_class_for_translated_function(raw_type, instance)
         else:
             raise ValueError(f'Illegal value for {attribute_name} in annotation {annotation_type}: {attribute_value}')
     elif attribute_type.isEnum():
@@ -805,6 +925,17 @@ def convert_annotation_value(annotation_type: JClass, attribute_type: JClass, at
                          f'{attribute_name} on annotation type {annotation_type}.')
 
 
+def generate_proxy_class_for_translated_function(interface_type, translated_function):
+    from ai.timefold.jpyinterpreter import InterfaceProxyGenerator
+    return InterfaceProxyGenerator.generateProxyForFunction(interface_type, translated_function)
+
+
+def generate_proxy_class_for_translated_class(interface_type, translated_class):
+    from ai.timefold.jpyinterpreter import InterfaceProxyGenerator
+    return InterfaceProxyGenerator.generateProxyForClass(interface_type, translated_class)
+
+
+
 def resolve_java_function_type_as_tuple(function_class) -> Tuple[JClass]:
     from java.lang.reflect import ParameterizedType, WildcardType
     if isinstance(function_class, WildcardType):
@@ -813,6 +944,7 @@ def resolve_java_function_type_as_tuple(function_class) -> Tuple[JClass]:
         return resolve_java_type_as_tuple(function_class.getActualTypeArguments()[0])
     else:
         raise ValueError(f'Unable to determine interface for type {function_class}')
+
 
 def resolve_java_type_as_tuple(generic_type) -> Tuple[JClass]:
     from java.lang.reflect import ParameterizedType, WildcardType
@@ -831,13 +963,12 @@ def resolve_raw_types(*type_arguments) -> Tuple[JClass]:
 
 
 def resolve_raw_type(type_argument) -> JClass:
-    from java.lang.reflect import ParameterizedType
+    from java.lang.reflect import ParameterizedType, WildcardType
     if isinstance(type_argument, ParameterizedType):
         return resolve_raw_type(type_argument.getRawType())
-    elif isinstance(type_argument, JClass):
-        return type_argument
-    else:
-        raise ValueError(f'Unable to determine raw type for type {type_argument}')
+    elif isinstance(type_argument, WildcardType):
+        return resolve_raw_type(type_argument.getUpperBounds()[0])
+    return type_argument
 
 
 def convert_annotation_array_elements(annotation_type: JClass, component_type: JClass, attribute_name: str,
@@ -910,7 +1041,6 @@ def copy_globals(globals_dict, co_names):
         if key not in key_set and key in co_names:
             key_set.add(key)
             out.put(key, convert_to_java_python_like_object(value, instance_map))
-
     return out
 
 
@@ -1277,7 +1407,10 @@ def translate_python_class_to_java_class(python_class):
         type_to_compiled_java_class[python_class] = python_class_java_type
         return python_class_java_type
 
-    type_to_compiled_java_class[python_class] = None
+    prepared_class_info = PythonClassTranslator.getPreparedClassInfo(python_class.__name__,
+                                                                     python_class.__module__,
+                                                                     python_class.__qualname__)
+    type_to_compiled_java_class[python_class] = prepared_class_info.type()
     methods = []
     for method_name in python_class.__dict__:
         method = inspect.getattr_static(python_class, method_name)
@@ -1368,8 +1501,7 @@ def translate_python_class_to_java_class(python_class):
     python_compiled_class.staticAttributeNameToObject = static_attributes_map
     python_compiled_class.staticAttributeNameToClassInstance = static_attributes_to_class_instance_map
 
-    out = PythonClassTranslator.translatePythonClass(python_compiled_class)
-    type_to_compiled_java_class[python_class] = out
+    out = PythonClassTranslator.translatePythonClass(python_compiled_class, prepared_class_info)
     PythonClassTranslator.setSelfStaticInstances(python_compiled_class, out.getJavaClass(), out,
                                                  CPythonBackedPythonInterpreter.pythonObjectIdToConvertedObjectMap)
     return out

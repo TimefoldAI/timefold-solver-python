@@ -78,7 +78,7 @@ long_description = (this_directory / "README.md").read_text()
 
 setup(
     name='timefold-solver',
-    version='1.7.0a0',
+    version='1.8.0a0',
     license='Apache License Version 2.0',
     license_file='LICENSE',
     description='An AI constraint solver that optimizes planning and scheduling problems',
@@ -97,7 +97,8 @@ setup(
         'License :: OSI Approved :: Apache Software License',
         'Operating System :: OS Independent'
     ],
-    packages=['timefold.solver', 'timefold.solver.config', 'timefold.solver.constraint', 'timefold.solver.score', 'timefold.solver.types', 'timefold.solver.test',
+    packages=['timefold.solver', 'timefold.solver.config', 'timefold.solver.constraint', 'timefold.solver.score',
+              'timefold.solver.types', 'timefold.solver.test', 'timefold.solver.valuerange',
               'jpyinterpreter',
               'java-stubs', 'jpype-stubs', 'ai-stubs'],
     package_dir={

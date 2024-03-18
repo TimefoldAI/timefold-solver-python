@@ -195,3 +195,53 @@ def test_count():
     count_verifier.verify((1, 1, 3, 1), 1, expected_result=3)
     count_verifier.verify((), 1, expected_result=0)
 
+
+def test_compare_methods():
+    def less_than(a: tuple, b: tuple):
+        return a < b
+
+    def greater_than(a: tuple, b: tuple):
+        return a > b
+
+    def less_than_or_equal(a: tuple, b: tuple):
+        return a <= b
+
+    def greater_than_or_equal(a: tuple, b: tuple):
+        return a >= b
+
+    less_than_verifier = verifier_for(less_than)
+    greater_than_verifier = verifier_for(greater_than)
+    less_than_or_equal_verifier = verifier_for(less_than_or_equal)
+    greater_than_or_equal_verifier = verifier_for(greater_than_or_equal)
+
+    less_than_verifier.verify((1, 1), (1, 1), expected_result=False)
+    less_than_verifier.verify((1, 1), (1, 2), expected_result=True)
+    less_than_verifier.verify((1, 2), (2, 1), expected_result=True)
+    less_than_verifier.verify((1, 1), (1, 1, 1), expected_result=True)
+    less_than_verifier.verify((2, 1), (1, 2), expected_result=False)
+    less_than_verifier.verify((1, 2), (1, 1), expected_result=False)
+    less_than_verifier.verify((1, 1, 1), (1, 1), expected_result=False)
+
+    greater_than_verifier.verify((1, 1), (1, 1), expected_result=False)
+    greater_than_verifier.verify((1, 1), (1, 2), expected_result=False)
+    greater_than_verifier.verify((1, 2), (2, 1), expected_result=False)
+    greater_than_verifier.verify((1, 1), (1, 1, 1), expected_result=False)
+    greater_than_verifier.verify((2, 1), (1, 2), expected_result=True)
+    greater_than_verifier.verify((1, 2), (1, 1), expected_result=True)
+    greater_than_verifier.verify((1, 1, 1), (1, 1), expected_result=True)
+
+    less_than_or_equal_verifier.verify((1, 1), (1, 1), expected_result=True)
+    less_than_or_equal_verifier.verify((1, 1), (1, 2), expected_result=True)
+    less_than_or_equal_verifier.verify((1, 2), (2, 1), expected_result=True)
+    less_than_or_equal_verifier.verify((1, 1), (1, 1, 1), expected_result=True)
+    less_than_or_equal_verifier.verify((2, 1), (1, 2), expected_result=False)
+    less_than_or_equal_verifier.verify((1, 2), (1, 1), expected_result=False)
+    less_than_or_equal_verifier.verify((1, 1, 1), (1, 1), expected_result=False)
+
+    greater_than_or_equal_verifier.verify((1, 1), (1, 1), expected_result=True)
+    greater_than_or_equal_verifier.verify((1, 1), (1, 2), expected_result=False)
+    greater_than_or_equal_verifier.verify((1, 2), (2, 1), expected_result=False)
+    greater_than_or_equal_verifier.verify((1, 1), (1, 1, 1), expected_result=False)
+    greater_than_or_equal_verifier.verify((2, 1), (1, 2), expected_result=True)
+    greater_than_or_equal_verifier.verify((1, 2), (1, 1), expected_result=True)
+    greater_than_or_equal_verifier.verify((1, 1, 1), (1, 1), expected_result=True)

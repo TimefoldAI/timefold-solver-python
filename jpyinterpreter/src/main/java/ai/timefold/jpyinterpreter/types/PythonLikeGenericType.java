@@ -28,7 +28,7 @@ public class PythonLikeGenericType extends PythonLikeType {
                     PythonClassTranslator.getJavaMethodName(fieldName),
                     origin.getJavaTypeInternalName(),
                     knownFunctionType.getJavaTypeDescriptor(),
-                    knownFunctionType, false);
+                    knownFunctionType, false, false);
             return Optional.of(out);
         }
     }

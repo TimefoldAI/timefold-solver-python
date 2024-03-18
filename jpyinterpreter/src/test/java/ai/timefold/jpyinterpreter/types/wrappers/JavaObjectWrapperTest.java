@@ -14,6 +14,7 @@ import ai.timefold.jpyinterpreter.types.numeric.PythonBoolean;
 import ai.timefold.jpyinterpreter.types.numeric.PythonInteger;
 import ai.timefold.jpyinterpreter.types.wrappers.inaccessible.PublicInterface;
 
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class JavaObjectWrapperTest {
@@ -58,8 +59,14 @@ public class JavaObjectWrapperTest {
     void testCallingRecordGetter() {
         TestObject object = new TestObject("My name");
         JavaObjectWrapper wrapper = new JavaObjectWrapper(object);
-        PythonLikeObject result = wrapper.$getAttributeOrNull("name");
-        assertThat(result).isEqualTo(PythonString.valueOf("My name"));
+        PythonLikeObject result = wrapper.$method$__getattribute__(PythonString.valueOf("name"));
+        if (result instanceof PythonLikeFunction getter) {
+            assertThat(getter.$call(List.of(), Map.of(), null))
+                    .isEqualTo(PythonString.valueOf("My name"));
+        } else {
+            Assertions.fail("Not an instance of a function");
+        }
+
     }
 
     @Test

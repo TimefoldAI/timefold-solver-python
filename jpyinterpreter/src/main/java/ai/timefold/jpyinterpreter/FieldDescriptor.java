@@ -1,52 +1,10 @@
 package ai.timefold.jpyinterpreter;
 
-import java.util.Objects;
-
 import ai.timefold.jpyinterpreter.types.PythonLikeType;
 
-public class FieldDescriptor {
-
-    final String pythonFieldName;
-    final String javaFieldName;
-    final String declaringClassInternalName;
-    final String javaFieldTypeDescriptor;
-    final PythonLikeType fieldPythonLikeType;
-    final boolean isTrueFieldDescriptor;
-
-    public FieldDescriptor(String pythonFieldName, String javaFieldName,
-            String declaringClassInternalName, String javaFieldTypeDescriptor,
-            PythonLikeType fieldPythonLikeType, boolean isTrueFieldDescriptor) {
-        this.pythonFieldName = pythonFieldName;
-        this.javaFieldName = javaFieldName;
-        this.declaringClassInternalName = declaringClassInternalName;
-        this.javaFieldTypeDescriptor = javaFieldTypeDescriptor;
-        this.fieldPythonLikeType = fieldPythonLikeType;
-        this.isTrueFieldDescriptor = isTrueFieldDescriptor;
-    }
-
-    public String getPythonFieldName() {
-        return pythonFieldName;
-    }
-
-    public String getJavaFieldName() {
-        return javaFieldName;
-    }
-
-    public String getDeclaringClassInternalName() {
-        return declaringClassInternalName;
-    }
-
-    public String getJavaFieldTypeDescriptor() {
-        return javaFieldTypeDescriptor;
-    }
-
-    public PythonLikeType getFieldPythonLikeType() {
-        return fieldPythonLikeType;
-    }
-
-    public boolean isTrueFieldDescriptor() {
-        return isTrueFieldDescriptor;
-    }
+public record FieldDescriptor(String pythonFieldName, String javaFieldName, String declaringClassInternalName,
+        String javaFieldTypeDescriptor, PythonLikeType fieldPythonLikeType,
+        boolean isTrueFieldDescriptor, boolean isJavaType) {
 
     @Override
     public boolean equals(Object o) {
@@ -62,12 +20,6 @@ public class FieldDescriptor {
                 && javaFieldTypeDescriptor.equals(that.javaFieldTypeDescriptor)
                 && fieldPythonLikeType.equals(that.fieldPythonLikeType)
                 && isTrueFieldDescriptor == that.isTrueFieldDescriptor;
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(pythonFieldName, javaFieldName, declaringClassInternalName, javaFieldTypeDescriptor,
-                fieldPythonLikeType, isTrueFieldDescriptor);
     }
 
     @Override

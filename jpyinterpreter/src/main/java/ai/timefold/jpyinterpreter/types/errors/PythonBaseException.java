@@ -63,20 +63,6 @@ public class PythonBaseException extends RuntimeException implements PythonLikeO
         $setAttribute("__cause__", PythonNone.INSTANCE);
     }
 
-    /**
-     * Python errors are supposed to be extremely low cost, to the point you are encouraged
-     * to write code with try...except instead of if...then. See
-     * <a href="https://docs.python.org/3/glossary.html#term-EAFP">the Python glossary</a>
-     * for more information.
-     *
-     * @return this
-     */
-    @Override
-    public Throwable fillInStackTrace() {
-        // Do nothing
-        return this;
-    }
-
     @Override
     public Throwable initCause(Throwable cause) {
         super.initCause(cause);

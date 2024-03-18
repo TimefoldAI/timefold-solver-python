@@ -3,60 +3,43 @@ import timefold.solver.score
 import timefold.solver.config
 import timefold.solver.constraint
 
+from dataclasses import dataclass, field
+from typing import Annotated, List
+
+
+class BaseClass:
+    pass
+
 
 @timefold.solver.planning_entity
+@dataclass
 class InverseRelationEntity:
-    def __init__(self, code, value=None):
-        self.code = code
-        self.value = value
+    code: str
+    value: Annotated[BaseClass, timefold.solver.PlanningVariable(value_range_provider_refs=['value_range'])] = \
+        field(default=None)
 
-    @timefold.solver.planning_variable(object, ['value_range'])
-    def get_value(self):
-        return self.value
-
-    def set_value(self, value):
-        self.value = value
+    def __hash__(self):
+        return hash(self.code)
 
 
 @timefold.solver.planning_entity
-class InverseRelationValue:
-    def __init__(self, code, entities=None):
-        self.code = code
-        if entities is None:
-            self.entities = []
-        else:
-            self.entities = entities
-
-    @timefold.solver.inverse_relation_shadow_variable(InverseRelationEntity, source_variable_name='value')
-    def get_entities(self):
-        return self.entities
-
-    def set_entities(self, entities):
-        self.entities = entities
+@dataclass
+class InverseRelationValue(BaseClass):
+    code: str
+    entities: Annotated[List[InverseRelationEntity],
+                        timefold.solver.InverseRelationShadowVariable(source_variable_name='value')] = \
+        field(default_factory=list)
 
 
 @timefold.solver.planning_solution
+@dataclass
 class InverseRelationSolution:
-    def __init__(self, values, entities, score=None):
-        self.values = values
-        self.entities = entities
-        self.score = score
-
-    @timefold.solver.planning_entity_collection_property(InverseRelationEntity)
-    def get_entities(self):
-        return self.entities
-
-    @timefold.solver.planning_entity_collection_property(InverseRelationValue)
-    @timefold.solver.value_range_provider('value_range')
-    def get_values(self):
-        return self.values
-
-    @timefold.solver.planning_score(timefold.solver.score.SimpleScore)
-    def get_score(self):
-        return self.score
-
-    def set_score(self, score):
-        self.score = score
+    values: Annotated[List[InverseRelationValue],
+                      timefold.solver.PlanningEntityCollectionProperty,
+                      timefold.solver.ValueRangeProvider(id='value_range')]
+    entities: Annotated[List[InverseRelationEntity],
+                        timefold.solver.PlanningEntityCollectionProperty]
+    score: Annotated[timefold.solver.score.SimpleScore, timefold.solver.PlanningScore] = field(default=None)
 
 
 @timefold.solver.constraint_provider
@@ -69,14 +52,17 @@ def inverse_relation_constraints(constraint_factory: timefold.solver.constraint.
 
 
 def test_inverse_relation():
-    termination = timefold.solver.config.solver.termination.TerminationConfig()
-    termination.setBestScoreLimit('0')
-    solver_config = timefold.solver.config.solver.SolverConfig() \
-        .withSolutionClass(InverseRelationSolution) \
-        .withEntityClasses(InverseRelationEntity, InverseRelationValue) \
-        .withConstraintProviderClass(inverse_relation_constraints) \
-        .withTerminationConfig(termination)
-    solver = timefold.solver.solver_factory_create(solver_config).buildSolver()
+    solver_config = timefold.solver.config.SolverConfig(
+        solution_class=InverseRelationSolution,
+        entity_class_list=[InverseRelationEntity, InverseRelationValue],
+        score_director_factory_config=timefold.solver.config.ScoreDirectorFactoryConfig(
+            constraint_provider_function=inverse_relation_constraints
+        ),
+        termination_config=timefold.solver.config.TerminationConfig(
+            best_score_limit='0'
+        )
+    )
+    solver = timefold.solver.SolverFactory.create(solver_config).build_solver()
     solution = solver.solve(InverseRelationSolution(
         [
             InverseRelationValue('A'),
@@ -89,7 +75,7 @@ def test_inverse_relation():
             InverseRelationEntity('3'),
         ]
     ))
-    assert solution.score.getScore() == 0
+    assert solution.score.score() == 0
     visited_set = set()
     for value in solution.values:
         assert len(value.entities) == 1

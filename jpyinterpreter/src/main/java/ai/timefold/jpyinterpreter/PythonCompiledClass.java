@@ -53,6 +53,10 @@ public class PythonCompiledClass {
     public Map<String, OpaquePythonReference> staticAttributeNameToClassInstance;
 
     public String getGeneratedClassBaseName() {
+        return getGeneratedClassBaseName(module, qualifiedName);
+    }
+
+    public static String getGeneratedClassBaseName(String module, String qualifiedName) {
         if (module == null || module.isEmpty()) {
             return JavaIdentifierUtils.sanitizeClassName((qualifiedName != null) ? qualifiedName : "PythonClass");
         }

@@ -1639,8 +1639,8 @@ public class GlobalBuiltins {
     public static PythonLikeFunction importFunction(PythonInterpreter pythonInterpreter) {
         return (positionalArguments, namedArguments, callerInstance) -> {
             PythonString name;
-            PythonLikeDict globals;
-            PythonLikeDict locals;
+            PythonLikeDict<PythonString, PythonLikeObject> globals;
+            PythonLikeDict<PythonString, PythonLikeObject> locals;
             PythonLikeTuple fromlist;
             PythonInteger level;
 

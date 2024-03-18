@@ -3,20 +3,16 @@ import timefold.solver.score
 import timefold.solver.config
 import timefold.solver.constraint
 
+from dataclasses import dataclass, field
+from typing import Annotated, List
+
 
 def test_solver_events():
     @timefold.solver.planning_entity
+    @dataclass
     class Entity:
-        def __init__(self, code, value=None):
-            self.code = code
-            self.value = value
-
-        @timefold.solver.planning_variable(int, value_range_provider_refs=['value_range'])
-        def get_value(self):
-            return self.value
-
-        def set_value(self, value):
-            self.value = value
+        code: str
+        value: Annotated[int, timefold.solver.PlanningVariable] = field(default=None)
 
     @timefold.solver.constraint_provider
     def my_constraints(constraint_factory: timefold.solver.constraint.ConstraintFactory):
@@ -26,56 +22,41 @@ def test_solver_events():
         ]
 
     @timefold.solver.planning_solution
+    @dataclass
     class Solution:
-        def __init__(self, entity, value_range, score=None):
-            self.entity = entity
-            self.value_range = value_range
-            self.score = score
+        entities: Annotated[List[Entity], timefold.solver.PlanningEntityCollectionProperty]
+        value_range: Annotated[List[int], timefold.solver.ValueRangeProvider]
+        score: Annotated[timefold.solver.score.SimpleScore, timefold.solver.PlanningScore] = field(default=None)
 
-        @timefold.solver.planning_entity_collection_property(Entity)
-        def get_entity(self):
-            return self.entity
-
-        @timefold.solver.problem_fact_collection_property(int)
-        @timefold.solver.value_range_provider(range_id='value_range')
-        def get_value_range(self):
-            return self.value_range
-
-        @timefold.solver.planning_score(timefold.solver.score.SimpleScore)
-        def get_score(self) -> timefold.solver.score.SimpleScore:
-            return self.score
-
-        def set_score(self, score):
-            self.score = score
-
-
-    solver_config = timefold.solver.config.solver.SolverConfig()
-    termination_config = timefold.solver.config.solver.termination.TerminationConfig()
-    termination_config.setBestScoreLimit('6')
-    solver_config.withSolutionClass(Solution) \
-        .withEntityClasses(Entity) \
-        .withConstraintProviderClass(my_constraints) \
-        .withTerminationConfig(termination_config)
+    solver_config = timefold.solver.config.SolverConfig(
+        solution_class=Solution,
+        entity_class_list=[Entity],
+        score_director_factory_config=timefold.solver.config.ScoreDirectorFactoryConfig(
+            constraint_provider_function=my_constraints,
+        ),
+        termination_config=timefold.solver.config.TerminationConfig(
+            best_score_limit='6'
+        )
+    )
 
     problem: Solution = Solution([Entity('A'), Entity('B')], [1, 2, 3])
     score_list = []
     solution_list = []
 
     def on_best_solution_changed(event):
-        solution_list.append(event.getNewBestSolution())
-        score_list.append(event.getNewBestScore())
+        solution_list.append(event.new_best_solution)
+        score_list.append(event.new_best_score)
 
-    solver = timefold.solver.solver_factory_create(solver_config).buildSolver()
-    solver.addEventListener(on_best_solution_changed)
+    solver = timefold.solver.SolverFactory.create(solver_config).build_solver()
+    solver.add_event_listener(on_best_solution_changed)
     solution = solver.solve(problem)
 
-
-    assert solution.get_score().getScore() == 6
-    assert solution.entity[0].value == 3
-    assert solution.entity[1].value == 3
+    assert solution.score.score() == 6
+    assert solution.entities[0].value == 3
+    assert solution.entities[1].value == 3
     assert len(score_list) == len(solution_list)
     assert len(solution_list) == 1
-    assert score_list[0].getScore() == 6
-    assert solution_list[0].get_score().getScore() == 6
-    assert solution_list[0].entity[0].value == 3
-    assert solution_list[0].entity[1].value == 3
+    assert score_list[0].score() == 6
+    assert solution_list[0].score.score() == 6
+    assert solution_list[0].entities[0].value == 3
+    assert solution_list[0].entities[1].value == 3
