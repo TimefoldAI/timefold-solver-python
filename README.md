@@ -11,7 +11,7 @@ Timefold Solver is *an AI constraint solver for Python* to optimize
 the Vehicle Routing Problem, Employee Rostering, Maintenance Scheduling, Task Assignment, School Timetabling,
 Cloud Optimization, Conference Scheduling, Job Shop Scheduling, Bin Packing and many more planning problems.
 
-Using Timefold in Python is significantly slower than using Timefold in Java or Kotlin.
+Using Timefold Solver in Python is significantly slower than using Timefold Solver in Java or Kotlin.
 
 ## Requirements
 
@@ -22,18 +22,15 @@ Using Timefold in Python is significantly slower than using Timefold in Java or 
 
 ### Domain
 
-In Timefold, the domain has three parts:
+In Timefold Solver, the domain has three parts:
 
-- Problem Facts, which do not change
-- Planning Entities, which have one or more planning variables
-- Planning Solution, which define the facts and entities of the problem
+- Problem Facts, which do not change.
+- Planning Entities, which have one or more planning variables.
+- Planning Solution, which define the facts and entities of the problem.
 
 #### Problem Facts
 
-> The examples below use dataclasses to reduce code,
-> but you can also use regular Python classes.
-
-Problem facts can be any Python class, which are used to describe unchanging facts in your problem
+Problem facts can be any Python class, which are used to describe unchanging facts in your problem:
 
 ```python
 from dataclasses import dataclass
@@ -49,7 +46,7 @@ class Timeslot:
 
 #### Planning Entities
 
-To declare Planning Entities, use the `@planning_entity` decorator along with annotations
+To declare Planning Entities, use the `@planning_entity` decorator along with annotations:
 
 ```python
 from dataclasses import dataclass, field
@@ -67,13 +64,13 @@ class Lesson:
     room: Annotated[Room, PlanningVariable] = field(default=None)
 ```
 
-- The `PlanningVariable` annotation is used to mark what fields Timefold is allowed to change.
+- The `PlanningVariable` annotation is used to mark what fields the solver is allowed to change.
 
 - The `PlanningId` annotation is used to uniquely identify an entity object of a particular class. The same Planning Id can be used on entities of different classes, but the ids of all entities in the same class must be different.
 
 #### Planning Solution
 
-To declare the Planning Solution, use the `@planning_solution` decorator
+To declare the Planning Solution, use the `@planning_solution` decorator:
 
 ```python
 from dataclasses import dataclass, field
@@ -84,15 +81,15 @@ from timefold.solver.score import HardSoftScore
 @planning_solution
 @dataclass
 class TimeTable:
-    timeslot_list: Annotated[list[Timeslot], ProblemFactCollectionProperty, ValueRangeProvider]
-    room_list: Annotated[list[Room], ProblemFactCollectionProperty, ValueRangeProvider]
-    lesson_list: Annotated[list[Lesson], PlanningEntityCollectionProperty]
+    timeslots: Annotated[list[Timeslot], ProblemFactCollectionProperty, ValueRangeProvider]
+    rooms: Annotated[list[Room], ProblemFactCollectionProperty, ValueRangeProvider]
+    lessons: Annotated[list[Lesson], PlanningEntityCollectionProperty]
     score: Annotated[HardSoftScore, PlanningScore] = field(default=None)
 ```
 
 - The `ValueRangeProvider` annotation is used to denote a field that contains possible planning values for a `PlanningVariable`.
 
-- The`ProblemFactCollection` annotation is used to denote a field that contains problem facts. This allows these facts to be queried in your constraints
+- The`ProblemFactCollection` annotation is used to denote a field that contains problem facts. This allows these facts to be queried in your constraints.
 
 - The `PlanningEntityCollection` annotation is used to denote a field that contains planning entities. The planning variables of these entities will be modified during solving. 
 
@@ -100,7 +97,8 @@ class TimeTable:
 
 ### Constraints
 
-You define your constraints by using the ConstraintFactory
+You define your constraints by using the ConstraintFactory:
+
 ```python
 from domain import Lesson
 from timefold.solver import constraint_provider
