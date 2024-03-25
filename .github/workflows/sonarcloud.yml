@@ -19,12 +19,7 @@ defaults:
 
 jobs:
   sonarcloud-analysis:
-    strategy:
-      matrix:
-        os: [ ubuntu-latest ]
-        java-version: [ 17 ]  # JaCoCo segfaults Java 11 JVM but not Java 17 JVM when Python tests finish
-      fail-fast: false
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
 
     steps:
       # Need to check for stale repo, since Github is not aware of the build chain and therefore doesn't automate it.
@@ -67,7 +62,7 @@ jobs:
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
-          java-version: ${{ matrix.java-version }}
+          java-version: 17
           distribution: 'temurin'
       - name: Cache SonarCloud packages
         uses: actions/cache@v4
@@ -81,26 +76,14 @@ jobs:
           path: ~/.m2
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-m2
-      # Need to install both Python 3.9, Python 3.10 and Python 3.11 for tox (has to be in the same run)
-      # Feature Request for setup action: https://github.com/actions/setup-python/issues/98
-      - name: Python 3.9 Setup
+          # Need to install all Python versions in the same run for tox
+      - name: Python 3.9, Python 3.10, Python 3.11 Setup
         uses: actions/setup-python@v4
         with:
-          python-version: '3.9'
-          cache: 'pip'
-          cache-dependency-path: |
-            **/setup.py
-      - name: Python 3.10 Setup
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-          cache: 'pip'
-          cache-dependency-path: |
-            **/setup.py
-      - name: Python 3.11 Setup
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
+          python-version: |
+            3.9
+            3.10
+            3.11
           cache: 'pip'
           cache-dependency-path: |
             **/setup.py
