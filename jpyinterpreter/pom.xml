@@ -11,7 +11,7 @@
 
   <properties>
     <java.module.name>ai.timefold.jpyinterpreter</java.module.name>
-    <version.ow2.asm>9.6</version.ow2.asm>
+    <version.ow2.asm>9.7</version.ow2.asm>
   </properties>
 
   <dependencyManagement>
