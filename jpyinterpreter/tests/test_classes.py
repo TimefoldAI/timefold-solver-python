@@ -902,7 +902,7 @@ def test_class_annotations():
     assert annotations[0].forRemoval()
     assert annotations[0].since() == '0.0.0'
 
-    annotations = translated_class.getField('$field$my_field').getAnnotations()
+    annotations = translated_class.getField('my_field').getAnnotations()
     assert len(annotations) == 2
     assert isinstance(annotations[0], Deprecated)
     assert annotations[0].forRemoval()
@@ -915,3 +915,28 @@ def test_class_annotations():
     assert isinstance(annotations[0], Deprecated)
     assert annotations[0].forRemoval() is False
     assert annotations[0].since() == '2.0.0'
+
+
+def test_java_class_as_field_type():
+    from ai.timefold.jpyinterpreter import TypeHint
+    from jpyinterpreter import translate_python_class_to_java_class
+
+    class A:
+        my_field: TypeHint
+
+    translated_class = translate_python_class_to_java_class(A).getJavaClass()
+    field_type = translated_class.getField('my_field').getType()
+    assert field_type.getName() == TypeHint.class_.getName()
+
+
+def test_generic_field_type():
+    from typing import List
+    from ai.timefold.jpyinterpreter.types import PythonString
+    from jpyinterpreter import translate_python_class_to_java_class
+
+    class A:
+        my_field: List[str]
+
+    translated_class = translate_python_class_to_java_class(A).getJavaClass()
+    field_type = translated_class.getField('my_field').getGenericType()
+    assert field_type.getActualTypeArguments()[0].getName() == PythonString.class_.getName()

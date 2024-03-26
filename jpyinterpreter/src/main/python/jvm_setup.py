@@ -4,8 +4,6 @@ import jpype.imports
 import importlib.resources
 from typing import List
 
-from jpype import JClass
-
 
 def extract_python_translator_jars() -> list[str]:
     """Extracts and return a list of the Python Translator Java dependencies
@@ -76,7 +74,7 @@ class GetPythonObjectType:
 class GetAttributeOnPythonObject:
     @jpype.JOverride()
     def apply(self, python_object, attribute_name):
-        from .python_to_java_bytecode_translator import convert_to_java_python_like_object
+        from .conversions import convert_to_java_python_like_object
         if not hasattr(python_object, attribute_name):
             return None
         out = getattr(python_object, attribute_name)
@@ -114,7 +112,7 @@ class GetAttributePointerArrayOnPythonObject:
 class GetAttributeOnPythonObjectWithMap:
     @jpype.JOverride()
     def apply(self, python_object, attribute_name, instance_map):
-        from .python_to_java_bytecode_translator import convert_to_java_python_like_object
+        from .conversions import convert_to_java_python_like_object
         if not hasattr(python_object, attribute_name):
             return None
         out = getattr(python_object, attribute_name)
@@ -126,12 +124,13 @@ class GetAttributeOnPythonObjectWithMap:
             raise e
 
 
-@jpype.JImplements('ai.timefold.jpyinterpreter.util.function.TriConsumer', deferred=True)
+@jpype.JImplements('ai.timefold.jpyinterpreter.util.function.QuadConsumer', deferred=True)
 class SetAttributeOnPythonObject:
     @jpype.JOverride()
-    def accept(self, python_object, attribute_name, value):
-        from .python_to_java_bytecode_translator import unwrap_python_like_object
-        setattr(python_object, attribute_name, unwrap_python_like_object(value))
+    def accept(self, python_object, clone_map, attribute_name, value):
+        from .conversions import unwrap_python_like_object
+        setattr(python_object, attribute_name, unwrap_python_like_object(value,
+                                                                         clone_map))
 
 
 @jpype.JImplements('java.util.function.BiConsumer', deferred=True)
@@ -146,7 +145,7 @@ class GetDictOnPythonObject:
     @jpype.JOverride()
     def apply(self, python_object, instance_map):
         from java.util import HashMap
-        from .python_to_java_bytecode_translator import convert_to_java_python_like_object
+        from .conversions import convert_to_java_python_like_object
 
         out = HashMap()
         for key in dir(python_object):
@@ -159,7 +158,7 @@ class GetDictOnPythonObject:
 class CallPythonFunction:
     @jpype.JOverride()
     def apply(self, python_object, var_args_list, keyword_args_map):
-        from .python_to_java_bytecode_translator import unwrap_python_like_object, convert_to_java_python_like_object
+        from .conversions import unwrap_python_like_object, convert_to_java_python_like_object
         actual_vargs = unwrap_python_like_object(var_args_list)
         actual_keyword_args = unwrap_python_like_object(keyword_args_map)
         if actual_keyword_args is None:
@@ -178,7 +177,8 @@ class CreateFunctionFromCode:
     @jpype.JOverride()
     def apply(self, code_object, function_globals, closure, name):
         from types import FunctionType
-        from .python_to_java_bytecode_translator import unwrap_python_like_object, find_globals_dict_for_java_map
+        from .conversions import unwrap_python_like_object
+        from .translator import find_globals_dict_for_java_map
         from ai.timefold.jpyinterpreter import CPythonBackedPythonInterpreter  # noqa
         from ai.timefold.jpyinterpreter.types.wrappers import OpaquePythonReference, PythonObjectWrapper  # noqa
         from java.util import HashMap
@@ -208,7 +208,7 @@ class CreateFunctionFromCode:
 class ImportModule:
     @jpype.JOverride()
     def apply(self, module_name, globals_map, locals_map, from_list, level):
-        from .python_to_java_bytecode_translator import unwrap_python_like_object, convert_to_java_python_like_object
+        from .conversions import unwrap_python_like_object, convert_to_java_python_like_object
         from ai.timefold.jpyinterpreter import CPythonBackedPythonInterpreter  # noqa
         python_globals = unwrap_python_like_object(globals_map, None)
         python_locals = unwrap_python_like_object(locals_map, None)

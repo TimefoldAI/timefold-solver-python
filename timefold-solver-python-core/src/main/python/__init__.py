@@ -10,5 +10,5 @@ use init before decorators and any timefold.solver.types imports.
 
 from .annotations import *
 from .timefold_api_wrappers import *
-from .timefold_java_interop import init, _planning_clone, set_class_output_directory
+from .timefold_java_interop import init, set_class_output_directory
 from .constraint_stream import BytecodeTranslation

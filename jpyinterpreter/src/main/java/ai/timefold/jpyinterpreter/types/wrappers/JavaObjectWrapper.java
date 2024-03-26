@@ -18,7 +18,6 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import ai.timefold.jpyinterpreter.PythonBinaryOperator;
 import ai.timefold.jpyinterpreter.PythonLikeObject;
@@ -61,14 +60,8 @@ public class JavaObjectWrapper implements PythonLikeObject,
         Class<?> clazz = baseClass;
 
         List<Member> members = new ArrayList<>();
-        for (; clazz != null; clazz = clazz.getSuperclass()) {
-            Stream.of(clazz.getDeclaredFields())
-                    .filter((field) -> !field.isSynthetic())
-                    .forEach(members::add);
-            Stream.of(clazz.getDeclaredMethods())
-                    .filter((method) -> !method.isSynthetic())
-                    .forEach(members::add);
-        }
+        members.addAll(Arrays.asList(clazz.getFields()));
+        members.addAll(Arrays.asList(clazz.getMethods()));
         return members;
     }
 
@@ -86,6 +79,9 @@ public class JavaObjectWrapper implements PythonLikeObject,
         PythonLikeObject object = type.$getAttributeOrNull(getterName);
         if (object instanceof JavaMethodReference methodReference) {
             return methodReference.getMethod();
+        }
+        if (object instanceof MultiDispatchJavaMethodReference multiDispatchJavaMethodReference) {
+            return multiDispatchJavaMethodReference.getNoArgsMethod();
         }
         throw new AttributeError("Cannot get attribute (%s) on class (%s)."
                 .formatted(field.getName(), type));
@@ -200,7 +196,8 @@ public class JavaObjectWrapper implements PythonLikeObject,
                             new JavaMethodReference(method, Map.of()));
                 }
             }
-            type.__dir__.put(method.getName(), new JavaMethodReference(method, Map.of()));
+            ((MultiDispatchJavaMethodReference) type.__dir__.computeIfAbsent(method.getName(),
+                    (name) -> new MultiDispatchJavaMethodReference())).addMethod(method);
         } else {
             if (isInaccessible(member)) {
                 return;
@@ -221,7 +218,7 @@ public class JavaObjectWrapper implements PythonLikeObject,
 
     private static PythonLikeType generatePythonTypeForClass(Class<?> objectClass,
             Map<Object, PythonLikeObject> convertedObjectMap) {
-        var out = new PythonLikeType(objectClass.getName(), JavaObjectWrapper.class);
+        var out = new PythonLikeType(objectClass.getName(), JavaObjectWrapper.class, objectClass);
         getAllDeclaredMembers(objectClass)
                 .stream()
                 .filter(member -> Modifier.isStatic(member.getModifiers()) || member instanceof Method)

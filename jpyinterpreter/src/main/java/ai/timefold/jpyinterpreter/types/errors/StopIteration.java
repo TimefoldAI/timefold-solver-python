@@ -42,4 +42,15 @@ public class StopIteration extends PythonException {
     public PythonLikeObject getValue() {
         return value;
     }
+
+    /**
+     * This exception acts as a signal, and should be low cost
+     * 
+     * @return this
+     */
+    @Override
+    public Throwable fillInStackTrace() {
+        // Do nothing
+        return this;
+    }
 }

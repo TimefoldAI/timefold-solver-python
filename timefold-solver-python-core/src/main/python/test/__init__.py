@@ -4,6 +4,7 @@ from jpype import JProxy
 from ..jpype_type_conversions import PythonBiFunction
 from ..timefold_java_interop import get_class
 from ..constraint_stream import PythonConstraintFactory, BytecodeTranslation
+from ..config import SolverConfig
 
 if TYPE_CHECKING:
     # These imports require a JVM to be running, so only import if type checking
@@ -23,6 +24,22 @@ class ConstraintVerifier(Generic[Solution_]):
     def __init__(self, delegate):
         self.delegate = delegate
         self.bytecode_translation = BytecodeTranslation.IF_POSSIBLE
+
+    @staticmethod
+    def create(solver_config: SolverConfig):
+        from ai.timefold.solver.test.api.score.stream import ConstraintVerifier as JavaConstraintVerifier  # noqa
+        return ConstraintVerifier(JavaConstraintVerifier.create(solver_config._to_java_solver_config()))
+
+    @staticmethod
+    def build(constraint_provider: Callable[['PythonConstraintFactory'], List['Constraint']],
+              planning_solution_class: Type[Solution_], *entity_classes: Type):
+        from ai.timefold.solver.test.api.score.stream import ConstraintVerifier as JavaConstraintVerifier  # noqa
+        constraint_provider_instance = get_class(constraint_provider).getConstructor().newInstance()
+        planning_solution_java_class = get_class(planning_solution_class)
+        entity_java_classes = list(map(get_class, entity_classes))
+        return ConstraintVerifier(JavaConstraintVerifier.build(constraint_provider_instance,
+                                                               planning_solution_java_class,
+                                                               entity_java_classes))
 
     def with_bytecode_translation(self, bytecode_translation: BytecodeTranslation) ->\
             'ConstraintVerifier[Solution_]':
@@ -52,7 +69,7 @@ class ConstraintVerifier(Generic[Solution_]):
         """
         ...
 
-    def verify_that(self, constraint_function: Callable[['ConstraintFactory'], 'Constraint'] = None):
+    def verify_that(self, constraint_function: Callable[['PythonConstraintFactory'], 'Constraint'] = None):
         """
         Creates a constraint verifier for a given Constraint of the ConstraintProvider.
         :param constraint_function: Sometimes None, the constraint to verify. If not provided, all
@@ -76,36 +93,27 @@ class SingleConstraintVerification(Generic[Solution_]):
         Set the facts for this assertion
         :param facts: Never None, at least one
         """
-        from ai.timefold.solver.python import PythonSolver  # noqa
         from ai.timefold.jpyinterpreter import CPythonBackedPythonInterpreter  # noqa
         from ai.timefold.jpyinterpreter.types import CPythonBackedPythonLikeObject  # noqa
         from ai.timefold.jpyinterpreter.types.wrappers import OpaquePythonReference  # noqa
-        reference_map = PythonSolver.getNewReferenceMap()
+        from java.util import HashMap
+        from jpyinterpreter import convert_to_java_python_like_object
+        reference_map = HashMap()
         wrapped_facts = []
 
         for fact in facts:
-            fact_class = get_class(type(fact))
-            wrapped_fact = PythonSolver.wrapFact(fact_class, fact, reference_map)
+            wrapped_fact = convert_to_java_python_like_object(fact, reference_map)
             wrapped_facts.append(wrapped_fact)
 
-        referenced_facts = list(reference_map.values())
-        for fact in referenced_facts:
-            if isinstance(fact, CPythonBackedPythonLikeObject):
-                CPythonBackedPythonInterpreter.updateJavaObjectFromPythonObject(fact, JProxy(OpaquePythonReference,
-                                                                                inst=getattr(fact, '$cpythonReference'),
-                                                                                convert=True), reference_map)
-
         return SingleConstraintAssertion(self.delegate.given(wrapped_facts))
-
 
     def given_solution(self, solution: 'Solution_') -> 'SingleConstraintAssertion':
         """
         Set the solution to be used for this assertion
         :param solution: Never None
         """
-        from ai.timefold.solver.python import PythonSolver  # noqa
-        solution_class = get_class(type(solution))
-        wrapped_solution = PythonSolver.wrapProblem(solution_class, solution)
+        from jpyinterpreter import convert_to_java_python_like_object
+        wrapped_solution = convert_to_java_python_like_object(solution)
         return SingleConstraintAssertion(self.delegate.givenSolution(wrapped_solution))
 
 
@@ -118,24 +126,17 @@ class MultiConstraintVerification(Generic[Solution_]):
         Set the facts for this assertion
         :param facts: Never None, at least one
         """
-        from ai.timefold.solver.python import PythonSolver  # noqa
         from ai.timefold.jpyinterpreter import CPythonBackedPythonInterpreter  # noqa
         from ai.timefold.jpyinterpreter.types import CPythonBackedPythonLikeObject  # noqa
         from ai.timefold.jpyinterpreter.types.wrappers import OpaquePythonReference  # noqa
-        reference_map = PythonSolver.getNewReferenceMap()
+        from jpyinterpreter import convert_to_java_python_like_object
+        from java.util import HashMap
+        reference_map = HashMap()
         wrapped_facts = []
 
         for fact in facts:
-            fact_class = get_class(type(fact))
-            wrapped_fact = PythonSolver.wrapFact(fact_class, fact, reference_map)
+            wrapped_fact = convert_to_java_python_like_object(fact, reference_map)
             wrapped_facts.append(wrapped_fact)
-
-        referenced_facts = list(reference_map.values())
-        for fact in referenced_facts:
-            if isinstance(fact, CPythonBackedPythonLikeObject):
-                CPythonBackedPythonInterpreter.updateJavaObjectFromPythonObject(fact, JProxy(OpaquePythonReference,
-                                                                                inst=getattr(fact, '$cpythonReference'),
-                                                                                convert=True), reference_map)
 
         return MultiConstraintAssertion(self.delegate.given(wrapped_facts))
 
@@ -144,9 +145,8 @@ class MultiConstraintVerification(Generic[Solution_]):
         Set the solution to be used for this assertion
         :param solution: Never None
         """
-        from ai.timefold.solver.python import PythonSolver  # noqa
-        solution_class = get_class(type(solution))
-        wrapped_solution = PythonSolver.wrapProblem(solution_class, solution)
+        from jpyinterpreter import convert_to_java_python_like_object
+        wrapped_solution = convert_to_java_python_like_object(solution)
         return MultiConstraintAssertion(self.delegate.givenSolution(wrapped_solution))
 
 
@@ -448,40 +448,3 @@ class MultiConstraintAssertion:
                 self.delegate.scores(score, message)
         except JavaAssertionError as e:
             raise AssertionError(e.getMessage())
-
-
-def constraint_verifier_build(constraint_provider: Callable[['ConstraintFactory'], List['Constraint']],
-                              planning_solution_class: Type[Solution_], *entity_classes: Type) -> \
-        ConstraintVerifier[Solution_]:
-    """
-    Build a constraint verifier for the given @constraint_provider function.
-
-    :param constraint_provider: The constraint provider function (decorated with @constraint_provider) to
-                                create the ConstraintVerifier for
-    :param planning_solution_class: The type of the planning solution (decorated with @planning_solution)
-    :param entity_classes: The types of the entity classes (each decorated with @planning_entity)
-
-    :return: A ConstraintVerifier that can be used to test constraints
-    """
-    from ai.timefold.solver.test.api.score.stream import ConstraintVerifier as JavaConstraintVerifier  # noqa
-    from ai.timefold.solver.python import PythonSolver  # noqa
-    constraint_provider_instance = PythonSolver.createConstraintProvider(get_class(constraint_provider))
-    planning_solution_java_class = get_class(planning_solution_class)
-    entity_java_classes = list(map(get_class, entity_classes))
-    return ConstraintVerifier(JavaConstraintVerifier.build(constraint_provider_instance,
-                                                           planning_solution_java_class,
-                                                           entity_java_classes))
-
-
-def constraint_verifier_create(solver_config: 'SolverConfig') -> ConstraintVerifier:
-    """
-    Uses a SolverConfig to build a ConstraintVerifier. Alternative to build(ConstraintProvider, Type, Type).
-
-    :param solver_config: never None, must have a PlanningSolution class, PlanningEntity classes and a
-                          ConstraintProvider configured.
-
-    :return: A ConstraintVerifier that can be used to test constraints configured using the solver_config's
-             planning solution class, planning entity classes and constraint provider function.
-    """
-    from ai.timefold.solver.test.api.score.stream import ConstraintVerifier as JavaConstraintVerifier  # noqa
-    return ConstraintVerifier(JavaConstraintVerifier.create(solver_config))

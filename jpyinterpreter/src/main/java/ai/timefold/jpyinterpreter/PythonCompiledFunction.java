@@ -173,6 +173,10 @@ public class PythonCompiledFunction {
         return Optional.of(returnTypeHint.type());
     }
 
+    public Optional<TypeHint> getReturnTypeHint() {
+        return Optional.ofNullable(typeAnnotations.get("return"));
+    }
+
     public String getAsmMethodDescriptorString() {
         Type returnType = Type.getType('L' + getReturnType().map(PythonLikeType::getJavaTypeInternalName)
                 .orElseGet(BuiltinTypes.BASE_TYPE::getJavaTypeInternalName) + ';');

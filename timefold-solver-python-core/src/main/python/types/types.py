@@ -1,21 +1,48 @@
-from ..timefold_java_interop import ensure_init
-import jpype.imports # noqa
+from dataclasses import dataclass, field
+from typing import TYPE_CHECKING
 
-ensure_init()
+if TYPE_CHECKING:
+    from java.time import Duration as _JavaDuration
 
-# The JVM must be started before importing Java Types, so these
-# imports cannot be at the top of the file.
-from ..config import *
-from ..score import *
-from ..constraint import *
 
-from ai.timefold.solver.core.api.domain.valuerange import ValueRangeFactory, CountableValueRange, ValueRange
-from ai.timefold.solver.core.api.domain.variable import PlanningVariableGraphType, VariableListener
-from ai.timefold.solver.core.api.score.director import ScoreDirector
-from ai.timefold.solver.core.api.solver import Solver, SolverManager, SolverFactory, SolverJob, SolverStatus
-from ai.timefold.solver.core.api.solver.change import ProblemChangeDirector
+@dataclass(kw_only=True)
+class Duration:
+    milliseconds: int = field(default=0)
+    seconds: int = field(default=0)
+    minutes: int = field(default=0)
+    hours: int = field(default=0)
+    days: int = field(default=0)
 
-SolverConfig = solver.SolverConfig
-TerminationConfig = solver.termination.TerminationConfig
+    def to_milliseconds(self) -> int:
+        return self._to_java_duration().toMillis()
 
-from java.time import Duration  # noqa
+    def to_seconds(self) -> int:
+        return self._to_java_duration().toSeconds()
+
+    def to_minutes(self) -> int:
+        return self._to_java_duration().toMinutes()
+
+    def to_hours(self) -> int:
+        return self._to_java_duration().toHours()
+
+    def to_days(self) -> int:
+        return self._to_java_duration().toDays()
+
+    @staticmethod
+    def _from_java_duration(duration: '_JavaDuration'):
+        return Duration(
+            milliseconds=duration.toMillis()
+        )
+
+    def _to_java_duration(self) -> '_JavaDuration':
+        from java.time import Duration
+        return (Duration.ZERO
+                .plusMillis(self.milliseconds)
+                .plusSeconds(self.seconds)
+                .plusMinutes(self.minutes)
+                .plusHours(self.hours)
+                .plusDays(self.days)
+                )
+
+
+__all__ = ['Duration']

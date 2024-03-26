@@ -647,12 +647,8 @@ public class PythonBytes extends AbstractPythonLikeObject implements PythonBytes
         return PythonBoolean.valueOf(hasSuffix(suffix.value, startAsInt, endAsInt));
     }
 
-    public PythonBoolean endsWith(PythonLikeTuple suffixes) {
-        for (PythonLikeObject object : suffixes) {
-            if (!(object instanceof PythonBytes)) {
-                throw new TypeError("startswith argument 1 must be bytes or a tuple of bytes");
-            }
-            PythonBytes suffix = (PythonBytes) object;
+    public PythonBoolean endsWith(PythonLikeTuple<PythonBytes> suffixes) {
+        for (PythonBytes suffix : suffixes) {
             if (hasSuffix(suffix.value, 0, value.length)) {
                 return PythonBoolean.TRUE;
             }
@@ -660,14 +656,10 @@ public class PythonBytes extends AbstractPythonLikeObject implements PythonBytes
         return PythonBoolean.FALSE;
     }
 
-    public PythonBoolean endsWith(PythonLikeTuple suffixes, PythonInteger start) {
+    public PythonBoolean endsWith(PythonLikeTuple<PythonBytes> suffixes, PythonInteger start) {
         int startAsInt = PythonSlice.asValidStartIntIndexForLength(start, value.length);
 
-        for (PythonLikeObject object : suffixes) {
-            if (!(object instanceof PythonBytes)) {
-                throw new TypeError("startswith argument 1 must be bytes or a tuple of bytes");
-            }
-            PythonBytes suffix = (PythonBytes) object;
+        for (PythonBytes suffix : suffixes) {
             if (hasSuffix(suffix.value, startAsInt, value.length)) {
                 return PythonBoolean.TRUE;
             }
@@ -675,15 +667,11 @@ public class PythonBytes extends AbstractPythonLikeObject implements PythonBytes
         return PythonBoolean.FALSE;
     }
 
-    public PythonBoolean endsWith(PythonLikeTuple suffixes, PythonInteger start, PythonInteger end) {
+    public PythonBoolean endsWith(PythonLikeTuple<PythonBytes> suffixes, PythonInteger start, PythonInteger end) {
         int startAsInt = PythonSlice.asValidStartIntIndexForLength(start, value.length);
         int endAsInt = PythonSlice.asValidEndIntIndexForLength(end, value.length);
 
-        for (PythonLikeObject object : suffixes) {
-            if (!(object instanceof PythonBytes)) {
-                throw new TypeError("startswith argument 1 must be bytes or a tuple of bytes");
-            }
-            PythonBytes suffix = (PythonBytes) object;
+        for (PythonBytes suffix : suffixes) {
             if (hasSuffix(suffix.value, startAsInt, endAsInt)) {
                 return PythonBoolean.TRUE;
             }
@@ -1124,12 +1112,8 @@ public class PythonBytes extends AbstractPythonLikeObject implements PythonBytes
         return PythonBoolean.valueOf(hasPrefix(prefix.value, startAsInt, endAsInt));
     }
 
-    public PythonBoolean startsWith(PythonLikeTuple prefixes) {
-        for (PythonLikeObject object : prefixes) {
-            if (!(object instanceof PythonBytes)) {
-                throw new TypeError("startswith argument 1 must be bytes or a tuple of bytes");
-            }
-            PythonBytes prefix = (PythonBytes) object;
+    public PythonBoolean startsWith(PythonLikeTuple<PythonBytes> prefixes) {
+        for (PythonBytes prefix : prefixes) {
             if (hasPrefix(prefix.value, 0, value.length)) {
                 return PythonBoolean.TRUE;
             }
@@ -1137,14 +1121,10 @@ public class PythonBytes extends AbstractPythonLikeObject implements PythonBytes
         return PythonBoolean.FALSE;
     }
 
-    public PythonBoolean startsWith(PythonLikeTuple prefixes, PythonInteger start) {
+    public PythonBoolean startsWith(PythonLikeTuple<PythonBytes> prefixes, PythonInteger start) {
         int startAsInt = PythonSlice.asValidStartIntIndexForLength(start, value.length);
 
-        for (PythonLikeObject object : prefixes) {
-            if (!(object instanceof PythonBytes)) {
-                throw new TypeError("startswith argument 1 must be bytes or a tuple of bytes");
-            }
-            PythonBytes prefix = (PythonBytes) object;
+        for (PythonBytes prefix : prefixes) {
             if (hasPrefix(prefix.value, startAsInt, value.length)) {
                 return PythonBoolean.TRUE;
             }
@@ -1152,15 +1132,11 @@ public class PythonBytes extends AbstractPythonLikeObject implements PythonBytes
         return PythonBoolean.FALSE;
     }
 
-    public PythonBoolean startsWith(PythonLikeTuple prefixes, PythonInteger start, PythonInteger end) {
+    public PythonBoolean startsWith(PythonLikeTuple<PythonBytes> prefixes, PythonInteger start, PythonInteger end) {
         int startAsInt = PythonSlice.asValidStartIntIndexForLength(start, value.length);
         int endAsInt = PythonSlice.asValidEndIntIndexForLength(end, value.length);
 
-        for (PythonLikeObject object : prefixes) {
-            if (!(object instanceof PythonBytes)) {
-                throw new TypeError("startswith argument 1 must be bytes or a tuple of bytes");
-            }
-            PythonBytes prefix = (PythonBytes) object;
+        for (PythonBytes prefix : prefixes) {
             if (hasPrefix(prefix.value, startAsInt, endAsInt)) {
                 return PythonBoolean.TRUE;
             }

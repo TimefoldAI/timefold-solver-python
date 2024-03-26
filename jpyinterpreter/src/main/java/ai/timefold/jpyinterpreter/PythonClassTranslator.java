@@ -40,28 +40,35 @@ import ai.timefold.jpyinterpreter.types.PythonNone;
 import ai.timefold.jpyinterpreter.types.PythonString;
 import ai.timefold.jpyinterpreter.types.collections.PythonLikeDict;
 import ai.timefold.jpyinterpreter.types.collections.PythonLikeTuple;
-import ai.timefold.jpyinterpreter.types.numeric.PythonInteger;
+import ai.timefold.jpyinterpreter.types.wrappers.JavaObjectWrapper;
 import ai.timefold.jpyinterpreter.types.wrappers.OpaquePythonReference;
 import ai.timefold.jpyinterpreter.util.arguments.ArgumentSpec;
 
 import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.FieldVisitor;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
+import org.objectweb.asm.signature.SignatureVisitor;
+import org.objectweb.asm.signature.SignatureWriter;
 
 public class PythonClassTranslator {
     static Map<FunctionSignature, InterfaceDeclaration> functionSignatureToInterfaceName = new HashMap<>();
 
     // $ is illegal in variables/methods in Python
-    public static String TYPE_FIELD_NAME = "$TYPE";
-    public static String CPYTHON_TYPE_FIELD_NAME = "$CPYTHON_TYPE";
-    private static String JAVA_FIELD_PREFIX = "$field$";
-    private static String JAVA_METHOD_PREFIX = "$method$";
+    public static final String TYPE_FIELD_NAME = "$TYPE";
+    public static final String CPYTHON_TYPE_FIELD_NAME = "$CPYTHON_TYPE";
+    private static final String JAVA_METHOD_PREFIX = "$method$";
 
-    public static PythonLikeType translatePythonClass(PythonCompiledClass pythonCompiledClass) {
+    public record PreparedClassInfo(PythonLikeType type, String className, String classInternalName) {
+    }
+
+    public static PreparedClassInfo getPreparedClassInfo(String pythonClassName,
+            String module, String qualifiedName) {
         String maybeClassName =
-                PythonBytecodeToJavaBytecodeTranslator.USER_PACKAGE_BASE + pythonCompiledClass.getGeneratedClassBaseName();
+                PythonBytecodeToJavaBytecodeTranslator.USER_PACKAGE_BASE
+                        + PythonCompiledClass.getGeneratedClassBaseName(module, qualifiedName);
         int numberOfInstances =
                 PythonBytecodeToJavaBytecodeTranslator.classNameToSharedInstanceCount.merge(maybeClassName, 1, Integer::sum);
         if (numberOfInstances > 1) {
@@ -69,6 +76,20 @@ public class PythonClassTranslator {
         }
         String className = maybeClassName;
         String internalClassName = className.replace('.', '/');
+        return new PreparedClassInfo(PythonLikeType.getTypeForNewClass(pythonClassName, internalClassName),
+                className, internalClassName);
+    }
+
+    public static PythonLikeType translatePythonClass(PythonCompiledClass pythonCompiledClass) {
+        return translatePythonClass(pythonCompiledClass, getPreparedClassInfo(pythonCompiledClass.className,
+                pythonCompiledClass.module,
+                pythonCompiledClass.qualifiedName));
+    }
+
+    public static PythonLikeType translatePythonClass(PythonCompiledClass pythonCompiledClass,
+            PreparedClassInfo preparedClassInfo) {
+        var className = preparedClassInfo.className;
+        var internalClassName = preparedClassInfo.classInternalName;
 
         Set<PythonLikeType> superTypeSet;
         Set<JavaInterfaceImplementor> javaInterfaceImplementorSet = new HashSet<>();
@@ -109,8 +130,8 @@ public class PythonClassTranslator {
         }
 
         List<PythonLikeType> superTypeList = new ArrayList<>(superTypeSet);
-        PythonLikeType pythonLikeType = new PythonLikeType(pythonCompiledClass.className, internalClassName,
-                superTypeList);
+        PythonLikeType pythonLikeType = preparedClassInfo.type;
+        pythonLikeType.initializeNewType(superTypeList);
         PythonLikeType superClassType = superTypeList.get(0);
         Set<String> instanceAttributeSet = new HashSet<>();
         pythonCompiledClass.instanceFunctionNameToPythonBytecode.values().forEach(instanceMethod -> {
@@ -177,17 +198,35 @@ public class PythonClassTranslator {
             if (type == null) { // null might be in __annotations__
                 type = BuiltinTypes.BASE_TYPE;
             }
-            String javaFieldTypeDescriptor = 'L' + type.getJavaTypeInternalName() + ';';
+
             attributeNameToTypeMap.put(attributeName, type);
-            var fieldVisitor = classWriter.visitField(Modifier.PUBLIC, getJavaFieldName(attributeName), javaFieldTypeDescriptor,
-                    null, null);
+            FieldVisitor fieldVisitor;
+            String javaFieldTypeDescriptor;
+            boolean isJavaType;
+            if (type.getJavaTypeInternalName().equals(Type.getInternalName(JavaObjectWrapper.class))) {
+                javaFieldTypeDescriptor = Type.getDescriptor(type.getJavaObjectWrapperType());
+                fieldVisitor = classWriter.visitField(Modifier.PUBLIC, getJavaFieldName(attributeName), javaFieldTypeDescriptor,
+                        null, null);
+                isJavaType = true;
+            } else {
+                String signature = null;
+                if (typeHint.genericArgs() != null) {
+                    var signatureWriter = new SignatureWriter();
+                    visitSignature(typeHint, signatureWriter);
+                    signature = signatureWriter.toString();
+                }
+                javaFieldTypeDescriptor = 'L' + type.getJavaTypeInternalName() + ';';
+                fieldVisitor = classWriter.visitField(Modifier.PUBLIC, getJavaFieldName(attributeName), javaFieldTypeDescriptor,
+                        signature, null);
+                isJavaType = false;
+            }
             for (var annotation : typeHint.annotationList()) {
                 annotation.addAnnotationTo(fieldVisitor);
             }
             fieldVisitor.visitEnd();
             FieldDescriptor fieldDescriptor =
                     new FieldDescriptor(attributeName, getJavaFieldName(attributeName), internalClassName,
-                            javaFieldTypeDescriptor, type, true);
+                            javaFieldTypeDescriptor, type, true, isJavaType);
             pythonLikeType.addInstanceField(fieldDescriptor);
         }
 
@@ -197,10 +236,13 @@ public class PythonClassTranslator {
                         null, null);
         methodVisitor.visitCode();
         methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
+        methodVisitor.visitFieldInsn(Opcodes.GETSTATIC, Type.getInternalName(PythonInterpreter.class), "DEFAULT",
+                Type.getDescriptor(PythonInterpreter.class));
         methodVisitor.visitFieldInsn(Opcodes.GETSTATIC, internalClassName, TYPE_FIELD_NAME,
                 Type.getDescriptor(PythonLikeType.class));
         methodVisitor.visitMethodInsn(Opcodes.INVOKESPECIAL, superClassType.getJavaTypeInternalName(), "<init>",
                 Type.getMethodDescriptor(Type.VOID_TYPE,
+                        Type.getType(PythonInterpreter.class),
                         Type.getType(PythonLikeType.class)),
                 false);
         methodVisitor.visitInsn(Opcodes.RETURN);
@@ -208,18 +250,20 @@ public class PythonClassTranslator {
         methodVisitor.visitMaxs(-1, -1);
         methodVisitor.visitEnd();
 
-        // type arg constructor for creating subclass of this class
+        // interpreter + type arg constructor for creating subclass of this class
         methodVisitor =
                 classWriter.visitMethod(Modifier.PUBLIC, "<init>", Type.getMethodDescriptor(Type.VOID_TYPE,
-                        Type.getType(PythonLikeType.class)),
+                        Type.getType(PythonInterpreter.class), Type.getType(PythonLikeType.class)),
                         null, null);
         methodVisitor.visitParameter("subclassType", 0);
 
         methodVisitor.visitCode();
         methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
         methodVisitor.visitVarInsn(Opcodes.ALOAD, 1);
+        methodVisitor.visitVarInsn(Opcodes.ALOAD, 2);
         methodVisitor.visitMethodInsn(Opcodes.INVOKESPECIAL, superClassType.getJavaTypeInternalName(), "<init>",
                 Type.getMethodDescriptor(Type.VOID_TYPE,
+                        Type.getType(PythonInterpreter.class),
                         Type.getType(PythonLikeType.class)),
                 false);
         methodVisitor.visitInsn(Opcodes.RETURN);
@@ -341,6 +385,16 @@ public class PythonClassTranslator {
         return pythonLikeType;
     }
 
+    private static void visitSignature(TypeHint typeHint, SignatureVisitor signatureVisitor) {
+        signatureVisitor.visitClassType(typeHint.type().getJavaTypeInternalName());
+        if (typeHint.genericArgs() != null) {
+            for (TypeHint genericArg : typeHint.genericArgs()) {
+                visitSignature(genericArg, signatureVisitor.visitTypeArgument('='));
+            }
+        }
+        signatureVisitor.visitEnd();
+    }
+
     public static void setSelfStaticInstances(PythonCompiledClass pythonCompiledClass, Class<?> generatedClass,
             PythonLikeType pythonLikeType,
             Map<Number, PythonLikeObject> instanceMap) {
@@ -355,7 +409,6 @@ public class PythonClassTranslator {
                 Number pythonReferenceId = CPythonBackedPythonInterpreter.getPythonReferenceId(instancePointer);
                 instanceMap.put(pythonReferenceId, objectInstance);
                 objectInstance.$setCPythonReference(instancePointer);
-                objectInstance.$setCPythonId(PythonInteger.valueOf(pythonReferenceId.longValue()));
                 objectInstance.$setInstanceMap(instanceMap);
                 objectInstance.$readFieldsFromCPythonReference();
                 pythonLikeType.$setAttribute(attributeName, objectInstance);
@@ -366,11 +419,11 @@ public class PythonClassTranslator {
     }
 
     public static String getJavaFieldName(String pythonFieldName) {
-        return JAVA_FIELD_PREFIX + pythonFieldName;
+        return pythonFieldName;
     }
 
     public static String getPythonFieldName(String javaFieldName) {
-        return javaFieldName.substring(JAVA_FIELD_PREFIX.length());
+        return javaFieldName;
     }
 
     public static String getJavaMethodName(String pythonMethodName) {
@@ -488,6 +541,9 @@ public class PythonClassTranslator {
                 Type.getInternalName(Object.class), new String[] { interfaceDeclaration.interfaceName });
 
         classWriter.visitField(Modifier.PUBLIC | Modifier.FINAL, "$binaryType", Type.getDescriptor(PythonLikeType.class),
+                null, null);
+        classWriter.visitField(Modifier.STATIC | Modifier.PUBLIC, ARGUMENT_SPEC_INSTANCE_FIELD_NAME,
+                Type.getDescriptor(ArgumentSpec.class),
                 null, null);
 
         // Constructor that takes a PythonLikeType
@@ -715,11 +771,12 @@ public class PythonClassTranslator {
         Type[] javaParameterTypes = new Type[Math.max(0, function.totalArgCount() - 1)];
 
         for (int i = 1; i < function.totalArgCount(); i++) {
-            javaParameterTypes[i - 1] = Type.getType('L' + parameterPythonTypeList.get(i).getJavaTypeInternalName() + ';');
+            javaParameterTypes[i - 1] = Type.getType(parameterPythonTypeList.get(i).getJavaTypeDescriptor());
         }
         String javaMethodDescriptor = Type.getMethodDescriptor(returnType, javaParameterTypes);
+        String signature = getFunctionSignature(function, javaMethodDescriptor);
         MethodVisitor methodVisitor =
-                classWriter.visitMethod(Modifier.PUBLIC, javaMethodName, javaMethodDescriptor, null, null);
+                classWriter.visitMethod(Modifier.PUBLIC, javaMethodName, javaMethodDescriptor, signature, null);
 
         createInstanceOrStaticMethodBody(internalClassName, javaMethodName, javaParameterTypes,
                 interfaceDeclaration.methodDescriptor, function,
@@ -739,11 +796,12 @@ public class PythonClassTranslator {
         InterfaceDeclaration interfaceDeclaration = getInterfaceForPythonFunction(function);
         String interfaceDescriptor = 'L' + interfaceDeclaration.interfaceName + ';';
         String javaMethodName = getJavaMethodName(methodName);
+        String signature = getFunctionSignature(function, function.getAsmMethodDescriptorString());
 
         classWriter.visitField(Modifier.PUBLIC | Modifier.STATIC, javaMethodName, interfaceDescriptor,
                 null, null);
         MethodVisitor methodVisitor = classWriter.visitMethod(Modifier.PUBLIC | Modifier.STATIC, javaMethodName,
-                function.getAsmMethodDescriptorString(), null, null);
+                function.getAsmMethodDescriptorString(), signature, null);
 
         List<PythonLikeType> parameterPythonTypeList = function.getParameterTypes();
         Type[] javaParameterTypes = new Type[function.totalArgCount()];
@@ -773,8 +831,10 @@ public class PythonClassTranslator {
                 null, null);
 
         String javaMethodDescriptor = interfaceDeclaration.methodDescriptor;
+        String signature = getFunctionSignature(function, javaMethodDescriptor);
         MethodVisitor methodVisitor =
-                classWriter.visitMethod(Modifier.PUBLIC | Modifier.STATIC, javaMethodName, javaMethodDescriptor, null, null);
+                classWriter.visitMethod(Modifier.PUBLIC | Modifier.STATIC, javaMethodName, javaMethodDescriptor, signature,
+                        null);
 
         for (int i = 0; i < function.getParameterTypes().size(); i++) {
             methodVisitor.visitParameter(function.co_varnames.get(i), 0);
@@ -837,6 +897,25 @@ public class PythonClassTranslator {
                 .orElseGet(() -> getPythonReturnTypeOfFunction(function, true).getJavaTypeInternalName()) + ';');
     }
 
+    public static String getFunctionSignature(PythonCompiledFunction function,
+            String asmMethodDescriptor) {
+        var maybeReturnTypeHint = function.getReturnTypeHint();
+        if (maybeReturnTypeHint.isPresent()) {
+            var returnTypeHint = maybeReturnTypeHint.get();
+            var signatureWriter = new SignatureWriter();
+            Type methodType = Type.getMethodType(asmMethodDescriptor);
+            for (int i = 0; i < methodType.getArgumentCount(); i++) {
+                var parameterVisitor = signatureWriter.visitParameterType();
+                parameterVisitor.visitClassType(methodType.getArgumentTypes()[i].getInternalName());
+                parameterVisitor.visitEnd();
+            }
+            visitSignature(returnTypeHint, signatureWriter.visitReturnType());
+            signatureWriter.visitEnd();
+            return signatureWriter.toString();
+        }
+        return null;
+    }
+
     public static void createGetAttribute(ClassWriter classWriter, String classInternalName, String superInternalName,
             Collection<String> instanceAttributes,
             Map<String, PythonLikeType> fieldToType) {
@@ -852,8 +931,21 @@ public class PythonClassTranslator {
         methodVisitor.visitVarInsn(Opcodes.ALOAD, 1);
         BytecodeSwitchImplementor.createStringSwitch(methodVisitor, instanceAttributes, 2, field -> {
             methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
-            methodVisitor.visitFieldInsn(Opcodes.GETFIELD, classInternalName, getJavaFieldName(field),
-                    'L' + fieldToType.get(field).getJavaTypeInternalName() + ';');
+            var type = fieldToType.get(field);
+            if (type.getJavaTypeInternalName().equals(Type.getInternalName(JavaObjectWrapper.class))) {
+                Class<?> fieldType = type.getJavaObjectWrapperType();
+                methodVisitor.visitFieldInsn(Opcodes.GETFIELD, classInternalName, getJavaFieldName(field),
+                        Type.getDescriptor(fieldType));
+                methodVisitor.visitTypeInsn(Opcodes.NEW, Type.getInternalName(JavaObjectWrapper.class));
+                methodVisitor.visitInsn(Opcodes.DUP_X1);
+                methodVisitor.visitInsn(Opcodes.DUP_X1);
+                methodVisitor.visitInsn(Opcodes.POP);
+                methodVisitor.visitMethodInsn(Opcodes.INVOKESPECIAL, Type.getInternalName(JavaObjectWrapper.class),
+                        "<init>", Type.getMethodDescriptor(Type.VOID_TYPE, Type.getType(Object.class)), false);
+            } else {
+                methodVisitor.visitFieldInsn(Opcodes.GETFIELD, classInternalName, getJavaFieldName(field),
+                        'L' + type.getJavaTypeInternalName() + ';');
+            }
             methodVisitor.visitInsn(Opcodes.ARETURN);
         }, () -> {
             methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
@@ -885,11 +977,22 @@ public class PythonClassTranslator {
 
         methodVisitor.visitVarInsn(Opcodes.ALOAD, 1);
         BytecodeSwitchImplementor.createStringSwitch(methodVisitor, instanceAttributes, 3, field -> {
+            var type = fieldToType.get(field);
             methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
             methodVisitor.visitVarInsn(Opcodes.ALOAD, 2);
-            methodVisitor.visitTypeInsn(Opcodes.CHECKCAST, fieldToType.get(field).getJavaTypeInternalName());
+            String typeDescriptor = type.getJavaTypeDescriptor();
+            if (type.getJavaTypeInternalName().equals(Type.getInternalName(JavaObjectWrapper.class))) {
+                // Need to unwrap the object
+                methodVisitor.visitTypeInsn(Opcodes.CHECKCAST, Type.getInternalName(JavaObjectWrapper.class));
+                methodVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, Type.getInternalName(JavaObjectWrapper.class),
+                        "getWrappedObject", Type.getMethodDescriptor(Type.getType(Object.class)), false);
+                methodVisitor.visitTypeInsn(Opcodes.CHECKCAST, Type.getType(type.getJavaObjectWrapperType()).getInternalName());
+                typeDescriptor = Type.getDescriptor(type.getJavaObjectWrapperType());
+            } else {
+                methodVisitor.visitTypeInsn(Opcodes.CHECKCAST, type.getJavaTypeInternalName());
+            }
             methodVisitor.visitFieldInsn(Opcodes.PUTFIELD, classInternalName, getJavaFieldName(field),
-                    'L' + fieldToType.get(field).getJavaTypeInternalName() + ';');
+                    typeDescriptor);
             methodVisitor.visitInsn(Opcodes.RETURN);
         }, () -> {
             methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
@@ -923,8 +1026,14 @@ public class PythonClassTranslator {
         BytecodeSwitchImplementor.createStringSwitch(methodVisitor, instanceAttributes, 2, field -> {
             methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
             methodVisitor.visitInsn(Opcodes.ACONST_NULL);
-            methodVisitor.visitFieldInsn(Opcodes.PUTFIELD, classInternalName, getJavaFieldName(field),
-                    'L' + fieldToType.get(field).getJavaTypeInternalName() + ';');
+            var fieldType = fieldToType.get(field);
+            if (fieldType.getJavaTypeInternalName().equals(Type.getInternalName(JavaObjectWrapper.class))) {
+                methodVisitor.visitFieldInsn(Opcodes.PUTFIELD, classInternalName, getJavaFieldName(field),
+                        Type.getDescriptor(fieldType.getJavaObjectWrapperType()));
+            } else {
+                methodVisitor.visitFieldInsn(Opcodes.PUTFIELD, classInternalName, getJavaFieldName(field),
+                        fieldType.getJavaTypeDescriptor());
+            }
             methodVisitor.visitInsn(Opcodes.RETURN);
         }, () -> {
             methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
@@ -1003,9 +1112,20 @@ public class PythonClassTranslator {
                 methodVisitor.visitJumpInsn(Opcodes.IF_ACMPEQ, ifFieldIsNone);
             }
 
+            var attributeType = attributeNameToType.get(field);
             methodVisitor.visitTypeInsn(Opcodes.CHECKCAST, attributeNameToType.get(field).getJavaTypeInternalName());
-            methodVisitor.visitFieldInsn(Opcodes.PUTFIELD, internalClassName, getJavaFieldName(field),
-                    "L" + attributeNameToType.get(field).getJavaTypeInternalName() + ";");
+
+            if (attributeType.getJavaTypeInternalName().equals(Type.getInternalName(JavaObjectWrapper.class))) {
+                Class<?> wrappedJavaType = attributeType.getJavaObjectWrapperType();
+                methodVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, Type.getInternalName(JavaObjectWrapper.class),
+                        "getWrappedObject", Type.getMethodDescriptor(Type.getType(Object.class)), false);
+                methodVisitor.visitTypeInsn(Opcodes.CHECKCAST, Type.getType(wrappedJavaType).getInternalName());
+                methodVisitor.visitFieldInsn(Opcodes.PUTFIELD, internalClassName, getJavaFieldName(field),
+                        Type.getDescriptor(wrappedJavaType));
+            } else {
+                methodVisitor.visitFieldInsn(Opcodes.PUTFIELD, internalClassName, getJavaFieldName(field),
+                        attributeType.getJavaTypeDescriptor());
+            }
 
             if (!isAssignableFromNone) {
                 methodVisitor.visitJumpInsn(Opcodes.GOTO, doneSettingField);
@@ -1013,8 +1133,13 @@ public class PythonClassTranslator {
                 methodVisitor.visitLabel(ifFieldIsNone);
                 methodVisitor.visitInsn(Opcodes.POP);
                 methodVisitor.visitInsn(Opcodes.ACONST_NULL);
-                methodVisitor.visitFieldInsn(Opcodes.PUTFIELD, internalClassName, getJavaFieldName(field),
-                        "L" + attributeNameToType.get(field).getJavaTypeInternalName() + ";");
+                if (attributeType.getJavaTypeInternalName().equals(Type.getInternalName(JavaObjectWrapper.class))) {
+                    methodVisitor.visitFieldInsn(Opcodes.PUTFIELD, internalClassName, getJavaFieldName(field),
+                            Type.getDescriptor(attributeType.getJavaObjectWrapperType()));
+                } else {
+                    methodVisitor.visitFieldInsn(Opcodes.PUTFIELD, internalClassName, getJavaFieldName(field),
+                            attributeType.getJavaTypeDescriptor());
+                }
                 methodVisitor.visitLabel(doneSettingField);
             }
         }
@@ -1027,15 +1152,16 @@ public class PythonClassTranslator {
     public static void createWriteToCPythonReference(ClassWriter classWriter, String internalClassName,
             String superClassInternalName, Map<String, PythonLikeType> attributeNameToType) {
         MethodVisitor methodVisitor = classWriter.visitMethod(Modifier.PUBLIC, "$writeFieldsToCPythonReference",
-                Type.getMethodDescriptor(Type.VOID_TYPE), null,
+                Type.getMethodDescriptor(Type.VOID_TYPE, Type.getType(OpaquePythonReference.class)), null,
                 null);
         methodVisitor.visitCode();
 
         methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
         methodVisitor.visitInsn(Opcodes.DUP);
+        methodVisitor.visitVarInsn(Opcodes.ALOAD, 1);
         methodVisitor.visitMethodInsn(Opcodes.INVOKESPECIAL, superClassInternalName,
                 "$writeFieldsToCPythonReference",
-                Type.getMethodDescriptor(Type.VOID_TYPE), false);
+                Type.getMethodDescriptor(Type.VOID_TYPE, Type.getType(OpaquePythonReference.class)), false);
 
         methodVisitor.visitInsn(Opcodes.DUP);
         methodVisitor.visitFieldInsn(Opcodes.GETFIELD, Type.getInternalName(CPythonBackedPythonLikeObject.class),
@@ -1052,15 +1178,31 @@ public class PythonClassTranslator {
         methodVisitor.visitInsn(Opcodes.SWAP);
         for (String field : attributeNameToType.keySet()) {
             methodVisitor.visitInsn(Opcodes.DUP2);
-
-            methodVisitor.visitFieldInsn(Opcodes.GETFIELD, internalClassName, getJavaFieldName(field),
-                    "L" + attributeNameToType.get(field).getJavaTypeInternalName() + ";");
+            var attributeType = attributeNameToType.get(field);
+            if (attributeType.getJavaTypeInternalName().equals(Type.getInternalName(JavaObjectWrapper.class))) {
+                var wrappedJavaType = attributeType.getJavaObjectWrapperType();
+                methodVisitor.visitFieldInsn(Opcodes.GETFIELD, internalClassName, getJavaFieldName(field),
+                        Type.getDescriptor(wrappedJavaType));
+                methodVisitor.visitTypeInsn(Opcodes.NEW, Type.getInternalName(JavaObjectWrapper.class));
+                methodVisitor.visitInsn(Opcodes.DUP_X1);
+                methodVisitor.visitInsn(Opcodes.DUP_X1);
+                methodVisitor.visitInsn(Opcodes.POP);
+                methodVisitor.visitMethodInsn(Opcodes.INVOKESPECIAL, Type.getInternalName(JavaObjectWrapper.class),
+                        "<init>", Type.getMethodDescriptor(Type.VOID_TYPE, Type.getType(Object.class)), false);
+            } else {
+                methodVisitor.visitFieldInsn(Opcodes.GETFIELD, internalClassName, getJavaFieldName(field),
+                        attributeType.getJavaTypeDescriptor());
+            }
             methodVisitor.visitLdcInsn(field);
             methodVisitor.visitInsn(Opcodes.SWAP);
+            methodVisitor.visitVarInsn(Opcodes.ALOAD, 1);
+            methodVisitor.visitInsn(Opcodes.DUP_X2);
+            methodVisitor.visitInsn(Opcodes.POP);
 
             methodVisitor.visitMethodInsn(Opcodes.INVOKESTATIC, Type.getInternalName(CPythonBackedPythonInterpreter.class),
                     "setAttributeOnPythonReference",
                     Type.getMethodDescriptor(Type.VOID_TYPE,
+                            Type.getType(OpaquePythonReference.class),
                             Type.getType(OpaquePythonReference.class),
                             Type.getType(String.class),
                             Type.getType(Object.class)),
@@ -1098,11 +1240,12 @@ public class PythonClassTranslator {
         List<PythonLikeType> parameterTypeAnnotations = pythonCompiledFunction.getParameterTypes();
 
         for (int i = 0; i < parameterTypeAnnotations.size(); i++) {
-            parameterTypes[i] = 'L' + parameterTypeAnnotations.get(i).getJavaTypeInternalName() + ';';
+            var parameterType = parameterTypeAnnotations.get(i);
+            parameterTypes[i] = parameterType.getJavaTypeDescriptor();
         }
 
-        String returnType = 'L' + pythonCompiledFunction.getReturnType()
-                .orElse(BuiltinTypes.BASE_TYPE).getJavaTypeInternalName() + ';';
+        String returnType = pythonCompiledFunction.getReturnType()
+                .orElse(BuiltinTypes.BASE_TYPE).getJavaTypeDescriptor();
 
         FunctionSignature functionSignature = new FunctionSignature(returnType, parameterTypes);
         return functionSignatureToInterfaceName.computeIfAbsent(functionSignature,

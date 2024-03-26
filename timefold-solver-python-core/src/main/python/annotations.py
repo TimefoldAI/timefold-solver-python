@@ -1,11 +1,11 @@
 import jpype
 
-from .timefold_java_interop import ensure_init, _add_shallow_copy_to_class, _generate_planning_entity_class, \
-    _generate_problem_fact_class, _generate_planning_solution_class, _generate_constraint_provider_class, \
-    _generate_easy_score_calculator_class, _generate_incremental_score_calculator_class,\
-    _generate_variable_listener_class, get_class
+from .timefold_java_interop import ensure_init, _generate_constraint_provider_class, \
+    _generate_incremental_score_calculator_class, \
+    _generate_variable_listener_class
+from jpyinterpreter import JavaAnnotation
 from jpype import JImplements, JOverride
-from typing import Union, List, Callable, Type, Any, TYPE_CHECKING, TypeVar
+from typing import Union, List, Callable, Type, TYPE_CHECKING, TypeVar
 from .constraint_stream import BytecodeTranslation
 
 if TYPE_CHECKING:
@@ -13,507 +13,186 @@ if TYPE_CHECKING:
     from ai.timefold.solver.core.api.score.stream import Constraint as _Constraint, ConstraintFactory as _ConstraintFactory
     from ai.timefold.solver.core.api.score import Score as _Score
     from ai.timefold.solver.core.api.score.calculator import IncrementalScoreCalculator as _IncrementalScoreCalculator
-    from ai.timefold.solver.core.api.domain.valuerange import ValueRange as _ValueRange
     from ai.timefold.solver.core.api.domain.variable import PlanningVariableGraphType as _PlanningVariableGraphType, \
-        VariableListener as _VariableListener, PlanningVariableReference as _PlanningVariableReference
+        VariableListener as _VariableListener
 
-"""
-All Timefold Python annotations work like this:
-
-1. Ensure Timefold Python module is initialized using ensure_init
-2. Import the corresponding Java annotation
-3. Set __timefold_annotation_<annotation_name> (ex: __timefold_annotation_PlanningId) on the given function/class
-   to a dict containing the following:
-       - 'annotationType' -> the imported Java annotation
-       - annotation parameter -> parameter value or None if unset
-4. Return the modified function/class
-
-For classes, JImplements(ai.timefold.jpyinterpreter.types.wrappers.OpaquePythonReference')(the_class)
-is called and used (which allows __getattr__ to work w/o casting to a Java Proxy).
-"""
 
 Solution_ = TypeVar('Solution_')
 
 
-def planning_id(getter_function: Callable[[], Union[int, str]]) -> Callable[[], Union[int, str]]:
-    """Specifies that a bean property is the id to match when locating an externalObject (often from another Thread).
-
-    Used during Move rebasing and in a ProblemFactChange.
-    It is specified on a getter of a java bean property of a PlanningEntity class,
-    planning value class or any problem fact class.
-
-    The return type can be any Comparable type which overrides Object.equals(Object) and Object.hashCode(),
-    and is usually number or str. It must never return a null instance.
-    """
-    ensure_init()
-    from ai.timefold.solver.core.api.domain.lookup import PlanningId as JavaPlanningId
-    getter_function.__timefold_annotation_PlanningId = {
-        'annotationType': JavaPlanningId
-    }
-    return getter_function
+class PlanningId(JavaAnnotation):
+    def __init__(self):
+        ensure_init()
+        from ai.timefold.solver.core.api.domain.lookup import PlanningId as JavaPlanningId
+        super().__init__(JavaPlanningId, {})
 
 
-def planning_pin(getter_function: Callable[[], bool]) -> Callable[[], bool]:
-    """Specifies that a boolean property (or field) of a @planning_entity determines if the planning entity is pinned.
-       A pinned planning entity is never changed during planning.
-       For example, it allows the user to pin a shift to a specific employee before solving
-       and the solver will not undo that, regardless of the constraints.
-
-       The boolean is false if the planning entity is movable and true if the planning entity is pinned.
-
-       It applies to all the planning variables of that planning entity.
-       To make individual variables pinned, see https://issues.redhat.com/browse/PLANNER-124
-
-       This is syntactic sugar for @planning_entity(pinning_filter=is_pinned_function),
-       which is a more flexible and verbose way to pin a planning entity.
-
-       :type getter_function: Callable[[], bool]
-    """
-    ensure_init()
-    from ai.timefold.solver.core.api.domain.entity import PlanningPin as JavaPlanningPin
-    getter_function.__timefold_annotation_PlanningPin = {
-        'annotationType': JavaPlanningPin
-    }
-    getter_function.__timefold_return = get_class(bool)
-    return getter_function
+class PlanningPin:
+    pass
 
 
-def planning_variable(variable_type: Type, value_range_provider_refs: List[str], nullable: bool = False,
-                      graph_type: '_PlanningVariableGraphType' = None, strength_comparator_class=None,
-                      strength_weight_factory_class=None) -> Callable[[Callable[[], Any]], Callable[[], Any]]:
-    """Specifies that a bean property can be changed and should be optimized by the optimization algorithms.
-
-    It is specified on a getter of a java bean property (or directly on a field) of
-    a PlanningEntity class. A PlanningVariable MUST be annotated on the getter.
-    The getter MUST be named get<X> (ex: getRoom) and has
-    a corresponding setter set<X> (ex: setRoom).
-
-    :param variable_type: The type of values this variable can take.
-    :param value_range_provider_refs: The value range providers refs that this
-                                      planning variable takes values from.
-    :param nullable: If this planning variable can take None as a value. Default False.
-    :param graph_type: In some use cases, such as Vehicle Routing, planning entities form a specific graph type, as
-                       specified by ai.timefold.solver.core.api.domain.variable.PlanningVariableGraphType; default None.
-    :param strength_comparator_class: Allows a collection of planning values for this variable to be sorted by strength.
-    :param strength_weight_factory_class: The SelectionSorterWeightFactory alternative for strength_comparator_class.
-    """
-
-    def planning_variable_function_wrapper(variable_getter_function: Callable[[], Any]):
+class PlanningVariable(JavaAnnotation):
+    def __init__(self, *,
+                 value_range_provider_refs: List[str] = None,
+                 allows_unassigned: bool = False,
+                 graph_type: '_PlanningVariableGraphType' = None):
         ensure_init()
         from ai.timefold.solver.core.api.domain.variable import PlanningVariable as JavaPlanningVariable
-        variable_getter_function.__timefold_annotation_PlanningVariable = {
-            'annotationType': JavaPlanningVariable,
-            'valueRangeProviderRefs': value_range_provider_refs,
-            'nullable': nullable,
-            'graphType': graph_type,
-            'strengthComparatorClass': strength_comparator_class,
-            'strengthWeightFactoryClass': strength_weight_factory_class
-        }
-        variable_getter_function.__timefold_return = get_class(variable_type)
-        return variable_getter_function
-
-    return planning_variable_function_wrapper
+        super().__init__(JavaPlanningVariable,
+                         {
+                             'valueRangeProviderRefs': value_range_provider_refs,
+                             'graphType': graph_type,
+                             'allowsUnassigned': allows_unassigned
+                         })
 
 
-def planning_list_variable(variable_type: Type, value_range_provider_refs: List[str]) -> \
-        Callable[[Callable[[], Any]], Callable[[], Any]]:
-    """Specifies that a bean property of a list type should be optimized by the optimization
-    algorithms. Unlike @planning_variable, the @planning_list_variable tells solver to change elements
-    inside the list variable instead of changing the list reference.
-
-    It is specified on a getter of a java bean property (or directly on a field) of a @planning_entity class.
-    The getter MUST be named get<X> (ex: get_room_list) and has
-    a corresponding setter set<X> (ex: set_room_list).
-
-    The type of the @planning_list_variable annotated bean property must be a List.
-    Furthermore, the current implementation works under the assumption that the list variables of all entity instances
-    are "disjoint lists":
-
-    - List means that the order of elements inside a list planning variable is significant.
-    - Disjoint means that any given pair of entities have no common elements in their list variables.
-
-    In other words, each element from the list variable's value range appears in exactly one entity's list variable.
-
-    Therefore, we refer to such a planning variable as a list variable.
-
-    This makes sense for common use cases, for example the Vehicle Routing Problem or Task Assigning. In both cases
-    the order in which customers are visited and tasks are being worked on matters. Also, each customer
-    must be visited once and each task must be completed by exactly one employee.
-
-    :param variable_type: The type of values in the list
-    :param value_range_provider_refs: The value range providers refs that this
-                                      planning list variable takes values from.
-    """
-
-    def planning_list_variable_function_wrapper(variable_getter_function: Callable[[], Any]):
+class PlanningListVariable(JavaAnnotation):
+    def __init__(self, *,
+                 value_range_provider_refs: List[str] = None,
+                 allows_unassigned: bool = False):
         ensure_init()
-        from java.util import List as JavaList
-        from ai.timefold.solver.python import PythonWrapperGenerator  # noqa
         from ai.timefold.solver.core.api.domain.variable import PlanningListVariable as JavaPlanningListVariable
-        variable_getter_function.__timefold_annotation_PlanningListVariable = {
-            'annotationType': JavaPlanningListVariable,
-            'valueRangeProviderRefs': value_range_provider_refs,
-        }
-        variable_getter_function.__timefold_is_planning_clone = True
-        variable_getter_function.__timefold_return = JavaList
-        variable_getter_function.__timefold_signature = PythonWrapperGenerator.getCollectionSignature(
-            JavaList, get_class(variable_type))
-        return variable_getter_function
-
-    return planning_list_variable_function_wrapper
+        super().__init__(JavaPlanningListVariable,
+                         {
+                             'valueRangeProviderRefs': value_range_provider_refs,
+                             # TODO: When updated to 1.8.0, add allowsUnassigned
+                             #'allowsUnassigned': allows_unassigned
+                         })
 
 
-def planning_variable_reference(variable_name: str, entity_class: Type = None) -> '_PlanningVariableReference':
-    """
-    Creates a reference to a planning variable (both genuine variables and shadow variables).
-
-    :param variable_name: The name of the variable
-    :param entity_class: The class the variable is on. If not specified, the current class will be use
-
-    :return: A PlanningVariableReference to that variable. Used in custom_shadow_variable decorators.
-    :rtype _PlanningVariableReference
-    """
-    ensure_init()
-    from typing import cast
-    from ai.timefold.solver.core.api.domain.variable import PlanningVariableReference as JavaPlanningVariableReference
-    return cast(JavaPlanningVariableReference, {
-        'annotationType': JavaPlanningVariableReference,
-        'variableName': variable_name,
-        'entityClass': entity_class
-    })
-
-
-def custom_shadow_variable(shadow_variable_type: Type, *,
-                           variable_listener_class: Type['_VariableListener'] = None,
-                           variable_listener_ref: '_PlanningVariableReference' = None,
-                           sources: List['_PlanningVariableReference'] = None) -> \
-        Callable[[], Any]:
-    """Specifies that a property is a custom shadow of 1 or more planning_variable's.
-
-    It is specified on a getter of a java bean property (or a field) of a planning_entity class.
-    """
-    ensure_init()
-    def custom_shadow_variable_function_mapper(custom_variable_getter_function: Callable[[], Any]):
+class PlanningVariableReference(JavaAnnotation):
+    def __init__(self, *,
+                 entity_class: Type = None,
+                 variable_name: str):
         ensure_init()
-        from ai.timefold.solver.core.api.domain.variable import CustomShadowVariable as JavaCustomShadowVariable
-
-        custom_variable_getter_function.__timefold_annotation_CustomShadowVariable = {
-            'annotationType': JavaCustomShadowVariable,
-            'sources': sources,
-            'variableListenerRef': variable_listener_ref,
-        }
-
-        if variable_listener_class is not None:
-            custom_variable_getter_function.__timefold_annotation_CustomShadowVariable['variableListenerClass'] = \
-                get_class(variable_listener_class)
-
-        custom_variable_getter_function.__timefold_return = get_class(shadow_variable_type)
-        return custom_variable_getter_function
-
-    return custom_shadow_variable_function_mapper
+        from ai.timefold.solver.core.api.domain.variable import (
+            PlanningVariableReference as JavaPlanningVariableReference)
+        super().__init__(JavaPlanningVariableReference,
+                         {
+                             'variableName': variable_name,
+                             'entityClass': entity_class,
+                         })
 
 
-def index_shadow_variable(anchor_type: Type, source_variable_name: str) -> Callable[[Callable[[], Any]],
-                                                                                     Callable[[], Any]]:
-    """Specifies that a bean property (or a field) is an index of this planning value in another entity's
-    a shadow variable.
-
-    It is specified on a getter of a java bean property (or a field) of a @planning_entity class.
-
-    :param source_variable_name: The source variable must be a list variable.
-
-           When the Solver changes a genuine variable, it adjusts the shadow variable accordingly.
-           In practice, the Solver ignores shadow variables (except for consistency housekeeping).
-    """
-
-    def index_shadow_variable_function_mapper(index_getter_function: Callable[[], Any]):
+class ShadowVariable(JavaAnnotation):
+    def __init__(self, *,
+                 variable_listener_class: Type['_VariableListener'] = None,
+                 source_variable_name: str,
+                 source_entity_class: Type = None):
         ensure_init()
-        from ai.timefold.solver.core.api.domain.variable import IndexShadowVariable as JavaIndexShadowVariable
-        planning_variable_name = source_variable_name
-        index_getter_function.__timefold_annotation_IndexShadowVariable = {
-            'annotationType': JavaIndexShadowVariable,
-            'sourceVariableName': planning_variable_name,
-        }
-        index_getter_function.__timefold_return = get_class(anchor_type)
-        return index_getter_function
+        from .timefold_java_interop import get_class
+        from ai.timefold.jpyinterpreter import PythonClassTranslator
+        from ai.timefold.solver.core.api.domain.variable import (
+            ShadowVariable as JavaShadowVariable)
+        super().__init__(JavaShadowVariable,
+                         {
+                             'variableListenerClass': get_class(variable_listener_class),
+                             'sourceVariableName': PythonClassTranslator.getJavaFieldName(source_variable_name),
+                             'sourceEntityClass': source_entity_class,
+                         })
 
-    return index_shadow_variable_function_mapper
 
-
-def anchor_shadow_variable(anchor_type: Type, source_variable_name: str) -> Callable[[Callable[[], Any]],
-                                                                                     Callable[[], Any]]:
-    """
-    Specifies that a bean property (or a field) is the anchor of a chained @planning_variable, which implies it's
-    a shadow variable.
-
-    It is specified on a getter of a java bean property (or a field) of a @planning_entity class.
-
-    :param anchor_type: The type of the anchor class.
-    :param source_variable_name: The source planning variable is a chained planning variable that leads to the anchor.
-           Both the genuine variable and the shadow variable should be consistent:
-           if A chains to B, then A must have the same anchor as B (unless B is the anchor).
-
-           When the Solver changes a genuine variable, it adjusts the shadow variable accordingly.
-           In practice, the Solver ignores shadow variables (except for consistency housekeeping).
-    """
-
-    def anchor_shadow_variable_function_mapper(anchor_getter_function: Callable[[], Any]):
+class IndexShadowVariable(JavaAnnotation):
+    def __init__(self, *,
+                 source_variable_name: str):
         ensure_init()
-        from ai.timefold.solver.core.api.domain.variable import AnchorShadowVariable as JavaAnchorShadowVariable
-        planning_variable_name = source_variable_name
-        anchor_getter_function.__timefold_annotation_AnchorShadowVariable = {
-            'annotationType': JavaAnchorShadowVariable,
-            'sourceVariableName': planning_variable_name,
-        }
-        anchor_getter_function.__timefold_return = get_class(anchor_type)
-        return anchor_getter_function
-
-    return anchor_shadow_variable_function_mapper
+        from ai.timefold.jpyinterpreter import PythonClassTranslator
+        from ai.timefold.solver.core.api.domain.variable import (
+            IndexShadowVariable as JavaIndexShadowVariable)
+        super().__init__(JavaIndexShadowVariable,
+                         {
+                             'sourceVariableName': PythonClassTranslator.getJavaFieldName(source_variable_name)
+                         })
 
 
-def inverse_relation_shadow_variable(source_type: Type, source_variable_name: str,
-                                     is_singleton: bool = False) -> Callable[
-    [Callable[[], Any]],
-    Callable[[], Any]]:
-    """
-    Specifies that a bean property (or a field) is the inverse of a @planning_variable, which implies it's a shadow
-    variable.
-
-    It is specified on a getter of a java bean property (or a field) of a @planning_entity class.
-
-    :param source_type: The planning entity that contains the planning variable that reference this entity.
-
-    :param source_variable_name: In a bidirectional relationship, the shadow side (= the follower side) uses this
-           property (and nothing else) to declare for which @planning_variable (= the leader side) it is a shadow.
-
-           Both sides of a bidirectional relationship should be consistent: if A points to B, then B must point to A.
-
-           When the Solver changes a genuine variable, it adjusts the shadow variable accordingly.
-           In practice, the Solver ignores shadow variables (except for consistency housekeeping).
-
-    :param is_singleton: True if and only if the shadow variable has a 1-to-{0,1} relationship
-                         (i.e. if at most one planning variable can take this value). Defaults to False.
-    """
-
-    def inverse_relation_shadow_variable_function_mapper(inverse_relation_getter_function):
+class AnchorShadowVariable(JavaAnnotation):
+    def __init__(self, *,
+                 source_variable_name: str):
         ensure_init()
-        from ai.timefold.solver.python import PythonWrapperGenerator, SelfType  # noqa
-        from ai.timefold.solver.core.api.domain.variable import InverseRelationShadowVariable as \
-            JavaInverseRelationShadowVariable
-        from java.util import Collection
-        the_source_type = source_type
-        if the_source_type is None:
-            the_source_type = SelfType
-        planning_variable_name = source_variable_name
-        inverse_relation_getter_function.__timefold_annotation_InverseRelationVariable = {
-            'annotationType': JavaInverseRelationShadowVariable,
-            'sourceVariableName': planning_variable_name,
-        }
-        if is_singleton:
-            inverse_relation_getter_function.__timefold_return = the_source_type
-        else:
-            inverse_relation_getter_function.__timefold_return = Collection
-            inverse_relation_getter_function.__timefold_signature = PythonWrapperGenerator.getCollectionSignature(
-                Collection, get_class(the_source_type))
-        return inverse_relation_getter_function
-
-    return inverse_relation_shadow_variable_function_mapper  # noqa
+        from ai.timefold.jpyinterpreter import PythonClassTranslator
+        from ai.timefold.solver.core.api.domain.variable import (
+            AnchorShadowVariable as JavaAnchorShadowVariable)
+        super().__init__(JavaAnchorShadowVariable,
+                         {
+                             'sourceVariableName': PythonClassTranslator.getJavaFieldName(source_variable_name)
+                         })
 
 
-def __verify_is_problem_fact(type, problem_fact_type):
-    if type == str or type == int or type == bool:
-        # These built-in python types have direct java equivalents
-        # and thus can be used in Lists without an illegal item on the stack
-        return
-    if not hasattr(type, '__timefold_java_class'):
-        raise ValueError(f'{type} is not a @{problem_fact_type}. Maybe decorate {type} with '
-                         f'@{problem_fact_type}?')
-
-
-def problem_fact_property(fact_type: Type) -> Callable[[Callable[[], List]],
-                                                       Callable[[], List]]:
-    """Specifies that a property on a @planning_solution class is a problem fact.
-
-    A problem fact must not change during solving (except through a ProblemFactChange event). The constraints in a
-    ConstraintProvider rely on problem facts for ConstraintFactory.from(Class).
-
-    Do not annotate planning entities as problem facts: they are automatically available as facts for
-    ConstraintFactory.from(Class).
-    """
-
-    def problem_fact_property_function_mapper(getter_function: Callable[[], Any]):
+class InverseRelationShadowVariable(JavaAnnotation):
+    def __init__(self, *,
+                 source_variable_name: str):
         ensure_init()
-        from ai.timefold.solver.python import PythonWrapperGenerator  # noqa
-        from ai.timefold.solver.core.api.domain.solution import \
-            ProblemFactProperty as JavaProblemFactProperty
-        __verify_is_problem_fact(fact_type, 'problem_fact')
-        getter_function.__timefold_return = get_class(fact_type)
-        getter_function.__timefold_annotation_PlanningEntityCollectionProperty = {
-            'annotationType': JavaProblemFactProperty
-        }
-        return getter_function
-
-    return problem_fact_property_function_mapper
+        from ai.timefold.solver.core.api.domain.variable import (
+            InverseRelationShadowVariable as JavaInverseRelationShadowVariable)
+        from ai.timefold.jpyinterpreter import PythonClassTranslator
+        super().__init__(JavaInverseRelationShadowVariable,
+                         {
+                             'sourceVariableName': PythonClassTranslator.getJavaFieldName(source_variable_name)
+                         })
 
 
-def problem_fact_collection_property(fact_type: Type) -> Callable[[Callable[[], List]],
-                                                                  Callable[[], List]]:
-    """Specifies that a property on a @planning_solution class is a Collection of problem facts.
-
-    A problem fact must not change during solving (except through a ProblemFactChange event). The constraints in a
-    ConstraintProvider rely on problem facts for ConstraintFactory.from(Class).
-    Do not annotate planning entities as problem facts: they are automatically available as facts for
-    ConstraintFactory.from(Class).
-    """
-
-    def problem_fact_collection_property_function_mapper(getter_function: Callable[[], List]):
+class ProblemFactProperty(JavaAnnotation):
+    def __init__(self):
         ensure_init()
-        from java.util import List as JavaList
-        from ai.timefold.solver.python import PythonWrapperGenerator  # noqa
-        from ai.timefold.solver.core.api.domain.solution import \
-            ProblemFactCollectionProperty as JavaProblemFactCollectionProperty
-        __verify_is_problem_fact(fact_type, 'problem_fact')
-        getter_function.__timefold_return = JavaList
-        getter_function.__timefold_signature = PythonWrapperGenerator.getCollectionSignature(
-            JavaList, get_class(fact_type))
-        getter_function.__timefold_annotation_PlanningEntityCollectionProperty = {
-            'annotationType': JavaProblemFactCollectionProperty
-        }
-        return getter_function
-
-    return problem_fact_collection_property_function_mapper
+        from ai.timefold.solver.core.api.domain.solution import (
+            ProblemFactProperty as JavaProblemFactProperty)
+        super().__init__(JavaProblemFactProperty, {})
 
 
-def planning_entity_property(entity_type: Type) -> Callable[[Callable[[], List]],
-                                                            Callable[[], List]]:
-    """Specifies that a property on a PlanningSolution class is a Collection of planning entities.
-
-    Every element in the planning entity collection should have the @planning_entity annotation. Every element in the
-    planning entity collection will be added to the ScoreDirector.
-    """
-
-    def planning_entity_property_function_mapper(getter_function: Callable[[], List]):
+class ProblemFactCollectionProperty(JavaAnnotation):
+    def __init__(self):
         ensure_init()
-        from ai.timefold.solver.python import PythonWrapperGenerator  # noqa
-        from ai.timefold.solver.core.api.domain.solution import \
-            PlanningEntityProperty as JavaPlanningEntityProperty
-        __verify_is_problem_fact(entity_type, 'planning_entity')
-        getter_function.__timefold_annotation_PlanningEntityCollectionProperty = {
-            'annotationType': JavaPlanningEntityProperty
-        }
-        getter_function.__timefold_return = get_class(entity_type)
-        return getter_function
-
-    return planning_entity_property_function_mapper
+        from ai.timefold.solver.core.api.domain.solution import (
+            ProblemFactCollectionProperty as JavaProblemFactCollectionProperty)
+        super().__init__(JavaProblemFactCollectionProperty, {})
 
 
-def planning_entity_collection_property(entity_type: Type) -> Callable[[Callable[[], List]],
-                                                                       Callable[[], List]]:
-    """Specifies that a property on a PlanningSolution class is a Collection of planning entities.
-
-    Every element in the planning entity collection should have the @planning_entity annotation. Every element in the
-    planning entity collection will be added to the ScoreDirector.
-    """
-
-    def planning_entity_collection_property_function_mapper(getter_function: Callable[[], List]):
+class PlanningEntityProperty(JavaAnnotation):
+    def __init__(self):
         ensure_init()
-        from java.util import List as JavaList
-        from ai.timefold.solver.python import PythonWrapperGenerator  # noqa
-        from ai.timefold.solver.core.api.domain.solution import \
-            PlanningEntityCollectionProperty as JavaPlanningEntityCollectionProperty
-        __verify_is_problem_fact(entity_type, 'planning_entity')
-        getter_function.__timefold_annotation_PlanningEntityCollectionProperty = {
-            'annotationType': JavaPlanningEntityCollectionProperty
-        }
-        getter_function.__timefold_return = JavaList
-        getter_function.__timefold_signature = PythonWrapperGenerator.getCollectionSignature(
-            JavaList, get_class(entity_type))
-        return getter_function
-
-    return planning_entity_collection_property_function_mapper
+        from ai.timefold.solver.core.api.domain.solution import (
+            PlanningEntityProperty as JavaPlanningEntityProperty)
+        super().__init__(JavaPlanningEntityProperty, {})
 
 
-def value_range_provider(range_id: str, value_range_type: type = object) -> Callable[
-    [Callable[[], Union[List, '_ValueRange']]], Callable[[], Union[List, '_ValueRange']]]:
-    """Provides the planning values that can be used for a PlanningVariable.
-
-    This is specified on a getter which returns a list or ValueRange. A list is implicitly converted to a ValueRange.
-
-    :param range_id: The id of the value range. Referenced by @planning_variable's value_range_provider_refs
-                     parameter. Required.
-
-    :param value_range_type: The type of the value range. Optional; required if the method does not have
-                             another decorator (@problem_fact_collection_property or
-                             @planning_entity_collection_property) that defines the type.
-                             Should be either the type of the elements the value range provider contains
-                             (if your value range is [Value(1), Value(2)], then it should be Value),
-                             or ValueRange/CountableValueRange if you use a ValueRange from
-                             timefold.solver.types.ValueRangeFactory
-                             (ex: timefold.solver.types.ValueRangeFactory.createIntValueRange(0, 10)).
-    """
-
-    def value_range_provider_function_wrapper(getter_function: Callable[[], Union[List, '_ValueRange']]):
+class PlanningEntityCollectionProperty(JavaAnnotation):
+    def __init__(self):
         ensure_init()
-        from ai.timefold.solver.core.api.domain.valuerange import ValueRangeProvider as JavaValueRangeProvider,\
-                                                               ValueRange as JavaValueRange
-        from ai.timefold.jpyinterpreter.types.wrappers import OpaquePythonReference # noqa
-        from ai.timefold.solver.python import PythonWrapperGenerator  # noqa
-        from java.util import List as JavaList
-        from java.lang import Object as JavaObject
-
-        getter_function.__timefold_annotation_ValueRangeProvider = {
-            'annotationType': JavaValueRangeProvider,
-            'id': range_id
-        }
-        if not hasattr(getter_function, '__timefold_return'):
-            actual_value_range_type = get_class(value_range_type)
-            if JavaValueRange.class_.isAssignableFrom(actual_value_range_type):
-                getter_function.__timefold_return = get_class(value_range_type)
-            else:
-                if actual_value_range_type == JavaObject:
-                    getter_function.__timefold_return = PythonWrapperGenerator.getArrayClass(OpaquePythonReference)
-                else:
-                    getter_function.__timefold_return = JavaList
-                    getter_function.__timefold_signature = PythonWrapperGenerator.getCollectionSignature(
-                        JavaList, actual_value_range_type)
-        return getter_function
-
-    return value_range_provider_function_wrapper
+        from ai.timefold.solver.core.api.domain.solution import (
+            PlanningEntityCollectionProperty as JavaPlanningEntityCollectionProperty)
+        super().__init__(JavaPlanningEntityCollectionProperty, {})
 
 
-def planning_score(score_type: Type['_Score'],
-                   bendable_hard_levels_size: int = None,
-                   bendable_soft_levels_size: int = None,
-                   score_definition_class: Type = None):
-    """Specifies that a property on a @planning_solution class holds the Score of that solution.
-
-    This property can be null if the @planning_solution is uninitialized.
-    This property is modified by the Solver, every time when the Score of this PlanningSolution has been calculated.
-
-    :param score_type: The type of the score. Should be imported from timefold.solver.score.
-    :type score_type: Type[Score]
-    :param bendable_hard_levels_size: Required for bendable scores.
-                                      For example with 3 hard levels, hard level 0 always outweighs hard level 1 which
-                                      always outweighs hard level 2, which outweighs all the soft levels.
-    :param bendable_soft_levels_size: Required for bendable scores. For example with 3 soft levels,
-                                      soft level 0 always outweighs soft level 1 which always outweighs soft level 2.
-    :param score_definition_class: Overrides the default determined ScoreDefinition to implement a custom one.
-                                   In most cases, this should not be used.
-    """
-
-    def planning_score_function_wrapper(getter_function):
+class ValueRangeProvider(JavaAnnotation):
+    def __init__(self, *, id: str = None):
         ensure_init()
-        from ai.timefold.solver.core.api.domain.solution import PlanningScore as JavaPlanningScore
-        getter_function.__timefold_annotation_PlanningScore = {
-            'annotationType': JavaPlanningScore,
-            'bendableHardLevelsSize': bendable_hard_levels_size,
-            'bendableSoftLevelsSize': bendable_soft_levels_size,
-            'scoreDefinitionClass': score_definition_class
-        }
-        getter_function.__timefold_return = get_class(score_type)
-        return getter_function
+        from ai.timefold.solver.core.api.domain.valuerange import (
+            ValueRangeProvider as JavaValueRangeProvider)
+        super().__init__(JavaValueRangeProvider, {
+            'id': id
+        })
 
-    return planning_score_function_wrapper
+
+class PlanningScore(JavaAnnotation):
+    def __init__(self, *,
+                 bendable_hard_levels_size: int = None,
+                 bendable_soft_levels_size: int = None):
+        ensure_init()
+        from ai.timefold.solver.core.api.domain.solution import (
+            PlanningScore as JavaPlanningScore)
+        super().__init__(JavaPlanningScore,
+                         {
+                             'bendableHardLevelsSize': bendable_hard_levels_size,
+                             'bendableSoftLevelsSize': bendable_soft_levels_size
+                         })
+
+
+class DeepPlanningClone(JavaAnnotation):
+    def __init__(self):
+        ensure_init()
+        from ai.timefold.solver.core.api.domain.solution.cloner import (
+            DeepPlanningClone as JavaDeepPlanningClone)
+        super().__init__(JavaDeepPlanningClone, {})
 
 
 @JImplements('ai.timefold.solver.core.api.domain.entity.PinningFilter', deferred=True)
@@ -549,20 +228,37 @@ def planning_entity(entity_class: Type = None, /, *, pinning_filter: Callable = 
     """
     ensure_init()
     from ai.timefold.solver.core.api.domain.entity import PlanningEntity as JavaPlanningEntity
-    annotation_data = {
-        'annotationType': JavaPlanningEntity,
-        'pinningFilter': _PythonPinningFilter(pinning_filter) if pinning_filter is not None else None,
-        'difficultyComparatorClass': None,
-        'difficultyWeightFactoryClass': None,
-    }
 
     def planning_entity_wrapper(entity_class_argument):
-        from jpyinterpreter import force_update_type
-        out = JImplements('ai.timefold.jpyinterpreter.types.wrappers.OpaquePythonReference')(entity_class_argument)
-        out.__timefold_java_class = _generate_planning_entity_class(entity_class_argument, annotation_data)
-        out.__timefold_is_planning_clone = True
-        _add_shallow_copy_to_class(out)
-        force_update_type(out, out.__timefold_java_class.getField('$TYPE').get(None))
+        from .timefold_java_interop import _generate_planning_entity_class
+        from ai.timefold.solver.core.api.domain.entity import PinningFilter
+        from jpyinterpreter import add_class_annotation, translate_python_bytecode_to_java_bytecode
+        from typing import get_type_hints, get_origin, Annotated
+        type_hints = get_type_hints(entity_class_argument, include_extras=True)
+        planning_pin_field = None
+        for name, type_hint in type_hints.items():
+            if get_origin(type_hint) == Annotated:
+                for metadata in type_hint.__metadata__:
+                    if metadata == PlanningPin or isinstance(metadata, PlanningPin):
+                        if planning_pin_field is not None:
+                            raise ValueError(f'Only one attribute can be annotated with PlanningPin, '
+                                             f'but found multiple fields ({planning_pin_field} and {name}).')
+                        planning_pin_field = name
+
+        pinning_filter_function = None
+        if pinning_filter is not None:
+            if planning_pin_field is not None:
+                pinning_filter_function = lambda solution, entity: (getattr(entity, planning_pin_field, False) or
+                                                                    pinning_filter(solution, entity))
+            else:
+                pinning_filter_function = pinning_filter
+        else:
+            if planning_pin_field is not None:
+                pinning_filter_function = lambda solution, entity: getattr(entity, planning_pin_field, False)
+
+        out = add_class_annotation(JavaPlanningEntity,
+                                   pinningFilter=pinning_filter_function)(entity_class_argument)
+        _generate_planning_entity_class(out)
         return out
 
     if entity_class:  # Called as @planning_entity
@@ -571,23 +267,7 @@ def planning_entity(entity_class: Type = None, /, *, pinning_filter: Callable = 
         return planning_entity_wrapper
 
 
-def problem_fact(fact_class: Type) -> Type:
-    """Specifies that a class is a problem fact.
-
-    A problem fact must not change during solving (except through a ProblemFactChange event).
-    The constraints in a ConstraintProvider rely on problem facts for ConstraintFactory.from(Class).
-    Do not annotate a planning entity as a problem fact:
-    they are automatically available as facts for ConstraintFactory.from(Class)
-    """
-    ensure_init()
-    from jpyinterpreter import force_update_type
-    out = JImplements('ai.timefold.jpyinterpreter.types.wrappers.OpaquePythonReference')(fact_class)
-    out.__timefold_java_class = _generate_problem_fact_class(fact_class)
-    force_update_type(out, out.__timefold_java_class.getField('$TYPE').get(None))
-    return out
-
-
-def planning_solution(planning_solution_class: Type) -> Type:
+def planning_solution(planning_solution_class: Type[Solution_]) -> Type[Solution_]:
     """Specifies that the class is a planning solution (represents a problem and a possible solution of that problem).
 
     A possible solution does not need to be optimal or even feasible.
@@ -614,39 +294,18 @@ def planning_solution(planning_solution_class: Type) -> Type:
     )
     """
     ensure_init()
-    from jpyinterpreter import force_update_type
-    out = JImplements('ai.timefold.jpyinterpreter.types.wrappers.OpaquePythonReference')(planning_solution_class)
-    out.__timefold_java_class = _generate_planning_solution_class(planning_solution_class)
-    out.__timefold_is_planning_solution = True
-    out.__timefold_is_planning_clone = True
-    _add_shallow_copy_to_class(out)
-    force_update_type(out, out.__timefold_java_class.getField('$TYPE').get(None))
+    from jpyinterpreter import add_class_annotation
+    from .timefold_java_interop import _generate_planning_solution_class
+    from ai.timefold.solver.core.api.domain.solution import PlanningSolution as JavaPlanningSolution
+    out = add_class_annotation(JavaPlanningSolution)(planning_solution_class)
+    _generate_planning_solution_class(planning_solution_class)
     return out
-
-
-def deep_planning_clone(planning_clone_object: Union[Type, Callable]):
-    """
-    Marks a problem fact class as being required to be deep planning cloned.
-    Not needed for a @planning_solution or @planning_entity because those are automatically deep cloned.
-
-    It can also mark a property (getter for a field) as being required to be deep planning cloned.
-    This is especially useful for list (or dictionary) properties.
-    Not needed for a list or map that contain only planning entities or planning solution as values,
-    because they are automatically deep cloned.
-    Note: If a list or map contains both planning entities and problem facts, this decorator is needed.
-
-    :param planning_clone_object: The class or property that should be deep planning cloned.
-    :return: planning_clone_object marked as being required for deep planning clone.
-    """
-    planning_clone_object.__timefold_is_planning_clone = True
-    if isinstance(planning_clone_object, type):
-        _add_shallow_copy_to_class(planning_clone_object)
-    return planning_clone_object
 
 
 def constraint_provider(constraint_provider_function: Callable[['_ConstraintFactory'], List['_Constraint']] = None, /, *,
                         function_bytecode_translation: BytecodeTranslation = BytecodeTranslation.IF_POSSIBLE) -> \
-        Callable[['_ConstraintFactory'], List['_Constraint']]:
+        Union[Callable[[Callable], Callable[['_ConstraintFactory'], List['_Constraint']]],
+              Callable[['_ConstraintFactory'], List['_Constraint']]]:
     """Marks a function as a ConstraintProvider.
 
     The function takes a single parameter, the ConstraintFactory, and
@@ -663,21 +322,16 @@ def constraint_provider(constraint_provider_function: Callable[['_ConstraintFact
     def constraint_provider_wrapper(function):
         def wrapped_constraint_provider(constraint_factory):
             from . import constraint_stream
-            from ai.timefold.solver.python import PythonSolver
             try:
                 constraint_stream.convert_to_java = function_bytecode_translation
                 out = function(constraint_stream.PythonConstraintFactory(constraint_factory,
                                                                          function_bytecode_translation))
-                if function_bytecode_translation is not BytecodeTranslation.NONE:
-                    PythonSolver.onlyUseJavaSetters = constraint_stream.all_translated_successfully
-                else:
-                    PythonSolver.onlyUseJavaSetters = False
                 return out
             finally:
                 constraint_stream.convert_to_java = BytecodeTranslation.IF_POSSIBLE
                 constraint_stream.all_translated_successfully = True
-        wrapped_constraint_provider.__timefold_java_class = _generate_constraint_provider_class(function,
-                                                                                              wrapped_constraint_provider)
+        wrapped_constraint_provider.__timefold_java_class = (
+            _generate_constraint_provider_class(function, wrapped_constraint_provider))
         return wrapped_constraint_provider
 
     if constraint_provider_function:  # Called as @constraint_provider
@@ -698,8 +352,11 @@ def easy_score_calculator(easy_score_calculator_function: Callable[[Solution_], 
     :rtype: Callable[[Solution_], '_Score']
     """
     ensure_init()
+    from jpyinterpreter import translate_python_bytecode_to_java_bytecode, generate_proxy_class_for_translated_function
+    from ai.timefold.solver.core.api.score.calculator import EasyScoreCalculator
     easy_score_calculator_function.__timefold_java_class = \
-        _generate_easy_score_calculator_class(easy_score_calculator_function)
+        generate_proxy_class_for_translated_function(EasyScoreCalculator,
+            translate_python_bytecode_to_java_bytecode(easy_score_calculator_function, EasyScoreCalculator))
     return easy_score_calculator_function
 
 
@@ -741,6 +398,7 @@ def incremental_score_calculator(incremental_score_calculator: Type['_Incrementa
     :rtype: Type
     """
     ensure_init()
+    from jpyinterpreter import translate_python_class_to_java_class, generate_proxy_class_for_translated_class
     from ai.timefold.solver.core.api.score.calculator import IncrementalScoreCalculator, \
         ConstraintMatchAwareIncrementalScoreCalculator
     constraint_match_aware = callable(getattr(incremental_score_calculator, 'getConstraintMatchTotals', None)) and \
@@ -765,13 +423,12 @@ def incremental_score_calculator(incremental_score_calculator: Type['_Incrementa
     if len(missing_method_list) != 0:
         raise ValueError(f'The following required methods are missing from @incremental_score_calculator class '
                          f'{incremental_score_calculator}: {missing_method_list}')
-    for method in methods:
-        method_on_class = getattr(incremental_score_calculator, method, None)
-        setattr(incremental_score_calculator, method, JOverride()(method_on_class))
+    # for method in methods:
+    #     method_on_class = getattr(incremental_score_calculator, method, None
 
-    out = jpype.JImplements(base_interface)(incremental_score_calculator)
-    out.__timefold_java_class = _generate_incremental_score_calculator_class(out, constraint_match_aware)
-    return out
+    translated_class = translate_python_class_to_java_class(incremental_score_calculator)
+    incremental_score_calculator.__timefold_java_class = generate_proxy_class_for_translated_class(base_interface, translated_class)
+    return incremental_score_calculator
 
 
 def variable_listener(variable_listener_class: Type['_VariableListener'] = None, /, *,
@@ -820,6 +477,7 @@ def variable_listener(variable_listener_class: Type['_VariableListener'] = None,
     ensure_init()
 
     def variable_listener_wrapper(the_variable_listener_class):
+        from jpyinterpreter import translate_python_class_to_java_class, generate_proxy_class_for_translated_class
         from ai.timefold.solver.core.api.domain.variable import VariableListener
         methods = ['beforeEntityAdded',
                    'afterEntityAdded',
@@ -828,8 +486,6 @@ def variable_listener(variable_listener_class: Type['_VariableListener'] = None,
                    'beforeEntityRemoved',
                    'afterEntityRemoved']
 
-        base_interface = VariableListener
-
         missing_method_list = []
         for method in methods:
             if not callable(getattr(the_variable_listener_class, method, None)):
@@ -837,30 +493,13 @@ def variable_listener(variable_listener_class: Type['_VariableListener'] = None,
         if len(missing_method_list) != 0:
             raise ValueError(f'The following required methods are missing from @variable_listener class '
                              f'{the_variable_listener_class}: {missing_method_list}')
-        for method in methods:
-            method_on_class = getattr(the_variable_listener_class, method, None)
-
-            if method.startswith('after'):
-                # Use method_on_class as a default argument to force early binding
-                # (Otherwise, it will be the same method for all wrappers)
-                def wrapper_method(self, score_director, entity, original_method=method_on_class):
-                    score_director.getWorkingSolution().forceUpdate()
-                    original_method(self, score_director, entity)
-
-                method_on_class = wrapper_method
-
-            setattr(the_variable_listener_class, method, JOverride()(method_on_class))
 
         method_on_class = getattr(the_variable_listener_class, 'requiresUniqueEntityEvents', None)
         if method_on_class is None:
             def class_requires_unique_entity_events(self):
                 return require_unique_entity_events
 
-            setattr(the_variable_listener_class, 'requiresUniqueEntityEvents',
-                    JOverride()(class_requires_unique_entity_events))
-        else:
-            setattr(the_variable_listener_class, 'requiresUniqueEntityEvents',
-                    JOverride()(method_on_class))
+            setattr(the_variable_listener_class, 'requiresUniqueEntityEvents', class_requires_unique_entity_events)
 
 
         method_on_class = getattr(the_variable_listener_class, 'close', None)
@@ -868,26 +507,18 @@ def variable_listener(variable_listener_class: Type['_VariableListener'] = None,
             def close(self):
                 pass
 
-            setattr(the_variable_listener_class, 'close',
-                    JOverride()(close))
-        else:
-            setattr(the_variable_listener_class, 'close',
-                    JOverride()(method_on_class))
+            setattr(the_variable_listener_class, 'close', close)
 
         method_on_class = getattr(the_variable_listener_class, 'resetWorkingSolution', None)
         if method_on_class is None:
             def reset_working_solution(self, score_director):
                 pass
 
-            setattr(the_variable_listener_class, 'resetWorkingSolution',
-                    JOverride()(reset_working_solution))
-        else:
-            setattr(the_variable_listener_class, 'resetWorkingSolution',
-                    JOverride()(method_on_class))
+            setattr(the_variable_listener_class, 'resetWorkingSolution', reset_working_solution)
 
-        out = jpype.JImplements(base_interface)(the_variable_listener_class)
-        out.__timefold_java_class = _generate_variable_listener_class(out)
-        return out
+        translated_class = translate_python_class_to_java_class(the_variable_listener_class)
+        the_variable_listener_class.__timefold_java_class = generate_proxy_class_for_translated_class(VariableListener, translated_class)
+        return the_variable_listener_class
 
     if variable_listener_class:  # Called as @variable_listener
         return variable_listener_wrapper(variable_listener_class)

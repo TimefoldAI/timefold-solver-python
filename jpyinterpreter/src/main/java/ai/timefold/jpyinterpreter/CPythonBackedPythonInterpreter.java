@@ -3,10 +3,12 @@ package ai.timefold.jpyinterpreter;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -20,9 +22,10 @@ import ai.timefold.jpyinterpreter.types.errors.PythonTraceback;
 import ai.timefold.jpyinterpreter.types.numeric.PythonInteger;
 import ai.timefold.jpyinterpreter.types.wrappers.OpaquePythonReference;
 import ai.timefold.jpyinterpreter.types.wrappers.PythonObjectWrapper;
+import ai.timefold.jpyinterpreter.util.ConcurrentWeakIdentityHashMap;
 import ai.timefold.jpyinterpreter.util.function.PentaFunction;
+import ai.timefold.jpyinterpreter.util.function.QuadConsumer;
 import ai.timefold.jpyinterpreter.util.function.QuadFunction;
-import ai.timefold.jpyinterpreter.util.function.TriConsumer;
 import ai.timefold.jpyinterpreter.util.function.TriFunction;
 
 public class CPythonBackedPythonInterpreter implements PythonInterpreter {
@@ -31,6 +34,9 @@ public class CPythonBackedPythonInterpreter implements PythonInterpreter {
     Scanner inputScanner;
 
     Map<ModuleSpec, PythonModule> moduleSpecToModuleMap = new HashMap<>();
+
+    final Set<PythonLikeObject> hasReferenceSet =
+            Collections.newSetFromMap(new ConcurrentWeakIdentityHashMap<>());
 
     public static Map<Number, Object> pythonObjectIdToConvertedObjectMap = new HashMap<>();
 
@@ -42,7 +48,7 @@ public class CPythonBackedPythonInterpreter implements PythonInterpreter {
     public static BiFunction<OpaquePythonReference, String, OpaquePythonReference[]> lookupPointerArrayForAttributeOnPythonReferencePythonFunction;
 
     public static TriFunction<OpaquePythonReference, String, Map<Number, PythonLikeObject>, PythonLikeObject> lookupAttributeOnPythonReferenceWithMapPythonFunction;
-    public static TriConsumer<OpaquePythonReference, String, Object> setAttributeOnPythonReferencePythonFunction;
+    public static QuadConsumer<OpaquePythonReference, OpaquePythonReference, String, Object> setAttributeOnPythonReferencePythonFunction;
     public static BiConsumer<OpaquePythonReference, String> deleteAttributeOnPythonReferencePythonFunction;
     public static BiFunction<OpaquePythonReference, Map<Number, PythonLikeObject>, Map<String, PythonLikeObject>> lookupDictOnPythonReferencePythonFunction;
     public static TriFunction<OpaquePythonReference, List<PythonLikeObject>, Map<PythonString, PythonLikeObject>, PythonLikeObject> callPythonFunction;
@@ -87,8 +93,9 @@ public class CPythonBackedPythonInterpreter implements PythonInterpreter {
         return lookupPointerArrayForAttributeOnPythonReferencePythonFunction.apply(object, attribute);
     }
 
-    public static void setAttributeOnPythonReference(OpaquePythonReference object, String attribute, Object value) {
-        setAttributeOnPythonReferencePythonFunction.accept(object, attribute, value);
+    public static void setAttributeOnPythonReference(OpaquePythonReference object, OpaquePythonReference cloneMap,
+            String attribute, Object value) {
+        setAttributeOnPythonReferencePythonFunction.accept(object, cloneMap, attribute, value);
     }
 
     public static void deleteAttributeOnPythonReference(OpaquePythonReference object, String attribute) {
@@ -105,7 +112,6 @@ public class CPythonBackedPythonInterpreter implements PythonInterpreter {
             Map<Number, PythonLikeObject> instanceMap) {
         javaObject.$setInstanceMap(instanceMap);
         javaObject.$setCPythonReference(pythonObject);
-        javaObject.$setCPythonId(PythonInteger.valueOf(getPythonReferenceId(pythonObject).longValue()));
         javaObject.$readFieldsFromCPythonReference();
     }
 
@@ -127,6 +133,23 @@ public class CPythonBackedPythonInterpreter implements PythonInterpreter {
             PythonLikeTuple closure,
             PythonString name) {
         return createFunctionFromCodeFunction.apply(codeObject, globals, closure, name);
+    }
+
+    @Override
+    public boolean hasValidPythonReference(PythonLikeObject instance) {
+        return hasReferenceSet.contains(instance);
+    }
+
+    @Override
+    public void setPythonReference(PythonLikeObject instance, OpaquePythonReference reference) {
+        if (instance instanceof CPythonBackedPythonLikeObject backedObject) {
+            backedObject.$cpythonReference = reference;
+            backedObject.$cpythonId = PythonInteger.valueOf(getPythonReferenceId(reference).longValue());
+            hasReferenceSet.add(backedObject);
+        } else {
+            throw new IllegalArgumentException(
+                    "Can only call this method on %s objects.".formatted(CPythonBackedPythonLikeObject.class.getSimpleName()));
+        }
     }
 
     @Override
@@ -167,7 +190,7 @@ public class CPythonBackedPythonInterpreter implements PythonInterpreter {
 
     @Override
     public void write(String output) {
-        standardOutput.println(output);
+        standardOutput.print(output);
     }
 
     @Override

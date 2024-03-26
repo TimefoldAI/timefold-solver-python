@@ -576,13 +576,8 @@ public class PythonString extends AbstractPythonLikeObject implements PythonLike
         return PythonBoolean.valueOf(value.startsWith(prefix.value));
     }
 
-    public PythonBoolean startsWith(PythonLikeTuple prefixTuple) {
-        for (PythonLikeObject maybePrefix : prefixTuple) {
-            if (!(maybePrefix instanceof PythonString)) {
-                throw new TypeError("tuple for endswith must only contain str, not int");
-            }
-
-            PythonString prefix = (PythonString) maybePrefix;
+    public PythonBoolean startsWith(PythonLikeTuple<PythonString> prefixTuple) {
+        for (PythonString prefix : prefixTuple) {
             if (value.startsWith(prefix.value)) {
                 return PythonBoolean.TRUE;
             }
@@ -595,15 +590,10 @@ public class PythonString extends AbstractPythonLikeObject implements PythonLike
         return PythonBoolean.valueOf(value.substring(startIndex).startsWith(prefix.value));
     }
 
-    public PythonBoolean startsWith(PythonLikeTuple prefixTuple, PythonInteger start) {
+    public PythonBoolean startsWith(PythonLikeTuple<PythonString> prefixTuple, PythonInteger start) {
         int startIndex = PythonSlice.asValidStartIntIndexForLength(start, value.length());
         String toCheck = value.substring(startIndex);
-        for (PythonLikeObject maybePrefix : prefixTuple) {
-            if (!(maybePrefix instanceof PythonString)) {
-                throw new TypeError("tuple for endswith must only contain str, not int");
-            }
-
-            PythonString prefix = (PythonString) maybePrefix;
+        for (PythonString prefix : prefixTuple) {
             if (toCheck.startsWith(prefix.value)) {
                 return PythonBoolean.TRUE;
             }
@@ -617,17 +607,12 @@ public class PythonString extends AbstractPythonLikeObject implements PythonLike
         return PythonBoolean.valueOf(value.substring(startIndex, endIndex).startsWith(prefix.value));
     }
 
-    public PythonBoolean startsWith(PythonLikeTuple prefixTuple, PythonInteger start, PythonInteger end) {
+    public PythonBoolean startsWith(PythonLikeTuple<PythonString> prefixTuple, PythonInteger start, PythonInteger end) {
         int startIndex = PythonSlice.asValidStartIntIndexForLength(start, value.length());
         int endIndex = PythonSlice.asValidEndIntIndexForLength(end, value.length());
 
         String toCheck = value.substring(startIndex, endIndex);
-        for (PythonLikeObject maybePrefix : prefixTuple) {
-            if (!(maybePrefix instanceof PythonString)) {
-                throw new TypeError("tuple for endswith must only contain str, not int");
-            }
-
-            PythonString prefix = (PythonString) maybePrefix;
+        for (PythonString prefix : prefixTuple) {
             if (toCheck.startsWith(prefix.value)) {
                 return PythonBoolean.TRUE;
             }
@@ -639,13 +624,8 @@ public class PythonString extends AbstractPythonLikeObject implements PythonLike
         return PythonBoolean.valueOf(value.endsWith(suffix.value));
     }
 
-    public PythonBoolean endsWith(PythonLikeTuple suffixTuple) {
-        for (PythonLikeObject maybeSuffix : suffixTuple) {
-            if (!(maybeSuffix instanceof PythonString)) {
-                throw new TypeError("tuple for endswith must only contain str, not int");
-            }
-
-            PythonString suffix = (PythonString) maybeSuffix;
+    public PythonBoolean endsWith(PythonLikeTuple<PythonString> suffixTuple) {
+        for (PythonString suffix : suffixTuple) {
             if (value.endsWith(suffix.value)) {
                 return PythonBoolean.TRUE;
             }
@@ -658,15 +638,10 @@ public class PythonString extends AbstractPythonLikeObject implements PythonLike
         return PythonBoolean.valueOf(value.substring(startIndex).endsWith(suffix.value));
     }
 
-    public PythonBoolean endsWith(PythonLikeTuple suffixTuple, PythonInteger start) {
+    public PythonBoolean endsWith(PythonLikeTuple<PythonString> suffixTuple, PythonInteger start) {
         int startIndex = PythonSlice.asValidStartIntIndexForLength(start, value.length());
         String toCheck = value.substring(startIndex);
-        for (PythonLikeObject maybeSuffix : suffixTuple) {
-            if (!(maybeSuffix instanceof PythonString)) {
-                throw new TypeError("tuple for endswith must only contain str, not int");
-            }
-
-            PythonString suffix = (PythonString) maybeSuffix;
+        for (PythonString suffix : suffixTuple) {
             if (toCheck.endsWith(suffix.value)) {
                 return PythonBoolean.TRUE;
             }
@@ -681,17 +656,12 @@ public class PythonString extends AbstractPythonLikeObject implements PythonLike
         return PythonBoolean.valueOf(value.substring(startIndex, endIndex).endsWith(suffix.value));
     }
 
-    public PythonBoolean endsWith(PythonLikeTuple suffixTuple, PythonInteger start, PythonInteger end) {
+    public PythonBoolean endsWith(PythonLikeTuple<PythonString> suffixTuple, PythonInteger start, PythonInteger end) {
         int startIndex = PythonSlice.asValidStartIntIndexForLength(start, value.length());
         int endIndex = PythonSlice.asValidEndIntIndexForLength(end, value.length());
 
         String toCheck = value.substring(startIndex, endIndex);
-        for (PythonLikeObject maybeSuffix : suffixTuple) {
-            if (!(maybeSuffix instanceof PythonString)) {
-                throw new TypeError("tuple for endswith must only contain str, not int");
-            }
-
-            PythonString suffix = (PythonString) maybeSuffix;
+        for (PythonString suffix : suffixTuple) {
             if (toCheck.endsWith(suffix.value)) {
                 return PythonBoolean.TRUE;
             }

@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 
 import ai.timefold.jpyinterpreter.CPythonBackedPythonInterpreter;
+import ai.timefold.jpyinterpreter.PythonInterpreter;
 import ai.timefold.jpyinterpreter.PythonLikeObject;
 import ai.timefold.jpyinterpreter.types.CPythonBackedPythonLikeObject;
 import ai.timefold.jpyinterpreter.types.PythonLikeFunction;
@@ -24,7 +25,7 @@ public class PythonObjectWrapper extends CPythonBackedPythonLikeObject
     private final Map<String, PythonLikeObject> cachedAttributeMap;
 
     public PythonObjectWrapper(OpaquePythonReference pythonReference) {
-        super(CPythonType.lookupTypeOfPythonObject(pythonReference), pythonReference);
+        super(PythonInterpreter.DEFAULT, CPythonType.lookupTypeOfPythonObject(pythonReference), pythonReference);
         cachedAttributeMap = new HashMap<>();
     }
 
@@ -42,7 +43,7 @@ public class PythonObjectWrapper extends CPythonBackedPythonLikeObject
     @Override
     public void $setAttribute(String attributeName, PythonLikeObject value) {
         cachedAttributeMap.put(attributeName, value);
-        CPythonBackedPythonInterpreter.setAttributeOnPythonReference($cpythonReference, attributeName, value);
+        CPythonBackedPythonInterpreter.setAttributeOnPythonReference($cpythonReference, null, attributeName, value);
     }
 
     @Override

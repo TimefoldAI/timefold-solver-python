@@ -38,4 +38,15 @@ public class GeneratorExit extends PythonException {
             value = PythonNone.INSTANCE;
         }
     }
+
+    /**
+     * This exception acts as a signal, and should be low cost
+     * 
+     * @return this
+     */
+    @Override
+    public Throwable fillInStackTrace() {
+        // Do nothing
+        return this;
+    }
 }

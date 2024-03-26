@@ -21,9 +21,11 @@ import ai.timefold.jpyinterpreter.types.errors.ValueError;
 import ai.timefold.jpyinterpreter.types.errors.lookup.KeyError;
 import ai.timefold.jpyinterpreter.types.numeric.PythonBoolean;
 import ai.timefold.jpyinterpreter.types.numeric.PythonInteger;
+import ai.timefold.solver.core.impl.domain.solution.cloner.PlanningCloneable;
 
-public class PythonLikeSet extends AbstractPythonLikeObject implements Set<PythonLikeObject> {
-    public final Set<PythonLikeObject> delegate;
+public class PythonLikeSet<T extends PythonLikeObject> extends AbstractPythonLikeObject implements Set<T>,
+        PlanningCloneable<PythonLikeSet<T>> {
+    public final Set delegate;
 
     static {
         PythonOverloadImplementor.deferDispatchesFor(PythonLikeSet::registerMethods);
@@ -147,9 +149,14 @@ public class PythonLikeSet extends AbstractPythonLikeObject implements Set<Pytho
         delegate = new HashSet<>(size);
     }
 
+    @Override
+    public PythonLikeSet<T> createNewInstance() {
+        return new PythonLikeSet<>();
+    }
+
     // Required for bytecode generation
     @SuppressWarnings("unused")
-    public void reverseAdd(PythonLikeObject item) {
+    public void reverseAdd(T item) {
         delegate.add(item);
     }
 
@@ -193,29 +200,29 @@ public class PythonLikeSet extends AbstractPythonLikeObject implements Set<Pytho
         return PythonBoolean.valueOf(delegate.containsAll(other.delegate) && !other.delegate.containsAll(delegate));
     }
 
-    public PythonLikeSet union(PythonLikeSet other) {
-        PythonLikeSet out = new PythonLikeSet();
+    public PythonLikeSet<T> union(PythonLikeSet<T> other) {
+        var out = new PythonLikeSet<T>();
         out.delegate.addAll(delegate);
         out.delegate.addAll(other.delegate);
         return out;
     }
 
-    public PythonLikeSet union(PythonLikeFrozenSet other) {
-        PythonLikeSet out = new PythonLikeSet();
+    public PythonLikeSet<T> union(PythonLikeFrozenSet other) {
+        var out = new PythonLikeSet<T>();
         out.delegate.addAll(delegate);
         out.delegate.addAll(other.delegate);
         return out;
     }
 
-    public PythonLikeSet intersection(PythonLikeSet other) {
-        PythonLikeSet out = new PythonLikeSet();
+    public PythonLikeSet<T> intersection(PythonLikeSet<T> other) {
+        var out = new PythonLikeSet<T>();
         out.delegate.addAll(delegate);
         out.delegate.retainAll(other.delegate);
         return out;
     }
 
-    public PythonLikeSet intersection(PythonLikeFrozenSet other) {
-        PythonLikeSet out = new PythonLikeSet();
+    public PythonLikeSet<T> intersection(PythonLikeFrozenSet other) {
+        var out = new PythonLikeSet<T>();
         out.delegate.addAll(delegate);
         out.delegate.retainAll(other.delegate);
         return out;
@@ -245,17 +252,17 @@ public class PythonLikeSet extends AbstractPythonLikeObject implements Set<Pytho
         return out;
     }
 
-    public PythonLikeSet symmetricDifference(PythonLikeFrozenSet other) {
-        PythonLikeSet out = new PythonLikeSet();
+    public PythonLikeSet<T> symmetricDifference(PythonLikeFrozenSet other) {
+        var out = new PythonLikeSet<T>();
         out.delegate.addAll(delegate);
         other.delegate.stream() // for each item in other
-                .filter(Predicate.not(out.delegate::add)) // add each item
+                .filter(Predicate.not(item -> out.delegate.add(item))) // add each item
                 .forEach(out.delegate::remove); // add return false iff item already in set, so this remove
         // all items in both this and other
         return out;
     }
 
-    public PythonLikeSet updateWithResult(PythonLikeObject collection) {
+    public PythonLikeSet<T> updateWithResult(PythonLikeObject collection) {
         if (collection instanceof Collection) {
             delegate.addAll((Collection<? extends PythonLikeObject>) collection);
         } else {
@@ -356,7 +363,7 @@ public class PythonLikeSet extends AbstractPythonLikeObject implements Set<Pytho
         if (delegate.isEmpty()) {
             throw new KeyError("set (" + this + ") is empty.");
         }
-        PythonLikeObject out = delegate.iterator().next();
+        PythonLikeObject out = (PythonLikeObject) delegate.iterator().next();
         delegate.remove(out);
         return out;
     }
@@ -398,7 +405,7 @@ public class PythonLikeSet extends AbstractPythonLikeObject implements Set<Pytho
     }
 
     @Override
-    public Iterator<PythonLikeObject> iterator() {
+    public Iterator<T> iterator() {
         return delegate.iterator();
     }
 
@@ -413,7 +420,7 @@ public class PythonLikeSet extends AbstractPythonLikeObject implements Set<Pytho
 
     @Override
     public <T> T[] toArray(T[] ts) {
-        return delegate.toArray(ts);
+        return (T[]) delegate.toArray(ts);
     }
 
     @Override
@@ -432,7 +439,7 @@ public class PythonLikeSet extends AbstractPythonLikeObject implements Set<Pytho
     }
 
     @Override
-    public boolean addAll(Collection<? extends PythonLikeObject> collection) {
+    public boolean addAll(Collection<? extends T> collection) {
         return delegate.addAll(collection);
     }
 

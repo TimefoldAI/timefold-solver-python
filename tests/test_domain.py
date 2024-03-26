@@ -1,35 +1,28 @@
 import timefold.solver
 import timefold.solver.types
 import timefold.solver.score
+import timefold.solver.valuerange
 import timefold.solver.config
 import timefold.solver.constraint
 
-import dataclasses
-from typing import Optional, Union, List
+from dataclasses import dataclass, field
+from typing import Annotated, Optional, List
 
 
 def test_solve_partial():
+    @dataclass
     class Code:
-        def __init__(self, value):
-            self.value = value
+        value: str
 
-    @timefold.solver.problem_fact
+    @dataclass
     class Value:
-        def __init__(self, code):
-            self.code = Code(code)
+        code: Code
 
     @timefold.solver.planning_entity
+    @dataclass
     class Entity:
-        def __init__(self, code, value=None):
-            self.code = Code(code)
-            self.value = value
-
-        @timefold.solver.planning_variable(Value, value_range_provider_refs=['value_range'])
-        def get_value(self):
-            return self.value
-
-        def set_value(self, value):
-            self.value = value
+        code: Code
+        value: Annotated[Value, timefold.solver.PlanningVariable] = field(default=None)
 
     def is_value_one(constraint_factory: timefold.solver.constraint.ConstraintFactory):
         return (constraint_factory.for_each(Entity)
@@ -44,90 +37,67 @@ def test_solve_partial():
         ]
 
     @timefold.solver.planning_solution
+    @dataclass
     class Solution:
-        def __init__(self, entities, values, score=None):
-            self.entities = entities
-            self.values = values
-            self.score = score
+        entities: Annotated[List[Entity], timefold.solver.PlanningEntityCollectionProperty]
+        values: Annotated[List[Value],
+                          timefold.solver.ProblemFactCollectionProperty,
+                          timefold.solver.ValueRangeProvider]
+        score: Annotated[timefold.solver.score.SimpleScore, timefold.solver.PlanningScore] = field(default=None)
 
-        @timefold.solver.planning_entity_collection_property(Entity)
-        def get_entities(self):
-            return self.entities
+    solver_config = timefold.solver.config.SolverConfig(
+        solution_class=Solution,
+        entity_class_list=[Entity],
+        score_director_factory_config=timefold.solver.config.ScoreDirectorFactoryConfig(
+            constraint_provider_function=my_constraints
+        ),
+        termination_config=timefold.solver.config.TerminationConfig(
+            best_score_limit='3'
+        )
+    )
 
-        @timefold.solver.problem_fact_collection_property(Value)
-        @timefold.solver.value_range_provider(range_id='value_range')
-        def get_values(self):
-            return self.values
+    e1 = Entity(Code('e1'))
+    e2 = Entity(Code('e2'))
+    e3 = Entity(Code('e3'))
 
-        @timefold.solver.planning_score(timefold.solver.score.SimpleScore)
-        def get_score(self) -> timefold.solver.score.SimpleScore:
-            return self.score
-
-        def set_score(self, score):
-            self.score = score
-
-    solver_config = timefold.solver.config.solver.SolverConfig()
-    termination_config = timefold.solver.config.solver.termination.TerminationConfig()
-    termination_config.setBestScoreLimit('3')
-    solver_config.withSolutionClass(Solution) \
-        .withEntityClasses(Entity) \
-        .withConstraintProviderClass(my_constraints) \
-        .withTerminationConfig(termination_config)
-
-    e1 = Entity('e1')
-    e2 = Entity('e2')
-    e3 = Entity('e3')
-
-    v1 = Value('v1')
-    v2 = Value('v2')
-    v3 = Value('v3')
+    v1 = Value(Code('v1'))
+    v2 = Value(Code('v2'))
+    v3 = Value(Code('v3'))
 
     e1.value = v1
     e2.value = v2
     e3.value = v3
 
     problem = Solution([e1, e2, e3], [v1, v2, v3])
-    solver = timefold.solver.solver_factory_create(solver_config).buildSolver()
+    solver = timefold.solver.SolverFactory.create(solver_config).build_solver()
     solution = solver.solve(problem)
 
-    assert solution.score.getScore() == 3
+    assert solution.score.score() == 3
     assert solution.entities[0].value == v1
     assert solution.entities[1].value == v1
     assert solution.entities[2].value == v1
 
 
 def test_solve_nullable():
+    @dataclass
     class Code:
         value: str
 
-        def __init__(self, value):
-            self.value = value
-
-    @timefold.solver.problem_fact
+    @dataclass
     class Value:
         code: Code
 
-        def __init__(self, code):
-            self.code = Code(code)
-
     @timefold.solver.planning_entity
+    @dataclass
     class Entity:
         code: Code
-        value: Optional[Value]
-
-        def __init__(self, code, value=None):
-            self.code = Code(code)
-            self.value = value
-
-        @timefold.solver.planning_variable(Value, nullable=True, value_range_provider_refs=['value_range'])
-        def get_value(self):
-            return self.value
-
-        def set_value(self, value):
-            self.value = value
+        value: Annotated[Optional[Value],
+                         timefold.solver.PlanningVariable(allows_unassigned=True,
+                                                          value_range_provider_refs=['value_range'])] = (
+            field(default=None))
 
     def at_least_one_null(constraint_factory: timefold.solver.constraint.ConstraintFactory):
-        return (constraint_factory.for_each_including_null_vars(Entity)
+        return (constraint_factory.for_each_including_unassigned(Entity)
                                   .filter(lambda e: e.value is None)
                                   .group_by(timefold.solver.constraint.ConstraintCollectors.count())
                                   .filter(lambda count: count >= 1)
@@ -135,7 +105,7 @@ def test_solve_nullable():
                 )
 
     def assign_to_v1(constraint_factory: timefold.solver.constraint.ConstraintFactory):
-        return (constraint_factory.for_each_including_null_vars(Entity)
+        return (constraint_factory.for_each_including_unassigned(Entity)
                                   .filter(lambda e: e.value is not None and e.value.code.value == 'v1')
                                   .group_by(timefold.solver.constraint.ConstraintCollectors.count())
                                   .filter(lambda count: count >= 1)
@@ -150,81 +120,55 @@ def test_solve_nullable():
         ]
 
     @timefold.solver.planning_solution
+    @dataclass
     class Solution:
-        def __init__(self, entities, values, score=None):
-            self.entities = entities
-            self.values = values
-            self.score = score
+        entities: Annotated[List[Entity], timefold.solver.PlanningEntityCollectionProperty]
+        values: Annotated[List[Value],
+                          timefold.solver.ProblemFactCollectionProperty,
+                          timefold.solver.ValueRangeProvider(id='value_range')]
+        score: Annotated[timefold.solver.score.HardSoftScore, timefold.solver.PlanningScore] = field(default=None)
 
-        @timefold.solver.planning_entity_collection_property(Entity)
-        def get_entities(self):
-            return self.entities
+    solver_config = timefold.solver.config.SolverConfig(
+        solution_class=Solution,
+        entity_class_list=[Entity],
+        score_director_factory_config=timefold.solver.config.ScoreDirectorFactoryConfig(
+            constraint_provider_function=my_constraints
+        ),
+        termination_config=timefold.solver.config.TerminationConfig(
+            best_score_limit='1hard/1soft'
+        )
+    )
 
-        @timefold.solver.problem_fact_collection_property(Value)
-        @timefold.solver.value_range_provider(range_id='value_range')
-        def get_values(self):
-            return self.values
+    e1 = Entity(Code('e1'))
+    e2 = Entity(Code('e2'))
 
-        @timefold.solver.planning_score(timefold.solver.score.HardSoftScore)
-        def get_score(self) -> timefold.solver.score.HardSoftScore:
-            return self.score
-
-        def set_score(self, score):
-            self.score = score
-
-    solver_config = timefold.solver.config.solver.SolverConfig()
-    termination_config = timefold.solver.config.solver.termination.TerminationConfig()
-    termination_config.setBestScoreLimit('1hard/1soft')
-    solver_config.withSolutionClass(Solution) \
-        .withEntityClasses(Entity) \
-        .withConstraintProviderClass(my_constraints) \
-        .withTerminationConfig(termination_config)
-
-    e1 = Entity('e1')
-    e2 = Entity('e2')
-
-    v1 = Value('v1')
-    v2 = Value('v2')
+    v1 = Value(Code('v1'))
+    v2 = Value(Code('v2'))
 
     problem = Solution([e1, e2], [v1, v2])
-    solver = timefold.solver.solver_factory_create(solver_config).buildSolver()
+    solver = timefold.solver.SolverFactory.create(solver_config).build_solver()
     solution = solver.solve(problem)
 
-    assert solution.score.getHardScore() == 1
-    assert solution.score.getSoftScore() == 1
-    assert solution.entities[0].value == v1 or solution.entities[0].value == None
-    assert solution.entities[1].value == v1 or solution.entities[1].value == None
+    assert solution.score.hard_score() == 1
+    assert solution.score.soft_score() == 1
+    assert solution.entities[0].value == v1 or solution.entities[0].value is None
+    assert solution.entities[1].value == v1 or solution.entities[1].value is None
 
 
 def test_solve_typed():
+    @dataclass
     class Code:
         value: str
 
-        def __init__(self, value: str):
-            self.value = value
-
-    @timefold.solver.problem_fact
+    @dataclass
     class Value:
         code: Code
 
-        def __init__(self, code: str):
-            self.code = Code(code)
-
     @timefold.solver.planning_entity
+    @dataclass
     class Entity:
         code: Code
-        value: Value
-
-        def __init__(self, code, value=None):
-            self.code = Code(code)
-            self.value = value
-
-        @timefold.solver.planning_variable(Value, value_range_provider_refs=['value_range'])
-        def get_value(self):
-            return self.value
-
-        def set_value(self, value):
-            self.value = value
+        value: Annotated[Value, timefold.solver.PlanningVariable] = field(default=None)
 
     def assign_to_v1(constraint_factory: timefold.solver.constraint.ConstraintFactory):
         return (constraint_factory.for_each(Entity)
@@ -239,47 +183,36 @@ def test_solve_typed():
         ]
 
     @timefold.solver.planning_solution
+    @dataclass
     class Solution:
-        def __init__(self, entities, values, score=None):
-            self.entities = entities
-            self.values = values
-            self.score = score
+        entities: Annotated[List[Entity], timefold.solver.PlanningEntityCollectionProperty]
+        values: Annotated[List[Value],
+                          timefold.solver.ProblemFactCollectionProperty,
+                          timefold.solver.ValueRangeProvider]
+        score: Annotated[timefold.solver.score.SimpleScore, timefold.solver.PlanningScore] = field(default=None)
 
-        @timefold.solver.planning_entity_collection_property(Entity)
-        def get_entities(self):
-            return self.entities
+    solver_config = timefold.solver.config.SolverConfig(
+        solution_class=Solution,
+        entity_class_list=[Entity],
+        score_director_factory_config=timefold.solver.config.ScoreDirectorFactoryConfig(
+            constraint_provider_function=my_constraints
+        ),
+        termination_config=timefold.solver.config.TerminationConfig(
+            best_score_limit='2'
+        )
+    )
 
-        @timefold.solver.problem_fact_collection_property(Value)
-        @timefold.solver.value_range_provider(range_id='value_range')
-        def get_values(self):
-            return self.values
+    e1 = Entity(Code('e1'))
+    e2 = Entity(Code('e2'))
 
-        @timefold.solver.planning_score(timefold.solver.score.SimpleScore)
-        def get_score(self) -> timefold.solver.score.SimpleScore:
-            return self.score
-
-        def set_score(self, score):
-            self.score = score
-
-    solver_config = timefold.solver.config.solver.SolverConfig()
-    termination_config = timefold.solver.config.solver.termination.TerminationConfig()
-    termination_config.setBestScoreLimit('2')
-    solver_config.withSolutionClass(Solution) \
-        .withEntityClasses(Entity) \
-        .withConstraintProviderClass(my_constraints) \
-        .withTerminationConfig(termination_config)
-
-    e1 = Entity('e1')
-    e2 = Entity('e2')
-
-    v1 = Value('v1')
-    v2 = Value('v2')
+    v1 = Value(Code('v1'))
+    v2 = Value(Code('v2'))
 
     problem = Solution([e1, e2], [v1, v2])
-    solver = timefold.solver.solver_factory_create(solver_config).buildSolver()
+    solver = timefold.solver.SolverFactory.create(solver_config).build_solver()
     solution = solver.solve(problem)
 
-    assert solution.score.getScore() == 2
+    assert solution.score.score() == 2
     assert solution.entities[0].value == v1
     assert solution.entities[1].value == v1
 
@@ -287,7 +220,6 @@ def test_solve_typed():
 def test_solve_complex_problem_facts():
     from abc import abstractmethod
 
-    @timefold.solver.problem_fact
     class BaseValue:
         @abstractmethod
         def get_id(self) -> str:
@@ -297,40 +229,33 @@ def test_solve_complex_problem_facts():
         def __str__(self) -> str:
             raise NotImplementedError('Calling function on abstract base class')
 
-    @timefold.solver.problem_fact
+    @dataclass
     class ExpiringValue(BaseValue):
-        def __init__(self, name: str, id: str, expiration_date: float = 0.0) -> None:
-            self.name = name
-            self.id = id
-            self.expiration_date = expiration_date
+        name: str
+        id: Annotated[str, timefold.solver.PlanningId]
+        expiration_date: float
 
-        @timefold.solver.planning_id
         def get_id(self) -> str:
             return self.id
 
         def __str__(self) -> str:
             return f'ExpiringValue(id={self.id}, name={self.name})'
 
-    @timefold.solver.problem_fact
+    @dataclass
     class SimpleValue(BaseValue):
-        def __init__(self, name: str, id: str) -> None:
-            self.name = name
-            self.id = id
+        name: str
+        id: Annotated[str, timefold.solver.PlanningId]
 
-        @timefold.solver.planning_id
         def get_id(self) -> str:
             return self.id
 
         def __str__(self) -> str:
             return f'SimpleValue(id={str(self.id)}, name={str(self.name)})'
 
-    @timefold.solver.problem_fact
     class NullValue(BaseValue):
-        def __init__(self) -> None:
-            self.name = 'NULL'
-            self.id = 'NULL'
+        name: str
+        id: Annotated[str, timefold.solver.PlanningId]
 
-        @timefold.solver.planning_id
         def get_id(self) -> str:
             return self.id
 
@@ -338,75 +263,25 @@ def test_solve_complex_problem_facts():
             return f'NullValue(id={str(self.id)}, name={str(self.name)})'
 
     @timefold.solver.planning_entity
+    @dataclass
     class Entity:
-        def __init__(
-                self,
-                id: str,  # Unique ID for this instance
-                list_of_suitable_values: List[BaseValue],
-                start_time: float = 0.0,
-                end_time: float = 1000000000.0,
-                value: Optional[BaseValue] = None,
-        ):
-            self.id = id
-            self.start_time = start_time
-            self.end_time = end_time
-            self.list_of_suitable_values = list_of_suitable_values
-            self.value = value
+        id: Annotated[str, timefold.solver.PlanningId]
+        list_of_suitable_values: List[BaseValue]
+        start_time: int
+        end_time: int
+        value: Annotated[Optional[BaseValue],
+                         timefold.solver.PlanningVariable(value_range_provider_refs=['value_range'])] = (
+            field(default=None))
 
-        @timefold.solver.planning_id
-        def get_id(self) -> str:
-            return self.id
-
-        @timefold.solver.planning_variable(
-            BaseValue, value_range_provider_refs=['list_of_suitable_values']
-        )
-        def get_value(self) -> Optional[BaseValue]:
-            return self.value
-
-        def set_value(self, value: Union[BaseValue, None]) -> None:
-            self.value = value
-
-        @timefold.solver.value_range_provider(value_range_type=BaseValue, range_id='list_of_suitable_values')
-        def get_allowable_values(self) -> List[BaseValue]:
+        def get_allowable_values(self) -> Annotated[List[BaseValue],
+                                                    timefold.solver.ValueRangeProvider(id='value_range')]:
             return self.list_of_suitable_values
 
-        def __str__(self) -> str:
-            return (
-                f"Entity("
-                f"id={self.id}, "
-                f"start_time={self.start_time}, "
-                f"end_time={self.end_time}, "
-                f"value={self.value})"
-            )
-
     @timefold.solver.planning_solution
+    @dataclass
     class Solution:
-        def __init__(
-                self,
-                entity_list: List[Entity],
-                score: Optional[float] = None,
-        ):
-            self.entity_list = entity_list
-            self.score = score
-
-        @timefold.solver.planning_entity_collection_property(Entity)
-        def get_entity_list(self) -> List[Entity]:
-            return self.entity_list
-
-        @timefold.solver.planning_score(timefold.solver.score.HardSoftScore)
-        def get_score(self) -> timefold.solver.score.HardSoftScore:
-            return self.score
-
-        def set_score(self, score: timefold.solver.score.HardSoftScore) -> None:
-            self.score = score
-
-        def __str__(self) -> str:
-            return (
-                f"Solution("
-                f"entity_list={self.entity_list},\n"
-                f"score={str(self.score)}"
-                f")"
-            )
+        entity_list: Annotated[List[Entity], timefold.solver.PlanningEntityCollectionProperty]
+        score: Annotated[timefold.solver.score.HardSoftScore, timefold.solver.PlanningScore] = field(default=None)
 
     def is_present(r: Optional[BaseValue]) -> bool:
         if isinstance(r, NullValue):
@@ -422,7 +297,7 @@ def test_solve_complex_problem_facts():
                 Entity,
                 # ... if they support overlapping times
                 (timefold.solver.constraint.Joiners.overlapping(lambda entity: entity.start_time,
-                                                       lambda entity: entity.end_time)),
+                                                                lambda entity: entity.end_time)),
             )
             .filter(
                 lambda entity_1, entity_2: (is_present(entity_1.value)
@@ -447,23 +322,26 @@ def test_solve_complex_problem_facts():
             empty_value(constraint_factory)
         ]
 
-    solver_config = timefold.solver.config.solver.SolverConfig()
-    termination_config = timefold.solver.config.solver.termination.TerminationConfig()
-    termination_config.setBestScoreLimit('0hard/0soft')
-    solver_config.withSolutionClass(Solution) \
-        .withEntityClasses(Entity) \
-        .withConstraintProviderClass(my_constraints) \
-        .withTerminationConfig(termination_config)
+    solver_config = timefold.solver.config.SolverConfig(
+        solution_class=Solution,
+        entity_class_list=[Entity],
+        score_director_factory_config=timefold.solver.config.ScoreDirectorFactoryConfig(
+            constraint_provider_function=my_constraints
+        ),
+        termination_config=timefold.solver.config.TerminationConfig(
+            best_score_limit='0hard/0soft'
+        )
+    )
 
-    v1 = ExpiringValue('expiring', '0')
+    v1 = ExpiringValue('expiring', '0', 2.0)
     v2 = SimpleValue('simple', '1')
     v3 = NullValue()
 
-    e1 = Entity('e1', [v1, v2])
-    e2 = Entity('e2', [v1, v3])
+    e1 = Entity('e1', [v1, v2], 0, 2)
+    e2 = Entity('e2', [v1, v3], 1, 3)
 
     problem = Solution([e1, e2])
-    solver = timefold.solver.solver_factory_create(solver_config).buildSolver()
+    solver = timefold.solver.SolverFactory.create(solver_config).build_solver()
     solution = solver.solve(problem)
 
     assert solution.score.getHardScore() == 0
@@ -473,23 +351,15 @@ def test_solve_complex_problem_facts():
 
 
 def test_single_property():
-    @timefold.solver.planning_entity
-    class Entity:
-        def __init__(self, code, value=None):
-            self.code = code
-            self.value = value
-
-        @timefold.solver.planning_variable(str, value_range_provider_refs=['value_range'])
-        def get_value(self):
-            return self.value
-
-        def set_value(self, value):
-            self.value = value
-
-    @timefold.solver.problem_fact
+    @dataclass
     class Value:
-        def __init__(self, code):
-            self.code = code
+        code: str
+
+    @timefold.solver.planning_entity
+    @dataclass
+    class Entity:
+        code: str
+        value: Annotated[str, timefold.solver.PlanningVariable] = field(default=None)
 
     @timefold.solver.constraint_provider
     def my_constraints(constraint_factory: timefold.solver.constraint.ConstraintFactory):
@@ -502,65 +372,41 @@ def test_single_property():
         ]
 
     @timefold.solver.planning_solution
+    @dataclass
     class Solution:
-        def __init__(self, entity, value, value_range, score=None):
-            self.entity = entity
-            self.value = value
-            self.value_range = value_range
-            self.score = score
+        entity: Annotated[Entity, timefold.solver.PlanningEntityProperty]
+        value: Annotated[Value, timefold.solver.ProblemFactProperty]
+        value_range: Annotated[List[str], timefold.solver.ValueRangeProvider]
+        score: Annotated[timefold.solver.score.SimpleScore, timefold.solver.PlanningScore] = field(default=None)
 
-        @timefold.solver.planning_entity_property(Entity)
-        def get_entity(self):
-            return self.entity
+    solver_config = timefold.solver.config.SolverConfig(
+        solution_class=Solution,
+        entity_class_list=[Entity],
+        score_director_factory_config=timefold.solver.config.ScoreDirectorFactoryConfig(
+            constraint_provider_function=my_constraints
+        ),
+        termination_config=timefold.solver.config.TerminationConfig(
+            best_score_limit='1'
+        )
+    )
 
-        @timefold.solver.problem_fact_property(Value)
-        def get_value(self):
-            return self.value
-
-        @timefold.solver.problem_fact_collection_property(str)
-        @timefold.solver.value_range_provider(range_id='value_range')
-        def get_value_range(self):
-            return self.value_range
-
-        @timefold.solver.planning_score(timefold.solver.score.SimpleScore)
-        def get_score(self) -> timefold.solver.score.SimpleScore:
-            return self.score
-
-        def set_score(self, score):
-            self.score = score
-
-    solver_config = timefold.solver.config.solver.SolverConfig()
-    termination_config = timefold.solver.config.solver.termination.TerminationConfig()
-    termination_config.setBestScoreLimit('1')
-    solver_config.withSolutionClass(Solution) \
-        .withEntityClasses(Entity) \
-        .withConstraintProviderClass(my_constraints) \
-        .withTerminationConfig(termination_config)
     problem: Solution = Solution(Entity('A'), Value('1'), ['1', '2', '3'])
-    solver = timefold.solver.solver_factory_create(solver_config).buildSolver()
+    solver = timefold.solver.SolverFactory.create(solver_config).build_solver()
     solution = solver.solve(problem)
-    assert solution.get_score().getScore() == 1
+    assert solution.score.score() == 1
     assert solution.entity.value == '1'
 
 
 def test_constraint_stream_in_join():
-    @timefold.solver.problem_fact
+    @dataclass
     class Value:
-        def __init__(self, code):
-            self.code = code
+        code: int
 
     @timefold.solver.planning_entity
+    @dataclass
     class Entity:
-        def __init__(self, code, value=None):
-            self.code = code
-            self.value = value
-
-        @timefold.solver.planning_variable(Value, value_range_provider_refs=['value_range'])
-        def get_value(self):
-            return self.value
-
-        def set_value(self, value):
-            self.value = value
+        code: str
+        value: Annotated[Value, timefold.solver.PlanningVariable] = field(default=None)
 
     @timefold.solver.constraint_provider
     def my_constraints(constraint_factory: timefold.solver.constraint.ConstraintFactory):
@@ -576,84 +422,65 @@ def test_constraint_stream_in_join():
         ]
 
     @timefold.solver.planning_solution
+    @dataclass
     class Solution:
-        def __init__(self, entity_list, value_list, score=None):
-            self.entity_list = entity_list
-            self.value_list = value_list
-            self.score = score
+        entity_list: Annotated[List[Entity], timefold.solver.PlanningEntityCollectionProperty]
+        value_list: Annotated[List[Value],
+                              timefold.solver.ProblemFactCollectionProperty,
+                              timefold.solver.ValueRangeProvider]
+        score: Annotated[timefold.solver.score.SimpleScore, timefold.solver.PlanningScore] = field(default=None)
 
-        @timefold.solver.planning_entity_collection_property(Entity)
-        def get_entity_list(self):
-            return self.entity_list
-
-        @timefold.solver.problem_fact_collection_property(Value)
-        @timefold.solver.value_range_provider(range_id='value_range')
-        def get_value(self):
-            return self.value_list
-
-        @timefold.solver.planning_score(timefold.solver.score.SimpleScore)
-        def get_score(self) -> timefold.solver.score.SimpleScore:
-            return self.score
-
-        def set_score(self, score):
-            self.score = score
-
-    solver_config = timefold.solver.config.solver.SolverConfig()
-    solver_config.withSolutionClass(Solution) \
-        .withEntityClasses(Entity) \
-        .withConstraintProviderClass(my_constraints)
+    solver_config = timefold.solver.config.SolverConfig(
+        solution_class=Solution,
+        entity_class_list=[Entity],
+        score_director_factory_config=timefold.solver.config.ScoreDirectorFactoryConfig(
+            constraint_provider_function=my_constraints
+        )
+    )
 
     entity_1, entity_2, entity_3, entity_4, entity_5 = Entity('A'), Entity('B'), Entity('C'), Entity('D'), Entity('E')
     value_1, value_2, value_3 = Value(1), Value(2), Value(3)
     problem = Solution([entity_1, entity_2, entity_3, entity_4, entity_5], [value_1, value_2, value_3])
-    score_manager = timefold.solver.score_manager_create(timefold.solver.solver_factory_create(solver_config))
+    score_manager = timefold.solver.SolutionManager.create(timefold.solver.SolverFactory.create(solver_config))
 
-    entity_1.set_value(value_1)
-    entity_2.set_value(value_1)
-    entity_3.set_value(value_1)
-    entity_4.set_value(value_1)
-    entity_5.set_value(value_1)
+    entity_1.value = value_1
+    entity_2.value = value_1
+    entity_3.value = value_1
+    entity_4.value = value_1
+    entity_5.value = value_1
 
-    assert score_manager.updateScore(problem) == timefold.solver.score.SimpleScore.of(4)
+    assert score_manager.update(problem).score() == 4
 
-    entity_5.set_value(value_2)
+    entity_5.value = value_2
 
-    assert score_manager.updateScore(problem) == timefold.solver.score.SimpleScore.of(4)
+    assert score_manager.update(problem).score() == 4
 
-    entity_1.set_value(value_2)
-    assert score_manager.updateScore(problem) == timefold.solver.score.SimpleScore.of(5)
+    entity_1.value = value_2
+    assert score_manager.update(problem).score() == 5
 
-    entity_2.set_value(value_2)
-    assert score_manager.updateScore(problem) == timefold.solver.score.SimpleScore.of(6)
+    entity_2.value = value_2
+    assert score_manager.update(problem).score() == 6
 
-    entity_3.set_value(value_2)
-    assert score_manager.updateScore(problem) == timefold.solver.score.SimpleScore.of(7)
+    entity_3.value = value_2
+    assert score_manager.update(problem).score() == 7
 
-    entity_4.set_value(value_2)
-    assert score_manager.updateScore(problem) == timefold.solver.score.SimpleScore.of(8)
+    entity_4.value = value_2
+    assert score_manager.update(problem).score() == 8
 
-    entity_1.set_value(value_3)
-    assert score_manager.updateScore(problem) == timefold.solver.score.SimpleScore.of(9)
+    entity_1.value = value_3
+    assert score_manager.update(problem).score() == 9
 
 
 def test_tuple_group_by_key():
-    @timefold.solver.planning_entity
-    class Entity:
-        def __init__(self, code, value=None):
-            self.code = code
-            self.value = value
-
-        @timefold.solver.planning_variable(str, value_range_provider_refs=['value_range'])
-        def get_value(self):
-            return self.value
-
-        def set_value(self, value):
-            self.value = value
-
-    @timefold.solver.problem_fact
-    @dataclasses.dataclass(eq=False)
+    @dataclass(eq=False)
     class Value:
         code: str
+
+    @timefold.solver.planning_entity
+    @dataclass
+    class Entity:
+        code: str
+        value: Annotated[str, timefold.solver.PlanningVariable] = field(default=None)
 
     @timefold.solver.constraint_provider
     def my_constraints(constraint_factory: timefold.solver.constraint.ConstraintFactory):
@@ -667,32 +494,12 @@ def test_tuple_group_by_key():
         ]
 
     @timefold.solver.planning_solution
+    @dataclass
     class Solution:
-        def __init__(self, entity_list, value_list, value_range, score=None):
-            self.entity_list = entity_list
-            self.value_list = value_list
-            self.value_range = value_range
-            self.score = score
-
-        @timefold.solver.planning_entity_collection_property(Entity)
-        def get_entity_list(self):
-            return self.entity_list
-
-        @timefold.solver.problem_fact_collection_property(Value)
-        def get_value_list(self):
-            return self.value_list
-
-        @timefold.solver.problem_fact_collection_property(str)
-        @timefold.solver.value_range_provider(range_id='value_range')
-        def get_value_range(self):
-            return self.value_range
-
-        @timefold.solver.planning_score(timefold.solver.score.SimpleScore)
-        def get_score(self) -> timefold.solver.score.SimpleScore:
-            return self.score
-
-        def set_score(self, score):
-            self.score = score
+        entity_list: Annotated[List[Entity], timefold.solver.PlanningEntityCollectionProperty]
+        value_list: Annotated[List[Value], timefold.solver.ProblemFactCollectionProperty]
+        value_range: Annotated[List[str], timefold.solver.ValueRangeProvider]
+        score: Annotated[timefold.solver.score.SimpleScore, timefold.solver.PlanningScore] = field(default=None)
 
     entity_list = [Entity('A0'), Entity('B0'), Entity('C0'),
                    Entity('A1'), Entity('B1'), Entity('C1'),
@@ -705,20 +512,23 @@ def test_tuple_group_by_key():
                    Entity('A8'), Entity('B8'), Entity('C8'),
                    Entity('A9'), Entity('B9'), Entity('C9')]
 
-    solver_config = timefold.solver.config.solver.SolverConfig()
-    termination_config = timefold.solver.config.solver.termination.TerminationConfig()
-    termination_config.setBestScoreLimit(str(len(entity_list)))
-    solver_config.withSolutionClass(Solution) \
-        .withEntityClasses(Entity) \
-        .withConstraintProviderClass(my_constraints) \
-        .withTerminationConfig(termination_config)
+    solver_config = timefold.solver.config.SolverConfig(
+        solution_class=Solution,
+        entity_class_list=[Entity],
+        score_director_factory_config=timefold.solver.config.ScoreDirectorFactoryConfig(
+            constraint_provider_function=my_constraints
+        ),
+        termination_config=timefold.solver.config.TerminationConfig(
+            best_score_limit=str(len(entity_list))
+        )
+    )
 
     problem: Solution = Solution(entity_list,
                                  [Value('1')],
                                  ['1', '2', '3'])
-    solver = timefold.solver.solver_factory_create(solver_config).buildSolver()
+    solver = timefold.solver.SolverFactory.create(solver_config).build_solver()
     solution = solver.solve(problem)
-    assert solution.get_score().getScore() == len(entity_list)
+    assert solution.score.score() == len(entity_list)
     for entity in solution.entity_list:
         assert entity.value == '1'
 
@@ -730,17 +540,10 @@ def test_python_object():
     pointer3 = ctypes.c_void_p(3)
 
     @timefold.solver.planning_entity
+    @dataclass
     class Entity:
-        def __init__(self, code, value=None):
-            self.code = code
-            self.value = value
-
-        @timefold.solver.planning_variable(ctypes.c_void_p, value_range_provider_refs=['value_range'])
-        def get_value(self):
-            return self.value
-
-        def set_value(self, value):
-            self.value = value
+        code: str
+        value: Annotated[ctypes.c_void_p, timefold.solver.PlanningVariable] = field(default=None)
 
     @timefold.solver.constraint_provider
     def my_constraints(constraint_factory: timefold.solver.constraint.ConstraintFactory):
@@ -760,68 +563,44 @@ def test_python_object():
         ]
 
     @timefold.solver.planning_solution
+    @dataclass
     class Solution:
-        def __init__(self, entity, value_range, score=None):
-            self.entity = entity
-            self.value_range = value_range
-            self.score = score
+        entity: Annotated[Entity, timefold.solver.PlanningEntityProperty]
+        value_range: Annotated[List[ctypes.c_void_p], timefold.solver.ValueRangeProvider]
+        score: Annotated[timefold.solver.score.SimpleScore, timefold.solver.PlanningScore] = field(default=None)
 
-        @timefold.solver.planning_entity_property(Entity)
-        def get_entity(self):
-            return self.entity
-
-        @timefold.solver.value_range_provider(range_id='value_range', value_range_type=ctypes.c_void_p)
-        def get_value_range(self):
-            return self.value_range
-
-        @timefold.solver.planning_score(timefold.solver.score.SimpleScore)
-        def get_score(self) -> timefold.solver.score.SimpleScore:
-            return self.score
-
-        def set_score(self, score):
-            self.score = score
-
-    solver_config = timefold.solver.config.solver.SolverConfig()
-    termination_config = timefold.solver.config.solver.termination.TerminationConfig()
-    termination_config.setBestScoreLimit('3')
-    solver_config.withSolutionClass(timefold.solver.get_class(Solution)) \
-        .withEntityClasses(Entity) \
-        .withConstraintProviderClass(my_constraints) \
-        .withTerminationConfig(termination_config)
+    solver_config = timefold.solver.config.SolverConfig(
+        solution_class=Solution,
+        entity_class_list=[Entity],
+        score_director_factory_config=timefold.solver.config.ScoreDirectorFactoryConfig(
+            constraint_provider_function=my_constraints
+        ),
+        termination_config=timefold.solver.config.TerminationConfig(
+            best_score_limit='3'
+        )
+    )
     problem: Solution = Solution(Entity('A'), [pointer1, pointer2, pointer3])
-    solver = timefold.solver.solver_factory_create(solver_config).buildSolver()
+    solver = timefold.solver.SolverFactory.create(solver_config).build_solver()
     solution = solver.solve(problem)
-    assert solution.get_score().getScore() == 3
+    assert solution.score.score() == 3
     assert solution.entity.value is pointer1
 
 
 def test_custom_planning_id():
-    from uuid import uuid4
+    from uuid import UUID, uuid4
     id_1 = uuid4()
     id_2 = uuid4()
     id_3 = uuid4()
 
-    @timefold.solver.problem_fact
+    @dataclass(unsafe_hash=True)
     class Value:
-        def __init__(self, code):
-            self.code = code
+        code: str
 
     @timefold.solver.planning_entity
+    @dataclass
     class Entity:
-        def __init__(self, code, value=None):
-            self.code = code
-            self.value = value
-
-        @timefold.solver.planning_id
-        def get_code(self):
-            return self.code
-
-        @timefold.solver.planning_variable(Value, value_range_provider_refs=['value_range'])
-        def get_value(self):
-            return self.value
-
-        def set_value(self, value):
-            self.value = value
+        code: Annotated[UUID, timefold.solver.PlanningId]
+        value: Annotated[Value, timefold.solver.PlanningVariable] = field(default=None)
 
     @timefold.solver.constraint_provider
     def my_constraints(constraint_factory: timefold.solver.constraint.ConstraintFactory):
@@ -832,35 +611,24 @@ def test_custom_planning_id():
         ]
 
     @timefold.solver.planning_solution
+    @dataclass
     class Solution:
-        def __init__(self, entities, values, score=None):
-            self.entities = entities
-            self.values = values
-            self.score = score
+        entities: Annotated[List[Entity], timefold.solver.PlanningEntityCollectionProperty]
+        values: Annotated[List[Value],
+                          timefold.solver.ProblemFactCollectionProperty,
+                          timefold.solver.ValueRangeProvider]
+        score: Annotated[timefold.solver.score.SimpleScore, timefold.solver.PlanningScore] = field(default=None)
 
-        @timefold.solver.planning_entity_collection_property(Entity)
-        def get_entities(self):
-            return self.entities
-
-        @timefold.solver.problem_fact_collection_property(Value)
-        @timefold.solver.value_range_provider(range_id='value_range')
-        def get_values(self):
-            return self.values
-
-        @timefold.solver.planning_score(timefold.solver.score.SimpleScore)
-        def get_score(self) -> timefold.solver.score.SimpleScore:
-            return self.score
-
-        def set_score(self, score):
-            self.score = score
-
-    solver_config = timefold.solver.config.solver.SolverConfig()
-    termination_config = timefold.solver.config.solver.termination.TerminationConfig()
-    termination_config.setBestScoreLimit('0')
-    solver_config.withSolutionClass(timefold.solver.get_class(Solution)) \
-        .withEntityClasses(Entity) \
-        .withConstraintProviderClass(my_constraints) \
-        .withTerminationConfig(termination_config)
+    solver_config = timefold.solver.config.SolverConfig(
+        solution_class=Solution,
+        entity_class_list=[Entity],
+        score_director_factory_config=timefold.solver.config.ScoreDirectorFactoryConfig(
+            constraint_provider_function=my_constraints
+        ),
+        termination_config=timefold.solver.config.TerminationConfig(
+            best_score_limit='0'
+        )
+    )
 
     entity_1 = Entity(id_1)
     entity_2 = Entity(id_2)
@@ -878,9 +646,9 @@ def test_custom_planning_id():
         value_2,
         value_3
     ])
-    solver = timefold.solver.solver_factory_create(solver_config).buildSolver()
+    solver = timefold.solver.SolverFactory.create(solver_config).build_solver()
     solution = solver.solve(problem)
-    assert solution.get_score().getScore() == 0
+    assert solution.score.score() == 0
 
     encountered = set()
     for entity in solution.entities:
@@ -889,30 +657,15 @@ def test_custom_planning_id():
 
 
 def test_custom_comparator():
-    @timefold.solver.problem_fact
+    @dataclass(order=True, unsafe_hash=True)
     class Value:
-        def __init__(self, code):
-            self.code = code
-
-        def __lt__(self, other):
-            return self.code < other.code
+        code: str
 
     @timefold.solver.planning_entity
+    @dataclass
     class Entity:
-        def __init__(self, code, value=None):
-            self.code = code
-            self.value = value
-
-        @timefold.solver.planning_id
-        def get_code(self):
-            return self.code
-
-        @timefold.solver.planning_variable(Value, value_range_provider_refs=['value_range'])
-        def get_value(self):
-            return self.value
-
-        def set_value(self, value):
-            self.value = value
+        code: Annotated[int, timefold.solver.PlanningId]
+        value: Annotated[Value, timefold.solver.PlanningVariable] = field(default=None)
 
     @timefold.solver.constraint_provider
     def my_constraints(constraint_factory: timefold.solver.constraint.ConstraintFactory):
@@ -925,35 +678,24 @@ def test_custom_comparator():
         ]
 
     @timefold.solver.planning_solution
+    @dataclass
     class Solution:
-        def __init__(self, entities, values, score=None):
-            self.entities = entities
-            self.values = values
-            self.score = score
+        entities: Annotated[List[Entity], timefold.solver.PlanningEntityCollectionProperty]
+        values: Annotated[List[Value],
+                          timefold.solver.ProblemFactCollectionProperty,
+                          timefold.solver.ValueRangeProvider]
+        score: Annotated[timefold.solver.score.SimpleScore, timefold.solver.PlanningScore] = field(default=None)
 
-        @timefold.solver.planning_entity_collection_property(Entity)
-        def get_entities(self):
-            return self.entities
-
-        @timefold.solver.problem_fact_collection_property(Value)
-        @timefold.solver.value_range_provider(range_id='value_range')
-        def get_values(self):
-            return self.values
-
-        @timefold.solver.planning_score(timefold.solver.score.SimpleScore)
-        def get_score(self) -> timefold.solver.score.SimpleScore:
-            return self.score
-
-        def set_score(self, score):
-            self.score = score
-
-    solver_config = timefold.solver.config.solver.SolverConfig()
-    termination_config = timefold.solver.config.solver.termination.TerminationConfig()
-    termination_config.setBestScoreLimit('0')
-    solver_config.withSolutionClass(timefold.solver.get_class(Solution)) \
-        .withEntityClasses(Entity) \
-        .withConstraintProviderClass(my_constraints) \
-        .withTerminationConfig(termination_config)
+    solver_config = timefold.solver.config.SolverConfig(
+        solution_class=Solution,
+        entity_class_list=[Entity],
+        score_director_factory_config=timefold.solver.config.ScoreDirectorFactoryConfig(
+            constraint_provider_function=my_constraints
+        ),
+        termination_config=timefold.solver.config.TerminationConfig(
+            best_score_limit='0'
+        )
+    )
 
     entity_1 = Entity(0)
     entity_2 = Entity(1)
@@ -971,9 +713,9 @@ def test_custom_comparator():
         value_2,
         value_3
     ])
-    solver = timefold.solver.solver_factory_create(solver_config).buildSolver()
+    solver = timefold.solver.SolverFactory.create(solver_config).build_solver()
     solution = solver.solve(problem)
-    assert solution.get_score().getScore() == 0
+    assert solution.score.score() == 0
 
     encountered = set()
     for entity in solution.entities:
@@ -982,39 +724,19 @@ def test_custom_comparator():
 
 
 def test_custom_equals():
+    @dataclass(eq=True, unsafe_hash=True)
     class Code:
-        def __init__(self, code):
-            self.code = code
+        code: str
 
-        def __eq__(self, other):
-            return self.code == other.code
-
-        def __hash__(self):
-            return hash(self.code)
-
-    @timefold.solver.problem_fact
+    @dataclass
     class Value:
         code: Code
 
-        def __init__(self, code):
-            self.code = Code(code)
-
     @timefold.solver.planning_entity
+    @dataclass
     class Entity:
-        def __init__(self, code, value=None):
-            self.code = code
-            self.value = value
-
-        @timefold.solver.planning_id
-        def get_code(self):
-            return self.code
-
-        @timefold.solver.planning_variable(Value, value_range_provider_refs=['value_range'])
-        def get_value(self):
-            return self.value
-
-        def set_value(self, value):
-            self.value = value
+        code: Annotated[int, timefold.solver.PlanningId]
+        value: Annotated[Value, timefold.solver.PlanningVariable] = field(default=None)
 
     @timefold.solver.constraint_provider
     def my_constraints(constraint_factory: timefold.solver.constraint.ConstraintFactory):
@@ -1025,39 +747,28 @@ def test_custom_equals():
         ]
 
     @timefold.solver.planning_solution
+    @dataclass
     class Solution:
-        def __init__(self, entities, values, score=None):
-            self.entities = entities
-            self.values = values
-            self.score = score
+        entities: Annotated[List[Entity], timefold.solver.PlanningEntityCollectionProperty]
+        values: Annotated[List[Value],
+                          timefold.solver.ProblemFactCollectionProperty,
+                          timefold.solver.ValueRangeProvider]
+        score: Annotated[timefold.solver.score.SimpleScore, timefold.solver.PlanningScore] = field(default=None)
 
-        @timefold.solver.planning_entity_collection_property(Entity)
-        def get_entities(self):
-            return self.entities
+    solver_config = timefold.solver.config.SolverConfig(
+        solution_class=Solution,
+        entity_class_list=[Entity],
+        score_director_factory_config=timefold.solver.config.ScoreDirectorFactoryConfig(
+            constraint_provider_function=my_constraints
+        ),
+        termination_config=timefold.solver.config.TerminationConfig(
+            best_score_limit='-1'
+        )
+    )
 
-        @timefold.solver.problem_fact_collection_property(Value)
-        @timefold.solver.value_range_provider(range_id='value_range')
-        def get_values(self):
-            return self.values
-
-        @timefold.solver.planning_score(timefold.solver.score.SimpleScore)
-        def get_score(self) -> timefold.solver.score.SimpleScore:
-            return self.score
-
-        def set_score(self, score):
-            self.score = score
-
-    solver_config = timefold.solver.config.solver.SolverConfig()
-    termination_config = timefold.solver.config.solver.termination.TerminationConfig()
-    termination_config.setBestScoreLimit('-1')
-    solver_config.withSolutionClass(timefold.solver.get_class(Solution)) \
-        .withEntityClasses(Entity) \
-        .withConstraintProviderClass(my_constraints) \
-        .withTerminationConfig(termination_config)
-
-    value_1a = Value('A')
-    value_1b = Value('A')
-    value_2a = Value('B')
+    value_1a = Value(Code('A'))
+    value_1b = Value(Code('A'))
+    value_2a = Value(Code('B'))
 
     entity_1 = Entity(0, value_1a)
     entity_2 = Entity(1, value_1b)
@@ -1071,37 +782,25 @@ def test_custom_equals():
         value_1b,
         value_2a,
     ])
-    score_manager = timefold.solver.score_manager_create(timefold.solver.solver_factory_create(solver_config))
-    score = score_manager.updateScore(problem)
-    assert score.getScore() == -1
+    score_manager = timefold.solver.SolutionManager.create(timefold.solver.SolverFactory.create(solver_config))
+    score = score_manager.update(problem)
+    assert score.score() == -1
 
 
 def test_entity_value_range_provider():
-    @timefold.solver.problem_fact
+    @dataclass(unsafe_hash=True)
     class Value:
-        def __init__(self, code):
-            self.code = code
+        code: str
 
     @timefold.solver.planning_entity
+    @dataclass
     class Entity:
-        def __init__(self, code, possible_values, value=None):
-            self.code = code
-            self.possible_values = possible_values
-            self.value = value
+        code: Annotated[str, timefold.solver.PlanningId]
+        possible_values: List[Value]
+        value: Annotated[Value, timefold.solver.PlanningVariable(value_range_provider_refs=['value_range'])] = (
+            field(default=None))
 
-        @timefold.solver.planning_id
-        def get_code(self):
-            return self.code
-
-        @timefold.solver.planning_variable(Value, value_range_provider_refs=['value_range'])
-        def get_value(self):
-            return self.value
-
-        def set_value(self, value):
-            self.value = value
-
-        @timefold.solver.value_range_provider(range_id='value_range', value_range_type=Value)
-        def get_possible_values(self):
+        def get_possible_values(self) -> Annotated[List[Value], timefold.solver.ValueRangeProvider(id='value_range')]:
             return self.possible_values
 
     @timefold.solver.constraint_provider
@@ -1113,29 +812,21 @@ def test_entity_value_range_provider():
         ]
 
     @timefold.solver.planning_solution
+    @dataclass
     class Solution:
-        def __init__(self, entities, score=None):
-            self.entities = entities
-            self.score = score
+        entities: Annotated[List[Entity], timefold.solver.PlanningEntityCollectionProperty]
+        score: Annotated[timefold.solver.score.SimpleScore, timefold.solver.PlanningScore] = field(default=None)
 
-        @timefold.solver.planning_entity_collection_property(Entity)
-        def get_entities(self):
-            return self.entities
-
-        @timefold.solver.planning_score(timefold.solver.score.SimpleScore)
-        def get_score(self) -> timefold.solver.score.SimpleScore:
-            return self.score
-
-        def set_score(self, score):
-            self.score = score
-
-    solver_config = timefold.solver.config.solver.SolverConfig()
-    termination_config = timefold.solver.config.solver.termination.TerminationConfig()
-    termination_config.setBestScoreLimit('0')
-    solver_config.withSolutionClass(timefold.solver.get_class(Solution)) \
-        .withEntityClasses(Entity) \
-        .withConstraintProviderClass(my_constraints) \
-        .withTerminationConfig(termination_config)
+    solver_config = timefold.solver.config.SolverConfig(
+        solution_class=Solution,
+        entity_class_list=[Entity],
+        score_director_factory_config=timefold.solver.config.ScoreDirectorFactoryConfig(
+            constraint_provider_function=my_constraints
+        ),
+        termination_config=timefold.solver.config.TerminationConfig(
+            best_score_limit='0'
+        )
+    )
 
     value_1 = Value('A')
     value_2 = Value('B')
@@ -1151,9 +842,9 @@ def test_entity_value_range_provider():
         entity_2,
         entity_3
     ])
-    solver = timefold.solver.solver_factory_create(solver_config).buildSolver()
+    solver = timefold.solver.SolverFactory.create(solver_config).build_solver()
     solution = solver.solve(problem)
-    assert solution.get_score().getScore() == 0
+    assert solution.score.score() == 0
 
     encountered = set()
     for entity in solution.entities:
@@ -1163,26 +854,18 @@ def test_entity_value_range_provider():
 
 def test_int_value_range_provider():
     @timefold.solver.planning_entity
+    @dataclass
     class Entity:
-        def __init__(self, code, actual_value, value=None):
-            self.code = code
-            self.actual_value = actual_value
-            self.value = value
+        code: Annotated[str, timefold.solver.PlanningId]
+        actual_value: int
+        value: Annotated[int, timefold.solver.PlanningVariable(value_range_provider_refs=['value_range'])]\
+            = field(default=None)
+        possible_values: Annotated[timefold.solver.valuerange.CountableValueRange,
+        timefold.solver.ValueRangeProvider(id='value_range')] = field(init=False)
 
-        @timefold.solver.planning_id
-        def get_code(self):
-            return self.code
-
-        @timefold.solver.planning_variable(int, value_range_provider_refs=['value_range'])
-        def get_value(self):
-            return self.value
-
-        def set_value(self, value):
-            self.value = value
-
-        @timefold.solver.value_range_provider(range_id='value_range', value_range_type=timefold.solver.types.CountableValueRange)
-        def get_possible_values(self):
-            return timefold.solver.types.ValueRangeFactory.createIntValueRange(self.actual_value, self.actual_value + 1)
+        def __post_init__(self):
+            self.possible_values = timefold.solver.valuerange.ValueRangeFactory.create_int_value_range(self.actual_value,
+                                                                                                       self.actual_value + 1)
 
     @timefold.solver.constraint_provider
     def my_constraints(constraint_factory: timefold.solver.constraint.ConstraintFactory):
@@ -1193,29 +876,21 @@ def test_int_value_range_provider():
         ]
 
     @timefold.solver.planning_solution
+    @dataclass
     class Solution:
-        def __init__(self, entities, score=None):
-            self.entities = entities
-            self.score = score
+        entities: Annotated[List[Entity], timefold.solver.PlanningEntityCollectionProperty]
+        score: Annotated[timefold.solver.score.SimpleScore, timefold.solver.PlanningScore] = field(default=None)
 
-        @timefold.solver.planning_entity_collection_property(Entity)
-        def get_entities(self):
-            return self.entities
-
-        @timefold.solver.planning_score(timefold.solver.score.SimpleScore)
-        def get_score(self) -> timefold.solver.score.SimpleScore:
-            return self.score
-
-        def set_score(self, score):
-            self.score = score
-
-    solver_config = timefold.solver.config.solver.SolverConfig()
-    termination_config = timefold.solver.config.solver.termination.TerminationConfig()
-    termination_config.setBestScoreLimit('0')
-    solver_config.withSolutionClass(timefold.solver.get_class(Solution)) \
-        .withEntityClasses(Entity) \
-        .withConstraintProviderClass(my_constraints) \
-        .withTerminationConfig(termination_config)
+    solver_config = timefold.solver.config.SolverConfig(
+        solution_class=Solution,
+        entity_class_list=[Entity],
+        score_director_factory_config=timefold.solver.config.ScoreDirectorFactoryConfig(
+            constraint_provider_function=my_constraints
+        ),
+        termination_config=timefold.solver.config.TerminationConfig(
+            best_score_limit='0'
+        )
+    )
 
     entity_1 = Entity('1', 1)
     entity_2 = Entity('2', 2)
@@ -1227,9 +902,9 @@ def test_int_value_range_provider():
         entity_2,
         entity_3
     ])
-    solver = timefold.solver.solver_factory_create(solver_config).buildSolver()
+    solver = timefold.solver.SolverFactory.create(solver_config).build_solver()
     solution = solver.solve(problem)
-    assert solution.get_score().getScore() == 0
+    assert solution.score.score() == 0
 
     encountered = set()
     for entity in solution.entities:
@@ -1239,19 +914,10 @@ def test_int_value_range_provider():
 
 def test_list_variable():
     @timefold.solver.planning_entity
+    @dataclass
     class Entity:
-        def __init__(self, code, value=None):
-            self.code = code
-            if value is None:
-                value = []
-            self.value = value
-
-        @timefold.solver.planning_list_variable(int, value_range_provider_refs=['value_range'])
-        def get_value(self):
-            return self.value
-
-        def set_value(self, value):
-            self.value = value
+        code: str
+        value: Annotated[List[int], timefold.solver.PlanningListVariable] = field(default_factory=list)
 
     def count_mismatches(entity):
         mismatches = 0
@@ -1269,37 +935,24 @@ def test_list_variable():
         ]
 
     @timefold.solver.planning_solution
+    @dataclass
     class Solution:
-        def __init__(self, entity, value_range, score=None):
-            self.entity = entity
-            self.value_range = value_range
-            self.score = score
+        entity: Annotated[Entity, timefold.solver.PlanningEntityProperty]
+        value_range: Annotated[List[int], timefold.solver.ValueRangeProvider]
+        score: Annotated[timefold.solver.score.SimpleScore, timefold.solver.PlanningScore] = field(default=None)
 
-        @timefold.solver.planning_entity_property(Entity)
-        def get_entity(self):
-            return self.entity
-
-        @timefold.solver.problem_fact_collection_property(int)
-        @timefold.solver.value_range_provider(range_id='value_range')
-        def get_value_range(self):
-            return self.value_range
-
-        @timefold.solver.planning_score(timefold.solver.score.SimpleScore)
-        def get_score(self) -> timefold.solver.score.SimpleScore:
-            return self.score
-
-        def set_score(self, score):
-            self.score = score
-
-    solver_config = timefold.solver.config.solver.SolverConfig()
-    termination_config = timefold.solver.config.solver.termination.TerminationConfig()
-    termination_config.setBestScoreLimit('0')
-    solver_config.withSolutionClass(Solution) \
-        .withEntityClasses(Entity) \
-        .withConstraintProviderClass(my_constraints) \
-        .withTerminationConfig(termination_config)
+    solver_config = timefold.solver.config.SolverConfig(
+        solution_class=Solution,
+        entity_class_list=[Entity],
+        score_director_factory_config=timefold.solver.config.ScoreDirectorFactoryConfig(
+            constraint_provider_function=my_constraints
+        ),
+        termination_config=timefold.solver.config.TerminationConfig(
+            best_score_limit='0'
+        )
+    )
     problem: Solution = Solution(Entity('A'), [1, 2, 3])
-    solver = timefold.solver.solver_factory_create(solver_config).buildSolver()
+    solver = timefold.solver.SolverFactory.create(solver_config).build_solver()
     solution = solver.solve(problem)
-    assert solution.get_score().getScore() == 0
+    assert solution.score.score() == 0
     assert solution.entity.value == [1, 2, 3]

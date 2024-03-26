@@ -27,6 +27,7 @@ import ai.timefold.jpyinterpreter.types.collections.PythonLikeTuple;
 import ai.timefold.jpyinterpreter.types.errors.AttributeError;
 import ai.timefold.jpyinterpreter.types.errors.TypeError;
 import ai.timefold.jpyinterpreter.types.errors.ValueError;
+import ai.timefold.jpyinterpreter.types.wrappers.JavaObjectWrapper;
 
 import org.objectweb.asm.Type;
 
@@ -39,6 +40,7 @@ public class PythonLikeType implements PythonLikeObject,
     private final String JAVA_TYPE_INTERNAL_NAME;
     private final List<PythonLikeType> PARENT_TYPES;
     public final List<PythonLikeType> MRO;
+    private Class<?> javaObjectWrapperType = null;
 
     private final Map<String, PythonKnownFunctionType> functionNameToKnownFunctionType;
     private Optional<PythonKnownFunctionType> constructorKnownFunctionType;
@@ -49,6 +51,12 @@ public class PythonLikeType implements PythonLikeObject,
 
     public PythonLikeType(String typeName, Class<? extends PythonLikeObject> javaClass) {
         this(typeName, javaClass, List.of(BuiltinTypes.BASE_TYPE));
+    }
+
+    public PythonLikeType(String typeName, Class<? extends PythonLikeObject> javaClass,
+            Class<?> javaObjectWrapperType) {
+        this(typeName, javaClass, List.of(BuiltinTypes.BASE_TYPE));
+        this.javaObjectWrapperType = javaObjectWrapperType;
     }
 
     public PythonLikeType(String typeName, Class<? extends PythonLikeObject> javaClass, List<PythonLikeType> parents) {
@@ -82,6 +90,29 @@ public class PythonLikeType implements PythonLikeObject,
     public PythonLikeType(String typeName, Class<? extends PythonLikeObject> javaClass, Consumer<PythonLikeType> initializer) {
         this(typeName, javaClass, List.of(BuiltinTypes.BASE_TYPE));
         initializer.accept(this);
+    }
+
+    private PythonLikeType(String typeName, String internalName) {
+        TYPE_NAME = typeName;
+        JAVA_TYPE_INTERNAL_NAME = internalName;
+        PARENT_TYPES = new ArrayList<>();
+        constructor = (positional, keywords, callerInstance) -> {
+            throw new UnsupportedOperationException("Cannot create instance of type (" + TYPE_NAME + ").");
+        };
+        __dir__ = new HashMap<>();
+        functionNameToKnownFunctionType = new HashMap<>();
+        constructorKnownFunctionType = Optional.empty();
+        instanceFieldToFieldDescriptorMap = new HashMap<>();
+        MRO = new ArrayList<>();
+    }
+
+    public static PythonLikeType getTypeForNewClass(String typeName, String internalName) {
+        return new PythonLikeType(typeName, internalName);
+    }
+
+    public void initializeNewType(List<PythonLikeType> superClassTypes) {
+        PARENT_TYPES.addAll(superClassTypes);
+        MRO.addAll(determineMRO());
     }
 
     private List<PythonLikeType> determineMRO() {
@@ -159,14 +190,22 @@ public class PythonLikeType implements PythonLikeObject,
         return BuiltinTypes.BASE_TYPE;
     }
 
+    public Class<?> getJavaObjectWrapperType() {
+        if (javaObjectWrapperType == null) {
+            throw new IllegalStateException("Can only call this method on %s types."
+                    .formatted(JavaObjectWrapper.class.getSimpleName()));
+        }
+        return javaObjectWrapperType;
+    }
+
     public static PythonLikeType registerTypeType() {
         BuiltinTypes.TYPE_TYPE.setConstructor((positional, keywords, callerInstance) -> {
             if (positional.size() == 1) {
                 return positional.get(0).$getType();
             } else if (positional.size() == 3) {
-                PythonString name = (PythonString) positional.get(0);
-                PythonLikeTuple baseClasses = (PythonLikeTuple) positional.get(1);
-                PythonLikeDict dict = (PythonLikeDict) positional.get(2);
+                var name = (PythonString) positional.get(0);
+                var baseClasses = (PythonLikeTuple) positional.get(1);
+                var dict = (PythonLikeDict<PythonLikeObject, PythonLikeObject>) positional.get(2);
 
                 PythonLikeType out;
                 if (baseClasses.isEmpty()) {
@@ -361,17 +400,17 @@ public class PythonLikeType implements PythonLikeObject,
     }
 
     public void addInstanceField(FieldDescriptor fieldDescriptor) {
-        Optional<FieldDescriptor> maybeExistingField = getInstanceFieldDescriptor(fieldDescriptor.getPythonFieldName());
+        Optional<FieldDescriptor> maybeExistingField = getInstanceFieldDescriptor(fieldDescriptor.pythonFieldName());
         if (maybeExistingField.isPresent()) {
-            PythonLikeType existingFieldType = maybeExistingField.get().getFieldPythonLikeType();
-            if (!fieldDescriptor.getFieldPythonLikeType().isSubclassOf(existingFieldType)) {
-                throw new IllegalStateException("Field (" + fieldDescriptor.getPythonFieldName() + ") already exist with type ("
+            PythonLikeType existingFieldType = maybeExistingField.get().fieldPythonLikeType();
+            if (!fieldDescriptor.fieldPythonLikeType().isSubclassOf(existingFieldType)) {
+                throw new IllegalStateException("Field (" + fieldDescriptor.pythonFieldName() + ") already exist with type ("
                         +
-                        existingFieldType + ") which is not assignable from (" + fieldDescriptor.getFieldPythonLikeType()
+                        existingFieldType + ") which is not assignable from (" + fieldDescriptor.fieldPythonLikeType()
                         + ").");
             }
         } else {
-            instanceFieldToFieldDescriptorMap.put(fieldDescriptor.getPythonFieldName(), fieldDescriptor);
+            instanceFieldToFieldDescriptorMap.put(fieldDescriptor.pythonFieldName(), fieldDescriptor);
         }
     }
 

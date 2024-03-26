@@ -4,7 +4,8 @@
   <parent>
     <groupId>ai.timefold.solver</groupId>
     <artifactId>timefold-solver-python-parent</artifactId>
-    <version>1.7.0</version>
+    <version>999-SNAPSHOT</version>
+    <relativePath>../pom.xml</relativePath>
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <artifactId>jpyinterpreter</artifactId>
@@ -30,6 +31,10 @@
   </dependencyManagement>
 
   <dependencies>
+    <dependency>
+      <groupId>ai.timefold.solver</groupId>
+      <artifactId>timefold-solver-core</artifactId>
+    </dependency>
     <!-- ASM -->
     <dependency>
       <groupId>org.ow2.asm</groupId>

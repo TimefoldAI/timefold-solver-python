@@ -11,128 +11,94 @@ Timefold Solver is *an AI constraint solver for Python* to optimize
 the Vehicle Routing Problem, Employee Rostering, Maintenance Scheduling, Task Assignment, School Timetabling,
 Cloud Optimization, Conference Scheduling, Job Shop Scheduling, Bin Packing and many more planning problems.
 
-Using Timefold in Python is significantly slower than using Timefold in Java or Kotlin.
+Using Timefold Solver in Python is significantly slower than using Timefold Solver in Java or Kotlin.
 
 ## Requirements
 
-- [Install Python 3.9 or later.](https://www.python.org)
+- [Install Python 3.10 or later.](https://www.python.org)
 - [Install JDK 17 or later](https://adoptium.net) with the environment variable `JAVA_HOME` configured to the JDK installation directory.
 
 ## Source code overview
 
 ### Domain
 
-In Timefold, the domain has three parts:
+In Timefold Solver, the domain has three parts:
 
-- Problem Facts, which do not change
-- Planning Entities, which have one or more planning variables
-- Planning Solution, which define the facts and entities of the problem
+- Problem Facts, which do not change.
+- Planning Entities, which have one or more planning variables.
+- Planning Solution, which define the facts and entities of the problem.
 
 #### Problem Facts
 
-To declare Problem Facts, use the `@problem_fact` decorator
+Problem facts can be any Python class, which are used to describe unchanging facts in your problem:
 
 ```python
-from timefold.solver import problem_fact
+from dataclasses import dataclass
+from datetime import time
 
-
-@problem_fact
+@dataclass
 class Timeslot:
-    def __init__(self, id, day_of_week, start_time, end_time):
-        self.id = id
-        self.day_of_week = day_of_week
-        self.start_time = start_time
-        self.end_time = end_time
+    id: int
+    day_of_week: str
+    start_time: time
+    end_time: time
 ```
 
 #### Planning Entities
 
-To declare Planning Entities, use the `@planning_entity` decorator
+To declare Planning Entities, use the `@planning_entity` decorator along with annotations:
 
 ```python
-from timefold.solver import planning_entity, planning_id, planning_variable
+from dataclasses import dataclass, field
+from typing import Annotated
+from timefold.solver import planning_entity, PlanningId, PlanningVariable
 
 @planning_entity
+@dataclass
 class Lesson:
-    def __init__(self, id, subject, teacher, student_group, timeslot=None, room=None):
-        self.id = id
-        self.subject = subject
-        self.teacher = teacher
-        self.student_group = student_group
-        self.timeslot = timeslot
-        self.room = room
-
-    @planning_id
-    def get_id(self):
-        return self.id
-
-    @planning_variable(Timeslot, value_range_provider_refs=["timeslotRange"])
-    def get_timeslot(self):
-        return self.timeslot
-
-    def set_timeslot(self, new_timeslot):
-        self.timeslot = new_timeslot
-
-    @planning_variable(Room, value_range_provider_refs=["roomRange"])
-    def get_room(self):
-        return self.room
-
-    def set_room(self, new_room):
-        self.room = new_room
+    id: Annotated[int, PlanningId]
+    subject: str
+    teacher: str
+    student_group: str
+    timeslot: Annotated[Timeslot, PlanningVariable] = field(default=None)
+    room: Annotated[Room, PlanningVariable] = field(default=None)
 ```
 
-- `@planning_variable` method decorators are used to indicate what fields can change. MUST begin with get and have a corresponding set method (i.e. `get_room(self)`, `set_room(self, newRoom)`). The first parameter of the decorator is the type of the Planning Variable (required). The `value_range_provider_refs` parameter tells Timefold what value range providers on the Planning Solution this Planning Variable can take values from.
+- The `PlanningVariable` annotation is used to mark what fields the solver is allowed to change.
 
-- `@planning_id` is used to uniquely identify an entity object of a particular class. The same Planning Id can be used on entities of different classes, but the ids of all entities in the same class must be different.
+- The `PlanningId` annotation is used to uniquely identify an entity object of a particular class. The same Planning Id can be used on entities of different classes, but the ids of all entities in the same class must be different.
 
 #### Planning Solution
 
-To declare the Planning Solution, use the `@planning_solution` decorator
+To declare the Planning Solution, use the `@planning_solution` decorator:
 
 ```python
-from timefold.solver import planning_solution, problem_fact_collection_property, value_range_provider, planning_entity_collection_property, planning_score
+from dataclasses import dataclass, field
+from typing import Annotated
+from timefold.solver import planning_solution, ProblemFactCollectionProperty, ValueRangeProvider, PlanningEntityCollectionProperty, PlanningScore
+from timefold.solver.score import HardSoftScore
 
 @planning_solution
+@dataclass
 class TimeTable:
-    def __init__(self, timeslot_list, room_list, lesson_list, score=None):
-        self.timeslot_list = timeslot_list
-        self.room_list = room_list
-        self.lesson_list = lesson_list
-        self.score = score
-
-    @problem_fact_collection_property(Timeslot)
-    @value_range_provider(range_id = "timeslotRange")
-    def get_timeslot_list(self):
-        return self.timeslot_list
-
-    @problem_fact_collection_property(Room)
-    @value_range_provider(range_id = "roomRange")
-    def get_room_list(self):
-        return self.room_list
-
-    @planning_entity_collection_property(Lesson)
-    def get_lesson_list(self):
-        return self.lesson_list
-
-    @planning_score(HardSoftScore)
-    def get_score(self):
-        return self.score
-
-    def set_score(self, score):
-        self.score = score
+    timeslots: Annotated[list[Timeslot], ProblemFactCollectionProperty, ValueRangeProvider]
+    rooms: Annotated[list[Room], ProblemFactCollectionProperty, ValueRangeProvider]
+    lessons: Annotated[list[Lesson], PlanningEntityCollectionProperty]
+    score: Annotated[HardSoftScore, PlanningScore] = field(default=None)
 ```
 
-- `@value_range_provider(range_id)` is used to indicate a method returns values a Planning Variable can take. It can be referenced by its id in the `value_range_provider_refs` parameter of `@planning_variable`. It should also have a `@problem_fact_collection_property` or a `@planning_entity_collection_property`.
+- The `ValueRangeProvider` annotation is used to denote a field that contains possible planning values for a `PlanningVariable`.
 
-- `@problem_fact_collection_property(type)` is used to indicate a method returns Problem Facts. The first parameter of the decorator is the type of the Problem Fact Collection (required). It should be a list.
+- The`ProblemFactCollection` annotation is used to denote a field that contains problem facts. This allows these facts to be queried in your constraints.
 
-- `@planning_entity_collection_property(type)` is used to indicate a method returns Planning Entities. The first parameter of the decorator is the type of the Planning Entity Collection (required). It should be a list.
+- The `PlanningEntityCollection` annotation is used to denote a field that contains planning entities. The planning variables of these entities will be modified during solving. 
 
-- `@planning_score(scoreType)` is used to tell Timefold what field holds the score. The method MUST begin with get and have a corresponding set method (i.e. `get_score(self)`, `set_score(self, score)`). The first parameter of the decorator is the score type (required).
+- The `PlanningScore` annotation is used to denote the field that holds the score of the current solution. The solver will set this field during solving.
 
 ### Constraints
 
-You define your constraints by using the ConstraintFactory
+You define your constraints by using the ConstraintFactory:
+
 ```python
 from domain import Lesson
 from timefold.solver import constraint_provider
@@ -162,17 +128,23 @@ see https://timefold.ai/docs/timefold-solver/latest/constraints-and-score/score-
 ### Solve
 
 ```python
-from timefold.solver import solver_factory_create
-from timefold.solver.types import SolverConfig, Duration
+from timefold.solver import SolverFactory
+from timefold.solver.config import SolverConfig, TerminationConfig, ScoreDirectorFactoryConfig, Duration
 from constraints import define_constraints
 from domain import TimeTable, Lesson, generate_problem
 
-solver_config = SolverConfig().withEntityClasses(Lesson) \
-    .withSolutionClass(TimeTable) \
-    .withConstraintProviderClass(define_constraints) \
-    .withTerminationSpentLimit(Duration.ofSeconds(30))
+solver_config = SolverConfig(
+    solution_class=TimeTable,
+    entity_class_list=[Lesson],
+    score_director_factory_config=ScoreDirectorFactoryConfig(
+        constraint_provider_function=define_constraints
+    ),
+    termination_config=TerminationConfig(
+        spent_limit=Duration(seconds=30)
+    )
+)
 
-solver = solver_factory_create(solver_config).buildSolver()
+solver = SolverFactory.create(solver_config).build_solver()
 solution = solver.solve(generate_problem())
 ```
 

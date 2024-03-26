@@ -116,7 +116,7 @@ public class CPythonType extends PythonLikeType {
     @Override
     public void $setAttribute(String attributeName, PythonLikeObject value) {
         cachedAttributeMap.put(attributeName, value);
-        CPythonBackedPythonInterpreter.setAttributeOnPythonReference(pythonReference, attributeName, value);
+        CPythonBackedPythonInterpreter.setAttributeOnPythonReference(pythonReference, null, attributeName, value);
     }
 
     @Override

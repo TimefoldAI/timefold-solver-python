@@ -7,6 +7,9 @@ import timefold.solver.config
 import timefold.solver.constraint
 import timefold.solver.test
 
+from typing import Annotated, List
+from dataclasses import dataclass, field
+
 
 def verifier_suite(verifier: timefold.solver.test.ConstraintVerifier, same_value, is_value_one,
                    solution, e1, e2, e3, v1, v2, v3):
@@ -191,28 +194,15 @@ def verifier_suite(verifier: timefold.solver.test.ConstraintVerifier, same_value
 
 
 def test_constraint_verifier_create():
-    @timefold.solver.problem_fact
+    @dataclass
     class Value:
-        def __init__(self, code):
-            self.code = code
-
-        def __str__(self):
-            return f'Value(code={self.code})'
-
+        code: str
 
     @timefold.solver.planning_entity
+    @dataclass
     class Entity:
-        def __init__(self, code, value=None):
-            self.code = code
-            self.value = value
-
-        @timefold.solver.planning_variable(Value, value_range_provider_refs=['value_range'])
-        def get_value(self):
-            return self.value
-
-        def set_value(self, value):
-            self.value = value
-
+        code: str
+        value: Annotated[Value, timefold.solver.PlanningVariable] = field(default=None)
 
     def same_value(constraint_factory: timefold.solver.constraint.ConstraintFactory):
         return (constraint_factory.for_each(Entity)
@@ -235,34 +225,23 @@ def test_constraint_verifier_create():
         ]
 
     @timefold.solver.planning_solution
+    @dataclass
     class Solution:
-        def __init__(self, entities, values, score=None):
-            self.entities = entities
-            self.values = values
-            self.score = score
+        entities: Annotated[List[Entity], timefold.solver.PlanningEntityCollectionProperty]
+        values: Annotated[List[Value],
+                          timefold.solver.ProblemFactCollectionProperty,
+                          timefold.solver.ValueRangeProvider]
+        score: Annotated[timefold.solver.score.SimpleScore, timefold.solver.PlanningScore] = field(default=None)
 
-        @timefold.solver.planning_entity_collection_property(Entity)
-        def get_entities(self):
-            return self.entities
+    solver_config = timefold.solver.config.SolverConfig(
+        solution_class=Solution,
+        entity_class_list=[Entity],
+        score_director_factory_config=timefold.solver.config.ScoreDirectorFactoryConfig(
+            constraint_provider_function=my_constraints
+        )
+    )
 
-        @timefold.solver.problem_fact_collection_property(Value)
-        @timefold.solver.value_range_provider(range_id='value_range')
-        def get_values(self):
-            return self.values
-
-        @timefold.solver.planning_score(timefold.solver.score.SimpleScore)
-        def get_score(self) -> timefold.solver.score.SimpleScore:
-            return self.score
-
-        def set_score(self, score):
-            self.score = score
-
-    solver_config = timefold.solver.config.solver.SolverConfig()
-    solver_config.withSolutionClass(Solution) \
-        .withEntityClasses(Entity) \
-        .withConstraintProviderClass(my_constraints)
-
-    verifier = timefold.solver.test.constraint_verifier_create(solver_config)
+    verifier = timefold.solver.test.ConstraintVerifier.create(solver_config)
 
     e1 = Entity('e1')
     e2 = Entity('e2')
@@ -277,7 +256,7 @@ def test_constraint_verifier_create():
     verifier_suite(verifier, same_value, is_value_one,
                    solution, e1, e2, e3, v1, v2, v3)
 
-    verifier = timefold.solver.test.constraint_verifier_build(my_constraints, Solution, Entity)
+    verifier = timefold.solver.test.ConstraintVerifier.build(my_constraints, Solution, Entity)
 
     e1 = Entity('e1')
     e2 = Entity('e2')

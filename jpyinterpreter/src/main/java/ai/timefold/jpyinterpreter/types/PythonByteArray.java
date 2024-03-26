@@ -841,12 +841,8 @@ public class PythonByteArray extends AbstractPythonLikeObject implements PythonB
         return PythonBoolean.valueOf(hasSuffix(suffix.valueBuffer, startAsInt, endAsInt));
     }
 
-    public PythonBoolean endsWith(PythonLikeTuple suffixes) {
-        for (PythonLikeObject object : suffixes) {
-            if (!(object instanceof PythonByteArray)) {
-                throw new TypeError("startswith argument 1 must be bytes or a tuple of bytes");
-            }
-            PythonByteArray suffix = (PythonByteArray) object;
+    public PythonBoolean endsWith(PythonLikeTuple<PythonByteArray> suffixes) {
+        for (PythonByteArray suffix : suffixes) {
             if (hasSuffix(suffix.valueBuffer, 0, valueBuffer.limit())) {
                 return PythonBoolean.TRUE;
             }
@@ -854,14 +850,10 @@ public class PythonByteArray extends AbstractPythonLikeObject implements PythonB
         return PythonBoolean.FALSE;
     }
 
-    public PythonBoolean endsWith(PythonLikeTuple suffixes, PythonInteger start) {
+    public PythonBoolean endsWith(PythonLikeTuple<PythonByteArray> suffixes, PythonInteger start) {
         int startAsInt = PythonSlice.asValidStartIntIndexForLength(start, valueBuffer.limit());
 
-        for (PythonLikeObject object : suffixes) {
-            if (!(object instanceof PythonByteArray)) {
-                throw new TypeError("startswith argument 1 must be bytes or a tuple of bytes");
-            }
-            PythonByteArray suffix = (PythonByteArray) object;
+        for (PythonByteArray suffix : suffixes) {
             if (hasSuffix(suffix.valueBuffer, startAsInt, valueBuffer.limit())) {
                 return PythonBoolean.TRUE;
             }
@@ -869,15 +861,11 @@ public class PythonByteArray extends AbstractPythonLikeObject implements PythonB
         return PythonBoolean.FALSE;
     }
 
-    public PythonBoolean endsWith(PythonLikeTuple suffixes, PythonInteger start, PythonInteger end) {
+    public PythonBoolean endsWith(PythonLikeTuple<PythonByteArray> suffixes, PythonInteger start, PythonInteger end) {
         int startAsInt = PythonSlice.asValidStartIntIndexForLength(start, valueBuffer.limit());
         int endAsInt = PythonSlice.asValidEndIntIndexForLength(end, valueBuffer.limit());
 
-        for (PythonLikeObject object : suffixes) {
-            if (!(object instanceof PythonByteArray)) {
-                throw new TypeError("startswith argument 1 must be bytes or a tuple of bytes");
-            }
-            PythonByteArray suffix = (PythonByteArray) object;
+        for (PythonByteArray suffix : suffixes) {
             if (hasSuffix(suffix.valueBuffer, startAsInt, endAsInt)) {
                 return PythonBoolean.TRUE;
             }
@@ -1319,12 +1307,8 @@ public class PythonByteArray extends AbstractPythonLikeObject implements PythonB
         return PythonBoolean.valueOf(hasPrefix(prefix.valueBuffer, startAsInt, endAsInt));
     }
 
-    public PythonBoolean startsWith(PythonLikeTuple prefixes) {
-        for (PythonLikeObject object : prefixes) {
-            if (!(object instanceof PythonByteArray)) {
-                throw new TypeError("startswith argument 1 must be bytes or a tuple of bytes");
-            }
-            PythonByteArray prefix = (PythonByteArray) object;
+    public PythonBoolean startsWith(PythonLikeTuple<PythonByteArray> prefixes) {
+        for (PythonByteArray prefix : prefixes) {
             if (hasPrefix(prefix.valueBuffer, 0, valueBuffer.limit())) {
                 return PythonBoolean.TRUE;
             }
@@ -1332,14 +1316,10 @@ public class PythonByteArray extends AbstractPythonLikeObject implements PythonB
         return PythonBoolean.FALSE;
     }
 
-    public PythonBoolean startsWith(PythonLikeTuple prefixes, PythonInteger start) {
+    public PythonBoolean startsWith(PythonLikeTuple<PythonByteArray> prefixes, PythonInteger start) {
         int startAsInt = PythonSlice.asValidStartIntIndexForLength(start, valueBuffer.limit());
 
-        for (PythonLikeObject object : prefixes) {
-            if (!(object instanceof PythonByteArray)) {
-                throw new TypeError("startswith argument 1 must be bytes or a tuple of bytes");
-            }
-            PythonByteArray prefix = (PythonByteArray) object;
+        for (PythonByteArray prefix : prefixes) {
             if (hasPrefix(prefix.valueBuffer, startAsInt, valueBuffer.limit())) {
                 return PythonBoolean.TRUE;
             }
@@ -1347,15 +1327,11 @@ public class PythonByteArray extends AbstractPythonLikeObject implements PythonB
         return PythonBoolean.FALSE;
     }
 
-    public PythonBoolean startsWith(PythonLikeTuple prefixes, PythonInteger start, PythonInteger end) {
+    public PythonBoolean startsWith(PythonLikeTuple<PythonByteArray> prefixes, PythonInteger start, PythonInteger end) {
         int startAsInt = PythonSlice.asValidStartIntIndexForLength(start, valueBuffer.limit());
         int endAsInt = PythonSlice.asValidEndIntIndexForLength(end, valueBuffer.limit());
 
-        for (PythonLikeObject object : prefixes) {
-            if (!(object instanceof PythonByteArray)) {
-                throw new TypeError("startswith argument 1 must be bytes or a tuple of bytes");
-            }
-            PythonByteArray prefix = (PythonByteArray) object;
+        for (PythonByteArray prefix : prefixes) {
             if (hasPrefix(prefix.valueBuffer, startAsInt, endAsInt)) {
                 return PythonBoolean.TRUE;
             }

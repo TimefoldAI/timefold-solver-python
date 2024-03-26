@@ -38,17 +38,20 @@ def pytest_sessionstart(session):
         timefold.solver.set_class_output_directory(pathlib.Path('target', 'tox-generated-classes', 'python', f'{sys.version_info[0]}.{sys.version_info[1]}'))
 
 
-
+exit_code = 0
 def pytest_sessionfinish(session, exitstatus):
     """
     Called after whole test run finished, right before
     returning the exit status to the system.
     """
-    pass
+    global exit_code
+    exit_code = exitstatus
 
 
 def pytest_unconfigure(config):
     """
-    called before test process is exited.
+    Called before test process is exited.
     """
-    pass
+    global exit_code
+    from java.lang import System
+    System.exit(exit_code)

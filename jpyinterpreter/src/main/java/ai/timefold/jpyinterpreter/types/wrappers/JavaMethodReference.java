@@ -8,7 +8,9 @@ import java.util.Map;
 
 import ai.timefold.jpyinterpreter.PythonLikeObject;
 import ai.timefold.jpyinterpreter.implementors.JavaPythonTypeConversionImplementor;
+import ai.timefold.jpyinterpreter.types.BuiltinTypes;
 import ai.timefold.jpyinterpreter.types.PythonLikeFunction;
+import ai.timefold.jpyinterpreter.types.PythonLikeType;
 import ai.timefold.jpyinterpreter.types.PythonString;
 
 public class JavaMethodReference implements PythonLikeFunction {
@@ -45,8 +47,6 @@ public class JavaMethodReference implements PythonLikeFunction {
             throw new IllegalStateException("Method (" + method + ") is not accessible.", e);
         } catch (InvocationTargetException e) {
             throw (RuntimeException) e.getCause();
-        } catch (RuntimeException e) {
-            throw e;
         }
     }
 
@@ -68,5 +68,14 @@ public class JavaMethodReference implements PythonLikeFunction {
         }
 
         return out;
+    }
+
+    @Override
+    public PythonLikeType $getType() {
+        if (Modifier.isStatic(method.getModifiers())) {
+            return BuiltinTypes.STATIC_FUNCTION_TYPE;
+        } else {
+            return BuiltinTypes.FUNCTION_TYPE;
+        }
     }
 }
