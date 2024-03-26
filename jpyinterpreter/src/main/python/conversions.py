@@ -160,9 +160,9 @@ def convert_object_to_java_python_like_object(value, instance_map=None):
     from .translator import (translate_python_code_to_java_class,
                              translate_python_code_to_python_wrapper_class,
                              type_to_compiled_java_class)
-    from java.lang import Object, ClassNotFoundException
+    from java.lang import Object, ClassNotFoundException, NoSuchMethodException
     from java.util import HashMap
-    from ai.timefold.jpyinterpreter import CPythonBackedPythonInterpreter
+    from ai.timefold.jpyinterpreter import PythonInterpreter, CPythonBackedPythonInterpreter
     from ai.timefold.jpyinterpreter.types import PythonLikeType, AbstractPythonLikeObject, CPythonBackedPythonLikeObject
     from ai.timefold.jpyinterpreter.types.wrappers import OpaquePythonReference, CPythonType, JavaObjectWrapper, PythonLikeFunctionWrapper
     from ai.timefold.jpyinterpreter.types.datetime import PythonDate, PythonDateTime, PythonTime, PythonTimeDelta
@@ -208,7 +208,7 @@ def convert_object_to_java_python_like_object(value, instance_map=None):
             return out
     elif type(value) is object:
         java_type = type_to_compiled_java_class[type(value)]
-        out = CPythonBackedPythonLikeObject(java_type)
+        out = CPythonBackedPythonLikeObject(PythonInterpreter.DEFAULT, java_type)
         put_in_instance_map(instance_map, value, out)
         CPythonBackedPythonInterpreter.updateJavaObjectFromPythonObject(out,
                                                                         JProxy(OpaquePythonReference, inst=value,
@@ -226,10 +226,14 @@ def convert_object_to_java_python_like_object(value, instance_map=None):
         except ClassNotFoundException:
             # Class is currently being generated
             return None
-        out = java_class.getConstructor(PythonLikeType).newInstance(java_type)
-        if isinstance(out, CPythonBackedPythonLikeObject):
-            # Mark the item as created from python
-            getattr(out, '$markValidPythonReference')()
+
+        try:
+            out = java_class.getConstructor(PythonInterpreter, PythonLikeType).newInstance(PythonInterpreter.DEFAULT,
+                                                                                           java_type)
+        except NoSuchMethodException:
+            # Value class, such as the error classes ValueError, and are independent of the interpreter
+            out = java_class.getConstructor(PythonLikeType).newInstance(java_type)
+
         put_in_instance_map(instance_map, value, out)
         CPythonBackedPythonInterpreter.updateJavaObjectFromPythonObject(out,
                                                                         JProxy(OpaquePythonReference, inst=value,
@@ -260,10 +264,13 @@ def convert_object_to_java_python_like_object(value, instance_map=None):
             if isinstance(java_type, CPythonType):
                 return None
             java_class = java_type.getJavaClass()
-            out = java_class.getConstructor(PythonLikeType).newInstance(java_type)
-            if isinstance(out, CPythonBackedPythonLikeObject):
-                # Mark the item as created from python
-                getattr(out, '$markValidPythonReference')()
+            try:
+                out = java_class.getConstructor(PythonInterpreter, PythonLikeType).newInstance(PythonInterpreter.DEFAULT,
+                                                                                               java_type)
+            except NoSuchMethodException:
+                # Value class, such as the error classes ValueError, and are independent of the interpreter
+                out = java_class.getConstructor(PythonLikeType).newInstance(java_type)
+
             put_in_instance_map(instance_map, value, out)
             CPythonBackedPythonInterpreter.updateJavaObjectFromPythonObject(out,
                                                                             JProxy(OpaquePythonReference, inst=value,
@@ -572,8 +579,8 @@ def unwrap_python_like_object(python_like_object, clone_map=None, default=NotImp
             maybe_cpython_type = getattr(python_like_object, "$CPYTHON_TYPE")
             if isinstance(maybe_cpython_type, CPythonType):
                 out = object.__new__(maybe_cpython_type.getPythonReference())
-                setattr(python_like_object, '$cpythonReference', JProxy(OpaquePythonReference, inst=out, convert=True))
-                setattr(python_like_object, '$cpythonId', PythonInteger.valueOf(JLong(id(out))))
+                getattr(python_like_object, '$setCPythonReference')(
+                    JProxy(OpaquePythonReference, inst=out, convert=True))
             else:
                 out = None
         else:

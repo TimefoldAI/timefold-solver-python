@@ -7,9 +7,14 @@ import ai.timefold.jpyinterpreter.types.PythonModule;
 import ai.timefold.jpyinterpreter.types.PythonString;
 import ai.timefold.jpyinterpreter.types.errors.PythonTraceback;
 import ai.timefold.jpyinterpreter.types.numeric.PythonInteger;
+import ai.timefold.jpyinterpreter.types.wrappers.OpaquePythonReference;
 
 public interface PythonInterpreter {
     PythonInterpreter DEFAULT = new CPythonBackedPythonInterpreter();
+
+    boolean hasValidPythonReference(PythonLikeObject instance);
+
+    void setPythonReference(PythonLikeObject instance, OpaquePythonReference reference);
 
     PythonLikeObject getGlobal(Map<String, PythonLikeObject> globalsMap, String name);
 

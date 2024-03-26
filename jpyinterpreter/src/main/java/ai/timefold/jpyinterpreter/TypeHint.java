@@ -7,6 +7,10 @@ import java.util.List;
 import ai.timefold.jpyinterpreter.types.PythonLikeType;
 
 public record TypeHint(PythonLikeType type, List<AnnotationMetadata> annotationList, TypeHint[] genericArgs) {
+    public TypeHint {
+        annotationList = Collections.unmodifiableList(annotationList);
+    }
+
     public TypeHint(PythonLikeType type, List<AnnotationMetadata> annotationList) {
         this(type, annotationList, null);
     }

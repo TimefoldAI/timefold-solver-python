@@ -60,8 +60,8 @@ public class JavaObjectWrapper implements PythonLikeObject,
         Class<?> clazz = baseClass;
 
         List<Member> members = new ArrayList<>();
-        members.addAll(List.of(clazz.getFields()));
-        members.addAll(List.of(clazz.getMethods()));
+        members.addAll(Arrays.asList(clazz.getFields()));
+        members.addAll(Arrays.asList(clazz.getMethods()));
         return members;
     }
 

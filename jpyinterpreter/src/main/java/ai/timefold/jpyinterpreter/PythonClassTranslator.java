@@ -40,7 +40,6 @@ import ai.timefold.jpyinterpreter.types.PythonNone;
 import ai.timefold.jpyinterpreter.types.PythonString;
 import ai.timefold.jpyinterpreter.types.collections.PythonLikeDict;
 import ai.timefold.jpyinterpreter.types.collections.PythonLikeTuple;
-import ai.timefold.jpyinterpreter.types.numeric.PythonInteger;
 import ai.timefold.jpyinterpreter.types.wrappers.JavaObjectWrapper;
 import ai.timefold.jpyinterpreter.types.wrappers.OpaquePythonReference;
 import ai.timefold.jpyinterpreter.util.arguments.ArgumentSpec;
@@ -60,7 +59,6 @@ public class PythonClassTranslator {
     // $ is illegal in variables/methods in Python
     public static final String TYPE_FIELD_NAME = "$TYPE";
     public static final String CPYTHON_TYPE_FIELD_NAME = "$CPYTHON_TYPE";
-    private static final String JAVA_FIELD_PREFIX = "$field$";
     private static final String JAVA_METHOD_PREFIX = "$method$";
 
     public record PreparedClassInfo(PythonLikeType type, String className, String classInternalName) {
@@ -238,10 +236,13 @@ public class PythonClassTranslator {
                         null, null);
         methodVisitor.visitCode();
         methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
+        methodVisitor.visitFieldInsn(Opcodes.GETSTATIC, Type.getInternalName(PythonInterpreter.class), "DEFAULT",
+                Type.getDescriptor(PythonInterpreter.class));
         methodVisitor.visitFieldInsn(Opcodes.GETSTATIC, internalClassName, TYPE_FIELD_NAME,
                 Type.getDescriptor(PythonLikeType.class));
         methodVisitor.visitMethodInsn(Opcodes.INVOKESPECIAL, superClassType.getJavaTypeInternalName(), "<init>",
                 Type.getMethodDescriptor(Type.VOID_TYPE,
+                        Type.getType(PythonInterpreter.class),
                         Type.getType(PythonLikeType.class)),
                 false);
         methodVisitor.visitInsn(Opcodes.RETURN);
@@ -249,18 +250,20 @@ public class PythonClassTranslator {
         methodVisitor.visitMaxs(-1, -1);
         methodVisitor.visitEnd();
 
-        // type arg constructor for creating subclass of this class
+        // interpreter + type arg constructor for creating subclass of this class
         methodVisitor =
                 classWriter.visitMethod(Modifier.PUBLIC, "<init>", Type.getMethodDescriptor(Type.VOID_TYPE,
-                        Type.getType(PythonLikeType.class)),
+                        Type.getType(PythonInterpreter.class), Type.getType(PythonLikeType.class)),
                         null, null);
         methodVisitor.visitParameter("subclassType", 0);
 
         methodVisitor.visitCode();
         methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
         methodVisitor.visitVarInsn(Opcodes.ALOAD, 1);
+        methodVisitor.visitVarInsn(Opcodes.ALOAD, 2);
         methodVisitor.visitMethodInsn(Opcodes.INVOKESPECIAL, superClassType.getJavaTypeInternalName(), "<init>",
                 Type.getMethodDescriptor(Type.VOID_TYPE,
+                        Type.getType(PythonInterpreter.class),
                         Type.getType(PythonLikeType.class)),
                 false);
         methodVisitor.visitInsn(Opcodes.RETURN);
@@ -406,7 +409,6 @@ public class PythonClassTranslator {
                 Number pythonReferenceId = CPythonBackedPythonInterpreter.getPythonReferenceId(instancePointer);
                 instanceMap.put(pythonReferenceId, objectInstance);
                 objectInstance.$setCPythonReference(instancePointer);
-                objectInstance.$setCPythonId(PythonInteger.valueOf(pythonReferenceId.longValue()));
                 objectInstance.$setInstanceMap(instanceMap);
                 objectInstance.$readFieldsFromCPythonReference();
                 pythonLikeType.$setAttribute(attributeName, objectInstance);
