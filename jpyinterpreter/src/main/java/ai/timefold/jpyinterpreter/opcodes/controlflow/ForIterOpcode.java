@@ -11,12 +11,10 @@ import ai.timefold.jpyinterpreter.types.BuiltinTypes;
 
 public class ForIterOpcode extends AbstractControlFlowOpcode {
     int jumpTarget;
-    boolean popIterator;
 
-    public ForIterOpcode(PythonBytecodeInstruction instruction, int jumpTarget, boolean popIterator) {
+    public ForIterOpcode(PythonBytecodeInstruction instruction, int jumpTarget) {
         super(instruction);
         this.jumpTarget = jumpTarget;
-        this.popIterator = popIterator;
     }
 
     @Override
@@ -31,12 +29,12 @@ public class ForIterOpcode extends AbstractControlFlowOpcode {
             StackMetadata stackMetadata) {
         return List.of(stackMetadata.push(ValueSourceInfo.of(this, BuiltinTypes.BASE_TYPE,
                 stackMetadata.getValueSourcesUpToStackIndex(1))),
-                popIterator ? stackMetadata.pop() : stackMetadata);
+                stackMetadata.pop());
     }
 
     @Override
     public void implement(FunctionMetadata functionMetadata, StackMetadata stackMetadata) {
         CollectionImplementor.iterateIterator(functionMetadata.methodVisitor, jumpTarget,
-                popIterator, stackMetadata, functionMetadata);
+                stackMetadata, functionMetadata);
     }
 }
