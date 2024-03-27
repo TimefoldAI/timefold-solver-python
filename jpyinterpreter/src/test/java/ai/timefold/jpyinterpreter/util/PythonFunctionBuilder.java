@@ -691,6 +691,10 @@ public class PythonFunctionBuilder {
      * @param compareOp The comparison to perform
      */
     public PythonFunctionBuilder compare(CompareOp compareOp) {
-        return op(DunderOpDescriptor.COMPARE_OP, compareOp.id);
+        PythonBytecodeInstruction instruction = instruction(DunderOpDescriptor.COMPARE_OP)
+                .withArg(0)
+                .withArgRepr(compareOp.id);
+        instructionList.add(instruction);
+        return this;
     }
 }

@@ -13,6 +13,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -30,6 +31,7 @@ import ai.timefold.jpyinterpreter.opcodes.Opcode;
 import ai.timefold.jpyinterpreter.opcodes.OpcodeWithoutSource;
 import ai.timefold.jpyinterpreter.opcodes.SelfOpcodeWithoutSource;
 import ai.timefold.jpyinterpreter.opcodes.descriptor.GeneratorOpDescriptor;
+import ai.timefold.jpyinterpreter.opcodes.variable.LoadFastAndClearOpcode;
 import ai.timefold.jpyinterpreter.types.BuiltinTypes;
 import ai.timefold.jpyinterpreter.types.PythonLikeFunction;
 import ai.timefold.jpyinterpreter.types.PythonLikeType;
@@ -252,7 +254,7 @@ public class PythonBytecodeToJavaBytecodeTranslator {
                 null);
 
         translatePythonBytecodeToMethod(methodDescriptor, internalClassName, methodVisitor, pythonCompiledFunction,
-                isPythonLikeFunction, Integer.MAX_VALUE, isVirtual); // TODO: Use actual python version
+                isPythonLikeFunction, isVirtual);
 
         classWriter.visitEnd();
 
@@ -296,7 +298,7 @@ public class PythonBytecodeToJavaBytecodeTranslator {
                 null);
 
         translatePythonBytecodeToMethod(methodDescriptor, internalClassName, methodVisitor, pythonCompiledFunction,
-                isPythonLikeFunction, Integer.MAX_VALUE, isVirtual); // TODO: Use actual python version
+                isPythonLikeFunction, isVirtual);
 
         String withoutGenericsSignature = Type.getMethodDescriptor(methodWithoutGenerics);
         if (!withoutGenericsSignature.equals(methodDescriptor.getMethodDescriptor())) {
@@ -991,7 +993,7 @@ public class PythonBytecodeToJavaBytecodeTranslator {
     }
 
     private static void translatePythonBytecodeToMethod(MethodDescriptor method, String className, MethodVisitor methodVisitor,
-            PythonCompiledFunction pythonCompiledFunction, boolean isPythonLikeFunction, int pythonVersion, boolean isVirtual) {
+            PythonCompiledFunction pythonCompiledFunction, boolean isPythonLikeFunction, boolean isVirtual) {
         // Apply Method Adapters, which reorder try blocks and check the bytecode to ensure it valid
         methodVisitor = MethodVisitorAdapters.adapt(methodVisitor, method);
 
@@ -1057,6 +1059,7 @@ public class PythonBytecodeToJavaBytecodeTranslator {
 
         FlowGraph flowGraph = FlowGraph.createFlowGraph(functionMetadata, initialStackMetadata, opcodeList);
         List<StackMetadata> stackMetadataForOpcodeIndex = flowGraph.getStackMetadataForOperations();
+
         writeInstructionsForOpcodes(functionMetadata, stackMetadataForOpcodeIndex, opcodeList);
 
         methodVisitor.visitLabel(end);
@@ -1138,6 +1141,19 @@ public class PythonBytecodeToJavaBytecodeTranslator {
                                         stackMetadata,
                                         exceptionBlock));
                     });
+        }
+
+        var requiredNullVariableSet = new TreeSet<Integer>();
+        for (Opcode opcode : opcodeList) {
+            if (opcode instanceof LoadFastAndClearOpcode loadAndClearOpcode) {
+                requiredNullVariableSet.add(loadAndClearOpcode.getInstruction().arg());
+            }
+        }
+
+        for (var requiredNullVariable : requiredNullVariableSet) {
+            methodVisitor.visitInsn(Opcodes.ACONST_NULL);
+            methodVisitor.visitVarInsn(Opcodes.ASTORE,
+                    stackMetadataForOpcodeIndex.get(0).localVariableHelper.getPythonLocalVariableSlot(requiredNullVariable));
         }
 
         for (int i = 0; i < opcodeList.size(); i++) {

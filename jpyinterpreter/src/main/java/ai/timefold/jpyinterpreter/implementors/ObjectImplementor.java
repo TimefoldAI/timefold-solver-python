@@ -32,9 +32,9 @@ public class ObjectImplementor {
      */
     public static void getAttribute(FunctionMetadata functionMetadata, MethodVisitor methodVisitor, String className,
             StackMetadata stackMetadata,
-            PythonBytecodeInstruction instruction) {
+            int nameIndex) {
         PythonLikeType tosType = stackMetadata.getTOSType();
-        String name = functionMetadata.pythonCompiledFunction.co_names.get(instruction.arg());
+        String name = functionMetadata.pythonCompiledFunction.co_names.get(nameIndex);
         Optional<FieldDescriptor> maybeFieldDescriptor = tosType.getInstanceFieldDescriptor(name);
 
         if (maybeFieldDescriptor.isPresent()) {
@@ -86,7 +86,7 @@ public class ObjectImplementor {
                 // It a false field descriptor, which means TOS is a type and this is a field for a method
                 // We can call $method$__getattribute__ directly (since type do not override it),
                 // which is more efficient then going through the full logic of __getattribute__ dunder method impl.
-                PythonConstantsImplementor.loadName(methodVisitor, className, instruction.arg());
+                PythonConstantsImplementor.loadName(methodVisitor, className, nameIndex);
                 methodVisitor.visitTypeInsn(Opcodes.CHECKCAST, Type.getInternalName(PythonString.class));
                 methodVisitor.visitMethodInsn(Opcodes.INVOKEINTERFACE, Type.getInternalName(PythonLikeObject.class),
                         "$method$__getattribute__", Type.getMethodDescriptor(
@@ -95,7 +95,7 @@ public class ObjectImplementor {
                         true);
             }
         } else {
-            PythonConstantsImplementor.loadName(methodVisitor, className, instruction.arg());
+            PythonConstantsImplementor.loadName(methodVisitor, className, nameIndex);
             DunderOperatorImplementor.binaryOperator(methodVisitor,
                     stackMetadata.pushTemp(BuiltinTypes.STRING_TYPE),
                     PythonBinaryOperator.GET_ATTRIBUTE);

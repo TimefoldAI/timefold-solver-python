@@ -6,8 +6,8 @@ import abc
 from jpype import JInt, JBoolean, JProxy, JClass, JArray
 
 
-MINIMUM_SUPPORTED_PYTHON_VERSION = (3, 9)
-MAXIMUM_SUPPORTED_PYTHON_VERSION = (3, 11)
+MINIMUM_SUPPORTED_PYTHON_VERSION = (3, 10)
+MAXIMUM_SUPPORTED_PYTHON_VERSION = (3, 12)
 
 global_dict_to_instance = dict()
 global_dict_to_key_set = dict()
@@ -206,7 +206,7 @@ def get_function_bytecode_object(python_function):
             .atOffset(instruction.opname, JInt(instruction.offset // 2))
             .withIsJumpTarget(JBoolean(instruction.is_jump_target)))
         if instruction.arg is not None:
-            java_instruction = java_instruction.withArg(instruction.arg)
+            java_instruction = java_instruction.withArg(instruction.arg).withArgRepr(instruction.argrepr)
         if instruction.starts_line:
             java_instruction = java_instruction.startsLine(instruction.starts_line)
 
@@ -270,9 +270,10 @@ def get_code_bytecode_object(python_code):
             .atOffset(instruction.opname, JInt(instruction.offset // 2))
             .withIsJumpTarget(JBoolean(instruction.is_jump_target)))
         if instruction.arg is not None:
-            java_instruction = java_instruction.withArg(instruction.arg)
+            java_instruction = java_instruction.withArg(instruction.arg).withArgRepr(instruction.argrepr)
         if instruction.starts_line:
             java_instruction = java_instruction.startsLine(instruction.starts_line)
+
         instruction_list.add(java_instruction)
 
     python_compiled_function.module = '__code__'
@@ -409,13 +410,21 @@ def wrap_typed_java_function(java_function):
     return wrapped_function
 
 
+def try_or_reraise(function):
+    from java.lang import Exception as JException
+    try:
+        return function()
+    except JException as e:
+        raise RuntimeError(f'{e.getClass().getSimpleName()}: {e.getMessage()}\n{e.stacktrace()}')
+
+
 def as_java(python_function):
     return as_typed_java(python_function)
 
 
 def as_untyped_java(python_function):
     from ai.timefold.jpyinterpreter.types import PythonLikeFunction
-    java_function = translate_python_bytecode_to_java_bytecode(python_function, PythonLikeFunction)
+    java_function = try_or_reraise(lambda: translate_python_bytecode_to_java_bytecode(python_function, PythonLikeFunction))
     return wrap_untyped_java_function(java_function)
 
 
@@ -424,14 +433,14 @@ def as_typed_java(python_function):
     function_bytecode = get_function_bytecode_object(python_function)
     function_interface_declaration = PythonClassTranslator.getInterfaceForPythonFunction(function_bytecode)
     function_interface_class = PythonClassTranslator.getInterfaceClassForDeclaration(function_interface_declaration)
-    java_function = translate_python_bytecode_to_java_bytecode(python_function, function_interface_class)
+    java_function = try_or_reraise(lambda: translate_python_bytecode_to_java_bytecode(python_function, function_interface_class))
     return wrap_typed_java_function(java_function)
 
 
 def _force_as_java_generator(python_function):
     from ai.timefold.jpyinterpreter.types import PythonLikeFunction
-    java_function = _force_translate_python_bytecode_to_generator_java_bytecode(python_function,
-                                                                                PythonLikeFunction)
+    java_function = try_or_reraise(lambda: _force_translate_python_bytecode_to_generator_java_bytecode(python_function,
+                                                                                PythonLikeFunction))
     return wrap_untyped_java_function(java_function)
 
 

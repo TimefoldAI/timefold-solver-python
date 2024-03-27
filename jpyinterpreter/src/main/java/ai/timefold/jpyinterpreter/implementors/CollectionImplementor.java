@@ -41,6 +41,7 @@ public class CollectionImplementor {
      * normal exceptions.
      */
     public static void iterateIterator(MethodVisitor methodVisitor, int jumpTarget,
+            boolean popIterator,
             StackMetadata stackMetadata,
             FunctionMetadata functionMetadata) {
         Label tryStartLabel = new Label();
@@ -64,7 +65,9 @@ public class CollectionImplementor {
         methodVisitor.visitJumpInsn(Opcodes.GOTO, catchEndLabel);
 
         methodVisitor.visitLabel(catchStartLabel);
-        methodVisitor.visitInsn(Opcodes.POP);
+        if (popIterator) {
+            methodVisitor.visitInsn(Opcodes.POP);
+        }
         methodVisitor.visitJumpInsn(Opcodes.GOTO, loopEndLabel);
         methodVisitor.visitLabel(catchEndLabel);
 

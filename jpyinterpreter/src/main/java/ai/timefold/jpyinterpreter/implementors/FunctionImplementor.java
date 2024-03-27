@@ -101,9 +101,11 @@ public class FunctionImplementor {
      * TOS will be used as the first argument (self) by CALL_METHOD when calling the unbound method.
      * Otherwise, NULL and the object return by the attribute lookup are pushed.
      */
-    public static void loadMethod(FunctionMetadata functionMetadata, MethodVisitor methodVisitor, String className,
-            PythonCompiledFunction function,
-            StackMetadata stackMetadata, PythonBytecodeInstruction instruction) {
+    public static void loadMethod(FunctionMetadata functionMetadata, StackMetadata stackMetadata,
+            int nameIndex) {
+        var methodVisitor = functionMetadata.methodVisitor;
+        var function = functionMetadata.pythonCompiledFunction;
+        var className = functionMetadata.className;
         PythonLikeType stackTosType = stackMetadata.getTOSType();
         PythonLikeType tosType;
         boolean isTosType;
@@ -114,10 +116,10 @@ public class FunctionImplementor {
             tosType = stackTosType;
             isTosType = false;
         }
-        tosType.getMethodType(functionMetadata.pythonCompiledFunction.co_names.get(instruction.arg())).ifPresentOrElse(
+        tosType.getMethodType(functionMetadata.pythonCompiledFunction.co_names.get(nameIndex)).ifPresentOrElse(
                 knownFunctionType -> {
                     if (isTosType && knownFunctionType.isStaticMethod()) {
-                        methodVisitor.visitLdcInsn(function.co_names.get(instruction.arg()));
+                        methodVisitor.visitLdcInsn(function.co_names.get(nameIndex));
                         methodVisitor.visitMethodInsn(Opcodes.INVOKEINTERFACE, Type.getInternalName(PythonLikeObject.class),
                                 "$getAttributeOrNull", Type.getMethodDescriptor(Type.getType(PythonLikeObject.class),
                                         Type.getType(String.class)),
@@ -133,7 +135,7 @@ public class FunctionImplementor {
                         methodVisitor.visitMethodInsn(Opcodes.INVOKEINTERFACE, Type.getInternalName(PythonLikeObject.class),
                                 "$getType", Type.getMethodDescriptor(Type.getType(PythonLikeType.class)),
                                 true);
-                        methodVisitor.visitLdcInsn(function.co_names.get(instruction.arg()));
+                        methodVisitor.visitLdcInsn(function.co_names.get(nameIndex));
                         methodVisitor.visitMethodInsn(Opcodes.INVOKEINTERFACE, Type.getInternalName(PythonLikeObject.class),
                                 "$getAttributeOrNull", Type.getMethodDescriptor(Type.getType(PythonLikeObject.class),
                                         Type.getType(String.class)),
@@ -146,7 +148,7 @@ public class FunctionImplementor {
                         }
                     } else if (isTosType && knownFunctionType.isClassMethod()) {
                         methodVisitor.visitInsn(Opcodes.DUP);
-                        methodVisitor.visitLdcInsn(function.co_names.get(instruction.arg()));
+                        methodVisitor.visitLdcInsn(function.co_names.get(nameIndex));
                         methodVisitor.visitMethodInsn(Opcodes.INVOKEINTERFACE, Type.getInternalName(PythonLikeObject.class),
                                 "$getAttributeOrNull", Type.getMethodDescriptor(Type.getType(PythonLikeObject.class),
                                         Type.getType(String.class)),
@@ -157,7 +159,7 @@ public class FunctionImplementor {
                         methodVisitor.visitMethodInsn(Opcodes.INVOKEINTERFACE, Type.getInternalName(PythonLikeObject.class),
                                 "$getType", Type.getMethodDescriptor(Type.getType(PythonLikeType.class)),
                                 true);
-                        methodVisitor.visitLdcInsn(function.co_names.get(instruction.arg()));
+                        methodVisitor.visitLdcInsn(function.co_names.get(nameIndex));
                         methodVisitor.visitMethodInsn(Opcodes.INVOKEINTERFACE, Type.getInternalName(PythonLikeObject.class),
                                 "$getAttributeOrNull", Type.getMethodDescriptor(Type.getType(PythonLikeObject.class),
                                         Type.getType(String.class)),
@@ -165,7 +167,7 @@ public class FunctionImplementor {
                         methodVisitor.visitInsn(Opcodes.SWAP);
                     } else if (isTosType) {
                         methodVisitor.visitInsn(Opcodes.DUP);
-                        methodVisitor.visitLdcInsn(function.co_names.get(instruction.arg()));
+                        methodVisitor.visitLdcInsn(function.co_names.get(nameIndex));
                         methodVisitor.visitMethodInsn(Opcodes.INVOKEINTERFACE, Type.getInternalName(PythonLikeObject.class),
                                 "$getAttributeOrNull", Type.getMethodDescriptor(Type.getType(PythonLikeObject.class),
                                         Type.getType(String.class)),
@@ -176,7 +178,7 @@ public class FunctionImplementor {
                         methodVisitor.visitMethodInsn(Opcodes.INVOKEINTERFACE, Type.getInternalName(PythonLikeObject.class),
                                 "$getType", Type.getMethodDescriptor(Type.getType(PythonLikeType.class)),
                                 true);
-                        methodVisitor.visitLdcInsn(function.co_names.get(instruction.arg()));
+                        methodVisitor.visitLdcInsn(function.co_names.get(nameIndex));
                         methodVisitor.visitMethodInsn(Opcodes.INVOKEINTERFACE, Type.getInternalName(PythonLikeObject.class),
                                 "$getAttributeOrNull", Type.getMethodDescriptor(Type.getType(PythonLikeObject.class),
                                         Type.getType(String.class)),
@@ -184,7 +186,8 @@ public class FunctionImplementor {
                         methodVisitor.visitInsn(Opcodes.SWAP);
                     }
                 },
-                () -> loadGenericMethod(functionMetadata, methodVisitor, className, function, stackMetadata, instruction));
+                () -> loadGenericMethod(functionMetadata, methodVisitor, className, function, stackMetadata,
+                        nameIndex));
     }
 
     /**
@@ -195,13 +198,13 @@ public class FunctionImplementor {
      */
     private static void loadGenericMethod(FunctionMetadata functionMetadata, MethodVisitor methodVisitor, String className,
             PythonCompiledFunction function,
-            StackMetadata stackMetadata, PythonBytecodeInstruction instruction) {
+            StackMetadata stackMetadata, int nameIndex) {
 
         methodVisitor.visitInsn(Opcodes.DUP);
         methodVisitor.visitMethodInsn(Opcodes.INVOKEINTERFACE, Type.getInternalName(PythonLikeObject.class),
                 "$getType", Type.getMethodDescriptor(Type.getType(PythonLikeType.class)),
                 true);
-        methodVisitor.visitLdcInsn(function.co_names.get(instruction.arg()));
+        methodVisitor.visitLdcInsn(function.co_names.get(nameIndex));
         methodVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, Type.getInternalName(PythonLikeType.class),
                 "loadMethod", Type.getMethodDescriptor(Type.getType(PythonLikeObject.class),
                         Type.getType(String.class)),
@@ -216,7 +219,7 @@ public class FunctionImplementor {
         // TOS is null; type does not have attribute; do normal attribute lookup
         // Stack is object, null
         methodVisitor.visitInsn(Opcodes.POP);
-        ObjectImplementor.getAttribute(functionMetadata, methodVisitor, className, stackMetadata, instruction);
+        ObjectImplementor.getAttribute(functionMetadata, methodVisitor, className, stackMetadata, nameIndex);
 
         // Stack is method
         methodVisitor.visitInsn(Opcodes.ACONST_NULL);

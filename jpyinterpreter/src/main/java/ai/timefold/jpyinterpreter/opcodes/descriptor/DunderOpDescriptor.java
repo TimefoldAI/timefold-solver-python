@@ -10,7 +10,9 @@ import ai.timefold.jpyinterpreter.PythonVersion;
 import ai.timefold.jpyinterpreter.opcodes.Opcode;
 import ai.timefold.jpyinterpreter.opcodes.dunder.BinaryDunderOpcode;
 import ai.timefold.jpyinterpreter.opcodes.dunder.CompareOpcode;
+import ai.timefold.jpyinterpreter.opcodes.dunder.GetSliceOpcode;
 import ai.timefold.jpyinterpreter.opcodes.dunder.NotOpcode;
+import ai.timefold.jpyinterpreter.opcodes.dunder.StoreSliceOpcode;
 import ai.timefold.jpyinterpreter.opcodes.dunder.UniDunerOpcode;
 
 public enum DunderOpDescriptor implements OpcodeDescriptor {
@@ -85,6 +87,16 @@ public enum DunderOpDescriptor implements OpcodeDescriptor {
      * Implements TOS = TOS1[TOS].
      */
     BINARY_SUBSCR(PythonBinaryOperator.GET_ITEM),
+
+    /**
+     * Implements TOS = TOS2[TOS1:TOS]
+     */
+    BINARY_SLICE(GetSliceOpcode::new),
+
+    /**
+     * Implements TOS2[TOS1:TOS] = TOS3
+     */
+    STORE_SLICE(StoreSliceOpcode::new),
 
     /**
      * Implements TOS = TOS1 << TOS.

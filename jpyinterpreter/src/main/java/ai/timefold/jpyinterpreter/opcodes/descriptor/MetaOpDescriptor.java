@@ -7,6 +7,7 @@ import ai.timefold.jpyinterpreter.PythonBytecodeInstruction;
 import ai.timefold.jpyinterpreter.PythonVersion;
 import ai.timefold.jpyinterpreter.opcodes.Opcode;
 import ai.timefold.jpyinterpreter.opcodes.meta.NopOpcode;
+import ai.timefold.jpyinterpreter.opcodes.meta.UnaryIntrinsicFunction;
 
 public enum MetaOpDescriptor implements OpcodeDescriptor {
     /**
@@ -27,6 +28,7 @@ public enum MetaOpDescriptor implements OpcodeDescriptor {
     PRECALL(NopOpcode::new),
     MAKE_CELL(NopOpcode::new),
     COPY_FREE_VARS(NopOpcode::new),
+    CALL_INTRINSIC_1(UnaryIntrinsicFunction::lookup),
 
     // TODO
     EXTENDED_ARG(null),

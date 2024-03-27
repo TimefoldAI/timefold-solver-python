@@ -9,6 +9,7 @@ import ai.timefold.jpyinterpreter.PythonBytecodeInstruction;
 import ai.timefold.jpyinterpreter.PythonVersion;
 import ai.timefold.jpyinterpreter.opcodes.Opcode;
 import ai.timefold.jpyinterpreter.opcodes.exceptions.CheckExcMatchOpcode;
+import ai.timefold.jpyinterpreter.opcodes.exceptions.CleanupThrowOpcode;
 import ai.timefold.jpyinterpreter.opcodes.exceptions.LoadAssertionErrorOpcode;
 import ai.timefold.jpyinterpreter.opcodes.exceptions.PopBlockOpcode;
 import ai.timefold.jpyinterpreter.opcodes.exceptions.PopExceptOpcode;
@@ -64,7 +65,8 @@ public enum ExceptionOpDescriptor implements OpcodeDescriptor {
     WITH_EXCEPT_START(WithExceptStartOpcode::new),
     SETUP_FINALLY(SetupFinallyOpcode::new, JumpUtils::getRelativeTarget),
 
-    SETUP_WITH(SetupWithOpcode::new, JumpUtils::getRelativeTarget);
+    SETUP_WITH(SetupWithOpcode::new, JumpUtils::getRelativeTarget),
+    CLEANUP_THROW(CleanupThrowOpcode::new);
 
     final BiFunction<PythonBytecodeInstruction, PythonVersion, Opcode> opcodeConstructor;
 

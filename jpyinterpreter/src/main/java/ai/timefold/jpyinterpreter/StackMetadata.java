@@ -62,11 +62,6 @@ public class StackMetadata {
         return stackValueSources.size();
     }
 
-    public List<PythonLikeType> getStackTypeList() {
-        return stackValueSources.stream().map(ValueSourceInfo::getValueType)
-                .collect(Collectors.toList());
-    }
-
     /**
      * Returns the list index for the given stack index (stack index is how many
      * elements below TOS (i.e. 0 is TOS, 1 is TOS1)).
@@ -113,7 +108,8 @@ public class StackMetadata {
         if (valueSourceInfo != null) {
             return valueSourceInfo.valueType;
         }
-        return null;
+        // Unknown type
+        return BuiltinTypes.BASE_TYPE;
     }
 
     /**
@@ -127,20 +123,6 @@ public class StackMetadata {
     }
 
     /**
-     * Returns the type for the local variable in slot {@code index}
-     *
-     * @param index The slot
-     * @return The type for the local variable in the given slot
-     */
-    public PythonLikeType getLocalVariableType(int index) {
-        ValueSourceInfo valueSourceInfo = localVariableValueSources.get(index);
-        if (valueSourceInfo != null) {
-            return valueSourceInfo.valueType;
-        }
-        return null;
-    }
-
-    /**
      * Returns the value source for the cell variable in slot {@code index}
      *
      * @param index The slot
@@ -148,20 +130,6 @@ public class StackMetadata {
      */
     public ValueSourceInfo getCellVariableValueSource(int index) {
         return cellVariableValueSources.get(index);
-    }
-
-    /**
-     * Returns the type for the cell variable in slot {@code index}
-     *
-     * @param index The slot
-     * @return The type for the cell variable in the given slot
-     */
-    public PythonLikeType getCellVariableType(int index) {
-        ValueSourceInfo valueSourceInfo = cellVariableValueSources.get(index);
-        if (valueSourceInfo != null) {
-            return valueSourceInfo.valueType;
-        }
-        return null;
     }
 
     public PythonLikeType getTOSType() {
@@ -274,13 +242,6 @@ public class StackMetadata {
         for (PythonLikeType type : types) {
             out.stackValueSources.add(ValueSourceInfo.of(new OpcodeWithoutSource(), type));
         }
-        return out;
-    }
-
-    public StackMetadata insertTemp(int tosIndex, PythonLikeType type) {
-        StackMetadata out = copy();
-        out.stackValueSources.add(stackValueSources.size() - tosIndex,
-                ValueSourceInfo.of(new OpcodeWithoutSource(), type));
         return out;
     }
 

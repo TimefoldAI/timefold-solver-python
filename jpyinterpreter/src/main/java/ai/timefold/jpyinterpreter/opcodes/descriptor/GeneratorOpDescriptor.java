@@ -14,6 +14,7 @@ import ai.timefold.jpyinterpreter.opcodes.generator.ResumeOpcode;
 import ai.timefold.jpyinterpreter.opcodes.generator.SendOpcode;
 import ai.timefold.jpyinterpreter.opcodes.generator.YieldFromOpcode;
 import ai.timefold.jpyinterpreter.opcodes.generator.YieldValueOpcode;
+import ai.timefold.jpyinterpreter.opcodes.meta.NopOpcode;
 import ai.timefold.jpyinterpreter.opcodes.meta.ReturnGeneratorOpcode;
 import ai.timefold.jpyinterpreter.util.JumpUtils;
 
@@ -51,6 +52,9 @@ public enum GeneratorOpDescriptor implements OpcodeDescriptor {
      * yielded value; TOS1 remains. When the subgenerator is exhausted, jump forward by its argument.
      */
     SEND(SendOpcode::new, JumpUtils::getRelativeTarget),
+
+    END_SEND(NopOpcode::new),
+
     /**
      * Create a generator, coroutine, or async generator from the current frame.
      * Clear the current frame and return the newly created generator. A no-op for us, since we detect if

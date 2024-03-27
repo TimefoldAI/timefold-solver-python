@@ -27,6 +27,7 @@ import ai.timefold.jpyinterpreter.types.collections.PythonLikeTuple;
 import ai.timefold.jpyinterpreter.types.errors.PythonAssertionError;
 import ai.timefold.jpyinterpreter.types.errors.PythonBaseException;
 import ai.timefold.jpyinterpreter.types.errors.PythonTraceback;
+import ai.timefold.jpyinterpreter.types.errors.StopIteration;
 import ai.timefold.jpyinterpreter.types.numeric.PythonBoolean;
 import ai.timefold.jpyinterpreter.types.numeric.PythonInteger;
 
@@ -446,5 +447,20 @@ public class ExceptionImplementor {
         localVariableHelper.freeLocal();
 
         localVariableHelper.freeLocal();
+    }
+
+    public static void getValueFromStopIterationOrReraise(FunctionMetadata functionMetadata, StackMetadata stackMetadata) {
+        var methodVisitor = functionMetadata.methodVisitor;
+        Label isStopIteration = new Label();
+        methodVisitor.visitInsn(Opcodes.DUP);
+        methodVisitor.visitTypeInsn(Opcodes.INSTANCEOF, Type.getInternalName(StopIteration.class));
+        methodVisitor.visitJumpInsn(Opcodes.IFNE, isStopIteration);
+
+        ExceptionImplementor.reraise(methodVisitor);
+
+        methodVisitor.visitLabel(isStopIteration);
+        methodVisitor.visitTypeInsn(Opcodes.CHECKCAST, Type.getInternalName(StopIteration.class));
+        methodVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, Type.getInternalName(StopIteration.class),
+                "getValue", Type.getMethodDescriptor(Type.getType(PythonLikeObject.class)), false);
     }
 }

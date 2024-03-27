@@ -1,6 +1,5 @@
 package ai.timefold.jpyinterpreter.types;
 
-import java.math.BigInteger;
 import java.util.Map;
 import java.util.Objects;
 
@@ -143,62 +142,23 @@ public class PythonSlice extends AbstractPythonLikeObject {
         }
     }
 
+    private record SliceIndices(int start, int stop, int strideLength) {
+    }
+
+    private SliceIndices getSliceIndices(int length) {
+        return new SliceIndices(getStartIndex(length), getStopIndex(length), getStrideLength());
+    }
+
+    private SliceIndices getSliceIndices(PythonInteger length) {
+        return getSliceIndices(length.getValue().intValue());
+    }
+
     public PythonLikeTuple indices(PythonInteger sequenceLength) {
-        PythonInteger startIndex, stopIndex, strideLength;
-        boolean isReversed = false;
+        var sliceIndices = getSliceIndices(sequenceLength);
 
-        if (this.step == PythonNone.INSTANCE) {
-            strideLength = PythonInteger.ONE;
-        } else if (this.step instanceof PythonInteger) {
-            strideLength = (PythonInteger) this.step;
-            isReversed = strideLength.compareTo(PythonInteger.ZERO) < 0;
-        } else {
-            strideLength = (PythonInteger) UnaryDunderBuiltin.INDEX.invoke(start);
-            isReversed = strideLength.compareTo(PythonInteger.ZERO) < 0;
-        }
-
-        if (strideLength.value.intValueExact() == 0) {
-            throw new ValueError("stride length cannot be zero");
-        }
-
-        if (start instanceof PythonInteger) {
-            startIndex = (PythonInteger) start;
-        } else if (start == PythonNone.INSTANCE) {
-            startIndex = isReversed ? PythonInteger.valueOf(sequenceLength.value.subtract(BigInteger.ONE)) : PythonInteger.ZERO;
-        } else {
-            startIndex = ((PythonInteger) UnaryDunderBuiltin.INDEX.invoke(start));
-        }
-
-        if (startIndex.compareTo(PythonInteger.ZERO) < 0) {
-            startIndex = sequenceLength.add(startIndex);
-        }
-
-        if (!isReversed && startIndex.value.compareTo(sequenceLength.value) > 0) {
-            startIndex = sequenceLength;
-        } else if (isReversed && startIndex.value.compareTo(sequenceLength.value.subtract(BigInteger.ONE)) > 0) {
-            startIndex = PythonInteger.valueOf(sequenceLength.value.subtract(BigInteger.ONE));
-        }
-
-        if (stop instanceof PythonInteger) {
-            stopIndex = (PythonInteger) stop;
-        } else if (stop == PythonNone.INSTANCE) {
-            stopIndex =
-                    isReversed ? PythonInteger.valueOf(sequenceLength.value.negate().subtract(BigInteger.ONE)) : sequenceLength;
-        } else {
-            stopIndex = (PythonInteger) UnaryDunderBuiltin.INDEX.invoke(stop);
-        }
-
-        if (stopIndex.compareTo(PythonInteger.ZERO) < 0) {
-            stopIndex = sequenceLength.add(stopIndex);
-        }
-
-        if (!isReversed && stopIndex.value.compareTo(sequenceLength.value) > 0) {
-            stopIndex = sequenceLength;
-        } else if (isReversed && stopIndex.value.compareTo(sequenceLength.value.subtract(BigInteger.ONE)) > 0) {
-            stopIndex = PythonInteger.valueOf(sequenceLength.value.subtract(BigInteger.ONE));
-        }
-
-        return PythonLikeTuple.fromItems(startIndex, stopIndex, strideLength);
+        return PythonLikeTuple.fromItems(PythonInteger.valueOf(sliceIndices.start),
+                PythonInteger.valueOf(sliceIndices.start),
+                PythonInteger.valueOf(sliceIndices.strideLength));
     }
 
     public int getStartIndex(int length) {
@@ -256,10 +216,10 @@ public class PythonSlice extends AbstractPythonLikeObject {
 
         if (step instanceof PythonInteger) {
             strideLength = (PythonInteger) step;
-        } else if (step == PythonNone.INSTANCE) {
-            strideLength = PythonInteger.ONE;
-        } else {
+        } else if (step != null && step != PythonNone.INSTANCE) {
             strideLength = (PythonInteger) UnaryDunderBuiltin.INDEX.invoke(step);
+        } else {
+            strideLength = PythonInteger.ONE;
         }
 
         int out = strideLength.value.intValueExact();
@@ -268,71 +228,20 @@ public class PythonSlice extends AbstractPythonLikeObject {
             throw new ValueError("stride length cannot be zero");
         }
 
-        return strideLength.value.intValueExact();
+        return out;
     }
 
     public void iterate(int length, SliceConsumer consumer) {
-        int startIndex, stopIndex, strideLength;
-        boolean isReversed = false;
-
-        if (this.step == PythonNone.INSTANCE) {
-            strideLength = 1;
-        } else if (this.step instanceof PythonInteger) {
-            strideLength = ((PythonInteger) this.step).value.intValueExact();
-            isReversed = strideLength < 0;
-        } else {
-            strideLength = ((PythonInteger) UnaryDunderBuiltin.INDEX.invoke(start)).value.intValueExact();
-            isReversed = strideLength < 0;
-        }
-
-        if (strideLength == 0) {
-            throw new ValueError("stride length cannot be zero");
-        }
-
-        if (start instanceof PythonInteger) {
-            startIndex = ((PythonInteger) start).value.intValueExact();
-        } else if (start == PythonNone.INSTANCE) {
-            startIndex = isReversed ? length - 1 : 0;
-        } else {
-            startIndex = ((PythonInteger) UnaryDunderBuiltin.INDEX.invoke(start)).value.intValueExact();
-        }
-
-        if (startIndex < 0) {
-            startIndex = length + startIndex;
-        }
-
-        if (!isReversed && startIndex > length) {
-            startIndex = length;
-        } else if (isReversed && startIndex > length - 1) {
-            startIndex = length - 1;
-        }
-
-        if (stop instanceof PythonInteger) {
-            stopIndex = ((PythonInteger) stop).value.intValueExact();
-        } else if (stop == PythonNone.INSTANCE) {
-            stopIndex = isReversed ? -length - 1 : length; // use -length - 1 so length - stopIndex = -1
-        } else {
-            stopIndex = ((PythonInteger) UnaryDunderBuiltin.INDEX.invoke(stop)).value.intValueExact();
-        }
-
-        if (stopIndex < 0) {
-            stopIndex = length + stopIndex;
-        }
-
-        if (!isReversed && stopIndex > length) {
-            stopIndex = length;
-        } else if (isReversed && stopIndex > length - 1) {
-            stopIndex = length - 1;
-        }
+        var sliceIndices = getSliceIndices(length);
 
         int step = 0;
-        if (isReversed) {
-            for (int i = startIndex; i > stopIndex; i += strideLength) {
+        if (sliceIndices.strideLength < 0) {
+            for (int i = sliceIndices.start; i > sliceIndices.stop; i += sliceIndices.strideLength) {
                 consumer.accept(i, step);
                 step++;
             }
         } else {
-            for (int i = startIndex; i < stopIndex; i += strideLength) {
+            for (int i = sliceIndices.start; i < sliceIndices.stop; i += sliceIndices.strideLength) {
                 consumer.accept(i, step);
                 step++;
             }
@@ -344,10 +253,9 @@ public class PythonSlice extends AbstractPythonLikeObject {
     }
 
     public int getSliceSize(int length) {
-        int start = getStartIndex(length);
-        int stop = getStopIndex(length);
-        int span = stop - start;
-        int strideLength = getStrideLength();
+        var sliceIndices = getSliceIndices(length);
+        int span = sliceIndices.stop - sliceIndices.start;
+        int strideLength = sliceIndices.strideLength;
 
         // ceil division
         return span / strideLength + (span % strideLength == 0 ? 0 : 1);

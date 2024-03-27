@@ -12,6 +12,7 @@ import ai.timefold.jpyinterpreter.opcodes.variable.DeleteGlobalOpcode;
 import ai.timefold.jpyinterpreter.opcodes.variable.LoadClosureOpcode;
 import ai.timefold.jpyinterpreter.opcodes.variable.LoadConstantOpcode;
 import ai.timefold.jpyinterpreter.opcodes.variable.LoadDerefOpcode;
+import ai.timefold.jpyinterpreter.opcodes.variable.LoadFastAndClearOpcode;
 import ai.timefold.jpyinterpreter.opcodes.variable.LoadFastOpcode;
 import ai.timefold.jpyinterpreter.opcodes.variable.LoadGlobalOpcode;
 import ai.timefold.jpyinterpreter.opcodes.variable.StoreDerefOpcode;
@@ -27,7 +28,13 @@ public enum VariableOpDescriptor implements OpcodeDescriptor {
     LOAD_GLOBAL(LoadGlobalOpcode::new),
     STORE_GLOBAL(StoreGlobalOpcode::new),
     DELETE_GLOBAL(DeleteGlobalOpcode::new),
+    // TODO: Implement unbound local variable checks
     LOAD_FAST(LoadFastOpcode::new),
+
+    // This is LOAD_FAST but do an unbound variable check
+    LOAD_FAST_CHECK(LoadFastOpcode::new),
+
+    LOAD_FAST_AND_CLEAR(LoadFastAndClearOpcode::new),
     STORE_FAST(StoreFastOpcode::new),
     DELETE_FAST(DeleteFastOpcode::new),
     LOAD_CLOSURE(LoadClosureOpcode::new),

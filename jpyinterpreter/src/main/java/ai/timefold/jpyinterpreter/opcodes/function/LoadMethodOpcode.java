@@ -41,7 +41,6 @@ public class LoadMethodOpcode extends AbstractOpcode {
 
     @Override
     public void implement(FunctionMetadata functionMetadata, StackMetadata stackMetadata) {
-        FunctionImplementor.loadMethod(functionMetadata, functionMetadata.methodVisitor, functionMetadata.className,
-                functionMetadata.pythonCompiledFunction, stackMetadata, instruction);
+        FunctionImplementor.loadMethod(functionMetadata, stackMetadata, instruction.arg());
     }
 }
