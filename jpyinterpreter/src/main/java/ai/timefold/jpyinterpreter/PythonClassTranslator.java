@@ -26,6 +26,7 @@ import ai.timefold.jpyinterpreter.implementors.JavaInterfaceImplementor;
 import ai.timefold.jpyinterpreter.opcodes.AbstractOpcode;
 import ai.timefold.jpyinterpreter.opcodes.Opcode;
 import ai.timefold.jpyinterpreter.opcodes.SelfOpcodeWithoutSource;
+import ai.timefold.jpyinterpreter.opcodes.controlflow.ReturnConstantValueOpcode;
 import ai.timefold.jpyinterpreter.opcodes.controlflow.ReturnValueOpcode;
 import ai.timefold.jpyinterpreter.opcodes.object.DeleteAttrOpcode;
 import ai.timefold.jpyinterpreter.opcodes.object.LoadAttrOpcode;
@@ -1393,6 +1394,9 @@ public class PythonClassTranslator {
             List<PythonLikeType> possibleReturnTypeList = new ArrayList<>();
             flowGraph.visitOperations(ReturnValueOpcode.class, (opcode, stackMetadata) -> {
                 possibleReturnTypeList.add(stackMetadata.getTOSType());
+            });
+            flowGraph.visitOperations(ReturnConstantValueOpcode.class, (opcode, stackMetadata) -> {
+                possibleReturnTypeList.add(opcode.getConstant(pythonCompiledFunction).$getGenericType());
             });
 
             return possibleReturnTypeList.stream()

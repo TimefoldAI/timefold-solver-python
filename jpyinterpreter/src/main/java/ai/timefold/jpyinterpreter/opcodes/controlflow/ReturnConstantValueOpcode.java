@@ -4,6 +4,7 @@ import java.util.List;
 
 import ai.timefold.jpyinterpreter.FunctionMetadata;
 import ai.timefold.jpyinterpreter.PythonBytecodeInstruction;
+import ai.timefold.jpyinterpreter.PythonCompiledFunction;
 import ai.timefold.jpyinterpreter.PythonFunctionType;
 import ai.timefold.jpyinterpreter.PythonLikeObject;
 import ai.timefold.jpyinterpreter.StackMetadata;
@@ -34,9 +35,13 @@ public class ReturnConstantValueOpcode extends AbstractControlFlowOpcode {
         return true;
     }
 
+    public PythonLikeObject getConstant(PythonCompiledFunction function) {
+        return function.co_constants.get(instruction.arg());
+    }
+
     @Override
     public void implement(FunctionMetadata functionMetadata, StackMetadata stackMetadata) {
-        PythonLikeObject constant = functionMetadata.pythonCompiledFunction.co_constants.get(instruction.arg());
+        PythonLikeObject constant = getConstant(functionMetadata.pythonCompiledFunction);
         PythonLikeType constantType = constant.$getGenericType();
         if (functionMetadata.functionType == PythonFunctionType.GENERATOR) {
             PythonConstantsImplementor.loadConstant(functionMetadata.methodVisitor, functionMetadata.className,
