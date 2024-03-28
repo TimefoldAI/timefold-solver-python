@@ -28,7 +28,7 @@ public class LoadAttrOpcode extends AbstractOpcode {
 
     @Override
     public void implement(FunctionMetadata functionMetadata, StackMetadata stackMetadata) {
-        ObjectImplementor.getAttribute(functionMetadata, functionMetadata.methodVisitor, functionMetadata.className,
+        ObjectImplementor.getAttribute(functionMetadata,
                 stackMetadata,
                 instruction.arg());
     }

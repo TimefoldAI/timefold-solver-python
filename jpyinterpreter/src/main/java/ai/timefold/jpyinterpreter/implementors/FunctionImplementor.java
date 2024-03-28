@@ -219,7 +219,7 @@ public class FunctionImplementor {
         // TOS is null; type does not have attribute; do normal attribute lookup
         // Stack is object, null
         methodVisitor.visitInsn(Opcodes.POP);
-        ObjectImplementor.getAttribute(functionMetadata, methodVisitor, className, stackMetadata, nameIndex);
+        ObjectImplementor.getAttribute(functionMetadata, stackMetadata, nameIndex);
 
         // Stack is method
         methodVisitor.visitInsn(Opcodes.ACONST_NULL);

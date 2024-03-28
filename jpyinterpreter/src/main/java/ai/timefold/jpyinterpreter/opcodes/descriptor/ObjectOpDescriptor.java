@@ -13,6 +13,7 @@ import ai.timefold.jpyinterpreter.opcodes.function.LoadMethodOpcode;
 import ai.timefold.jpyinterpreter.opcodes.object.DeleteAttrOpcode;
 import ai.timefold.jpyinterpreter.opcodes.object.IsOpcode;
 import ai.timefold.jpyinterpreter.opcodes.object.LoadAttrOpcode;
+import ai.timefold.jpyinterpreter.opcodes.object.LoadSuperAttrOpcode;
 import ai.timefold.jpyinterpreter.opcodes.object.StoreAttrOpcode;
 
 public enum ObjectOpDescriptor implements OpcodeDescriptor {
@@ -21,6 +22,7 @@ public enum ObjectOpDescriptor implements OpcodeDescriptor {
             PythonVersion.PYTHON_3_12,
             instruction -> ((instruction.arg() & 1) == 1) ? new LoadMethodOpcode(instruction.withArg(instruction.arg() >> 1))
                     : new LoadAttrOpcode(instruction.withArg(instruction.arg() >> 1)))),
+    LOAD_SUPER_ATTR(LoadSuperAttrOpcode::new),
     STORE_ATTR(StoreAttrOpcode::new),
     DELETE_ATTR(DeleteAttrOpcode::new);
 
