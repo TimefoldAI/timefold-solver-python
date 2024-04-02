@@ -132,10 +132,10 @@ public class DictKeyView extends AbstractPythonLikeObject {
     }
 
     public PythonLikeSet symmetricDifference(DictKeyView other) {
-        PythonLikeSet out = new PythonLikeSet();
+        var out = new PythonLikeSet<>();
         out.delegate.addAll(keySet);
         other.keySet.stream() // for each item in other
-                .filter(Predicate.not(out.delegate::add)) // add each item
+                .filter(Predicate.not(e -> out.delegate.add(e))) // add each item
                 .forEach(out.delegate::remove); // add return false iff item already in set, so this remove
         // all items in both this and other
         return out;
@@ -143,8 +143,7 @@ public class DictKeyView extends AbstractPythonLikeObject {
 
     @Override
     public boolean equals(Object o) {
-        if (o instanceof DictKeyView) {
-            DictKeyView other = (DictKeyView) o;
+        if (o instanceof DictKeyView other) {
             return keySet.equals(other.keySet);
         }
         return false;

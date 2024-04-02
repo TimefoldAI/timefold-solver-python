@@ -2,6 +2,7 @@ package ai.timefold.jpyinterpreter;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -41,7 +42,7 @@ public class StackMetadata {
             cellVariableValueSources.add(ValueSourceInfo.of(new OpcodeWithoutSource(),
                     BuiltinTypes.BASE_TYPE));
         }
-        this.callKeywordNameList = List.of();
+        this.callKeywordNameList = Collections.emptyList();
     }
 
     private StackMetadata(LocalVariableHelper localVariableHelper, List<ValueSourceInfo> stackValueSources,

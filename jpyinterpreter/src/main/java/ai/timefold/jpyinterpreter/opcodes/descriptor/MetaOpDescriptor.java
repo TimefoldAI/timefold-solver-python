@@ -1,10 +1,8 @@
 package ai.timefold.jpyinterpreter.opcodes.descriptor;
 
-import java.util.Optional;
 import java.util.function.Function;
 
 import ai.timefold.jpyinterpreter.PythonBytecodeInstruction;
-import ai.timefold.jpyinterpreter.PythonVersion;
 import ai.timefold.jpyinterpreter.opcodes.Opcode;
 import ai.timefold.jpyinterpreter.opcodes.meta.NopOpcode;
 import ai.timefold.jpyinterpreter.opcodes.meta.UnaryIntrinsicFunction;
@@ -45,17 +43,14 @@ public enum MetaOpDescriptor implements OpcodeDescriptor {
      */
     SETUP_ANNOTATIONS(null);
 
-    private final Function<PythonBytecodeInstruction, Opcode> opcodeFunction;
+    private final VersionMapping versionLookup;
 
     MetaOpDescriptor(Function<PythonBytecodeInstruction, Opcode> opcodeFunction) {
-        this.opcodeFunction = opcodeFunction;
+        this.versionLookup = VersionMapping.constantMapping(opcodeFunction);
     }
 
     @Override
-    public Optional<Opcode> lookupOpcodeForInstruction(PythonBytecodeInstruction instruction, PythonVersion pythonVersion) {
-        if (opcodeFunction == null) {
-            return Optional.empty();
-        }
-        return Optional.of(opcodeFunction.apply(instruction));
+    public VersionMapping getVersionMapping() {
+        return versionLookup;
     }
 }

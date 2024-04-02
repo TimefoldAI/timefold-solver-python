@@ -1,5 +1,6 @@
 package ai.timefold.jpyinterpreter.opcodes.controlflow;
 
+import java.util.Collections;
 import java.util.List;
 
 import ai.timefold.jpyinterpreter.FunctionMetadata;
@@ -21,13 +22,13 @@ public class ReturnConstantValueOpcode extends AbstractControlFlowOpcode {
 
     @Override
     public List<Integer> getPossibleNextBytecodeIndexList() {
-        return List.of();
+        return Collections.emptyList();
     }
 
     @Override
     public List<StackMetadata> getStackMetadataAfterInstructionForBranches(FunctionMetadata functionMetadata,
             StackMetadata stackMetadata) {
-        return List.of();
+        return Collections.emptyList();
     }
 
     @Override

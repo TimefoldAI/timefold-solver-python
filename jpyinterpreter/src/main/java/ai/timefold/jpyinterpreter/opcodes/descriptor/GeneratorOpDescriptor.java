@@ -1,6 +1,5 @@
 package ai.timefold.jpyinterpreter.opcodes.descriptor;
 
-import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.ToIntBiFunction;
@@ -63,20 +62,22 @@ public enum GeneratorOpDescriptor implements OpcodeDescriptor {
      */
     RETURN_GENERATOR(ReturnGeneratorOpcode::new);
 
-    final BiFunction<PythonBytecodeInstruction, PythonVersion, Opcode> opcodeConstructor;
+    final VersionMapping versionLookup;
 
     GeneratorOpDescriptor(Function<PythonBytecodeInstruction, Opcode> opcodeFunction) {
-        this.opcodeConstructor = (instruction, pythonVersion) -> opcodeFunction.apply(instruction);
+        this.versionLookup = VersionMapping.constantMapping(opcodeFunction);
     }
 
     GeneratorOpDescriptor(BiFunction<PythonBytecodeInstruction, Integer, Opcode> opcodeConstructor,
             ToIntBiFunction<PythonBytecodeInstruction, PythonVersion> labelFunction) {
-        this.opcodeConstructor = (instruction, pythonVersion) -> opcodeConstructor.apply(instruction,
-                labelFunction.applyAsInt(instruction, pythonVersion));
+        this.versionLookup = VersionMapping.constantMapping(
+                (instruction, pythonVersion) -> opcodeConstructor.apply(
+                        instruction,
+                        labelFunction.applyAsInt(instruction, pythonVersion)));
     }
 
     @Override
-    public Optional<Opcode> lookupOpcodeForInstruction(PythonBytecodeInstruction instruction, PythonVersion pythonVersion) {
-        return Optional.of(opcodeConstructor.apply(instruction, pythonVersion));
+    public VersionMapping getVersionMapping() {
+        return versionLookup;
     }
 }

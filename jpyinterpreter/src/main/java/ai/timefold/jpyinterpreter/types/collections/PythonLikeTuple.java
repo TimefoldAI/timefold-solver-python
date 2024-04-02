@@ -31,7 +31,7 @@ public class PythonLikeTuple<T extends PythonLikeObject> extends AbstractPythonL
         PlanningCloneable<PythonLikeTuple<T>>,
         PythonLikeComparable<PythonLikeTuple>,
         RandomAccess {
-    public static PythonLikeTuple EMPTY = PythonLikeTuple.fromList(List.of());
+    public static PythonLikeTuple EMPTY = PythonLikeTuple.fromList(Collections.emptyList());
 
     final List delegate;
     private int remainderToAdd;

@@ -746,7 +746,7 @@ public class PythonString extends AbstractPythonLikeObject implements PythonLike
     }
 
     public PythonString formatMap(PythonLikeDict dict) {
-        return format(List.of(), (Map) dict);
+        return format(Collections.emptyList(), (Map) dict);
     }
 
     public PythonString formatSelf() {

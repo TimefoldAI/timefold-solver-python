@@ -1,9 +1,5 @@
 package ai.timefold.jpyinterpreter.opcodes.descriptor;
 
-import java.util.Map;
-import java.util.NavigableMap;
-import java.util.Optional;
-import java.util.TreeMap;
 import java.util.function.Function;
 
 import ai.timefold.jpyinterpreter.PythonBytecodeInstruction;
@@ -18,26 +14,28 @@ import ai.timefold.jpyinterpreter.opcodes.object.StoreAttrOpcode;
 
 public enum ObjectOpDescriptor implements OpcodeDescriptor {
     IS_OP(IsOpcode::new),
-    LOAD_ATTR(Map.of(PythonVersion.MINIMUM_PYTHON_VERSION, LoadAttrOpcode::new,
-            PythonVersion.PYTHON_3_12,
-            instruction -> ((instruction.arg() & 1) == 1) ? new LoadMethodOpcode(instruction.withArg(instruction.arg() >> 1))
-                    : new LoadAttrOpcode(instruction.withArg(instruction.arg() >> 1)))),
+    LOAD_ATTR(new VersionMapping()
+            .map(PythonVersion.MINIMUM_PYTHON_VERSION, LoadAttrOpcode::new)
+            .map(PythonVersion.PYTHON_3_12,
+                    instruction -> ((instruction.arg() & 1) == 1)
+                            ? new LoadMethodOpcode(instruction.withArg(instruction.arg() >> 1))
+                            : new LoadAttrOpcode(instruction.withArg(instruction.arg() >> 1)))),
     LOAD_SUPER_ATTR(LoadSuperAttrOpcode::new),
     STORE_ATTR(StoreAttrOpcode::new),
     DELETE_ATTR(DeleteAttrOpcode::new);
 
-    final NavigableMap<PythonVersion, Function<PythonBytecodeInstruction, Opcode>> opcodeFunctionMap;
+    final VersionMapping versionLookup;
 
     ObjectOpDescriptor(Function<PythonBytecodeInstruction, Opcode> opcodeFunction) {
-        this(Map.of(PythonVersion.MINIMUM_PYTHON_VERSION, opcodeFunction));
+        this(VersionMapping.constantMapping(opcodeFunction));
     }
 
-    ObjectOpDescriptor(Map<PythonVersion, Function<PythonBytecodeInstruction, Opcode>> opcodeFunctionMap) {
-        this.opcodeFunctionMap = new TreeMap<>(opcodeFunctionMap);
+    ObjectOpDescriptor(VersionMapping versionLookup) {
+        this.versionLookup = versionLookup;
     }
 
     @Override
-    public Optional<Opcode> lookupOpcodeForInstruction(PythonBytecodeInstruction instruction, PythonVersion pythonVersion) {
-        return Optional.of(opcodeFunctionMap.floorEntry(pythonVersion).getValue().apply(instruction));
+    public VersionMapping getVersionMapping() {
+        return versionLookup;
     }
 }

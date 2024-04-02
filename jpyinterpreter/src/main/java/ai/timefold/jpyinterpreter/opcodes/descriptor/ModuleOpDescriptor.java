@@ -1,10 +1,8 @@
 package ai.timefold.jpyinterpreter.opcodes.descriptor;
 
-import java.util.Optional;
 import java.util.function.Function;
 
 import ai.timefold.jpyinterpreter.PythonBytecodeInstruction;
-import ai.timefold.jpyinterpreter.PythonVersion;
 import ai.timefold.jpyinterpreter.opcodes.Opcode;
 import ai.timefold.jpyinterpreter.opcodes.module.ImportFromOpcode;
 import ai.timefold.jpyinterpreter.opcodes.module.ImportNameOpcode;
@@ -26,14 +24,14 @@ public enum ModuleOpDescriptor implements OpcodeDescriptor {
                 "Impossible state/invalid bytecode: import * only allowed at module level");
     });
 
-    final Function<PythonBytecodeInstruction, Opcode> opcodeFunction;
+    final VersionMapping versionLookup;
 
     ModuleOpDescriptor(Function<PythonBytecodeInstruction, Opcode> opcodeFunction) {
-        this.opcodeFunction = opcodeFunction;
+        this.versionLookup = VersionMapping.constantMapping(opcodeFunction);
     }
 
     @Override
-    public Optional<Opcode> lookupOpcodeForInstruction(PythonBytecodeInstruction instruction, PythonVersion pythonVersion) {
-        return Optional.of(opcodeFunction.apply(instruction));
+    public VersionMapping getVersionMapping() {
+        return versionLookup;
     }
 }

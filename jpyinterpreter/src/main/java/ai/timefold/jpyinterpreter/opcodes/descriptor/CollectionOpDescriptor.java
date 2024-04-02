@@ -1,10 +1,8 @@
 package ai.timefold.jpyinterpreter.opcodes.descriptor;
 
-import java.util.Optional;
 import java.util.function.Function;
 
 import ai.timefold.jpyinterpreter.PythonBytecodeInstruction;
-import ai.timefold.jpyinterpreter.PythonVersion;
 import ai.timefold.jpyinterpreter.opcodes.Opcode;
 import ai.timefold.jpyinterpreter.opcodes.collection.BuildConstantKeyMapOpcode;
 import ai.timefold.jpyinterpreter.opcodes.collection.BuildListOpcode;
@@ -87,14 +85,14 @@ public enum CollectionOpDescriptor implements OpcodeDescriptor {
     DICT_UPDATE(MapPutAllOpcode::new),
     DICT_MERGE(MapMergeOpcode::new);
 
-    final Function<PythonBytecodeInstruction, Opcode> instructionToOpcode;
+    final VersionMapping versionLookup;
 
     CollectionOpDescriptor(Function<PythonBytecodeInstruction, Opcode> instructionToOpcode) {
-        this.instructionToOpcode = instructionToOpcode;
+        this.versionLookup = VersionMapping.constantMapping(instructionToOpcode);
     }
 
     @Override
-    public Optional<Opcode> lookupOpcodeForInstruction(PythonBytecodeInstruction instruction, PythonVersion pythonVersion) {
-        return Optional.of(instructionToOpcode.apply(instruction));
+    public VersionMapping getVersionMapping() {
+        return versionLookup;
     }
 }

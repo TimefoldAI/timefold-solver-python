@@ -789,7 +789,7 @@ public class PythonClassTranslator {
                         function.getReturnType().orElse(BuiltinTypes.BASE_TYPE),
                         function.totalArgCount() > 0
                                 ? function.getParameterTypes().subList(1, function.getParameterTypes().size())
-                                : List.of()));
+                                : Collections.emptyList()));
     }
 
     private static void createStaticMethod(PythonLikeType pythonLikeType, ClassWriter classWriter, String internalClassName,

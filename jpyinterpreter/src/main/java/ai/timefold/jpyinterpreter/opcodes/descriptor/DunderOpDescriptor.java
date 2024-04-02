@@ -1,12 +1,10 @@
 package ai.timefold.jpyinterpreter.opcodes.descriptor;
 
-import java.util.Optional;
 import java.util.function.Function;
 
 import ai.timefold.jpyinterpreter.PythonBinaryOperator;
 import ai.timefold.jpyinterpreter.PythonBytecodeInstruction;
 import ai.timefold.jpyinterpreter.PythonUnaryOperator;
-import ai.timefold.jpyinterpreter.PythonVersion;
 import ai.timefold.jpyinterpreter.opcodes.Opcode;
 import ai.timefold.jpyinterpreter.opcodes.dunder.BinaryDunderOpcode;
 import ai.timefold.jpyinterpreter.opcodes.dunder.CompareOpcode;
@@ -192,10 +190,10 @@ public enum DunderOpDescriptor implements OpcodeDescriptor {
      */
     INPLACE_OR(PythonBinaryOperator.INPLACE_OR);
 
-    final Function<PythonBytecodeInstruction, Opcode> opcodeFunction;
+    final VersionMapping versionLookup;
 
     DunderOpDescriptor(Function<PythonBytecodeInstruction, Opcode> opcodeFunction) {
-        this.opcodeFunction = opcodeFunction;
+        this.versionLookup = VersionMapping.constantMapping(opcodeFunction);
     }
 
     DunderOpDescriptor(PythonUnaryOperator binaryOperator) {
@@ -207,7 +205,7 @@ public enum DunderOpDescriptor implements OpcodeDescriptor {
     }
 
     @Override
-    public Optional<Opcode> lookupOpcodeForInstruction(PythonBytecodeInstruction instruction, PythonVersion pythonVersion) {
-        return Optional.of(opcodeFunction.apply(instruction));
+    public VersionMapping getVersionMapping() {
+        return versionLookup;
     }
 }

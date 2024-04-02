@@ -8,6 +8,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -177,7 +178,7 @@ public class PythonBytecodeToJavaBytecodeTranslator {
         Method methodWithoutGenerics = getFunctionalInterfaceMethod(javaFunctionalInterfaceType);
         MethodDescriptor methodDescriptor = new MethodDescriptor(javaFunctionalInterfaceType,
                 methodWithoutGenerics,
-                List.of());
+                Collections.emptyList());
         Class<T> compiledClass = forceTranslatePythonBytecodeToGeneratorClass(pythonCompiledFunction, methodDescriptor,
                 methodWithoutGenerics, false);
         return FunctionImplementor.createInstance(new PythonLikeTuple(), new PythonLikeDict(),
@@ -1164,7 +1165,7 @@ public class PythonBytecodeToJavaBytecodeTranslator {
                 Label label = exceptionTableTargetLabelMap.get(instruction.offset());
                 methodVisitor.visitLabel(label);
             }
-            exceptionTableTryBlockMap.getOrDefault(instruction.offset(), List.of()).forEach(Runnable::run);
+            exceptionTableTryBlockMap.getOrDefault(instruction.offset(), Collections.emptyList()).forEach(Runnable::run);
 
             if (instruction.isJumpTarget() || bytecodeCounterToLabelMap.containsKey(instruction.offset())) {
                 Label label = bytecodeCounterToLabelMap.computeIfAbsent(instruction.offset(), offset -> new Label());
@@ -1173,7 +1174,7 @@ public class PythonBytecodeToJavaBytecodeTranslator {
 
             runAfterLabelAndBeforeArgumentors.accept(instruction);
 
-            bytecodeIndexToArgumentorsMap.getOrDefault(instruction.offset(), List.of()).forEach(Runnable::run);
+            bytecodeIndexToArgumentorsMap.getOrDefault(instruction.offset(), Collections.emptyList()).forEach(Runnable::run);
 
             if (exceptionTableStartLabelMap.containsKey(instruction.offset())) {
                 Label label = exceptionTableStartLabelMap.get(instruction.offset());

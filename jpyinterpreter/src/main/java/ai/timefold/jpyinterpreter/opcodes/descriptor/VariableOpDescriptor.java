@@ -1,10 +1,8 @@
 package ai.timefold.jpyinterpreter.opcodes.descriptor;
 
-import java.util.Optional;
 import java.util.function.Function;
 
 import ai.timefold.jpyinterpreter.PythonBytecodeInstruction;
-import ai.timefold.jpyinterpreter.PythonVersion;
 import ai.timefold.jpyinterpreter.opcodes.Opcode;
 import ai.timefold.jpyinterpreter.opcodes.variable.DeleteDerefOpcode;
 import ai.timefold.jpyinterpreter.opcodes.variable.DeleteFastOpcode;
@@ -22,9 +20,9 @@ import ai.timefold.jpyinterpreter.opcodes.variable.StoreGlobalOpcode;
 public enum VariableOpDescriptor implements OpcodeDescriptor {
     LOAD_CONST(LoadConstantOpcode::new),
 
-    LOAD_NAME(null), //TODO
-    STORE_NAME(null), //TODO
-    DELETE_NAME(null), //TODO
+    LOAD_NAME(VersionMapping.unimplemented()), //TODO
+    STORE_NAME(VersionMapping.unimplemented()), //TODO
+    DELETE_NAME(VersionMapping.unimplemented()), //TODO
     LOAD_GLOBAL(LoadGlobalOpcode::new),
     STORE_GLOBAL(StoreGlobalOpcode::new),
     DELETE_GLOBAL(DeleteGlobalOpcode::new),
@@ -41,19 +39,20 @@ public enum VariableOpDescriptor implements OpcodeDescriptor {
     LOAD_DEREF(LoadDerefOpcode::new),
     STORE_DEREF(StoreDerefOpcode::new),
     DELETE_DEREF(DeleteDerefOpcode::new),
-    LOAD_CLASSDEREF(null);
+    LOAD_CLASSDEREF(VersionMapping.unimplemented());
 
-    final Function<PythonBytecodeInstruction, Opcode> opcodeFunction;
+    final VersionMapping versionLookup;
 
     VariableOpDescriptor(Function<PythonBytecodeInstruction, Opcode> opcodeFunction) {
-        this.opcodeFunction = opcodeFunction;
+        this(VersionMapping.constantMapping(opcodeFunction));
+    }
+
+    VariableOpDescriptor(VersionMapping lookup) {
+        this.versionLookup = lookup;
     }
 
     @Override
-    public Optional<Opcode> lookupOpcodeForInstruction(PythonBytecodeInstruction instruction, PythonVersion pythonVersion) {
-        if (opcodeFunction == null) {
-            return Optional.empty();
-        }
-        return Optional.of(opcodeFunction.apply(instruction));
+    public VersionMapping getVersionMapping() {
+        return versionLookup;
     }
 }

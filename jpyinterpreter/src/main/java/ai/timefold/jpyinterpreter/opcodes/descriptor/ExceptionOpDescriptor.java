@@ -1,6 +1,5 @@
 package ai.timefold.jpyinterpreter.opcodes.descriptor;
 
-import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.ToIntBiFunction;
@@ -68,20 +67,20 @@ public enum ExceptionOpDescriptor implements OpcodeDescriptor {
     SETUP_WITH(SetupWithOpcode::new, JumpUtils::getRelativeTarget),
     CLEANUP_THROW(CleanupThrowOpcode::new);
 
-    final BiFunction<PythonBytecodeInstruction, PythonVersion, Opcode> opcodeConstructor;
+    final VersionMapping versionLookup;
 
     ExceptionOpDescriptor(Function<PythonBytecodeInstruction, Opcode> opcodeFunction) {
-        opcodeConstructor = (instruction, pythonVersion) -> opcodeFunction.apply(instruction);
+        this.versionLookup = VersionMapping.constantMapping(opcodeFunction);
     }
 
     ExceptionOpDescriptor(BiFunction<PythonBytecodeInstruction, Integer, Opcode> opcodeFunction,
             ToIntBiFunction<PythonBytecodeInstruction, PythonVersion> jumpFunction) {
-        opcodeConstructor = (instruction, pythonVersion) -> opcodeFunction.apply(instruction,
-                jumpFunction.applyAsInt(instruction, pythonVersion));
+        this.versionLookup = VersionMapping.constantMapping((instruction, pythonVersion) -> opcodeFunction.apply(instruction,
+                jumpFunction.applyAsInt(instruction, pythonVersion)));
     }
 
     @Override
-    public Optional<Opcode> lookupOpcodeForInstruction(PythonBytecodeInstruction instruction, PythonVersion pythonVersion) {
-        return Optional.of(opcodeConstructor.apply(instruction, pythonVersion));
+    public VersionMapping getVersionMapping() {
+        return versionLookup;
     }
 }
