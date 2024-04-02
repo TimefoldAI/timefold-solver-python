@@ -14,6 +14,7 @@ import ai.timefold.jpyinterpreter.types.BuiltinTypes;
 import ai.timefold.jpyinterpreter.types.PythonLikeType;
 import ai.timefold.jpyinterpreter.types.PythonNone;
 import ai.timefold.jpyinterpreter.types.PythonString;
+import ai.timefold.jpyinterpreter.types.PythonSuperObject;
 import ai.timefold.jpyinterpreter.types.errors.AttributeError;
 import ai.timefold.jpyinterpreter.types.wrappers.JavaObjectWrapper;
 
@@ -30,11 +31,11 @@ public class ObjectImplementor {
     /**
      * Replaces TOS with getattr(TOS, co_names[instruction.arg])
      */
-    public static void getAttribute(FunctionMetadata functionMetadata, MethodVisitor methodVisitor, String className,
-            StackMetadata stackMetadata,
-            PythonBytecodeInstruction instruction) {
+    public static void getAttribute(FunctionMetadata functionMetadata, StackMetadata stackMetadata, int nameIndex) {
+        var methodVisitor = functionMetadata.methodVisitor;
+        var className = functionMetadata.className;
         PythonLikeType tosType = stackMetadata.getTOSType();
-        String name = functionMetadata.pythonCompiledFunction.co_names.get(instruction.arg());
+        String name = functionMetadata.pythonCompiledFunction.co_names.get(nameIndex);
         Optional<FieldDescriptor> maybeFieldDescriptor = tosType.getInstanceFieldDescriptor(name);
 
         if (maybeFieldDescriptor.isPresent()) {
@@ -86,7 +87,7 @@ public class ObjectImplementor {
                 // It a false field descriptor, which means TOS is a type and this is a field for a method
                 // We can call $method$__getattribute__ directly (since type do not override it),
                 // which is more efficient then going through the full logic of __getattribute__ dunder method impl.
-                PythonConstantsImplementor.loadName(methodVisitor, className, instruction.arg());
+                PythonConstantsImplementor.loadName(methodVisitor, className, nameIndex);
                 methodVisitor.visitTypeInsn(Opcodes.CHECKCAST, Type.getInternalName(PythonString.class));
                 methodVisitor.visitMethodInsn(Opcodes.INVOKEINTERFACE, Type.getInternalName(PythonLikeObject.class),
                         "$method$__getattribute__", Type.getMethodDescriptor(
@@ -95,7 +96,7 @@ public class ObjectImplementor {
                         true);
             }
         } else {
-            PythonConstantsImplementor.loadName(methodVisitor, className, instruction.arg());
+            PythonConstantsImplementor.loadName(methodVisitor, className, nameIndex);
             DunderOperatorImplementor.binaryOperator(methodVisitor,
                     stackMetadata.pushTemp(BuiltinTypes.STRING_TYPE),
                     PythonBinaryOperator.GET_ATTRIBUTE);
@@ -160,6 +161,36 @@ public class ObjectImplementor {
                     .pushTemp(BuiltinTypes.STRING_TYPE)
                     .push(stackMetadata.getValueSourceForStackIndex(1)),
                     PythonTernaryOperator.SET_ATTRIBUTE);
+        }
+    }
+
+    /**
+     * Implement (super = TOS2)(TOS1, TOS).attr
+     */
+    public static void getSuperAttribute(FunctionMetadata functionMetadata,
+            StackMetadata stackMetadata,
+            int nameIndex,
+            boolean isLoadMethod) {
+        var methodVisitor = functionMetadata.methodVisitor;
+        // Stack: super, type, instance
+        methodVisitor.visitTypeInsn(Opcodes.NEW, Type.getInternalName(PythonSuperObject.class));
+        methodVisitor.visitInsn(Opcodes.DUP_X2);
+        methodVisitor.visitInsn(Opcodes.DUP_X2);
+        methodVisitor.visitInsn(Opcodes.POP);
+        // Stack: super, <uninit superobject>, <uninit superobject>, type, instance
+        methodVisitor.visitInsn(Opcodes.SWAP);
+        methodVisitor.visitTypeInsn(Opcodes.CHECKCAST, Type.getInternalName(PythonLikeType.class));
+        methodVisitor.visitInsn(Opcodes.SWAP);
+        methodVisitor.visitMethodInsn(Opcodes.INVOKESPECIAL, Type.getInternalName(PythonSuperObject.class),
+                "<init>", Type.getMethodDescriptor(Type.VOID_TYPE, Type.getType(PythonLikeType.class),
+                        Type.getType(PythonLikeObject.class)));
+        // Stack: super, superobject
+        ObjectImplementor.getAttribute(functionMetadata, stackMetadata.pop(2).pushTemp(BuiltinTypes.SUPER_TYPE), nameIndex);
+        methodVisitor.visitInsn(Opcodes.SWAP);
+        methodVisitor.visitInsn(Opcodes.POP);
+        if (isLoadMethod) {
+            methodVisitor.visitInsn(Opcodes.ACONST_NULL);
+            methodVisitor.visitInsn(Opcodes.SWAP);
         }
     }
 }

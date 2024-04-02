@@ -10,7 +10,6 @@ import ai.timefold.jpyinterpreter.types.BuiltinTypes;
 import ai.timefold.jpyinterpreter.types.PythonLikeType;
 
 public class LoadAttrOpcode extends AbstractOpcode {
-
     public LoadAttrOpcode(PythonBytecodeInstruction instruction) {
         super(instruction);
     }
@@ -18,7 +17,8 @@ public class LoadAttrOpcode extends AbstractOpcode {
     @Override
     protected StackMetadata getStackMetadataAfterInstruction(FunctionMetadata functionMetadata, StackMetadata stackMetadata) {
         PythonLikeType tosType = stackMetadata.getTOSType();
-        return tosType.getInstanceFieldDescriptor(functionMetadata.pythonCompiledFunction.co_names.get(instruction.arg()))
+        int arg = instruction.arg();
+        return tosType.getInstanceFieldDescriptor(functionMetadata.pythonCompiledFunction.co_names.get(arg))
                 .map(fieldDescriptor -> stackMetadata.pop()
                         .push(ValueSourceInfo.of(this, fieldDescriptor.fieldPythonLikeType(),
                                 stackMetadata.getValueSourcesUpToStackIndex(1))))
@@ -28,8 +28,8 @@ public class LoadAttrOpcode extends AbstractOpcode {
 
     @Override
     public void implement(FunctionMetadata functionMetadata, StackMetadata stackMetadata) {
-        ObjectImplementor.getAttribute(functionMetadata, functionMetadata.methodVisitor, functionMetadata.className,
+        ObjectImplementor.getAttribute(functionMetadata,
                 stackMetadata,
-                instruction);
+                instruction.arg());
     }
 }

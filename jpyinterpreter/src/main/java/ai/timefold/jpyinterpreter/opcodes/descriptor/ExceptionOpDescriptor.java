@@ -1,6 +1,5 @@
 package ai.timefold.jpyinterpreter.opcodes.descriptor;
 
-import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.ToIntBiFunction;
@@ -9,6 +8,7 @@ import ai.timefold.jpyinterpreter.PythonBytecodeInstruction;
 import ai.timefold.jpyinterpreter.PythonVersion;
 import ai.timefold.jpyinterpreter.opcodes.Opcode;
 import ai.timefold.jpyinterpreter.opcodes.exceptions.CheckExcMatchOpcode;
+import ai.timefold.jpyinterpreter.opcodes.exceptions.CleanupThrowOpcode;
 import ai.timefold.jpyinterpreter.opcodes.exceptions.LoadAssertionErrorOpcode;
 import ai.timefold.jpyinterpreter.opcodes.exceptions.PopBlockOpcode;
 import ai.timefold.jpyinterpreter.opcodes.exceptions.PopExceptOpcode;
@@ -64,22 +64,23 @@ public enum ExceptionOpDescriptor implements OpcodeDescriptor {
     WITH_EXCEPT_START(WithExceptStartOpcode::new),
     SETUP_FINALLY(SetupFinallyOpcode::new, JumpUtils::getRelativeTarget),
 
-    SETUP_WITH(SetupWithOpcode::new, JumpUtils::getRelativeTarget);
+    SETUP_WITH(SetupWithOpcode::new, JumpUtils::getRelativeTarget),
+    CLEANUP_THROW(CleanupThrowOpcode::new);
 
-    final BiFunction<PythonBytecodeInstruction, PythonVersion, Opcode> opcodeConstructor;
+    final VersionMapping versionLookup;
 
     ExceptionOpDescriptor(Function<PythonBytecodeInstruction, Opcode> opcodeFunction) {
-        opcodeConstructor = (instruction, pythonVersion) -> opcodeFunction.apply(instruction);
+        this.versionLookup = VersionMapping.constantMapping(opcodeFunction);
     }
 
     ExceptionOpDescriptor(BiFunction<PythonBytecodeInstruction, Integer, Opcode> opcodeFunction,
             ToIntBiFunction<PythonBytecodeInstruction, PythonVersion> jumpFunction) {
-        opcodeConstructor = (instruction, pythonVersion) -> opcodeFunction.apply(instruction,
-                jumpFunction.applyAsInt(instruction, pythonVersion));
+        this.versionLookup = VersionMapping.constantMapping((instruction, pythonVersion) -> opcodeFunction.apply(instruction,
+                jumpFunction.applyAsInt(instruction, pythonVersion)));
     }
 
     @Override
-    public Optional<Opcode> lookupOpcodeForInstruction(PythonBytecodeInstruction instruction, PythonVersion pythonVersion) {
-        return Optional.of(opcodeConstructor.apply(instruction, pythonVersion));
+    public VersionMapping getVersionMapping() {
+        return versionLookup;
     }
 }

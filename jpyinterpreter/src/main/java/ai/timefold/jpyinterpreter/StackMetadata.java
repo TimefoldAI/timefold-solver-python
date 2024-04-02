@@ -2,6 +2,7 @@ package ai.timefold.jpyinterpreter;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -41,7 +42,7 @@ public class StackMetadata {
             cellVariableValueSources.add(ValueSourceInfo.of(new OpcodeWithoutSource(),
                     BuiltinTypes.BASE_TYPE));
         }
-        this.callKeywordNameList = List.of();
+        this.callKeywordNameList = Collections.emptyList();
     }
 
     private StackMetadata(LocalVariableHelper localVariableHelper, List<ValueSourceInfo> stackValueSources,
@@ -60,11 +61,6 @@ public class StackMetadata {
 
     public int getStackSize() {
         return stackValueSources.size();
-    }
-
-    public List<PythonLikeType> getStackTypeList() {
-        return stackValueSources.stream().map(ValueSourceInfo::getValueType)
-                .collect(Collectors.toList());
     }
 
     /**
@@ -113,7 +109,8 @@ public class StackMetadata {
         if (valueSourceInfo != null) {
             return valueSourceInfo.valueType;
         }
-        return null;
+        // Unknown type
+        return BuiltinTypes.BASE_TYPE;
     }
 
     /**
@@ -127,20 +124,6 @@ public class StackMetadata {
     }
 
     /**
-     * Returns the type for the local variable in slot {@code index}
-     *
-     * @param index The slot
-     * @return The type for the local variable in the given slot
-     */
-    public PythonLikeType getLocalVariableType(int index) {
-        ValueSourceInfo valueSourceInfo = localVariableValueSources.get(index);
-        if (valueSourceInfo != null) {
-            return valueSourceInfo.valueType;
-        }
-        return null;
-    }
-
-    /**
      * Returns the value source for the cell variable in slot {@code index}
      *
      * @param index The slot
@@ -148,20 +131,6 @@ public class StackMetadata {
      */
     public ValueSourceInfo getCellVariableValueSource(int index) {
         return cellVariableValueSources.get(index);
-    }
-
-    /**
-     * Returns the type for the cell variable in slot {@code index}
-     *
-     * @param index The slot
-     * @return The type for the cell variable in the given slot
-     */
-    public PythonLikeType getCellVariableType(int index) {
-        ValueSourceInfo valueSourceInfo = cellVariableValueSources.get(index);
-        if (valueSourceInfo != null) {
-            return valueSourceInfo.valueType;
-        }
-        return null;
     }
 
     public PythonLikeType getTOSType() {
@@ -274,13 +243,6 @@ public class StackMetadata {
         for (PythonLikeType type : types) {
             out.stackValueSources.add(ValueSourceInfo.of(new OpcodeWithoutSource(), type));
         }
-        return out;
-    }
-
-    public StackMetadata insertTemp(int tosIndex, PythonLikeType type) {
-        StackMetadata out = copy();
-        out.stackValueSources.add(stackValueSources.size() - tosIndex,
-                ValueSourceInfo.of(new OpcodeWithoutSource(), type));
         return out;
     }
 

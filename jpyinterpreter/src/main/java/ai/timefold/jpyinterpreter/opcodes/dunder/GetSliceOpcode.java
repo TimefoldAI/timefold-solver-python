@@ -1,6 +1,5 @@
 package ai.timefold.jpyinterpreter.opcodes.dunder;
 
-import ai.timefold.jpyinterpreter.CompareOp;
 import ai.timefold.jpyinterpreter.FunctionMetadata;
 import ai.timefold.jpyinterpreter.PythonBytecodeInstruction;
 import ai.timefold.jpyinterpreter.StackMetadata;
@@ -9,22 +8,21 @@ import ai.timefold.jpyinterpreter.implementors.DunderOperatorImplementor;
 import ai.timefold.jpyinterpreter.opcodes.AbstractOpcode;
 import ai.timefold.jpyinterpreter.types.BuiltinTypes;
 
-public class CompareOpcode extends AbstractOpcode {
-
-    public CompareOpcode(PythonBytecodeInstruction instruction) {
+public class GetSliceOpcode extends AbstractOpcode {
+    public GetSliceOpcode(PythonBytecodeInstruction instruction) {
         super(instruction);
     }
 
     @Override
-    public StackMetadata getStackMetadataAfterInstruction(FunctionMetadata functionMetadata,
-            StackMetadata stackMetadata) {
-        return stackMetadata.pop(2).push(ValueSourceInfo.of(this, BuiltinTypes.BOOLEAN_TYPE,
-                stackMetadata.getValueSourcesUpToStackIndex(2)));
+    protected StackMetadata getStackMetadataAfterInstruction(FunctionMetadata functionMetadata, StackMetadata stackMetadata) {
+        // TODO: Type the result
+        return stackMetadata.pop(3)
+                .push(ValueSourceInfo.of(this, BuiltinTypes.BASE_TYPE,
+                        stackMetadata.getValueSourcesUpToStackIndex(3)));
     }
 
     @Override
     public void implement(FunctionMetadata functionMetadata, StackMetadata stackMetadata) {
-        DunderOperatorImplementor.compareValues(functionMetadata.methodVisitor, stackMetadata,
-                CompareOp.getOp(instruction.argRepr()));
+        DunderOperatorImplementor.getSlice(functionMetadata, stackMetadata);
     }
 }

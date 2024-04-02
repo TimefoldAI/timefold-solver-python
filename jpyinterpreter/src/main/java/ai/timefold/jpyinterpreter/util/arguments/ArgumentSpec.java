@@ -4,6 +4,7 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -43,10 +44,10 @@ public final class ArgumentSpec<Out_> {
         this.functionName = functionName + "()";
         requiredPositionalArguments = 0;
         numberOfPositionalArguments = 0;
-        argumentNameList = List.of();
-        argumentTypeList = List.of();
-        argumentKindList = List.of();
-        argumentDefaultList = List.of();
+        argumentNameList = Collections.emptyList();
+        argumentTypeList = Collections.emptyList();
+        argumentKindList = Collections.emptyList();
+        argumentDefaultList = Collections.emptyList();
         extraPositionalsArgumentIndex = Optional.empty();
         extraKeywordsArgumentIndex = Optional.empty();
         nullableArgumentSet = new BitSet();
@@ -536,7 +537,7 @@ public final class ArgumentSpec<Out_> {
             defaultParameterValueList = (List<PythonLikeObject>) (List<?>) argumentDefaultList.subList(firstDefault,
                     argumentDefaultList.size());
         } else {
-            defaultParameterValueList = List.of();
+            defaultParameterValueList = Collections.emptyList();
         }
 
         List<PythonLikeType> parameterTypeList = argumentTypeList.stream()

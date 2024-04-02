@@ -72,13 +72,13 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
       # Need to install all Python versions in the same run for tox
-      - name: Python 3.9, Python 3.10, Python 3.11 Setup
+      - name: Python 3.10, Python 3.11, Python 3.12 Setup
         uses: actions/setup-python@v4
         with:
           python-version: |
-              3.9
               3.10
               3.11
+              3.12
           cache: 'pip'
           cache-dependency-path: |
             **/setup.py

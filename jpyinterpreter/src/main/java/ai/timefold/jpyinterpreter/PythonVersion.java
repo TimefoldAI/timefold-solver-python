@@ -5,11 +5,11 @@ import java.util.Objects;
 public final class PythonVersion implements Comparable<PythonVersion> {
     private final int hexversion;
 
-    public static final PythonVersion PYTHON_3_9 = new PythonVersion(3, 9);
     public static final PythonVersion PYTHON_3_10 = new PythonVersion(3, 10);
     public static final PythonVersion PYTHON_3_11 = new PythonVersion(3, 11);
+    public static final PythonVersion PYTHON_3_12 = new PythonVersion(3, 12);
 
-    public static final PythonVersion MINIMUM_PYTHON_VERSION = PYTHON_3_9;
+    public static final PythonVersion MINIMUM_PYTHON_VERSION = PYTHON_3_10;
 
     public PythonVersion(int hexversion) {
         this.hexversion = hexversion;

@@ -1,6 +1,5 @@
 package ai.timefold.jpyinterpreter.opcodes.descriptor;
 
-import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.ToIntBiFunction;
@@ -14,6 +13,7 @@ import ai.timefold.jpyinterpreter.opcodes.generator.ResumeOpcode;
 import ai.timefold.jpyinterpreter.opcodes.generator.SendOpcode;
 import ai.timefold.jpyinterpreter.opcodes.generator.YieldFromOpcode;
 import ai.timefold.jpyinterpreter.opcodes.generator.YieldValueOpcode;
+import ai.timefold.jpyinterpreter.opcodes.meta.NopOpcode;
 import ai.timefold.jpyinterpreter.opcodes.meta.ReturnGeneratorOpcode;
 import ai.timefold.jpyinterpreter.util.JumpUtils;
 
@@ -51,6 +51,9 @@ public enum GeneratorOpDescriptor implements OpcodeDescriptor {
      * yielded value; TOS1 remains. When the subgenerator is exhausted, jump forward by its argument.
      */
     SEND(SendOpcode::new, JumpUtils::getRelativeTarget),
+
+    END_SEND(NopOpcode::new),
+
     /**
      * Create a generator, coroutine, or async generator from the current frame.
      * Clear the current frame and return the newly created generator. A no-op for us, since we detect if
@@ -59,20 +62,22 @@ public enum GeneratorOpDescriptor implements OpcodeDescriptor {
      */
     RETURN_GENERATOR(ReturnGeneratorOpcode::new);
 
-    final BiFunction<PythonBytecodeInstruction, PythonVersion, Opcode> opcodeConstructor;
+    final VersionMapping versionLookup;
 
     GeneratorOpDescriptor(Function<PythonBytecodeInstruction, Opcode> opcodeFunction) {
-        this.opcodeConstructor = (instruction, pythonVersion) -> opcodeFunction.apply(instruction);
+        this.versionLookup = VersionMapping.constantMapping(opcodeFunction);
     }
 
     GeneratorOpDescriptor(BiFunction<PythonBytecodeInstruction, Integer, Opcode> opcodeConstructor,
             ToIntBiFunction<PythonBytecodeInstruction, PythonVersion> labelFunction) {
-        this.opcodeConstructor = (instruction, pythonVersion) -> opcodeConstructor.apply(instruction,
-                labelFunction.applyAsInt(instruction, pythonVersion));
+        this.versionLookup = VersionMapping.constantMapping(
+                (instruction, pythonVersion) -> opcodeConstructor.apply(
+                        instruction,
+                        labelFunction.applyAsInt(instruction, pythonVersion)));
     }
 
     @Override
-    public Optional<Opcode> lookupOpcodeForInstruction(PythonBytecodeInstruction instruction, PythonVersion pythonVersion) {
-        return Optional.of(opcodeConstructor.apply(instruction, pythonVersion));
+    public VersionMapping getVersionMapping() {
+        return versionLookup;
     }
 }

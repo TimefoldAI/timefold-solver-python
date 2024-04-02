@@ -1,11 +1,5 @@
 package ai.timefold.jpyinterpreter.opcodes.descriptor;
 
-import java.util.Optional;
-
-import ai.timefold.jpyinterpreter.PythonBytecodeInstruction;
-import ai.timefold.jpyinterpreter.PythonVersion;
-import ai.timefold.jpyinterpreter.opcodes.Opcode;
-
 public enum AsyncOpDescriptor implements OpcodeDescriptor {
     /**
      * Implements TOS = get_awaitable(TOS), where get_awaitable(o) returns o if o is a coroutine object or a generator
@@ -42,9 +36,8 @@ public enum AsyncOpDescriptor implements OpcodeDescriptor {
     SETUP_ASYNC_WITH;
 
     @Override
-    public Optional<Opcode> lookupOpcodeForInstruction(PythonBytecodeInstruction instruction,
-            PythonVersion pythonVersion) {
+    public VersionMapping getVersionMapping() {
         // TODO
-        return Optional.empty();
+        return VersionMapping.unimplemented();
     }
 }

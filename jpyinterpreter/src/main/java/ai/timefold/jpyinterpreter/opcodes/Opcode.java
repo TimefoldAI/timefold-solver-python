@@ -65,9 +65,7 @@ public interface Opcode {
 
     static Opcode lookupOpcodeForInstruction(PythonBytecodeInstruction instruction, PythonVersion pythonVersion) {
         return AbstractOpcode.lookupInstruction(instruction.opname())
-                .lookupOpcodeForInstruction(instruction, pythonVersion)
-                .orElseThrow(() -> new UnsupportedOperationException(
-                        "Could not find implementation for Opcode %s for Python version %s (instruction %s)"
-                                .formatted(instruction.opname(), pythonVersion, instruction)));
+                .getVersionMapping()
+                .getOpcodeForVersion(instruction, pythonVersion);
     }
 }

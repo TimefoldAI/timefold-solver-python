@@ -1,10 +1,8 @@
 package ai.timefold.jpyinterpreter.opcodes.descriptor;
 
-import java.util.Optional;
 import java.util.function.Function;
 
 import ai.timefold.jpyinterpreter.PythonBytecodeInstruction;
-import ai.timefold.jpyinterpreter.PythonVersion;
 import ai.timefold.jpyinterpreter.opcodes.Opcode;
 import ai.timefold.jpyinterpreter.opcodes.string.BuildStringOpcode;
 import ai.timefold.jpyinterpreter.opcodes.string.FormatValueOpcode;
@@ -19,14 +17,14 @@ public enum StringOpDescriptor implements OpcodeDescriptor {
     FORMAT_VALUE(FormatValueOpcode::new),
     BUILD_STRING(BuildStringOpcode::new);
 
-    final Function<PythonBytecodeInstruction, Opcode> opcodeFunction;
+    final VersionMapping versionLookup;
 
     StringOpDescriptor(Function<PythonBytecodeInstruction, Opcode> opcodeFunction) {
-        this.opcodeFunction = opcodeFunction;
+        this.versionLookup = VersionMapping.constantMapping(opcodeFunction);
     }
 
     @Override
-    public Optional<Opcode> lookupOpcodeForInstruction(PythonBytecodeInstruction instruction, PythonVersion pythonVersion) {
-        return Optional.of(opcodeFunction.apply(instruction));
+    public VersionMapping getVersionMapping() {
+        return versionLookup;
     }
 }

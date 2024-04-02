@@ -1,16 +1,16 @@
 package ai.timefold.jpyinterpreter.opcodes.descriptor;
 
-import java.util.Optional;
 import java.util.function.Function;
 
 import ai.timefold.jpyinterpreter.PythonBinaryOperator;
 import ai.timefold.jpyinterpreter.PythonBytecodeInstruction;
 import ai.timefold.jpyinterpreter.PythonUnaryOperator;
-import ai.timefold.jpyinterpreter.PythonVersion;
 import ai.timefold.jpyinterpreter.opcodes.Opcode;
 import ai.timefold.jpyinterpreter.opcodes.dunder.BinaryDunderOpcode;
 import ai.timefold.jpyinterpreter.opcodes.dunder.CompareOpcode;
+import ai.timefold.jpyinterpreter.opcodes.dunder.GetSliceOpcode;
 import ai.timefold.jpyinterpreter.opcodes.dunder.NotOpcode;
+import ai.timefold.jpyinterpreter.opcodes.dunder.StoreSliceOpcode;
 import ai.timefold.jpyinterpreter.opcodes.dunder.UniDunerOpcode;
 
 public enum DunderOpDescriptor implements OpcodeDescriptor {
@@ -85,6 +85,16 @@ public enum DunderOpDescriptor implements OpcodeDescriptor {
      * Implements TOS = TOS1[TOS].
      */
     BINARY_SUBSCR(PythonBinaryOperator.GET_ITEM),
+
+    /**
+     * Implements TOS = TOS2[TOS1:TOS]
+     */
+    BINARY_SLICE(GetSliceOpcode::new),
+
+    /**
+     * Implements TOS2[TOS1:TOS] = TOS3
+     */
+    STORE_SLICE(StoreSliceOpcode::new),
 
     /**
      * Implements TOS = TOS1 << TOS.
@@ -180,10 +190,10 @@ public enum DunderOpDescriptor implements OpcodeDescriptor {
      */
     INPLACE_OR(PythonBinaryOperator.INPLACE_OR);
 
-    final Function<PythonBytecodeInstruction, Opcode> opcodeFunction;
+    final VersionMapping versionLookup;
 
     DunderOpDescriptor(Function<PythonBytecodeInstruction, Opcode> opcodeFunction) {
-        this.opcodeFunction = opcodeFunction;
+        this.versionLookup = VersionMapping.constantMapping(opcodeFunction);
     }
 
     DunderOpDescriptor(PythonUnaryOperator binaryOperator) {
@@ -195,7 +205,7 @@ public enum DunderOpDescriptor implements OpcodeDescriptor {
     }
 
     @Override
-    public Optional<Opcode> lookupOpcodeForInstruction(PythonBytecodeInstruction instruction, PythonVersion pythonVersion) {
-        return Optional.of(opcodeFunction.apply(instruction));
+    public VersionMapping getVersionMapping() {
+        return versionLookup;
     }
 }

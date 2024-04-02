@@ -1,5 +1,6 @@
 package ai.timefold.jpyinterpreter.types.errors;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -42,7 +43,7 @@ public class PythonBaseException extends RuntimeException implements PythonLikeO
     }
 
     public PythonBaseException(PythonLikeType type) {
-        this(type, List.of());
+        this(type, Collections.emptyList());
     }
 
     public PythonBaseException(PythonLikeType type, List<PythonLikeObject> args) {

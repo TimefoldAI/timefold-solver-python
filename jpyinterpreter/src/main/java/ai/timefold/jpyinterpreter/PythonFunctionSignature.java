@@ -56,12 +56,13 @@ public class PythonFunctionSignature {
 
     public PythonFunctionSignature(MethodDescriptor methodDescriptor,
             PythonLikeType returnType, PythonLikeType... parameterTypes) {
-        this(methodDescriptor, List.of(), extractKeywordArgument(methodDescriptor), returnType, parameterTypes);
+        this(methodDescriptor, Collections.emptyList(), extractKeywordArgument(methodDescriptor), returnType, parameterTypes);
     }
 
     public PythonFunctionSignature(MethodDescriptor methodDescriptor,
             PythonLikeType returnType, List<PythonLikeType> parameterTypeList) {
-        this(methodDescriptor, List.of(), extractKeywordArgument(methodDescriptor), returnType, parameterTypeList);
+        this(methodDescriptor, Collections.emptyList(), extractKeywordArgument(methodDescriptor), returnType,
+                parameterTypeList);
     }
 
     public PythonFunctionSignature(MethodDescriptor methodDescriptor,

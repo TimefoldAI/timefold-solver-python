@@ -2,11 +2,39 @@ import builtins
 import inspect
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
-from jpype import JLong, JDouble, JBoolean, JProxy
+
+from jpype import JLong, JDouble, JBoolean, JProxy, JImplementationFor
 
 
 if TYPE_CHECKING:
     from java.util import IdentityHashMap
+
+
+# Workaround for https://github.com/jpype-project/jpype/issues/1178
+@JImplementationFor('java.lang.Throwable')
+class _JavaException:
+    @staticmethod
+    def _get_exception_with_cause(exception):
+        if exception is None:
+            return None
+        try:
+            raise Exception(f'{exception.getClass().getSimpleName()}: {exception.getMessage()}')
+        except Exception as e:
+            cause = _JavaException._get_exception_with_cause(exception.getCause())
+            if cause is not None:
+                try:
+                    raise e from cause
+                except Exception as return_value:
+                    return return_value
+            else:
+                return e
+    @property
+    def __cause__(self):
+        if self.getCause() is not None:
+            return _JavaException._get_exception_with_cause(self.getCause())
+        else:
+            return None
+
 
 def get_translated_java_system_error_message(error):
     from ai.timefold.jpyinterpreter.util import TracebackUtils

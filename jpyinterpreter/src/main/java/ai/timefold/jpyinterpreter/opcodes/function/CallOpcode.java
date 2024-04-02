@@ -1,5 +1,6 @@
 package ai.timefold.jpyinterpreter.opcodes.function;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -41,7 +42,7 @@ public class CallOpcode extends AbstractOpcode {
                     .orElseGet(() -> stackMetadata.pop(instruction.arg() + 2)
                             .push(ValueSourceInfo.of(this, BuiltinTypes.BASE_TYPE,
                                     stackMetadata.getValueSourcesUpToStackIndex(instruction.arg() + 2))))
-                    .setCallKeywordNameList(List.of());
+                    .setCallKeywordNameList(Collections.emptyList());
         }
 
         functionType = stackMetadata.getTypeAtStackIndex(instruction.arg());
@@ -63,11 +64,12 @@ public class CallOpcode extends AbstractOpcode {
                     .orElseGet(() -> stackMetadata.pop(instruction.arg() + 2)
                             .push(ValueSourceInfo.of(this, BuiltinTypes.BASE_TYPE,
                                     stackMetadata.getValueSourcesUpToStackIndex(instruction.arg() + 2))))
-                    .setCallKeywordNameList(List.of());
+                    .setCallKeywordNameList(Collections.emptyList());
         }
 
         return stackMetadata.pop(instruction.arg() + 2).push(ValueSourceInfo.of(this, BuiltinTypes.BASE_TYPE,
-                stackMetadata.getValueSourcesUpToStackIndex(instruction.arg() + 2))).setCallKeywordNameList(List.of());
+                stackMetadata.getValueSourcesUpToStackIndex(instruction.arg() + 2)))
+                .setCallKeywordNameList(Collections.emptyList());
     }
 
     @Override

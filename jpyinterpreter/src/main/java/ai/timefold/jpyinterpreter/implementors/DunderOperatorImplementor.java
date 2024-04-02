@@ -20,6 +20,7 @@ import ai.timefold.jpyinterpreter.types.NotImplemented;
 import ai.timefold.jpyinterpreter.types.PythonKnownFunctionType;
 import ai.timefold.jpyinterpreter.types.PythonLikeFunction;
 import ai.timefold.jpyinterpreter.types.PythonLikeType;
+import ai.timefold.jpyinterpreter.types.PythonSlice;
 import ai.timefold.jpyinterpreter.types.collections.PythonLikeList;
 import ai.timefold.jpyinterpreter.types.errors.TypeError;
 
@@ -684,5 +685,53 @@ public class DunderOperatorImplementor {
         methodVisitor.visitInsn(Opcodes.SWAP);
         methodVisitor.visitLabel(ifDefined);
         binaryOperator(methodVisitor, stackMetadata.localVariableHelper, operator);
+    }
+
+    public static void getSlice(FunctionMetadata functionMetadata, StackMetadata stackMetadata) {
+        // stack: ..., collection, start, end
+        var methodVisitor = functionMetadata.methodVisitor;
+        methodVisitor.visitTypeInsn(Opcodes.NEW, Type.getInternalName(PythonSlice.class));
+        methodVisitor.visitInsn(Opcodes.DUP_X2);
+        methodVisitor.visitInsn(Opcodes.DUP_X2);
+        methodVisitor.visitInsn(Opcodes.POP);
+        methodVisitor.visitInsn(Opcodes.ACONST_NULL);
+        // stack: ..., collection, <uninit slice>, <uninit slice>, start, end, null
+        methodVisitor.visitMethodInsn(Opcodes.INVOKESPECIAL, Type.getInternalName(PythonSlice.class),
+                "<init>", Type.getMethodDescriptor(Type.VOID_TYPE, Type.getType(PythonLikeObject.class),
+                        Type.getType(PythonLikeObject.class),
+                        Type.getType(PythonLikeObject.class)),
+                false);
+        // stack: ..., collection, slice
+        DunderOperatorImplementor.binaryOperator(methodVisitor, stackMetadata
+                .pop(3).pushTemps(stackMetadata.getTypeAtStackIndex(2), BuiltinTypes.SLICE_TYPE),
+                PythonBinaryOperator.GET_ITEM);
+    }
+
+    public static void storeSlice(FunctionMetadata functionMetadata, StackMetadata stackMetadata) {
+        // stack: ..., values, collection, start, end
+        var methodVisitor = functionMetadata.methodVisitor;
+        methodVisitor.visitTypeInsn(Opcodes.NEW, Type.getInternalName(PythonSlice.class));
+        methodVisitor.visitInsn(Opcodes.DUP_X2);
+        methodVisitor.visitInsn(Opcodes.DUP_X2);
+        methodVisitor.visitInsn(Opcodes.POP);
+        methodVisitor.visitInsn(Opcodes.ACONST_NULL);
+        // stack: ..., values, collection, <uninit slice>, <uninit slice>, start, end, null
+        methodVisitor.visitMethodInsn(Opcodes.INVOKESPECIAL, Type.getInternalName(PythonSlice.class),
+                "<init>", Type.getMethodDescriptor(Type.VOID_TYPE, Type.getType(PythonLikeObject.class),
+                        Type.getType(PythonLikeObject.class),
+                        Type.getType(PythonLikeObject.class)),
+                false);
+        // stack: ..., values, collection, slice
+        methodVisitor.visitInsn(Opcodes.DUP_X2);
+        methodVisitor.visitInsn(Opcodes.POP);
+        // stack: ..., slice, values, collection
+        methodVisitor.visitInsn(Opcodes.DUP_X2);
+        methodVisitor.visitInsn(Opcodes.POP);
+        // stack: ..., collection, slice, values
+        DunderOperatorImplementor.ternaryOperator(functionMetadata, stackMetadata
+                .pop(4).pushTemps(stackMetadata.getTypeAtStackIndex(2), BuiltinTypes.SLICE_TYPE,
+                        stackMetadata.getTypeAtStackIndex(3)),
+                PythonTernaryOperator.SET_ITEM);
+        methodVisitor.visitInsn(Opcodes.POP);
     }
 }

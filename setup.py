@@ -114,7 +114,7 @@ setup(
         'ai-stubs': 'timefold-solver-python-core/src/main/resources',
     },
     test_suite='tests',
-    python_requires='>=3.9',
+    python_requires='>=3.10',
     install_requires=[
         'JPype1>=1.5.0',
     ],
