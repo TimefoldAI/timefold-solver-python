@@ -15,6 +15,11 @@ public class PythonCompiledClass {
     public String module;
 
     /**
+     * The path to the file that defines the module.
+     */
+    public String moduleFilePath;
+
+    /**
      * The qualified name of the class. Does not include module.
      */
     public String qualifiedName;

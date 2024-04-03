@@ -168,6 +168,8 @@ public class PythonClassTranslator {
         classWriter.visit(Opcodes.V11, Modifier.PUBLIC, internalClassName, null,
                 superClassType.getJavaTypeInternalName(), interfaces);
 
+        classWriter.visitSource(pythonCompiledClass.moduleFilePath, null);
+
         for (var annotation : pythonCompiledClass.annotations) {
             annotation.addAnnotationTo(classWriter);
         }
@@ -236,6 +238,7 @@ public class PythonClassTranslator {
                 classWriter.visitMethod(Modifier.PUBLIC, "<init>", Type.getMethodDescriptor(Type.VOID_TYPE),
                         null, null);
         methodVisitor.visitCode();
+        PythonBytecodeToJavaBytecodeTranslator.visitGeneratedLineNumber(methodVisitor);
         methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
         methodVisitor.visitFieldInsn(Opcodes.GETSTATIC, Type.getInternalName(PythonInterpreter.class), "DEFAULT",
                 Type.getDescriptor(PythonInterpreter.class));
@@ -259,6 +262,7 @@ public class PythonClassTranslator {
         methodVisitor.visitParameter("subclassType", 0);
 
         methodVisitor.visitCode();
+        PythonBytecodeToJavaBytecodeTranslator.visitGeneratedLineNumber(methodVisitor);
         methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
         methodVisitor.visitVarInsn(Opcodes.ALOAD, 1);
         methodVisitor.visitVarInsn(Opcodes.ALOAD, 2);
@@ -541,6 +545,8 @@ public class PythonClassTranslator {
         classWriter.visit(Opcodes.V11, Modifier.PUBLIC, internalClassName, null,
                 Type.getInternalName(Object.class), new String[] { interfaceDeclaration.interfaceName });
 
+        classWriter.visitSource("<generated signature>", null);
+
         classWriter.visitField(Modifier.PUBLIC | Modifier.FINAL, "$binaryType", Type.getDescriptor(PythonLikeType.class),
                 null, null);
         classWriter.visitField(Modifier.STATIC | Modifier.PUBLIC, ARGUMENT_SPEC_INSTANCE_FIELD_NAME,
@@ -554,7 +560,7 @@ public class PythonClassTranslator {
                 null, null);
 
         methodVisitor.visitCode();
-
+        PythonBytecodeToJavaBytecodeTranslator.visitGeneratedLineNumber(methodVisitor);
         methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
         methodVisitor.visitMethodInsn(Opcodes.INVOKESPECIAL, Type.getInternalName(Object.class), "<init>",
                 Type.getMethodDescriptor(Type.VOID_TYPE), false);
@@ -578,7 +584,7 @@ public class PythonClassTranslator {
         }
 
         methodVisitor.visitCode();
-
+        PythonBytecodeToJavaBytecodeTranslator.visitGeneratedLineNumber(methodVisitor);
         methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
         methodVisitor.visitFieldInsn(Opcodes.GETFIELD, internalClassName, "$binaryType",
                 Type.getDescriptor(PythonLikeType.class));
@@ -651,6 +657,8 @@ public class PythonClassTranslator {
                         Type.getInternalName(PythonLikeFunction.class)
                 });
 
+        classWriter.visitSource(initFunction != null ? initFunction.moduleFilePath : "<unknown>", null);
+
         classWriter.visitField(Modifier.STATIC | Modifier.PUBLIC, ARGUMENT_SPEC_INSTANCE_FIELD_NAME,
                 Type.getDescriptor(ArgumentSpec.class),
                 null, null);
@@ -659,6 +667,7 @@ public class PythonClassTranslator {
                 classWriter.visitMethod(Modifier.PUBLIC, "<init>", Type.getMethodDescriptor(Type.VOID_TYPE),
                         null, null);
         methodVisitor.visitCode();
+        PythonBytecodeToJavaBytecodeTranslator.visitGeneratedLineNumber(methodVisitor);
         methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
         methodVisitor.visitMethodInsn(Opcodes.INVOKESPECIAL, Type.getInternalName(Object.class), "<init>",
                 Type.getMethodDescriptor(Type.VOID_TYPE), false);
@@ -674,13 +683,16 @@ public class PythonClassTranslator {
                 null, null);
 
         methodVisitor.visitCode();
-
+        PythonBytecodeToJavaBytecodeTranslator.visitGeneratedLineNumber(methodVisitor);
         methodVisitor.visitTypeInsn(Opcodes.NEW, classInternalName);
         methodVisitor.visitInsn(Opcodes.DUP);
         methodVisitor.visitMethodInsn(Opcodes.INVOKESPECIAL, classInternalName, "<init>",
                 Type.getMethodDescriptor(Type.VOID_TYPE), false);
 
         if (initFunction != null) {
+            Label start = new Label();
+            methodVisitor.visitLabel(start);
+            methodVisitor.visitLineNumber(initFunction.getFirstLine(), start);
             methodVisitor.visitInsn(Opcodes.DUP);
 
             methodVisitor.visitFieldInsn(Opcodes.GETSTATIC, constructorInternalClassName, ARGUMENT_SPEC_INSTANCE_FIELD_NAME,
@@ -844,6 +856,10 @@ public class PythonClassTranslator {
         addAnnotationsToMethod(function, methodVisitor);
         methodVisitor.visitCode();
 
+        Label start = new Label();
+        methodVisitor.visitLabel(start);
+        methodVisitor.visitLineNumber(function.getFirstLine(), start);
+
         methodVisitor.visitFieldInsn(Opcodes.GETSTATIC, internalClassName, javaMethodName, interfaceDescriptor);
 
         for (int i = 0; i < function.totalArgCount(); i++) {
@@ -879,6 +895,10 @@ public class PythonClassTranslator {
         }
         addAnnotationsToMethod(function, methodVisitor);
         methodVisitor.visitCode();
+
+        Label start = new Label();
+        methodVisitor.visitLabel(start);
+        methodVisitor.visitLineNumber(function.getFirstLine(), start);
 
         methodVisitor.visitFieldInsn(Opcodes.GETSTATIC, internalClassName, javaMethodName, interfaceDescriptor);
         for (int i = 0; i < function.totalArgCount(); i++) {
@@ -929,6 +949,8 @@ public class PythonClassTranslator {
 
         methodVisitor.visitCode();
 
+        PythonBytecodeToJavaBytecodeTranslator.visitGeneratedLineNumber(methodVisitor);
+
         methodVisitor.visitVarInsn(Opcodes.ALOAD, 1);
         BytecodeSwitchImplementor.createStringSwitch(methodVisitor, instanceAttributes, 2, field -> {
             methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
@@ -975,6 +997,8 @@ public class PythonClassTranslator {
         methodVisitor.visitParameter("value", 0);
 
         methodVisitor.visitCode();
+
+        PythonBytecodeToJavaBytecodeTranslator.visitGeneratedLineNumber(methodVisitor);
 
         methodVisitor.visitVarInsn(Opcodes.ALOAD, 1);
         BytecodeSwitchImplementor.createStringSwitch(methodVisitor, instanceAttributes, 3, field -> {
@@ -1023,6 +1047,8 @@ public class PythonClassTranslator {
 
         methodVisitor.visitCode();
 
+        PythonBytecodeToJavaBytecodeTranslator.visitGeneratedLineNumber(methodVisitor);
+
         methodVisitor.visitVarInsn(Opcodes.ALOAD, 1);
         BytecodeSwitchImplementor.createStringSwitch(methodVisitor, instanceAttributes, 2, field -> {
             methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
@@ -1062,6 +1088,8 @@ public class PythonClassTranslator {
                 Type.getMethodDescriptor(Type.VOID_TYPE), null,
                 null);
         methodVisitor.visitCode();
+
+        PythonBytecodeToJavaBytecodeTranslator.visitGeneratedLineNumber(methodVisitor);
 
         methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
         methodVisitor.visitInsn(Opcodes.DUP);
@@ -1156,6 +1184,8 @@ public class PythonClassTranslator {
                 Type.getMethodDescriptor(Type.VOID_TYPE, Type.getType(OpaquePythonReference.class)), null,
                 null);
         methodVisitor.visitCode();
+
+        PythonBytecodeToJavaBytecodeTranslator.visitGeneratedLineNumber(methodVisitor);
 
         methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
         methodVisitor.visitInsn(Opcodes.DUP);
@@ -1304,6 +1334,8 @@ public class PythonClassTranslator {
         ClassWriter classWriter = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
         classWriter.visit(Opcodes.V11, Modifier.PUBLIC | Modifier.INTERFACE | Modifier.ABSTRACT, internalClassName, null,
                 Type.getInternalName(Object.class), null);
+
+        classWriter.visitSource("<generated signature>", null);
 
         Type returnType = Type.getType(functionSignature.returnType);
         Type[] parameterTypes = new Type[functionSignature.parameterTypes.length];

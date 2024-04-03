@@ -67,11 +67,56 @@ class FunctionVerifier:
                                      f'the property ({inspect.getsource(predicate)}) '
                                      f'for arguments {args}.')
             elif not predicate(untyped_java_result):
-                raise AssertionError(f'Untyped translated bytecode result ({java_result}) does not satisfy the '
+                raise AssertionError(f'Untyped translated bytecode result ({untyped_java_result}) does not satisfy the '
                                      f'property ({inspect.getsource(predicate)}) '
                                      f'for arguments {args}.')
             else:
                 raise AssertionError(f'Typed translated bytecode result ({java_result}) does not satisfy the '
+                                     f'property ({inspect.getsource(predicate)}) '
+                                     f'for arguments {args}.')
+
+    def verify_error_property(self, *args, predicate, clone_arguments=True):
+        cloner = get_argument_cloner(clone_arguments)
+        try:
+            python_result = self.python_function(*cloner(args))
+            raise AssertionError(f'Python function did not raise an error and returned ({python_result})')
+        except AssertionError:
+            raise
+        except Exception as python_result:
+            if not predicate(python_result):
+                import inspect
+                raise AssertionError(f'Python function error ({python_result}) does not satisfy the property '
+                                     f'({inspect.getsource(predicate).strip()}) '
+                                     f'for arguments {args}.')
+
+        try:
+            java_result = self.java_function(*cloner(args))
+            raise AssertionError(f'Typed Java function did not raise an error and returned ({java_result})')
+        except AssertionError:
+            raise
+        except Exception as err:
+            java_result = err
+
+        try:
+            untyped_java_result = self.untyped_java_function(*cloner(args))
+            raise AssertionError(f'Untyped Java function did not raise an error and returned ({untyped_java_result})')
+        except AssertionError:
+            raise
+        except Exception as err:
+            untyped_java_result = err
+
+        if not predicate(java_result) or not predicate(untyped_java_result):
+            import inspect
+            if not predicate(java_result) and not predicate(untyped_java_result):
+                raise AssertionError(f'Typed and untyped translated bytecode error ({java_result}) does not satisfy '
+                                     f'the property ({inspect.getsource(predicate)}) '
+                                     f'for arguments {args}.')
+            elif not predicate(untyped_java_result):
+                raise AssertionError(f'Untyped translated bytecode error ({untyped_java_result}) does not satisfy the '
+                                     f'property ({inspect.getsource(predicate)}) '
+                                     f'for arguments {args}.')
+            else:
+                raise AssertionError(f'Typed translated bytecode error ({java_result}) does not satisfy the '
                                      f'property ({inspect.getsource(predicate)}) '
                                      f'for arguments {args}.')
 

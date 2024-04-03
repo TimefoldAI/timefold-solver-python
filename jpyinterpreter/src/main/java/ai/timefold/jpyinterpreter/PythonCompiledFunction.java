@@ -23,6 +23,11 @@ public class PythonCompiledFunction {
     public String module;
 
     /**
+     * The path to the file that defines the module.
+     */
+    public String moduleFilePath;
+
+    /**
      * The qualified name of the function. Does not include module.
      */
     public String qualifiedName;
@@ -128,6 +133,7 @@ public class PythonCompiledFunction {
         PythonCompiledFunction out = new PythonCompiledFunction();
 
         out.module = module;
+        out.moduleFilePath = moduleFilePath;
         out.qualifiedName = qualifiedName;
         out.instructionList = List.copyOf(instructionList);
         out.closure = closure;
@@ -281,5 +287,14 @@ public class PythonCompiledFunction {
         }
 
         return co_argcount + co_kwonlyargcount + extraArgs;
+    }
+
+    public int getFirstLine() {
+        for (var instruction : instructionList) {
+            if (instruction.startsLine().isPresent()) {
+                return instruction.startsLine().getAsInt();
+            }
+        }
+        return -1;
     }
 }
