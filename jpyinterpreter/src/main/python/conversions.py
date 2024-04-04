@@ -655,7 +655,7 @@ def unwrap_python_like_object(python_like_object, clone_map=None, default=NotImp
                     super().__init__(*args)
 
                 def __str__(self):
-                    return '\n'.join(traceback_exception.format())
+                    return ''.join(traceback_exception.format())
 
             return clone_map.add_clone(python_like_object, WrappedException(*args))
         except AttributeError:

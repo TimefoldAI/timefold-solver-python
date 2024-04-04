@@ -18,21 +18,26 @@ function_interface_pair_to_instance = dict()
 function_interface_pair_to_class = dict()
 
 
-def get_file_for_module(module):
+def get_file_for_module(module_name):
     import pathlib
     import sys
 
-    if module is None:
+    if module_name is None:
         return '<unknown>'
 
-    file_path = sys.modules[module].__file__
-    if file_path is not None:
-        return file_path
+    module = sys.modules[module_name]
+    if hasattr(module, '__file__'):
+        file_path = sys.modules[module_name].__file__
+        if file_path is not None:
+            return file_path
 
     # Do not know file for module; predict file from module name
-    path_parts = module.split('.')
+    if module_name == '__main__':
+        return '<stdin>'
+
+    path_parts = module_name.split('.')
     path_parts[-1] = f'{path_parts[-1]}.py'
-    return str(pathlib.Path(path_parts))
+    return str(pathlib.Path(*path_parts))
 
 
 def is_python_version_supported(python_version):
