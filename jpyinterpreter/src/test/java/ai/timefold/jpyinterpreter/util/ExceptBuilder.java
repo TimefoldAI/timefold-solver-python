@@ -96,7 +96,6 @@ public class ExceptBuilder {
                 .markAsJumpTarget();
         delegate.instructionList.add(exceptGotoTarget);
 
-        delegate.op(StackOpDescriptor.POP_TOP);
         delegate.op(ExceptionOpDescriptor.RERAISE, 0);
 
         if (tryEndGoto != null) {
@@ -127,7 +126,6 @@ public class ExceptBuilder {
 
         finallyBuilder.accept(delegate);
 
-        delegate.op(StackOpDescriptor.POP_TOP);
         delegate.op(ExceptionOpDescriptor.RERAISE);
 
         delegate.update(finallyEndInstruction.withArg(delegate.instructionList.size()));
@@ -150,7 +148,6 @@ public class ExceptBuilder {
                     .markAsJumpTarget();
             delegate.instructionList.add(exceptGotoTarget);
 
-            delegate.op(StackOpDescriptor.POP_TOP);
             delegate.op(ExceptionOpDescriptor.RERAISE, 0);
         }
 

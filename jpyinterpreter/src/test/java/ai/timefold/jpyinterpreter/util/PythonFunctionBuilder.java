@@ -321,7 +321,7 @@ public class PythonFunctionBuilder {
         update(instruction.withArg(exceptionHandler.offset() - instruction.offset() - 1));
 
         ifFalse(reraiseExceptionBlock -> reraiseExceptionBlock
-                .op(StackOpDescriptor.POP_TOP).op(ExceptionOpDescriptor.RERAISE));
+                .op(ExceptionOpDescriptor.RERAISE));
 
         op(StackOpDescriptor.POP_TOP);
         op(StackOpDescriptor.POP_TOP);

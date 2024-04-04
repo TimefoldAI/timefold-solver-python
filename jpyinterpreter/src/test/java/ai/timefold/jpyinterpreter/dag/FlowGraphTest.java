@@ -217,16 +217,20 @@ public class FlowGraphTest {
                 new FrameData(9).stack(), // LOAD_ASSERTION_ERROR
                 new FrameData(10).stack(PythonAssertionError.ASSERTION_ERROR_TYPE), // RAISE
                 new FrameData(11).stack(BuiltinTypes.NONE_TYPE, BuiltinTypes.INT_TYPE, BuiltinTypes.NONE_TYPE,
-                        PythonTraceback.TRACEBACK_TYPE, PythonBaseException.BASE_EXCEPTION_TYPE, BuiltinTypes.TYPE_TYPE), // except handler; DUP_TOP,
+                        PythonTraceback.TRACEBACK_TYPE, PythonBaseException.BASE_EXCEPTION_TYPE,
+                        PythonBaseException.BASE_EXCEPTION_TYPE), // except handler; DUP_TOP,
                 new FrameData(12).stack(BuiltinTypes.NONE_TYPE, BuiltinTypes.INT_TYPE, BuiltinTypes.NONE_TYPE,
-                        PythonTraceback.TRACEBACK_TYPE, PythonBaseException.BASE_EXCEPTION_TYPE, BuiltinTypes.TYPE_TYPE,
-                        BuiltinTypes.TYPE_TYPE), // LOAD_CONSTANT
+                        PythonTraceback.TRACEBACK_TYPE, PythonBaseException.BASE_EXCEPTION_TYPE,
+                        PythonBaseException.BASE_EXCEPTION_TYPE,
+                        PythonBaseException.BASE_EXCEPTION_TYPE), // LOAD_CONSTANT
                 new FrameData(13).stack(BuiltinTypes.NONE_TYPE, BuiltinTypes.INT_TYPE, BuiltinTypes.NONE_TYPE,
-                        PythonTraceback.TRACEBACK_TYPE, PythonBaseException.BASE_EXCEPTION_TYPE, BuiltinTypes.TYPE_TYPE,
-                        BuiltinTypes.TYPE_TYPE,
+                        PythonTraceback.TRACEBACK_TYPE, PythonBaseException.BASE_EXCEPTION_TYPE,
+                        PythonBaseException.BASE_EXCEPTION_TYPE,
+                        PythonBaseException.BASE_EXCEPTION_TYPE,
                         BuiltinTypes.TYPE_TYPE), // JUMP_IF_NOT_EXC_MATCH
                 new FrameData(14).stack(BuiltinTypes.NONE_TYPE, BuiltinTypes.INT_TYPE, BuiltinTypes.NONE_TYPE,
-                        PythonTraceback.TRACEBACK_TYPE, PythonBaseException.BASE_EXCEPTION_TYPE, BuiltinTypes.TYPE_TYPE), // POP_TOP
+                        PythonTraceback.TRACEBACK_TYPE, PythonBaseException.BASE_EXCEPTION_TYPE,
+                        PythonBaseException.BASE_EXCEPTION_TYPE), // POP_TOP
                 new FrameData(15).stack(BuiltinTypes.NONE_TYPE, BuiltinTypes.INT_TYPE, BuiltinTypes.NONE_TYPE,
                         PythonTraceback.TRACEBACK_TYPE, PythonBaseException.BASE_EXCEPTION_TYPE), // POP_TOP
                 new FrameData(16).stack(BuiltinTypes.NONE_TYPE, BuiltinTypes.INT_TYPE, BuiltinTypes.NONE_TYPE,
@@ -236,13 +240,13 @@ public class FlowGraphTest {
                 new FrameData(19).stack(BuiltinTypes.STRING_TYPE), // RETURN
                 new FrameData(20).stack(BuiltinTypes.NONE_TYPE, BuiltinTypes.INT_TYPE, BuiltinTypes.NONE_TYPE,
                         PythonTraceback.TRACEBACK_TYPE, PythonBaseException.BASE_EXCEPTION_TYPE,
-                        BuiltinTypes.TYPE_TYPE), // POP_TOP
+                        PythonBaseException.BASE_EXCEPTION_TYPE), // POP_TOP
                 new FrameData(21).stack(BuiltinTypes.NONE_TYPE, BuiltinTypes.INT_TYPE, BuiltinTypes.NONE_TYPE,
-                        PythonTraceback.TRACEBACK_TYPE, PythonBaseException.BASE_EXCEPTION_TYPE, BuiltinTypes.TYPE_TYPE), // POP_TOP
+                        PythonTraceback.TRACEBACK_TYPE, PythonBaseException.BASE_EXCEPTION_TYPE,
+                        PythonBaseException.BASE_EXCEPTION_TYPE), // POP_TOP
                 new FrameData(22).stack(BuiltinTypes.NONE_TYPE, BuiltinTypes.INT_TYPE, BuiltinTypes.NONE_TYPE,
-                        PythonTraceback.TRACEBACK_TYPE, PythonBaseException.BASE_EXCEPTION_TYPE), // RERAISE
-                new FrameData(23).stack(BuiltinTypes.NONE_TYPE, BuiltinTypes.INT_TYPE, BuiltinTypes.NONE_TYPE,
-                        PythonTraceback.TRACEBACK_TYPE, PythonBaseException.BASE_EXCEPTION_TYPE, BuiltinTypes.TYPE_TYPE) // RERAISE
+                        PythonTraceback.TRACEBACK_TYPE, PythonBaseException.BASE_EXCEPTION_TYPE,
+                        PythonBaseException.BASE_EXCEPTION_TYPE) // RERAISE
         );
     }
 
@@ -301,16 +305,20 @@ public class FlowGraphTest {
                 new FrameData(15).stack(), // NOP
                 new FrameData(16).stack(), // JUMP_ABSOLUTE
                 new FrameData(17).stack(BuiltinTypes.NONE_TYPE, BuiltinTypes.INT_TYPE, BuiltinTypes.NONE_TYPE,
-                        PythonTraceback.TRACEBACK_TYPE, PythonBaseException.BASE_EXCEPTION_TYPE, BuiltinTypes.TYPE_TYPE), // except handler; DUP_TOP,
+                        PythonTraceback.TRACEBACK_TYPE, PythonBaseException.BASE_EXCEPTION_TYPE,
+                        PythonBaseException.BASE_EXCEPTION_TYPE), // except handler; DUP_TOP,
                 new FrameData(18).stack(BuiltinTypes.NONE_TYPE, BuiltinTypes.INT_TYPE, BuiltinTypes.NONE_TYPE,
-                        PythonTraceback.TRACEBACK_TYPE, PythonBaseException.BASE_EXCEPTION_TYPE, BuiltinTypes.TYPE_TYPE,
-                        BuiltinTypes.TYPE_TYPE), // LOAD_CONSTANT
+                        PythonTraceback.TRACEBACK_TYPE, PythonBaseException.BASE_EXCEPTION_TYPE,
+                        PythonBaseException.BASE_EXCEPTION_TYPE,
+                        PythonBaseException.BASE_EXCEPTION_TYPE), // LOAD_CONSTANT
                 new FrameData(19).stack(BuiltinTypes.NONE_TYPE, BuiltinTypes.INT_TYPE, BuiltinTypes.NONE_TYPE,
-                        PythonTraceback.TRACEBACK_TYPE, PythonBaseException.BASE_EXCEPTION_TYPE, BuiltinTypes.TYPE_TYPE,
-                        BuiltinTypes.TYPE_TYPE,
+                        PythonTraceback.TRACEBACK_TYPE, PythonBaseException.BASE_EXCEPTION_TYPE,
+                        PythonBaseException.BASE_EXCEPTION_TYPE,
+                        PythonBaseException.BASE_EXCEPTION_TYPE,
                         BuiltinTypes.TYPE_TYPE), // JUMP_IF_NOT_EXC_MATCH
                 new FrameData(20).stack(BuiltinTypes.NONE_TYPE, BuiltinTypes.INT_TYPE, BuiltinTypes.NONE_TYPE,
-                        PythonTraceback.TRACEBACK_TYPE, PythonBaseException.BASE_EXCEPTION_TYPE, BuiltinTypes.TYPE_TYPE), // POP_TOP
+                        PythonTraceback.TRACEBACK_TYPE, PythonBaseException.BASE_EXCEPTION_TYPE,
+                        PythonBaseException.BASE_EXCEPTION_TYPE), // POP_TOP
                 new FrameData(21).stack(BuiltinTypes.NONE_TYPE, BuiltinTypes.INT_TYPE, BuiltinTypes.NONE_TYPE,
                         PythonTraceback.TRACEBACK_TYPE, PythonBaseException.BASE_EXCEPTION_TYPE), // POP_TOP
                 new FrameData(22).stack(BuiltinTypes.NONE_TYPE, BuiltinTypes.INT_TYPE, BuiltinTypes.NONE_TYPE,
@@ -320,30 +328,31 @@ public class FlowGraphTest {
                 new FrameData(25).stack(BuiltinTypes.STRING_TYPE), // STORE_GLOBAL
                 new FrameData(26).stack(), // JUMP_ABSOLUTE
                 new FrameData(27).stack(BuiltinTypes.NONE_TYPE, BuiltinTypes.INT_TYPE, BuiltinTypes.NONE_TYPE,
-                        PythonTraceback.TRACEBACK_TYPE, PythonBaseException.BASE_EXCEPTION_TYPE, BuiltinTypes.TYPE_TYPE), // RERAISE
+                        PythonTraceback.TRACEBACK_TYPE, PythonBaseException.BASE_EXCEPTION_TYPE,
+                        PythonBaseException.BASE_EXCEPTION_TYPE), // RERAISE
                 new FrameData(28).stack(BuiltinTypes.NONE_TYPE, BuiltinTypes.INT_TYPE, BuiltinTypes.NONE_TYPE,
-                        PythonTraceback.TRACEBACK_TYPE, PythonBaseException.BASE_EXCEPTION_TYPE, BuiltinTypes.TYPE_TYPE), // POP_TOP
-                new FrameData(29).stack(BuiltinTypes.NONE_TYPE, BuiltinTypes.INT_TYPE, BuiltinTypes.NONE_TYPE,
-                        PythonTraceback.TRACEBACK_TYPE, PythonBaseException.BASE_EXCEPTION_TYPE), // POP_TOP
+                        PythonTraceback.TRACEBACK_TYPE, PythonBaseException.BASE_EXCEPTION_TYPE,
+                        PythonBaseException.BASE_EXCEPTION_TYPE), // POP_TOP
+                new FrameData(29).stack(), // POP_TOP
                 new FrameData(30).stack(), // POP_TOP
-                new FrameData(31).stack(), // Load constant
-                new FrameData(32).stack(BuiltinTypes.STRING_TYPE), // STORE
-                new FrameData(33).stack(), // JUMP_ABSOLUTE
+                new FrameData(31).stack(BuiltinTypes.STRING_TYPE), // STORE
+                new FrameData(32).stack(), // JUMP_ABSOLUTE
+                new FrameData(33).stack(BuiltinTypes.NONE_TYPE, BuiltinTypes.INT_TYPE, BuiltinTypes.NONE_TYPE,
+                        PythonTraceback.TRACEBACK_TYPE, PythonBaseException.BASE_EXCEPTION_TYPE,
+                        PythonBaseException.BASE_EXCEPTION_TYPE), // NO-OP; Uncaught exception handler
                 new FrameData(34).stack(BuiltinTypes.NONE_TYPE, BuiltinTypes.INT_TYPE, BuiltinTypes.NONE_TYPE,
-                        PythonTraceback.TRACEBACK_TYPE, PythonBaseException.BASE_EXCEPTION_TYPE, BuiltinTypes.TYPE_TYPE), // NO-OP; Uncaught exception handler
+                        PythonTraceback.TRACEBACK_TYPE, PythonBaseException.BASE_EXCEPTION_TYPE,
+                        PythonBaseException.BASE_EXCEPTION_TYPE), // LOAD-CONSTANT
                 new FrameData(35).stack(BuiltinTypes.NONE_TYPE, BuiltinTypes.INT_TYPE, BuiltinTypes.NONE_TYPE,
-                        PythonTraceback.TRACEBACK_TYPE, PythonBaseException.BASE_EXCEPTION_TYPE, BuiltinTypes.TYPE_TYPE), // LOAD-CONSTANT
-                new FrameData(36).stack(BuiltinTypes.NONE_TYPE, BuiltinTypes.INT_TYPE, BuiltinTypes.NONE_TYPE,
-                        PythonTraceback.TRACEBACK_TYPE, PythonBaseException.BASE_EXCEPTION_TYPE, BuiltinTypes.TYPE_TYPE,
+                        PythonTraceback.TRACEBACK_TYPE, PythonBaseException.BASE_EXCEPTION_TYPE,
+                        PythonBaseException.BASE_EXCEPTION_TYPE,
                         BuiltinTypes.STRING_TYPE), // STORE
-                new FrameData(37).stack(BuiltinTypes.NONE_TYPE, BuiltinTypes.INT_TYPE, BuiltinTypes.NONE_TYPE,
-                        PythonTraceback.TRACEBACK_TYPE, PythonBaseException.BASE_EXCEPTION_TYPE, BuiltinTypes.TYPE_TYPE), //  POP-TOP
-                new FrameData(38).stack(BuiltinTypes.NONE_TYPE, BuiltinTypes.INT_TYPE, BuiltinTypes.NONE_TYPE,
-                        PythonTraceback.TRACEBACK_TYPE, PythonBaseException.BASE_EXCEPTION_TYPE), // RERAISE
-                new FrameData(39).stack(), // NO-OP; After try
-                new FrameData(40).stack(), // LOAD_CONSTANT
-                new FrameData(41).stack(BuiltinTypes.INT_TYPE) // RETURN
-        );
+                new FrameData(36).stack(BuiltinTypes.NONE_TYPE, BuiltinTypes.INT_TYPE, BuiltinTypes.NONE_TYPE,
+                        PythonTraceback.TRACEBACK_TYPE, PythonBaseException.BASE_EXCEPTION_TYPE,
+                        PythonBaseException.BASE_EXCEPTION_TYPE), //  POP-TOP
+                new FrameData(37).stack(), // RERAISE
+                new FrameData(38).stack(), // NO-OP; After try
+                new FrameData(39).stack(BuiltinTypes.INT_TYPE));
     }
 
     @Test

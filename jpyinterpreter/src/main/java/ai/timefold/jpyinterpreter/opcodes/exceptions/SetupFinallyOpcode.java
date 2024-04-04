@@ -36,14 +36,13 @@ public class SetupFinallyOpcode extends AbstractControlFlowOpcode {
                         .pushTemp(BuiltinTypes.NONE_TYPE)
                         .pushTemp(PythonTraceback.TRACEBACK_TYPE)
                         .pushTemp(PythonBaseException.BASE_EXCEPTION_TYPE)
-                        .pushTemp(BuiltinTypes.TYPE_TYPE));
+                        .pushTemp(PythonBaseException.BASE_EXCEPTION_TYPE));
     }
 
     @Override
     public void implement(FunctionMetadata functionMetadata, StackMetadata stackMetadata) {
-        ExceptionImplementor.createTryFinallyBlock(functionMetadata.methodVisitor, functionMetadata.className,
+        ExceptionImplementor.createTryFinallyBlock(functionMetadata, stackMetadata,
                 jumpTarget,
-                stackMetadata,
                 functionMetadata.bytecodeCounterToLabelMap,
                 (bytecodeIndex, runnable) -> {
                     functionMetadata.bytecodeCounterToCodeArgumenterList

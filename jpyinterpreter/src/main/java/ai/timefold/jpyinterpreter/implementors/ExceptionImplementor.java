@@ -141,11 +141,13 @@ public class ExceptionImplementor {
      * are handled via the {@link ControlOpDescriptor#JUMP_IF_NOT_EXC_MATCH} instruction.
      * {@code instruction.arg} is the difference in bytecode offset to the first catch/finally block.
      */
-    public static void createTryFinallyBlock(MethodVisitor methodVisitor, String className,
-            int handlerLocation,
+    public static void createTryFinallyBlock(FunctionMetadata functionMetadata,
             StackMetadata stackMetadata,
+            int handlerLocation,
             Map<Integer, Label> bytecodeCounterToLabelMap,
             BiConsumer<Integer, Runnable> bytecodeCounterCodeArgumentConsumer) {
+        var methodVisitor = functionMetadata.methodVisitor;
+        var className = functionMetadata.className;
         // Store the stack in local variables so the except block has access to them
         int[] stackLocals = StackManipulationImplementor.storeStack(methodVisitor, stackMetadata);
 
@@ -159,7 +161,10 @@ public class ExceptionImplementor {
         methodVisitor.visitLabel(tryStart);
 
         // At finallyStart, stack is expected to be:
-        // [(stack-before-try), instruction, level, label, tb, exception, exception_class] ; where:
+        // in Python 3.10 and below
+        // [(stack-before-try), instruction, level, label, tb, value, exception]
+        // or in Python 3.11 and above
+        // [(stack-before-try), instruction, level, label, tb, value, exception] ; where:
         // (stack-before-try) = the stack state before the try statement
         // (see https://github.com/python/cpython/blob/b6558d768f19584ad724be23030603280f9e6361/Python/compile.c#L3241-L3268 )
         // instruction =  instruction that created the block
@@ -168,7 +173,11 @@ public class ExceptionImplementor {
         // (see https://stackoverflow.com/a/66720684)
         // tb = stack trace
         // exception = exception instance
-        // exception_class = the exception class
+        // value = the exception instance again?
+        // Results from Python 3.10 seems to indicate both exception and value are exception
+        // instances, since Python 3.10 use RERAISE on exception (TOS)
+        // and stores value into the exception variable (TOS1)
+        // Python 3.11 and above use a different code path
         bytecodeCounterCodeArgumentConsumer.accept(handlerLocation, () -> {
             // Stack is exception
             // Duplicate exception to the current exception variable slot so we can reraise it if needed
@@ -188,13 +197,12 @@ public class ExceptionImplementor {
                     "valueOf", Type.getMethodDescriptor(Type.getType(PythonInteger.class), Type.INT_TYPE),
                     false);
 
-            // Stack is (stack-before-try), instruction, stack-size, exception
+            // Stack is (stack-before-try), instruction, stack-size
 
             // Label
             PythonConstantsImplementor.loadNone(methodVisitor); // We don't use it
 
             // Stack is (stack-before-try), instruction, stack-size, label
-
             methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
             methodVisitor.visitTypeInsn(Opcodes.CHECKCAST, className); // needed cast; type confusion on this?
             methodVisitor.visitFieldInsn(Opcodes.GETFIELD, className,
@@ -212,13 +220,9 @@ public class ExceptionImplementor {
 
             // Stack is (stack-before-try), instruction, stack-size, label, traceback, exception
 
-            // Get exception class
+            // Get exception value
             methodVisitor.visitInsn(Opcodes.DUP);
-            methodVisitor.visitMethodInsn(Opcodes.INVOKEINTERFACE, Type.getInternalName(PythonLikeObject.class),
-                    "$getType", Type.getMethodDescriptor(Type.getType(PythonLikeType.class)),
-                    true);
-
-            // Stack is (stack-before-try), instruction, stack-size, label, traceback, exception, exception_class
+            // Stack is (stack-before-try), instruction, stack-size, label, traceback, value, exception
         });
     }
 
@@ -285,8 +289,7 @@ public class ExceptionImplementor {
                 .push(ValueSourceInfo.of(new OpcodeWithoutSource(), PythonLikeFunction.getFunctionType(),
                         stackMetadata.getTOSValueSource()));
 
-        createTryFinallyBlock(methodVisitor, functionMetadata.className, jumpTarget,
-                currentStackMetadata,
+        createTryFinallyBlock(functionMetadata, currentStackMetadata, jumpTarget,
                 functionMetadata.bytecodeCounterToLabelMap,
                 (bytecodeIndex, runnable) -> {
                     functionMetadata.bytecodeCounterToCodeArgumenterList
@@ -351,16 +354,16 @@ public class ExceptionImplementor {
         LocalVariableHelper localVariableHelper = stackMetadata.localVariableHelper;
 
         // First, store the top 7 items in the stack to be restored later
-        int exceptionType = localVariableHelper.newLocal();
         int exception = localVariableHelper.newLocal();
+        int exceptionArgs = localVariableHelper.newLocal();
         int traceback = localVariableHelper.newLocal();
         int label = localVariableHelper.newLocal();
         int stackSize = localVariableHelper.newLocal();
         int instruction = localVariableHelper.newLocal();
         int exitFunction = localVariableHelper.newLocal();
 
-        localVariableHelper.writeTemp(methodVisitor, Type.getType(PythonLikeObject.class), exceptionType);
         localVariableHelper.writeTemp(methodVisitor, Type.getType(PythonLikeObject.class), exception);
+        localVariableHelper.writeTemp(methodVisitor, Type.getType(PythonLikeObject.class), exceptionArgs);
         localVariableHelper.writeTemp(methodVisitor, Type.getType(PythonLikeObject.class), traceback);
         localVariableHelper.writeTemp(methodVisitor, Type.getType(PythonLikeObject.class), label);
         localVariableHelper.writeTemp(methodVisitor, Type.getType(PythonLikeObject.class), stackSize);
@@ -381,7 +384,9 @@ public class ExceptionImplementor {
                 false);
 
         methodVisitor.visitInsn(Opcodes.DUP);
-        localVariableHelper.readTemp(methodVisitor, Type.getType(PythonLikeObject.class), exceptionType);
+        localVariableHelper.readTemp(methodVisitor, Type.getType(PythonLikeObject.class), exception);
+        methodVisitor.visitMethodInsn(Opcodes.INVOKEINTERFACE, Type.getInternalName(PythonLikeObject.class),
+                "$getType", Type.getMethodDescriptor(Type.getType(PythonLikeType.class)), true);
         methodVisitor.visitMethodInsn(Opcodes.INVOKEINTERFACE, Type.getInternalName(Collection.class),
                 "add", Type.getMethodDescriptor(Type.BOOLEAN_TYPE, Type.getType(Object.class)),
                 true);
@@ -431,10 +436,10 @@ public class ExceptionImplementor {
         localVariableHelper.readTemp(methodVisitor, Type.getType(PythonLikeObject.class), traceback);
         methodVisitor.visitInsn(Opcodes.SWAP);
 
-        localVariableHelper.readTemp(methodVisitor, Type.getType(PythonLikeObject.class), exception);
+        localVariableHelper.readTemp(methodVisitor, Type.getType(PythonLikeObject.class), exceptionArgs);
         methodVisitor.visitInsn(Opcodes.SWAP);
 
-        localVariableHelper.readTemp(methodVisitor, Type.getType(PythonLikeObject.class), exceptionType);
+        localVariableHelper.readTemp(methodVisitor, Type.getType(PythonLikeObject.class), exception);
         methodVisitor.visitInsn(Opcodes.SWAP);
 
         // Free the 7 temps

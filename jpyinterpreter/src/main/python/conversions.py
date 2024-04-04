@@ -39,7 +39,9 @@ def extract_frames_from_java_error(java_error: 'Throwable'):
 def get_traceback_exception(java_error: 'Throwable', python_exception_type: type, clone_map: 'PythonCloneMap') -> TracebackException:
     out = object.__new__(TracebackException)
     if java_error.getCause() is not None:
-        out.__cause__ = get_traceback_exception(java_error, unwrap_python_like_object(java_error.getCause(), clone_map),
+        out.__cause__ = get_traceback_exception(java_error.getCause(),
+                                                unwrap_python_like_object(java_error.getCause(),
+                                                                          clone_map).__class__.__bases__[0],
                                                 clone_map)
     else:
         out.__cause__ = None
@@ -49,12 +51,6 @@ def get_traceback_exception(java_error: 'Throwable', python_exception_type: type
     out.__notes__ = None
     out.exceptions = None
     out.exc_type = python_exception_type
-    out.lineno = 0
-    out.end_lineno = 0
-    out.offset = 0
-    out.end_offset = 0
-    out.text = ''
-    out.msg = java_error.getMessage()
     out.stack = StackSummary.from_list(extract_frames_from_java_error(java_error))
     out._str = java_error.getMessage()
     return out
@@ -651,6 +647,7 @@ def unwrap_python_like_object(python_like_object, clone_map=None, default=NotImp
             traceback_exception = get_traceback_exception(python_like_object, exception_python_type, clone_map)
 
             class WrappedException(exception_python_type):
+                wrapped_type: type
                 def __init__(self, *args):
                     super().__init__(*args)
 

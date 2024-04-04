@@ -3,6 +3,7 @@ package ai.timefold.jpyinterpreter.implementors;
 import java.util.Map;
 
 import ai.timefold.jpyinterpreter.FunctionMetadata;
+import ai.timefold.jpyinterpreter.PythonLikeObject;
 import ai.timefold.jpyinterpreter.PythonUnaryOperator;
 import ai.timefold.jpyinterpreter.StackMetadata;
 import ai.timefold.jpyinterpreter.types.BuiltinTypes;
@@ -83,7 +84,8 @@ public class JumpImplementor {
     }
 
     /**
-     * TOS and TOS1 are an exception types. If TOS1 is not an instance of TOS, set the bytecode counter to the
+     * TOS is an exception type and TOS1 is an exception.
+     * If TOS1 is not an instance of TOS, set the bytecode counter to the
      * {@code instruction} argument.
      * Pop TOS and TOS1 off the stack.
      */
@@ -95,6 +97,8 @@ public class JumpImplementor {
 
         methodVisitor.visitTypeInsn(Opcodes.CHECKCAST, Type.getInternalName(PythonLikeType.class));
         StackManipulationImplementor.swap(methodVisitor);
+        methodVisitor.visitMethodInsn(Opcodes.INVOKEINTERFACE, Type.getInternalName(PythonLikeObject.class),
+                "$getType", Type.getMethodDescriptor(Type.getType(PythonLikeType.class)), true);
         methodVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, Type.getInternalName(PythonLikeType.class),
                 "isSubclassOf", Type.getMethodDescriptor(Type.BOOLEAN_TYPE, Type.getType(PythonLikeType.class)),
                 false);
