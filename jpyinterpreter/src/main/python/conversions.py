@@ -1,8 +1,7 @@
 import builtins
 import inspect
-import sys
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Optional, Generator
+from typing import TYPE_CHECKING
 from traceback import TracebackException, StackSummary, FrameSummary
 
 from jpype import JLong, JDouble, JBoolean, JProxy
@@ -11,19 +10,6 @@ from jpype import JLong, JDouble, JBoolean, JProxy
 if TYPE_CHECKING:
     from java.util import IdentityHashMap
     from java.lang import Throwable
-
-
-@dataclass
-class FakeFrame:
-    f_code: 'FakeCode'
-    f_globals: dict
-    f_locals: dict
-
-
-@dataclass
-class FakeCode:
-    co_filename: str
-    co_name: str
 
 
 def extract_frames_from_java_error(java_error: 'Throwable'):
@@ -47,7 +33,7 @@ def extract_frames_from_java_error(java_error: 'Throwable'):
         else:
             function_name = stack_trace_element.getMethodName() or '<unknown>'
         line_number = stack_trace_element.getLineNumber() or 0
-        yield FakeFrame(FakeCode(file_name, function_name), {}, {}), line_number
+        yield FrameSummary(file_name, line_number, function_name)
 
 
 def get_traceback_exception(java_error: 'Throwable', python_exception_type: type, clone_map: 'PythonCloneMap') -> TracebackException:
@@ -69,7 +55,7 @@ def get_traceback_exception(java_error: 'Throwable', python_exception_type: type
     out.end_offset = 0
     out.text = ''
     out.msg = java_error.getMessage()
-    out.stack = StackSummary.extract(extract_frames_from_java_error(java_error))
+    out.stack = StackSummary.from_list(extract_frames_from_java_error(java_error))
     out._str = java_error.getMessage()
     return out
 
