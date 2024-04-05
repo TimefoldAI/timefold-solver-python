@@ -406,7 +406,7 @@ def test_locals():
     with pytest.raises(ValueError) as excinfo:
         java_function()
 
-    assert 'builtin locals is not supported when executed in Java bytecode' in str(excinfo.value)
+    assert 'builtin locals() is not supported when executed in Java bytecode' in str(excinfo.value)
 
 
 def test_map():

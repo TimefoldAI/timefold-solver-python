@@ -1085,7 +1085,7 @@ public class GlobalBuiltins {
 
     public static PythonLikeDict locals(List<PythonLikeObject> positionalArgs,
             Map<PythonString, PythonLikeObject> keywordArgs, PythonLikeObject instance) {
-        throw new ValueError("builtin locals is not supported when executed in Java bytecode");
+        throw new ValueError("builtin locals() is not supported when executed in Java bytecode");
     }
 
     public static PythonIterator map(List<PythonLikeObject> positionalArgs,
