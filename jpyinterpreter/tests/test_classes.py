@@ -902,7 +902,7 @@ def test_class_annotations():
     assert annotations[0].forRemoval()
     assert annotations[0].since() == '0.0.0'
 
-    annotations = translated_class.getField('my_field').getAnnotations()
+    annotations = translated_class.getMethod('getMy_field').getAnnotations()
     assert len(annotations) == 2
     assert isinstance(annotations[0], Deprecated)
     assert annotations[0].forRemoval()
