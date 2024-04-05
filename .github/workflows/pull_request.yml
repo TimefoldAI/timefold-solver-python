@@ -29,28 +29,23 @@ jobs:
 
     steps:
       # Need to check for stale repo, since Github is not aware of the build chain and therefore doesn't automate it.
-      - name: Checkout timefold-solver to access the scripts
+      - name: Checkout timefold-solver (PR) # Checkout the PR branch first, if it exists
+        id: checkout-solver
+        uses: actions/checkout@v4
+        continue-on-error: true
+        with:
+          repository: ${{ github.actor }}/timefold-solver
+          ref: ${{ github.head_ref }}
+          path: ./timefold-solver
+          fetch-depth: 0 # Otherwise merge will fail on account of not having history.
+      - name: Checkout timefold-solver (main) # Checkout the main branch if the PR branch does not exist
+        if: steps.checkout-solver.outcome != 'success'
         uses: actions/checkout@v4
         with:
-          path: './timefold-solver'
-          repository: 'TimefoldAI/timefold-solver'
-      - name: Find the proper timefold-solver repo and branch
-        env:
-          CHAIN_USER: ${{ github.event.pull_request.head.repo.owner.login }}
-          CHAIN_BRANCH: ${{ github.head_ref }}
-          CHAIN_REPO: "timefold-solver"
-          CHAIN_DEFAULT_BRANCH: ${{ endsWith(github.head_ref, '.x') && github.head_ref || 'main' }}
-        shell: bash
-        run: |
-          ./timefold-solver/.github/scripts/check_chain_repo.sh
-          rm -rf ./timefold-solver
-      - name: Checkout the proper timefold-solver branch
-        uses: actions/checkout@v4
-        with:
-          repository: ${{ env.TARGET_CHAIN_USER }}/${{ env.TARGET_CHAIN_REPO }}
-          ref: ${{ env.TARGET_CHAIN_BRANCH }}
-          path: './timefold-solver'
-          fetch-depth: 0 # Otherwise merge in the next step will fail on account of not having history.
+          repository: TimefoldAI/timefold-solver
+          ref: main
+          path: ./timefold-solver
+          fetch-depth: 0 # Otherwise merge will fail on account of not having history.
       - name: Prevent stale fork of timefold-solver
         env:
           BLESSED_REPO: "timefold-solver"
