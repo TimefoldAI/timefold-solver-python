@@ -18,6 +18,28 @@ function_interface_pair_to_instance = dict()
 function_interface_pair_to_class = dict()
 
 
+def get_file_for_module(module_name):
+    import pathlib
+    import sys
+
+    if module_name is None:
+        return '<unknown>'
+
+    module = sys.modules[module_name]
+    if hasattr(module, '__file__'):
+        file_path = sys.modules[module_name].__file__
+        if file_path is not None:
+            return file_path
+
+    # Do not know file for module; predict file from module name
+    if module_name == '__main__':
+        return '<stdin>'
+
+    path_parts = module_name.split('.')
+    path_parts[-1] = f'{path_parts[-1]}.py'
+    return str(pathlib.Path(*path_parts))
+
+
 def is_python_version_supported(python_version):
     python_version_major_minor = python_version[0:2]
     return MINIMUM_SUPPORTED_PYTHON_VERSION <= python_version_major_minor <= MAXIMUM_SUPPORTED_PYTHON_VERSION
@@ -213,6 +235,7 @@ def get_function_bytecode_object(python_function):
         instruction_list.add(java_instruction)
 
     python_compiled_function.module = python_function.__module__
+    python_compiled_function.moduleFilePath = get_file_for_module(python_function.__module__)
     python_compiled_function.qualifiedName = python_function.__qualname__
     python_compiled_function.instructionList = instruction_list
     python_compiled_function.co_exceptiontable = get_python_exception_table(python_function.__code__)
@@ -386,10 +409,19 @@ def wrap_untyped_java_function(java_function):
             java_kwargs.put(convert_to_java_python_like_object(key, instance_map),
                             convert_to_java_python_like_object(value, instance_map))
 
+        out = None
+        error = None
+
         try:
-            return unwrap_python_like_object(getattr(java_function, '$call')(java_args, java_kwargs, None))
+            out = unwrap_python_like_object(getattr(java_function, '$call')(java_args, java_kwargs, None))
         except Exception as e:
-            raise unwrap_python_like_object(e)
+            error = unwrap_python_like_object(e)
+
+        if error is not None:
+            raise error
+
+        return out
+
 
     return wrapped_function
 
@@ -402,10 +434,18 @@ def wrap_typed_java_function(java_function):
         instance_map = HashMap()
         java_args = [convert_to_java_python_like_object(arg, instance_map) for arg in args]
 
+        out = None
+        error = None
+
         try:
-            return unwrap_python_like_object(java_function.invoke(*java_args))
+            out = unwrap_python_like_object(java_function.invoke(*java_args))
         except Exception as e:
-            raise unwrap_python_like_object(e)
+            error = unwrap_python_like_object(e)
+
+        if error is not None:
+            raise error
+
+        return out
 
     return wrapped_function
 
@@ -595,6 +635,7 @@ def translate_python_class_to_java_class(python_class):
     python_compiled_class.binaryType = CPythonType.getType(JProxy(OpaquePythonReference, inst=python_class,
                                                                   convert=True))
     python_compiled_class.module = python_class.__module__
+    python_compiled_class.moduleFilePath = get_file_for_module(python_class.__module__)
     python_compiled_class.qualifiedName = python_class.__qualname__
     python_compiled_class.className = python_class.__name__
     python_compiled_class.typeAnnotations = copy_type_annotations(python_class,

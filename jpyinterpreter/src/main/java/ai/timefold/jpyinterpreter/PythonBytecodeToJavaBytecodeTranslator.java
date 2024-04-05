@@ -245,6 +245,8 @@ public class PythonBytecodeToJavaBytecodeTranslator {
         final boolean isPythonLikeFunction =
                 methodDescriptor.getDeclaringClassInternalName().equals(Type.getInternalName(PythonLikeFunction.class));
 
+        classWriter.visitSource(pythonCompiledFunction.moduleFilePath, null);
+
         createFields(classWriter);
         createConstructor(classWriter, internalClassName);
 
@@ -289,6 +291,8 @@ public class PythonBytecodeToJavaBytecodeTranslator {
         final boolean isPythonLikeFunction =
                 methodDescriptor.getDeclaringClassInternalName().equals(Type.getInternalName(PythonLikeFunction.class));
 
+        classWriter.visitSource(pythonCompiledFunction.moduleFilePath, null);
+
         createFields(classWriter);
         createConstructor(classWriter, internalClassName);
 
@@ -308,6 +312,7 @@ public class PythonBytecodeToJavaBytecodeTranslator {
                             null);
 
             methodVisitor.visitCode();
+            visitGeneratedLineNumber(methodVisitor);
             methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
             for (int i = 0; i < methodWithoutGenerics.getParameterCount(); i++) {
                 Type parameterType = Type.getType(methodWithoutGenerics.getParameterTypes()[i]);
@@ -349,6 +354,8 @@ public class PythonBytecodeToJavaBytecodeTranslator {
         classWriter.visit(Opcodes.V11, Modifier.PUBLIC, internalClassName, null, Type.getInternalName(Object.class),
                 new String[] { Type.getInternalName(PythonLikeFunction.class) });
 
+        classWriter.visitSource(pythonCompiledFunction.moduleFilePath, null);
+
         createFields(classWriter);
         classWriter.visitField(Modifier.PUBLIC | Modifier.STATIC, PYTHON_WRAPPER_CODE_STATIC_FIELD_NAME,
                 Type.getDescriptor(OpaquePythonReference.class),
@@ -368,6 +375,7 @@ public class PythonBytecodeToJavaBytecodeTranslator {
                 null);
 
         methodVisitor.visitCode();
+        visitGeneratedLineNumber(methodVisitor);
         methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
         methodVisitor.visitFieldInsn(Opcodes.GETFIELD, internalClassName, PYTHON_WRAPPER_FUNCTION_INSTANCE_FIELD_NAME,
                 Type.getDescriptor(PythonObjectWrapper.class));
@@ -417,6 +425,8 @@ public class PythonBytecodeToJavaBytecodeTranslator {
         classWriter.visit(Opcodes.V11, Modifier.PUBLIC, internalClassName, null, Type.getInternalName(Object.class),
                 new String[] { methodDescriptor.getDeclaringClassInternalName() });
 
+        classWriter.visitSource(pythonCompiledFunction.moduleFilePath, null);
+
         final boolean isPythonLikeFunction =
                 methodDescriptor.getDeclaringClassInternalName().equals(Type.getInternalName(PythonLikeFunction.class));
 
@@ -460,6 +470,7 @@ public class PythonBytecodeToJavaBytecodeTranslator {
                             null);
 
             methodVisitor.visitCode();
+            visitGeneratedLineNumber(methodVisitor);
             methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
             for (int i = 0; i < methodWithoutGenerics.getParameterCount(); i++) {
                 Type parameterType = Type.getType(methodWithoutGenerics.getParameterTypes()[i]);
@@ -494,6 +505,7 @@ public class PythonBytecodeToJavaBytecodeTranslator {
                 null, null);
         methodVisitor.visitCode();
 
+        visitGeneratedLineNumber(methodVisitor);
         methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
         methodVisitor.visitInsn(Opcodes.DUP);
         methodVisitor.visitMethodInsn(Opcodes.INVOKESPECIAL, Type.getInternalName(Object.class), "<init>",
@@ -574,6 +586,8 @@ public class PythonBytecodeToJavaBytecodeTranslator {
                         Type.getType(PythonInterpreter.class)),
                 null, null);
         methodVisitor.visitCode();
+
+        visitGeneratedLineNumber(methodVisitor);
         methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
         methodVisitor.visitInsn(Opcodes.DUP);
         methodVisitor.visitMethodInsn(Opcodes.INVOKESPECIAL, Type.getInternalName(Object.class), "<init>",
@@ -647,6 +661,7 @@ public class PythonBytecodeToJavaBytecodeTranslator {
                 null, null);
         methodVisitor.visitCode();
 
+        visitGeneratedLineNumber(methodVisitor);
         methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
         methodVisitor.visitInsn(Opcodes.DUP);
         methodVisitor.visitMethodInsn(Opcodes.INVOKESPECIAL, Type.getInternalName(Object.class), "<init>",
@@ -759,6 +774,8 @@ public class PythonBytecodeToJavaBytecodeTranslator {
                         Type.getType(PythonInterpreter.class)),
                 null, null);
         methodVisitor.visitCode();
+
+        visitGeneratedLineNumber(methodVisitor);
         methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
         methodVisitor.visitInsn(Opcodes.DUP);
         methodVisitor.visitMethodInsn(Opcodes.INVOKESPECIAL, Type.getInternalName(Object.class), "<init>",
@@ -1007,6 +1024,7 @@ public class PythonBytecodeToJavaBytecodeTranslator {
         }
         methodVisitor.visitCode();
 
+        visitGeneratedLineNumber(methodVisitor);
         Label start = new Label();
         Label end = new Label();
 
@@ -1170,6 +1188,12 @@ public class PythonBytecodeToJavaBytecodeTranslator {
             if (instruction.isJumpTarget() || bytecodeCounterToLabelMap.containsKey(instruction.offset())) {
                 Label label = bytecodeCounterToLabelMap.computeIfAbsent(instruction.offset(), offset -> new Label());
                 methodVisitor.visitLabel(label);
+            }
+
+            if (instruction.startsLine().isPresent()) {
+                Label label = new Label();
+                methodVisitor.visitLabel(label);
+                methodVisitor.visitLineNumber(instruction.startsLine().getAsInt(), label);
             }
 
             runAfterLabelAndBeforeArgumentors.accept(instruction);
@@ -1360,5 +1384,11 @@ public class PythonBytecodeToJavaBytecodeTranslator {
                 .collect(Collectors.joining("\n")));
         out.append("\nco_exceptiontable = ").append(pythonCompiledFunction.co_exceptiontable).append("\n");
         return out.toString();
+    }
+
+    public static void visitGeneratedLineNumber(MethodVisitor methodVisitor) {
+        Label label = new Label();
+        methodVisitor.visitLabel(label);
+        methodVisitor.visitLineNumber(0, label);
     }
 }

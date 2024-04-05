@@ -2,7 +2,36 @@ import jpyinterpreter
 import pytest
 import sys
 from typing import SupportsAbs, Iterable, Callable, Sequence, Union, Iterator, Sized, Reversible, SupportsIndex
+
+from jpype import JImplementationFor
+
 from .conftest import verifier_for
+
+
+# Workaround for https://github.com/jpype-project/jpype/issues/1178
+@JImplementationFor('java.lang.Throwable')
+class _JavaException:
+    @staticmethod
+    def _get_exception_with_cause(exception):
+        if exception is None:
+            return None
+        try:
+            raise Exception(f'{exception.getClass().getSimpleName()}: {exception.getMessage()}')
+        except Exception as e:
+            cause = _JavaException._get_exception_with_cause(exception.getCause())
+            if cause is not None:
+                try:
+                    raise e from cause
+                except Exception as return_value:
+                    return return_value
+            else:
+                return e
+    @property
+    def __cause__(self):
+        if self.getCause() is not None:
+            return _JavaException._get_exception_with_cause(self.getCause())
+        else:
+            return None
 
 
 def test_abs():
@@ -377,7 +406,7 @@ def test_locals():
     with pytest.raises(ValueError) as excinfo:
         java_function()
 
-    assert 'builtin locals is not supported when executed in Java bytecode' == str(excinfo.value)
+    assert 'builtin locals() is not supported when executed in Java bytecode' in str(excinfo.value)
 
 
 def test_map():
@@ -748,4 +777,5 @@ def test_builtin_exceptions():
 
             verifier = verifier_for(my_function)
             verifier.verify_property(predicate=
-                                     lambda error: type(error) == exception_class and error.args == ('my argument',))
+                                     lambda error: isinstance(error, exception_class) and len(error.args) == 1 and
+                                                   'my argument' in error.args[0])

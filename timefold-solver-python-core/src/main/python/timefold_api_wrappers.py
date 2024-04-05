@@ -306,9 +306,7 @@ class Solver(Generic[Solution_]):
         try:
             java_solution = self._delegate.solve(java_problem)
         except PythonBaseException as e:
-            python_error = unwrap_python_like_object(e)
-            raise RuntimeError(f'Solving failed due to an error: {e.getMessage()}.\n'
-                               f'Java stack trace: {e.stacktrace()}') from python_error
+            raise unwrap_python_like_object(e)
         except JavaException as e:
             raise RuntimeError(f'Solving failed due to an error: {e.getMessage()}.\n'
                                f'Java stack trace: {e.stacktrace()}') from e

@@ -2,38 +2,58 @@ import builtins
 import inspect
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
+from traceback import TracebackException, StackSummary, FrameSummary
 
-from jpype import JLong, JDouble, JBoolean, JProxy, JImplementationFor
+from jpype import JLong, JDouble, JBoolean, JProxy
 
 
 if TYPE_CHECKING:
     from java.util import IdentityHashMap
+    from java.lang import Throwable
 
 
-# Workaround for https://github.com/jpype-project/jpype/issues/1178
-@JImplementationFor('java.lang.Throwable')
-class _JavaException:
-    @staticmethod
-    def _get_exception_with_cause(exception):
-        if exception is None:
-            return None
-        try:
-            raise Exception(f'{exception.getClass().getSimpleName()}: {exception.getMessage()}')
-        except Exception as e:
-            cause = _JavaException._get_exception_with_cause(exception.getCause())
-            if cause is not None:
-                try:
-                    raise e from cause
-                except Exception as return_value:
-                    return return_value
-            else:
-                return e
-    @property
-    def __cause__(self):
-        if self.getCause() is not None:
-            return _JavaException._get_exception_with_cause(self.getCause())
+def extract_frames_from_java_error(java_error: 'Throwable'):
+    stack_trace = java_error.getStackTrace()
+    start_index = 0
+    stop_index = len(stack_trace)
+    while start_index < stop_index and (stack_trace[start_index].getFileName() is None or
+                                        not stack_trace[start_index].getFileName().endswith('.py')):
+        start_index += 1
+
+    # If there is no python part, keep the entire exception
+    if start_index == stop_index:
+        start_index = 0
+
+    for i in range(start_index, stop_index):
+        stack_trace_element = stack_trace[stop_index - (i - start_index) - 1]
+        file_name = stack_trace_element.getFileName() or '<unknown>'
+        if file_name.endswith('.py'):
+            class_name = stack_trace_element.getClassName() or '<unknown>'
+            function_name = class_name.rsplit('.', 1)[-1].split('$', 1)[0]
         else:
-            return None
+            function_name = stack_trace_element.getMethodName() or '<unknown>'
+        line_number = stack_trace_element.getLineNumber() or 0
+        yield FrameSummary(file_name, line_number, function_name)
+
+
+def get_traceback_exception(java_error: 'Throwable', python_exception_type: type, clone_map: 'PythonCloneMap') -> TracebackException:
+    out = object.__new__(TracebackException)
+    if java_error.getCause() is not None:
+        out.__cause__ = get_traceback_exception(java_error.getCause(),
+                                                unwrap_python_like_object(java_error.getCause(),
+                                                                          clone_map).__class__.__bases__[0],
+                                                clone_map)
+    else:
+        out.__cause__ = None
+
+    out.__suppress_context__ = False
+    out.__context__ = None
+    out.__notes__ = None
+    out.exceptions = None
+    out.exc_type = python_exception_type
+    out.stack = StackSummary.from_list(extract_frames_from_java_error(java_error))
+    out._str = java_error.getMessage()
+    return out
 
 
 def get_translated_java_system_error_message(error):
@@ -624,7 +644,17 @@ def unwrap_python_like_object(python_like_object, clone_map=None, default=NotImp
             exception_python_type = getattr(builtins, exception_name)
             args = unwrap_python_like_object(getattr(python_like_object, '$getArgs')(),
                                              clone_map, default)
-            return clone_map.add_clone(python_like_object, exception_python_type(*args))
+            traceback_exception = get_traceback_exception(python_like_object, exception_python_type, clone_map)
+
+            class WrappedException(exception_python_type):
+                wrapped_type: type
+                def __init__(self, *args):
+                    super().__init__(*args)
+
+                def __str__(self):
+                    return ''.join(traceback_exception.format())
+
+            return clone_map.add_clone(python_like_object, WrappedException(*args))
         except AttributeError:
             return clone_map.add_clone(python_like_object, TranslatedJavaSystemError(python_like_object))
     elif isinstance(python_like_object, PythonLikeType):
