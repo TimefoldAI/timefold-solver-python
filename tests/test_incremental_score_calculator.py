@@ -43,12 +43,12 @@ class Solution:
     queen_list: Annotated[List[Queen], timefold.solver.PlanningEntityCollectionProperty]
     column_list: List[int]
     row_list: Annotated[List[int], timefold.solver.ValueRangeProvider]
-    score: Annotated[timefold.solver.score.HardSoftScore, timefold.solver.PlanningScore] = field(default=None)
+    score: Annotated[timefold.solver.score.SimpleScore, timefold.solver.PlanningScore] = field(default=None)
+
 
 def test_constraint_match_disabled_incremental_score_calculator():
     @timefold.solver.incremental_score_calculator
     class IncrementalScoreCalculator:
-        uninit_score: int  # Workaround, since None is considered initialized
         score: int
         row_index_map: dict
         ascending_diagonal_index_map: dict
@@ -67,7 +67,6 @@ def test_constraint_match_disabled_incremental_score_calculator():
                     self.ascending_diagonal_index_map[n - 1 + i] = list()
                     self.descending_diagonal_index_map[-i] = list()
             self.score = 0
-            self.uninit_score = 0
             for queen in working_solution.queen_list:
                 self.insert(queen)
 
@@ -101,8 +100,6 @@ def test_constraint_match_disabled_incremental_score_calculator():
                 descending_diagonal_index_list = self.descending_diagonal_index_map[queen.getDescendingDiagonalIndex()]
                 self.score -= len(descending_diagonal_index_list)
                 descending_diagonal_index_list.append(queen)
-            else:
-                self.uninit_score -= 1
 
         def retract(self, queen: Queen):
             if queen.row is not None:
@@ -116,11 +113,9 @@ def test_constraint_match_disabled_incremental_score_calculator():
                 descending_diagonal_index_list = self.descending_diagonal_index_map[queen.getDescendingDiagonalIndex()]
                 descending_diagonal_index_list.remove(queen)
                 self.score += len(descending_diagonal_index_list)
-            else:
-                self.uninit_score += 1
 
         def calculateScore(self) -> timefold.solver.score.HardSoftScore:
-            return timefold.solver.score.HardSoftScore.of(self.uninit_score, self.score)
+            return timefold.solver.score.SimpleScore.of(self.score)
 
     solver_config = timefold.solver.config.SolverConfig(
         solution_class=Solution,
@@ -129,7 +124,7 @@ def test_constraint_match_disabled_incremental_score_calculator():
             incremental_score_calculator_class=IncrementalScoreCalculator
         ),
         termination_config=timefold.solver.config.TerminationConfig(
-            best_score_limit='0hard/0soft'
+            best_score_limit='0'
         )
     )
     problem: Solution = Solution(4,
@@ -138,8 +133,7 @@ def test_constraint_match_disabled_incremental_score_calculator():
                                  [0, 1, 2, 3])
     solver = timefold.solver.SolverFactory.create(solver_config).build_solver()
     solution = solver.solve(problem)
-    assert solution.score.hard_score() == 0
-    assert solution.score.soft_score() == 0
+    assert solution.score.score() == 0
     for i in range(4):
         for j in range(i + 1, 4):
             left_queen = solution.queen_list[i]
@@ -157,7 +151,6 @@ def test_constraint_match_enabled_incremental_score_calculator():
     @timefold.solver.incremental_score_calculator
     class IncrementalScoreCalculator:
         score: int
-        uninit_score: int
         row_index_map: dict
         ascending_diagonal_index_map: dict
         descending_diagonal_index_map: dict
@@ -175,7 +168,6 @@ def test_constraint_match_enabled_incremental_score_calculator():
                     self.ascending_diagonal_index_map[n - 1 + i] = list()
                     self.descending_diagonal_index_map[-i] = list()
             self.score = 0
-            self.uninit_score = 0
             for queen in working_solution.queen_list:
                 self.insert(queen)
 
@@ -210,8 +202,6 @@ def test_constraint_match_enabled_incremental_score_calculator():
                 descending_diagonal_index_list = self.descending_diagonal_index_map[queen.getDescendingDiagonalIndex()]
                 self.score -= len(descending_diagonal_index_list)
                 descending_diagonal_index_list.append(queen)
-            else:
-                self.uninit_score -= 1
 
         def retract(self, queen: Queen):
             row = queen.row
@@ -226,11 +216,9 @@ def test_constraint_match_enabled_incremental_score_calculator():
                 descending_diagonal_index_list = self.descending_diagonal_index_map[queen.getDescendingDiagonalIndex()]
                 descending_diagonal_index_list.remove(queen)
                 self.score += len(descending_diagonal_index_list)
-            else:
-                self.uninit_score += 1
 
         def calculateScore(self) -> timefold.solver.score.HardSoftScore:
-            return timefold.solver.score.HardSoftScore.of(self.uninit_score, self.score)
+            return timefold.solver.score.SimpleScore.of(self.score)
 
         def getConstraintMatchTotals(self):
             row_conflict_constraint_match_total = timefold.solver.constraint.DefaultConstraintMatchTotal(
@@ -276,7 +264,7 @@ def test_constraint_match_enabled_incremental_score_calculator():
             incremental_score_calculator_class=IncrementalScoreCalculator
         ),
         termination_config=timefold.solver.config.TerminationConfig(
-            best_score_limit='0hard/0soft'
+            best_score_limit='0'
         )
     )
     problem: Solution = Solution(4,
@@ -286,8 +274,7 @@ def test_constraint_match_enabled_incremental_score_calculator():
     solver_factory = timefold.solver.SolverFactory.create(solver_config)
     solver = solver_factory.build_solver()
     solution = solver.solve(problem)
-    assert solution.score.hard_score() == 0
-    assert solution.score.soft_score() == 0
+    assert solution.score.score() == 0
     for i in range(4):
         for j in range(i + 1, 4):
             left_queen = solution.queen_list[i]
@@ -302,23 +289,23 @@ def test_constraint_match_enabled_incremental_score_calculator():
     row_conflict = constraint_match_total_map.get('NQueens/Row Conflict')
     ascending_diagonal_conflict = constraint_match_total_map.get('NQueens/Ascending Diagonal Conflict')
     descending_diagonal_conflict = constraint_match_total_map.get('NQueens/Descending Diagonal Conflict')
-    assert row_conflict.score().soft_score() == 0
-    assert ascending_diagonal_conflict.score().soft_score() == 0
-    assert descending_diagonal_conflict.score().soft_score() == 0
+    assert row_conflict.score().score() == 0
+    assert ascending_diagonal_conflict.score().score() == 0
+    assert descending_diagonal_conflict.score().score() == 0
 
     bad_solution = Solution(4,
                             [Queen('A', 0, 0), Queen('B', 1, 1), Queen('C', 2, 0), Queen('D', 3, 1)],
                             [0, 1, 2, 3],
                             [0, 1, 2, 3])
     score_explanation = score_manager.explain(bad_solution)
-    assert score_explanation.get_score().soft_score() == -5
+    assert score_explanation.get_score().score() == -5
     constraint_match_total_map = score_explanation.getConstraintMatchTotalMap()
     row_conflict = constraint_match_total_map.get('NQueens/Row Conflict')
     ascending_diagonal_conflict = constraint_match_total_map.get('NQueens/Ascending Diagonal Conflict')
     descending_diagonal_conflict = constraint_match_total_map.get('NQueens/Descending Diagonal Conflict')
-    assert row_conflict.score().soft_score() == -2  # (A, C), (B, D)
-    assert ascending_diagonal_conflict.score().soft_score() == -1  # (B, C)
-    assert descending_diagonal_conflict.score().soft_score() == -2  # (A, B), (C, D)
+    assert row_conflict.score().score() == -2  # (A, C), (B, D)
+    assert ascending_diagonal_conflict.score().score() == -1  # (B, C)
+    assert descending_diagonal_conflict.score().score() == -2  # (A, B), (C, D)
     indictment_map = score_explanation.getIndictmentMap()
     assert indictment_map.get(bad_solution.queen_list[0]).getConstraintMatchCount() == 2
     assert indictment_map.get(bad_solution.queen_list[1]).getConstraintMatchCount() == 3

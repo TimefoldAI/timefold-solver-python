@@ -23,6 +23,7 @@ import ai.timefold.jpyinterpreter.implementors.JavaComparableImplementor;
 import ai.timefold.jpyinterpreter.implementors.JavaEqualsImplementor;
 import ai.timefold.jpyinterpreter.implementors.JavaHashCodeImplementor;
 import ai.timefold.jpyinterpreter.implementors.JavaInterfaceImplementor;
+import ai.timefold.jpyinterpreter.implementors.PythonConstantsImplementor;
 import ai.timefold.jpyinterpreter.opcodes.AbstractOpcode;
 import ai.timefold.jpyinterpreter.opcodes.Opcode;
 import ai.timefold.jpyinterpreter.opcodes.SelfOpcodeWithoutSource;
@@ -205,6 +206,7 @@ public class PythonClassTranslator {
             attributeNameToTypeMap.put(attributeName, type);
             FieldVisitor fieldVisitor;
             String javaFieldTypeDescriptor;
+            String signature = null;
             boolean isJavaType;
             if (type.getJavaTypeInternalName().equals(Type.getInternalName(JavaObjectWrapper.class))) {
                 javaFieldTypeDescriptor = Type.getDescriptor(type.getJavaObjectWrapperType());
@@ -212,7 +214,6 @@ public class PythonClassTranslator {
                         null, null);
                 isJavaType = true;
             } else {
-                String signature = null;
                 if (typeHint.genericArgs() != null) {
                     var signatureWriter = new SignatureWriter();
                     visitSignature(typeHint, signatureWriter);
@@ -223,10 +224,12 @@ public class PythonClassTranslator {
                         signature, null);
                 isJavaType = false;
             }
-            for (var annotation : typeHint.annotationList()) {
-                annotation.addAnnotationTo(fieldVisitor);
-            }
             fieldVisitor.visitEnd();
+            createJavaGetterSetter(classWriter, preparedClassInfo,
+                    attributeName,
+                    Type.getType(javaFieldTypeDescriptor),
+                    signature,
+                    typeHint);
             FieldDescriptor fieldDescriptor =
                     new FieldDescriptor(attributeName, getJavaFieldName(attributeName), internalClassName,
                             javaFieldTypeDescriptor, type, true, isJavaType);
@@ -761,6 +764,85 @@ public class PythonClassTranslator {
         }
     }
 
+    private static void createJavaGetterSetter(ClassWriter classWriter,
+            PreparedClassInfo preparedClassInfo,
+            String attributeName, Type attributeType,
+            String signature,
+            TypeHint typeHint) {
+        createJavaGetter(classWriter, preparedClassInfo, attributeName, attributeType, signature, typeHint);
+        createJavaSetter(classWriter, preparedClassInfo, attributeName, attributeType, signature, typeHint);
+    }
+
+    private static void createJavaGetter(ClassWriter classWriter, PreparedClassInfo preparedClassInfo, String attributeName,
+            Type attributeType, String signature, TypeHint typeHint) {
+        var getterName = "get" + attributeName.substring(0, 1).toUpperCase() + attributeName.substring(1);
+        if (signature != null) {
+            signature = "()" + signature;
+        }
+        var getterVisitor = classWriter.visitMethod(Modifier.PUBLIC, getterName, Type.getMethodDescriptor(attributeType),
+                signature, null);
+        var maxStack = 1;
+
+        for (var annotation : typeHint.annotationList()) {
+            annotation.addAnnotationTo(getterVisitor);
+        }
+
+        getterVisitor.visitCode();
+        getterVisitor.visitVarInsn(Opcodes.ALOAD, 0);
+        getterVisitor.visitFieldInsn(Opcodes.GETFIELD, preparedClassInfo.classInternalName,
+                attributeName, attributeType.getDescriptor());
+        if (typeHint.type().isInstance(PythonNone.INSTANCE)) {
+            maxStack = 3;
+            getterVisitor.visitInsn(Opcodes.DUP);
+            PythonConstantsImplementor.loadNone(getterVisitor);
+            Label returnLabel = new Label();
+            getterVisitor.visitJumpInsn(Opcodes.IF_ACMPNE, returnLabel);
+            // field is None, so we want Java to see it as null
+            getterVisitor.visitInsn(Opcodes.POP);
+            getterVisitor.visitInsn(Opcodes.ACONST_NULL);
+            getterVisitor.visitLabel(returnLabel);
+            // If branch is taken, stack is field
+            // If branch is not taken, stack is null
+        }
+        getterVisitor.visitInsn(Opcodes.ARETURN);
+        getterVisitor.visitMaxs(maxStack, 0);
+        getterVisitor.visitEnd();
+    }
+
+    private static void createJavaSetter(ClassWriter classWriter, PreparedClassInfo preparedClassInfo, String attributeName,
+            Type attributeType, String signature, TypeHint typeHint) {
+        var setterName = "set" + attributeName.substring(0, 1).toUpperCase() + attributeName.substring(1);
+        if (signature != null) {
+            signature = "(" + signature + ")V";
+        }
+        var setterVisitor = classWriter.visitMethod(Modifier.PUBLIC, setterName, Type.getMethodDescriptor(Type.VOID_TYPE,
+                attributeType),
+                signature, null);
+        var maxStack = 2;
+        setterVisitor.visitCode();
+        setterVisitor.visitVarInsn(Opcodes.ALOAD, 0);
+        setterVisitor.visitVarInsn(Opcodes.ALOAD, 1);
+        if (typeHint.type().isInstance(PythonNone.INSTANCE)) {
+            maxStack = 4;
+            // We want to replace null with None
+            setterVisitor.visitInsn(Opcodes.DUP);
+            setterVisitor.visitInsn(Opcodes.ACONST_NULL);
+            Label setFieldLabel = new Label();
+            setterVisitor.visitJumpInsn(Opcodes.IF_ACMPNE, setFieldLabel);
+            // set value is null, so we want Python to see it as None
+            setterVisitor.visitInsn(Opcodes.POP);
+            PythonConstantsImplementor.loadNone(setterVisitor);
+            setterVisitor.visitLabel(setFieldLabel);
+            // If branch is taken, stack is (non-null instance)
+            // If branch is not taken, stack is None
+        }
+        setterVisitor.visitFieldInsn(Opcodes.PUTFIELD, preparedClassInfo.classInternalName,
+                attributeName, attributeType.getDescriptor());
+        setterVisitor.visitInsn(Opcodes.RETURN);
+        setterVisitor.visitMaxs(maxStack, 0);
+        setterVisitor.visitEnd();
+    }
+
     private static void addAnnotationsToMethod(PythonCompiledFunction function, MethodVisitor methodVisitor) {
         var returnTypeHint = function.typeAnnotations.get("return");
         if (returnTypeHint != null) {
@@ -956,15 +1038,9 @@ public class PythonClassTranslator {
             methodVisitor.visitVarInsn(Opcodes.ALOAD, 0);
             var type = fieldToType.get(field);
             if (type.getJavaTypeInternalName().equals(Type.getInternalName(JavaObjectWrapper.class))) {
-                Class<?> fieldType = type.getJavaObjectWrapperType();
                 methodVisitor.visitFieldInsn(Opcodes.GETFIELD, classInternalName, getJavaFieldName(field),
-                        Type.getDescriptor(fieldType));
-                methodVisitor.visitTypeInsn(Opcodes.NEW, Type.getInternalName(JavaObjectWrapper.class));
-                methodVisitor.visitInsn(Opcodes.DUP_X1);
-                methodVisitor.visitInsn(Opcodes.DUP_X1);
-                methodVisitor.visitInsn(Opcodes.POP);
-                methodVisitor.visitMethodInsn(Opcodes.INVOKESPECIAL, Type.getInternalName(JavaObjectWrapper.class),
-                        "<init>", Type.getMethodDescriptor(Type.VOID_TYPE, Type.getType(Object.class)), false);
+                        Type.getDescriptor(type.getJavaObjectWrapperType()));
+                getWrappedJavaObject(methodVisitor);
             } else {
                 methodVisitor.visitFieldInsn(Opcodes.GETFIELD, classInternalName, getJavaFieldName(field),
                         'L' + type.getJavaTypeInternalName() + ';');
@@ -982,6 +1058,15 @@ public class PythonClassTranslator {
 
         methodVisitor.visitMaxs(-1, -1);
         methodVisitor.visitEnd();
+    }
+
+    private static void getWrappedJavaObject(MethodVisitor methodVisitor) {
+        methodVisitor.visitTypeInsn(Opcodes.NEW, Type.getInternalName(JavaObjectWrapper.class));
+        methodVisitor.visitInsn(Opcodes.DUP_X1);
+        methodVisitor.visitInsn(Opcodes.DUP_X1);
+        methodVisitor.visitInsn(Opcodes.POP);
+        methodVisitor.visitMethodInsn(Opcodes.INVOKESPECIAL, Type.getInternalName(JavaObjectWrapper.class),
+                "<init>", Type.getMethodDescriptor(Type.VOID_TYPE, Type.getType(Object.class)), false);
     }
 
     public static void createSetAttribute(ClassWriter classWriter, String classInternalName, String superInternalName,
@@ -1008,10 +1093,7 @@ public class PythonClassTranslator {
             String typeDescriptor = type.getJavaTypeDescriptor();
             if (type.getJavaTypeInternalName().equals(Type.getInternalName(JavaObjectWrapper.class))) {
                 // Need to unwrap the object
-                methodVisitor.visitTypeInsn(Opcodes.CHECKCAST, Type.getInternalName(JavaObjectWrapper.class));
-                methodVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, Type.getInternalName(JavaObjectWrapper.class),
-                        "getWrappedObject", Type.getMethodDescriptor(Type.getType(Object.class)), false);
-                methodVisitor.visitTypeInsn(Opcodes.CHECKCAST, Type.getType(type.getJavaObjectWrapperType()).getInternalName());
+                getUnwrappedJavaObject(methodVisitor, type);
                 typeDescriptor = Type.getDescriptor(type.getJavaObjectWrapperType());
             } else {
                 methodVisitor.visitTypeInsn(Opcodes.CHECKCAST, type.getJavaTypeInternalName());
@@ -1033,6 +1115,13 @@ public class PythonClassTranslator {
 
         methodVisitor.visitMaxs(-1, -1);
         methodVisitor.visitEnd();
+    }
+
+    private static void getUnwrappedJavaObject(MethodVisitor methodVisitor, PythonLikeType type) {
+        methodVisitor.visitTypeInsn(Opcodes.CHECKCAST, Type.getInternalName(JavaObjectWrapper.class));
+        methodVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, Type.getInternalName(JavaObjectWrapper.class),
+                "getWrappedObject", Type.getMethodDescriptor(Type.getType(Object.class)), false);
+        methodVisitor.visitTypeInsn(Opcodes.CHECKCAST, Type.getType(type.getJavaObjectWrapperType()).getInternalName());
     }
 
     public static void createDeleteAttribute(ClassWriter classWriter, String classInternalName, String superInternalName,

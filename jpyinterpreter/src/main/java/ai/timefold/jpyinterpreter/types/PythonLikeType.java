@@ -107,7 +107,9 @@ public class PythonLikeType implements PythonLikeObject,
     }
 
     public static PythonLikeType getTypeForNewClass(String typeName, String internalName) {
-        return new PythonLikeType(typeName, internalName);
+        var out = new PythonLikeType(typeName, internalName);
+        out.__dir__.put("__class__", out);
+        return out;
     }
 
     public void initializeNewType(List<PythonLikeType> superClassTypes) {

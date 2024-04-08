@@ -48,11 +48,8 @@ def test_custom_shadow_variable():
     def my_constraints(constraint_factory: timefold.solver.constraint.ConstraintFactory):
         return [
             constraint_factory.for_each(MyPlanningEntity)
-                .filter(lambda entity: entity.value is None)
-                .penalize('Unassigned value', timefold.solver.score.HardSoftScore.ONE_HARD),
-            constraint_factory.for_each(MyPlanningEntity)
-                .filter(lambda entity: entity.value is not None and entity.value * 2 == entity.value_squared)
-                .reward('Double value is value squared', timefold.solver.score.HardSoftScore.ONE_SOFT)
+                .filter(lambda entity: entity.value * 2 == entity.value_squared)
+                .reward('Double value is value squared', timefold.solver.score.SimpleScore.ONE)
         ]
 
     @timefold.solver.planning_solution
@@ -60,7 +57,7 @@ def test_custom_shadow_variable():
     class MySolution:
         entity_list: Annotated[List[MyPlanningEntity], timefold.solver.PlanningEntityCollectionProperty]
         value_list: Annotated[List[int], timefold.solver.ValueRangeProvider]
-        score: Annotated[timefold.solver.score.HardSoftScore, timefold.solver.PlanningScore] = field(default=None)
+        score: Annotated[timefold.solver.score.SimpleScore, timefold.solver.PlanningScore] = field(default=None)
 
     solver_config = timefold.solver.config.SolverConfig(
         solution_class=MySolution,
@@ -69,7 +66,7 @@ def test_custom_shadow_variable():
             constraint_provider_function=my_constraints
         ),
         termination_config=timefold.solver.config.TerminationConfig(
-            best_score_limit='0hard/1soft'
+            best_score_limit='1'
         )
     )
 
@@ -77,8 +74,7 @@ def test_custom_shadow_variable():
     solver = solver_factory.build_solver()
     problem = MySolution([MyPlanningEntity()], [1, 2, 3])
     solution: MySolution = solver.solve(problem)
-    assert solution.score.hard_score() == 0
-    assert solution.score.soft_score() == 1
+    assert solution.score.score() == 1
     assert solution.entity_list[0].value == 2
     assert solution.entity_list[0].value_squared == 4
 
@@ -128,11 +124,8 @@ def test_custom_shadow_variable_with_variable_listener_ref():
     def my_constraints(constraint_factory: timefold.solver.constraint.ConstraintFactory):
         return [
             constraint_factory.for_each(MyPlanningEntity)
-            .filter(lambda entity: entity.value is None)
-            .penalize('Unassigned value', timefold.solver.score.HardSoftScore.ONE_HARD),
-            constraint_factory.for_each(MyPlanningEntity)
             .filter(lambda entity: entity.twice_value == entity.value_squared)
-            .reward('Double value is value squared', timefold.solver.score.HardSoftScore.ONE_SOFT)
+            .reward('Double value is value squared', timefold.solver.score.SimpleScore.ONE)
         ]
 
     @timefold.solver.planning_solution
@@ -140,7 +133,7 @@ def test_custom_shadow_variable_with_variable_listener_ref():
     class MySolution:
         entity_list: Annotated[List[MyPlanningEntity], PlanningEntityCollectionProperty]
         value_list: Annotated[List[int], ValueRangeProvider]
-        score: Annotated[timefold.solver.score.HardSoftScore, PlanningScore] = field(default=None)
+        score: Annotated[timefold.solver.score.SimpleScore, PlanningScore] = field(default=None)
 
     solver_config = timefold.solver.config.SolverConfig(
         solution_class=MySolution,
@@ -149,7 +142,7 @@ def test_custom_shadow_variable_with_variable_listener_ref():
             constraint_provider_function=my_constraints
         ),
         termination_config=timefold.solver.config.TerminationConfig(
-            best_score_limit='0hard/1soft'
+            best_score_limit='1'
         )
     )
 
@@ -157,7 +150,6 @@ def test_custom_shadow_variable_with_variable_listener_ref():
     solver = solver_factory.build_solver()
     problem = MySolution([MyPlanningEntity()], [1, 2, 3])
     solution: MySolution = solver.solve(problem)
-    assert solution.score.hard_score() == 0
-    assert solution.score.soft_score() == 1
+    assert solution.score.score() == 1
     assert solution.entity_list[0].value == 2
     assert solution.entity_list[0].value_squared == 4
