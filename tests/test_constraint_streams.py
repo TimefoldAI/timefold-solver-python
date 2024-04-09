@@ -1,19 +1,24 @@
+from timefold.solver.api import *
+from timefold.solver.annotation import *
+from timefold.solver.score import *
+from timefold.solver.config import *
+from timefold.solver.constraint import *
+
 import inspect
 import re
 from dataclasses import dataclass, field
 from typing import Annotated, List
-import timefold.solver
-import timefold.solver.score
-import timefold.solver.config
-import timefold.solver.constraint
-from timefold.solver.constraint import UniConstraintStream, BiConstraintStream, TriConstraintStream, QuadConstraintStream, \
-    Joiners, ConstraintCollectors, ConstraintFactory
-from ai.timefold.solver.core.api.score.stream import Joiners as JavaJoiners,\
+from ai.timefold.solver.core.api.score.stream import Joiners as JavaJoiners, \
     ConstraintCollectors as JavaConstraintCollectors, ConstraintFactory as JavaConstraintFactory
-from ai.timefold.solver.core.api.score.stream.uni import UniConstraintStream as JavaUniConstraintStream
-from ai.timefold.solver.core.api.score.stream.bi import BiConstraintStream as JavaBiConstraintStream
-from ai.timefold.solver.core.api.score.stream.tri import TriConstraintStream as JavaTriConstraintStream
-from ai.timefold.solver.core.api.score.stream.quad import QuadConstraintStream as JavaQuadConstraintStream
+from ai.timefold.solver.core.api.score.stream.uni import (UniConstraintStream as JavaUniConstraintStream,
+                                                          UniConstraintBuilder as JavaUniConstraintBuilder)
+from ai.timefold.solver.core.api.score.stream.bi import (BiConstraintStream as JavaBiConstraintStream,
+                                                         BiConstraintBuilder as JavaBiConstraintBuilder)
+from ai.timefold.solver.core.api.score.stream.tri import (TriConstraintStream as JavaTriConstraintStream,
+                                                          TriConstraintBuilder as JavaTriConstraintBuilder)
+from ai.timefold.solver.core.api.score.stream.quad import (QuadConstraintStream as JavaQuadConstraintStream,
+                                                           QuadConstraintBuilder as JavaQuadConstraintBuilder)
+
 
 @dataclass
 class Value:
@@ -21,40 +26,39 @@ class Value:
         self.number = number
 
 
-@timefold.solver.planning_entity
+@planning_entity
 @dataclass
 class Entity:
     code: str
-    value: Annotated[Value, timefold.solver.PlanningVariable] = field(default=None)
+    value: Annotated[Value, PlanningVariable] = field(default=None)
 
 
-@timefold.solver.planning_solution
+@planning_solution
 @dataclass
 class Solution:
-    entity_list: Annotated[List[Entity], timefold.solver.PlanningEntityCollectionProperty]
-    value_list: Annotated[List[Value],
-                          timefold.solver.ProblemFactCollectionProperty,
-                          timefold.solver.ValueRangeProvider]
-    score: Annotated[timefold.solver.score.SimpleScore, timefold.solver.PlanningScore] = field(default=None)
+    entity_list: Annotated[List[Entity], PlanningEntityCollectionProperty]
+    value_list: Annotated[List[Value], ProblemFactCollectionProperty, ValueRangeProvider]
+    score: Annotated[SimpleScore, PlanningScore] = field(default=None)
 
 
 def create_score_manager(constraint_provider):
-    return timefold.solver.SolutionManager.create(timefold.solver.SolverFactory.create(
-        timefold.solver.config.SolverConfig(solution_class=Solution,
-                                            entity_class_list=[Entity],
-                                            score_director_factory_config=
-                                            timefold.solver.config.ScoreDirectorFactoryConfig(
-                                                constraint_provider_function=constraint_provider
-                                            ))))
+    return SolutionManager.create(SolverFactory.create(
+        SolverConfig(solution_class=Solution,
+                     entity_class_list=[Entity],
+                     score_director_factory_config=ScoreDirectorFactoryConfig(
+                         constraint_provider_function=constraint_provider
+                     ))))
 
 
 def test_for_each():
-    @timefold.solver.constraint_provider
-    def define_constraints(constraint_factory: timefold.solver.constraint.ConstraintFactory):
+    @constraint_provider
+    def define_constraints(constraint_factory: ConstraintFactory):
         return [
             constraint_factory.for_each(Entity)
-                .reward('Count', timefold.solver.score.SimpleScore.ONE)
+            .reward(SimpleScore.ONE)
+            .as_constraint('Count')
         ]
+
     score_manager = create_score_manager(define_constraints)
     entity_a: Entity = Entity('A')
     entity_b: Entity = Entity('B')
@@ -75,12 +79,13 @@ def test_for_each():
 
 
 def test_filter_uni():
-    @timefold.solver.constraint_provider
-    def define_constraints(constraint_factory: timefold.solver.constraint.ConstraintFactory):
+    @constraint_provider
+    def define_constraints(constraint_factory: ConstraintFactory):
         return [
             constraint_factory.for_each(Entity)
             .filter(lambda e: e.value.number == 1)
-            .reward('Count', timefold.solver.score.SimpleScore.ONE)
+            .reward(SimpleScore.ONE)
+            .as_constraint('Count')
         ]
 
     score_manager = create_score_manager(define_constraints)
@@ -105,13 +110,14 @@ def test_filter_uni():
 
 
 def test_filter_bi():
-    @timefold.solver.constraint_provider
-    def define_constraints(constraint_factory: timefold.solver.constraint.ConstraintFactory):
+    @constraint_provider
+    def define_constraints(constraint_factory: ConstraintFactory):
         return [
             constraint_factory.for_each(Entity)
             .join(Entity)
             .filter(lambda e1, e2: e1.value.number == 1 and e2.value.number == 2)
-            .reward('Count', timefold.solver.score.SimpleScore.ONE)
+            .reward(SimpleScore.ONE)
+            .as_constraint('Count')
         ]
 
     score_manager = create_score_manager(define_constraints)
@@ -136,14 +142,15 @@ def test_filter_bi():
 
 
 def test_filter_tri():
-    @timefold.solver.constraint_provider
-    def define_constraints(constraint_factory: timefold.solver.constraint.ConstraintFactory):
+    @constraint_provider
+    def define_constraints(constraint_factory: ConstraintFactory):
         return [
             constraint_factory.for_each(Entity)
             .join(Entity)
             .join(Entity)
             .filter(lambda e1, e2, e3: e1.value.number == 1 and e2.value.number == 2 and e3.value.number == 3)
-            .reward('Count', timefold.solver.score.SimpleScore.ONE)
+            .reward(SimpleScore.ONE)
+            .as_constraint('Count')
         ]
 
     score_manager = create_score_manager(define_constraints)
@@ -173,16 +180,17 @@ def test_filter_tri():
 
 
 def test_filter_quad():
-    @timefold.solver.constraint_provider
-    def define_constraints(constraint_factory: timefold.solver.constraint.ConstraintFactory):
+    @constraint_provider
+    def define_constraints(constraint_factory: ConstraintFactory):
         return [
             constraint_factory.for_each(Entity)
             .join(Entity)
             .join(Entity)
             .join(Entity)
             .filter(lambda e1, e2, e3, e4: e1.value.number == 1 and e2.value.number == 2 and e3.value.number == 3
-                                           and e4.value.number == 4)
-            .reward('Count', timefold.solver.score.SimpleScore.ONE)
+                    and e4.value.number == 4)
+            .reward(SimpleScore.ONE)
+            .as_constraint('Count')
         ]
 
     score_manager = create_score_manager(define_constraints)
@@ -217,14 +225,16 @@ def test_filter_quad():
 
 
 def test_join_uni():
-    @timefold.solver.constraint_provider
-    def define_constraints(constraint_factory: timefold.solver.constraint.ConstraintFactory):
+    @constraint_provider
+    def define_constraints(constraint_factory: ConstraintFactory):
         return [
             constraint_factory.for_each(Entity)
-            .join(Entity, timefold.solver.constraint.Joiners.equal(lambda entity: entity.code))
+            .join(Entity, Joiners.equal(lambda entity: entity.code))
             .filter(lambda e1, e2: e1 is not e2)
-            .reward('Count', timefold.solver.score.SimpleScore.ONE, lambda e1, e2: e1.value.number * e2.value.number)
+            .reward(SimpleScore.ONE, lambda e1, e2: e1.value.number * e2.value.number)
+            .as_constraint('Count')
         ]
+
     score_manager = create_score_manager(define_constraints)
     entity_a1: Entity = Entity('A')
     entity_a2: Entity = Entity('A')
@@ -257,12 +267,13 @@ def test_join_uni():
 
 
 def test_map():
-    @timefold.solver.constraint_provider
-    def define_constraints(constraint_factory: timefold.solver.constraint.ConstraintFactory):
+    @constraint_provider
+    def define_constraints(constraint_factory: ConstraintFactory):
         return [
             constraint_factory.for_each(Entity)
             .map(lambda e: e.value.number)
-            .reward('Count', timefold.solver.score.SimpleScore.ONE, lambda v: v)
+            .reward(SimpleScore.ONE, lambda v: v)
+            .as_constraint('Count')
         ]
 
     score_manager = create_score_manager(define_constraints)
@@ -290,12 +301,13 @@ def test_map():
 
 
 def test_multi_map():
-    @timefold.solver.constraint_provider
-    def define_constraints(constraint_factory: timefold.solver.constraint.ConstraintFactory):
+    @constraint_provider
+    def define_constraints(constraint_factory: ConstraintFactory):
         return [
             constraint_factory.for_each(Entity)
             .map(lambda e: e.code, lambda e: e.value.number)
-            .reward('Count', timefold.solver.score.SimpleScore.ONE, lambda c, v: len(c) + v)
+            .reward(SimpleScore.ONE, lambda c, v: len(c) + v)
+            .as_constraint('Count')
         ]
 
     score_manager = create_score_manager(define_constraints)
@@ -323,12 +335,13 @@ def test_multi_map():
 
 
 def test_expand():
-    @timefold.solver.constraint_provider
-    def define_constraints(constraint_factory: timefold.solver.constraint.ConstraintFactory):
+    @constraint_provider
+    def define_constraints(constraint_factory: ConstraintFactory):
         return [
             constraint_factory.for_each(Entity)
             .expand(lambda e: e.value.number)
-            .reward('Count', timefold.solver.score.SimpleScore.ONE, lambda e, v: v)
+            .reward(SimpleScore.ONE, lambda e, v: v)
+            .as_constraint('Count')
         ]
 
     score_manager = create_score_manager(define_constraints)
@@ -356,12 +369,13 @@ def test_expand():
 
 
 def test_multi_expand():
-    @timefold.solver.constraint_provider
-    def define_constraints(constraint_factory: timefold.solver.constraint.ConstraintFactory):
+    @constraint_provider
+    def define_constraints(constraint_factory: ConstraintFactory):
         return [
             constraint_factory.for_each(Entity)
             .expand(lambda e: e.code, lambda e: e.value.number)
-            .reward('Count', timefold.solver.score.SimpleScore.ONE, lambda e, c, v: len(c) + v)
+            .reward(SimpleScore.ONE, lambda e, c, v: len(c) + v)
+            .as_constraint('Count')
         ]
 
     score_manager = create_score_manager(define_constraints)
@@ -389,13 +403,14 @@ def test_multi_expand():
 
 
 def test_concat():
-    @timefold.solver.constraint_provider
-    def define_constraints(constraint_factory: timefold.solver.constraint.ConstraintFactory):
+    @constraint_provider
+    def define_constraints(constraint_factory: ConstraintFactory):
         return [
             constraint_factory.for_each(Entity)
             .filter(lambda e: e.value.number == 1)
             .concat(constraint_factory.for_each(Entity).filter(lambda e: e.value.number == 2))
-            .reward('Count', timefold.solver.score.SimpleScore.ONE)
+            .reward(SimpleScore.ONE)
+            .as_constraint('Count')
         ]
 
     score_manager = create_score_manager(define_constraints)
@@ -441,6 +456,22 @@ ignored_java_functions = {
     'countLongQuad',
     'countLongTri',
     '_handler',  # JPype handler field should be ignored
+    # Unimplemented penalize/reward/impact
+    'impactBigDecimal',
+    'impactConfigurable',
+    'impactConfigurableBigDecimal',
+    'impactConfigurableLong',
+    'impactLong',
+    'penalizeBigDecimal',
+    'penalizeConfigurable',
+    'penalizeConfigurableBigDecimal',
+    'penalizeConfigurableLong',
+    'penalizeLong',
+    'rewardBigDecimal',
+    'rewardConfigurable',
+    'rewardConfigurableBigDecimal',
+    'rewardConfigurableLong',
+    'rewardLong',
     # These methods are deprecated
     'from_',
     'fromUnfiltered',
@@ -454,11 +485,14 @@ ignored_java_functions = {
 
 
 def test_has_all_methods():
-
     for python_type, java_type in ((UniConstraintStream, JavaUniConstraintStream),
                                    (BiConstraintStream, JavaBiConstraintStream),
                                    (TriConstraintStream, JavaTriConstraintStream),
                                    (QuadConstraintStream, JavaQuadConstraintStream),
+                                   (UniConstraintBuilder, JavaUniConstraintBuilder),
+                                   (BiConstraintBuilder, JavaBiConstraintBuilder),
+                                   (TriConstraintBuilder, JavaTriConstraintBuilder),
+                                   (QuadConstraintBuilder, JavaQuadConstraintBuilder),
                                    (Joiners, JavaJoiners),
                                    (ConstraintCollectors, JavaConstraintCollectors),
                                    (ConstraintFactory, JavaConstraintFactory)):
@@ -469,7 +503,7 @@ def test_has_all_methods():
             if python_type is ConstraintCollectors and function_name.endswith(('Long', 'BigInteger', 'Duration',
                                                                                'BigDecimal', 'Period')):
                 continue  # Python only has a single integer type (= BigInteger) and does not support Java Durations
-                          # or Period
+                # or Period
 
             snake_case_name = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', function_name)
             # change h_t_t_p -> http

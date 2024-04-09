@@ -1,9 +1,8 @@
 from typing import Callable, Generic, List, Type, TypeVar, TYPE_CHECKING, overload, Union
-from jpype import JProxy
 
 from ..jpype_type_conversions import PythonBiFunction
 from ..timefold_java_interop import get_class
-from ..constraint_stream import PythonConstraintFactory, BytecodeTranslation
+from ..constraint import ConstraintFactory
 from ..config import SolverConfig
 
 if TYPE_CHECKING:
@@ -23,7 +22,6 @@ class ConstraintVerifier(Generic[Solution_]):
     """
     def __init__(self, delegate):
         self.delegate = delegate
-        self.bytecode_translation = BytecodeTranslation.IF_POSSIBLE
 
     @staticmethod
     def create(solver_config: SolverConfig):
@@ -31,7 +29,7 @@ class ConstraintVerifier(Generic[Solution_]):
         return ConstraintVerifier(JavaConstraintVerifier.create(solver_config._to_java_solver_config()))
 
     @staticmethod
-    def build(constraint_provider: Callable[['PythonConstraintFactory'], List['Constraint']],
+    def build(constraint_provider: Callable[['ConstraintFactory'], List['Constraint']],
               planning_solution_class: Type[Solution_], *entity_classes: Type):
         from ai.timefold.solver.test.api.score.stream import ConstraintVerifier as JavaConstraintVerifier  # noqa
         constraint_provider_instance = get_class(constraint_provider).getConstructor().newInstance()
@@ -40,18 +38,6 @@ class ConstraintVerifier(Generic[Solution_]):
         return ConstraintVerifier(JavaConstraintVerifier.build(constraint_provider_instance,
                                                                planning_solution_java_class,
                                                                entity_java_classes))
-
-    def with_bytecode_translation(self, bytecode_translation: BytecodeTranslation) ->\
-            'ConstraintVerifier[Solution_]':
-        """
-        All subsequent calls to verify_that(constraint_function) will translate bytecode according to the rules
-        of the given BytecodeTranslation
-
-        :param bytecode_translation: A BytecodeTranslation member.
-        :return: self, for chaining
-        """
-        self.bytecode_translation = bytecode_translation
-        return self
 
     @overload
     def verify_that(self) -> 'MultiConstraintVerification[Solution_]':
@@ -69,7 +55,7 @@ class ConstraintVerifier(Generic[Solution_]):
         """
         ...
 
-    def verify_that(self, constraint_function: Callable[['PythonConstraintFactory'], 'Constraint'] = None):
+    def verify_that(self, constraint_function: Callable[['ConstraintFactory'], 'Constraint'] = None):
         """
         Creates a constraint verifier for a given Constraint of the ConstraintProvider.
         :param constraint_function: Sometimes None, the constraint to verify. If not provided, all
@@ -80,8 +66,7 @@ class ConstraintVerifier(Generic[Solution_]):
         else:
             return SingleConstraintVerification(self.delegate.verifyThat(
                 PythonBiFunction(lambda _, constraint_factory:
-                                 constraint_function(PythonConstraintFactory(constraint_factory,
-                                                                             self.bytecode_translation)))))
+                                 constraint_function(ConstraintFactory(constraint_factory)))))
 
 
 class SingleConstraintVerification(Generic[Solution_]):
@@ -448,3 +433,10 @@ class MultiConstraintAssertion:
                 self.delegate.scores(score, message)
         except JavaAssertionError as e:
             raise AssertionError(e.getMessage())
+
+
+__all__ = [
+    'ConstraintVerifier',
+    'SingleConstraintVerification', 'SingleConstraintAssertion',
+    'MultiConstraintVerification', 'MultiConstraintAssertion'
+]

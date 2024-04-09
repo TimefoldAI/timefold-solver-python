@@ -1,19 +1,20 @@
-import timefold.solver
-import timefold.solver.score
-import timefold.solver.config
-import timefold.solver.constraint
-import pytest
+from timefold.solver.api import *
+from timefold.solver.annotation import *
+from timefold.solver.config import *
+from timefold.solver.score import *
+from timefold.solver.constraint import *
 
+import pytest
 from dataclasses import dataclass, field
 from typing import Annotated, List, Optional
 
 
-@timefold.solver.planning_entity
+@planning_entity
 @dataclass
 class Queen:
     code: str
     column: int
-    row: Annotated[Optional[int], timefold.solver.PlanningVariable] = field(default=None)
+    row: Annotated[Optional[int], PlanningVariable] = field(default=None)
 
     def getColumnIndex(self):
         return self.column
@@ -36,18 +37,18 @@ class Queen:
         return hash(self.code)
 
 
-@timefold.solver.planning_solution
+@planning_solution
 @dataclass
 class Solution:
     n: int
-    queen_list: Annotated[List[Queen], timefold.solver.PlanningEntityCollectionProperty]
+    queen_list: Annotated[List[Queen], PlanningEntityCollectionProperty]
     column_list: List[int]
-    row_list: Annotated[List[int], timefold.solver.ValueRangeProvider]
-    score: Annotated[timefold.solver.score.SimpleScore, timefold.solver.PlanningScore] = field(default=None)
+    row_list: Annotated[List[int], ValueRangeProvider]
+    score: Annotated[SimpleScore, PlanningScore] = field(default=None)
 
 
 def test_constraint_match_disabled_incremental_score_calculator():
-    @timefold.solver.incremental_score_calculator
+    @incremental_score_calculator
     class IncrementalScoreCalculator:
         score: int
         row_index_map: dict
@@ -114,16 +115,16 @@ def test_constraint_match_disabled_incremental_score_calculator():
                 descending_diagonal_index_list.remove(queen)
                 self.score += len(descending_diagonal_index_list)
 
-        def calculateScore(self) -> timefold.solver.score.HardSoftScore:
-            return timefold.solver.score.SimpleScore.of(self.score)
+        def calculateScore(self) -> HardSoftScore:
+            return SimpleScore.of(self.score)
 
-    solver_config = timefold.solver.config.SolverConfig(
+    solver_config = SolverConfig(
         solution_class=Solution,
         entity_class_list=[Queen],
-        score_director_factory_config=timefold.solver.config.ScoreDirectorFactoryConfig(
+        score_director_factory_config=ScoreDirectorFactoryConfig(
             incremental_score_calculator_class=IncrementalScoreCalculator
         ),
-        termination_config=timefold.solver.config.TerminationConfig(
+        termination_config=TerminationConfig(
             best_score_limit='0'
         )
     )
@@ -131,7 +132,7 @@ def test_constraint_match_disabled_incremental_score_calculator():
                                  [Queen('A', 0), Queen('B', 1), Queen('C', 2), Queen('D', 3)],
                                  [0, 1, 2, 3],
                                  [0, 1, 2, 3])
-    solver = timefold.solver.SolverFactory.create(solver_config).build_solver()
+    solver = SolverFactory.create(solver_config).build_solver()
     solution = solver.solve(problem)
     assert solution.score.score() == 0
     for i in range(4):
@@ -148,7 +149,7 @@ def test_constraint_match_disabled_incremental_score_calculator():
                          "Doing this for all conversions would be expensive."
                          "This feature is not that important, so skipping for now.")
 def test_constraint_match_enabled_incremental_score_calculator():
-    @timefold.solver.incremental_score_calculator
+    @incremental_score_calculator
     class IncrementalScoreCalculator:
         score: int
         row_index_map: dict
@@ -217,36 +218,36 @@ def test_constraint_match_enabled_incremental_score_calculator():
                 descending_diagonal_index_list.remove(queen)
                 self.score += len(descending_diagonal_index_list)
 
-        def calculateScore(self) -> timefold.solver.score.HardSoftScore:
-            return timefold.solver.score.SimpleScore.of(self.score)
+        def calculateScore(self) -> HardSoftScore:
+            return SimpleScore.of(self.score)
 
         def getConstraintMatchTotals(self):
-            row_conflict_constraint_match_total = timefold.solver.constraint.DefaultConstraintMatchTotal(
+            row_conflict_constraint_match_total = DefaultConstraintMatchTotal(
                 'NQueens',
                 'Row Conflict',
-                timefold.solver.score.SimpleScore.ONE)
-            ascending_diagonal_constraint_match_total = timefold.solver.constraint.DefaultConstraintMatchTotal(
+                SimpleScore.ONE)
+            ascending_diagonal_constraint_match_total = DefaultConstraintMatchTotal(
                 'NQueens',
                 'Ascending Diagonal Conflict',
-                timefold.solver.score.SimpleScore.ONE)
-            descending_diagonal_constraint_match_total = timefold.solver.constraint.DefaultConstraintMatchTotal(
+                SimpleScore.ONE)
+            descending_diagonal_constraint_match_total = DefaultConstraintMatchTotal(
                 'NQueens',
                 'Descending Diagonal Conflict',
-                timefold.solver.score.SimpleScore.ONE)
+                SimpleScore.ONE)
             for row, queens in self.row_index_map.items():
                 if len(queens) > 1:
                     row_conflict_constraint_match_total.addConstraintMatch(queens,
-                                                                           timefold.solver.score.SimpleScore.of(
+                                                                           SimpleScore.of(
                                                                                -len(queens) + 1))
             for row, queens in self.ascending_diagonal_index_map.items():
                 if len(queens) > 1:
                     ascending_diagonal_constraint_match_total.addConstraintMatch(queens,
-                                                                                 timefold.solver.score.SimpleScore.of(
+                                                                                 SimpleScore.of(
                                                                                      -len(queens) + 1))
             for row, queens in self.descending_diagonal_index_map.items():
                 if len(queens) > 1:
                     descending_diagonal_constraint_match_total.addConstraintMatch(queens,
-                                                                                  timefold.solver.score.SimpleScore.of(
+                                                                                  SimpleScore.of(
                                                                                       -len(queens) + 1))
             return [
                 row_conflict_constraint_match_total,
@@ -257,13 +258,13 @@ def test_constraint_match_enabled_incremental_score_calculator():
         def getIndictmentMap(self):
             return None
 
-    solver_config = timefold.solver.config.SolverConfig(
+    solver_config = SolverConfig(
         solution_class=Solution,
         entity_class_list=[Queen],
-        score_director_factory_config=timefold.solver.config.ScoreDirectorFactoryConfig(
+        score_director_factory_config=ScoreDirectorFactoryConfig(
             incremental_score_calculator_class=IncrementalScoreCalculator
         ),
-        termination_config=timefold.solver.config.TerminationConfig(
+        termination_config=TerminationConfig(
             best_score_limit='0'
         )
     )
@@ -271,7 +272,7 @@ def test_constraint_match_enabled_incremental_score_calculator():
                                  [Queen('A', 0), Queen('B', 1), Queen('C', 2), Queen('D', 3)],
                                  [0, 1, 2, 3],
                                  [0, 1, 2, 3])
-    solver_factory = timefold.solver.SolverFactory.create(solver_config)
+    solver_factory = SolverFactory.create(solver_config)
     solver = solver_factory.build_solver()
     solution = solver.solve(problem)
     assert solution.score.score() == 0
@@ -284,7 +285,7 @@ def test_constraint_match_enabled_incremental_score_calculator():
             assert left_queen.getAscendingDiagonalIndex() != right_queen.getAscendingDiagonalIndex()
             assert left_queen.getDescendingDiagonalIndex() != right_queen.getDescendingDiagonalIndex()
 
-    score_manager = timefold.solver.SolutionManager.create(solver_factory)
+    score_manager = SolutionManager.create(solver_factory)
     constraint_match_total_map = score_manager.explain(solution).get_constraint_match_total_map()
     row_conflict = constraint_match_total_map.get('NQueens/Row Conflict')
     ascending_diagonal_conflict = constraint_match_total_map.get('NQueens/Ascending Diagonal Conflict')
@@ -319,7 +320,7 @@ def test_error_message_for_missing_methods():
             f".*IncrementalScoreCalculatorMissingMethods.*: "
             f"\\['resetWorkingSolution', 'beforeEntityRemoved', 'afterEntityRemoved', 'calculateScore'\\]"
     )):
-        @timefold.solver.incremental_score_calculator
+        @incremental_score_calculator
         class IncrementalScoreCalculatorMissingMethods:
             def beforeEntityAdded(self, entity: any):
                 pass

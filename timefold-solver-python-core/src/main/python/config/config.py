@@ -1,12 +1,13 @@
+from ..constraint import ConstraintFactory
+
 from typing import Any, Optional, List, Type, Callable, TYPE_CHECKING
 from dataclasses import dataclass, field
 from enum import Enum, auto
 from pathlib import Path
 from jpype import JClass
-from ..constraint_stream import PythonConstraintFactory
-from ..types import Duration
 
 if TYPE_CHECKING:
+    from java.time import Duration as _JavaDuration
     from ai.timefold.solver.core.api.score.stream import Constraint as _JavaConstraint
     from ai.timefold.solver.core.config.solver import SolverConfig as _JavaSolverConfig
     from ai.timefold.solver.core.config.solver.termination import TerminationConfig as _JavaTerminationConfig
@@ -22,6 +23,46 @@ def _lookup_on_java_class(java_class: str, attribute: str) -> Any:
     return getattr(JClass(java_class), attribute)
 
 
+@dataclass(kw_only=True)
+class Duration:
+    milliseconds: int = field(default=0)
+    seconds: int = field(default=0)
+    minutes: int = field(default=0)
+    hours: int = field(default=0)
+    days: int = field(default=0)
+
+    def to_milliseconds(self) -> int:
+        return self._to_java_duration().toMillis()
+
+    def to_seconds(self) -> int:
+        return self._to_java_duration().toSeconds()
+
+    def to_minutes(self) -> int:
+        return self._to_java_duration().toMinutes()
+
+    def to_hours(self) -> int:
+        return self._to_java_duration().toHours()
+
+    def to_days(self) -> int:
+        return self._to_java_duration().toDays()
+
+    @staticmethod
+    def _from_java_duration(duration: '_JavaDuration'):
+        return Duration(
+            milliseconds=duration.toMillis()
+        )
+
+    def _to_java_duration(self) -> '_JavaDuration':
+        from java.time import Duration
+        return (Duration.ZERO
+                .plusMillis(self.milliseconds)
+                .plusSeconds(self.seconds)
+                .plusMinutes(self.minutes)
+                .plusHours(self.hours)
+                .plusDays(self.days)
+                )
+
+
 class EnvironmentMode(Enum):
     NON_REPRODUCIBLE = auto()
     REPRODUCIBLE = auto()
@@ -32,6 +73,7 @@ class EnvironmentMode(Enum):
 
     def _get_java_enum(self):
         return _lookup_on_java_class(_java_environment_mode, self.name)
+
 
 class TerminationCompositionStyle(Enum):
     OR = auto()
@@ -118,7 +160,7 @@ class SolverConfig:
 
 @dataclass(kw_only=True)
 class ScoreDirectorFactoryConfig:
-    constraint_provider_function: Optional[Callable[[PythonConstraintFactory], List['_JavaConstraint']]] =\
+    constraint_provider_function: Optional[Callable[[ConstraintFactory], List['_JavaConstraint']]] =\
         field(default=None)
     easy_score_calculator_function: Optional[Callable] = field(default=None)
     incremental_score_calculator_class: Optional[Type] = field(default=None)

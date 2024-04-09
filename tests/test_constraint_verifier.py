@@ -1,17 +1,16 @@
 import pytest
 
-import timefold.solver
-import timefold.solver.types
-import timefold.solver.score
-import timefold.solver.config
-import timefold.solver.constraint
-import timefold.solver.test
+from timefold.solver.annotation import *
+from timefold.solver.score import *
+from timefold.solver.config import *
+from timefold.solver.constraint import *
+from timefold.solver.test import *
 
 from typing import Annotated, List
 from dataclasses import dataclass, field
 
 
-def verifier_suite(verifier: timefold.solver.test.ConstraintVerifier, same_value, is_value_one,
+def verifier_suite(verifier: ConstraintVerifier, same_value, is_value_one,
                    solution, e1, e2, e3, v1, v2, v3):
     verifier.verify_that(same_value) \
         .given(e1, e2) \
@@ -135,62 +134,62 @@ def verifier_suite(verifier: timefold.solver.test.ConstraintVerifier, same_value
 
     verifier.verify_that() \
         .given(e1, e2, e3) \
-        .scores(timefold.solver.score.SimpleScore.of(0))
+        .scores(SimpleScore.of(0))
 
     with pytest.raises(AssertionError):
         verifier.verify_that() \
             .given(e1, e2, e3) \
-            .scores(timefold.solver.score.SimpleScore.of(1))
+            .scores(SimpleScore.of(1))
 
     with pytest.raises(AssertionError):
         verifier.verify_that() \
             .given(e1, e2, e3) \
-            .scores(timefold.solver.score.SimpleScore.of(-1))
+            .scores(SimpleScore.of(-1))
 
     verifier.verify_that() \
         .given_solution(solution) \
-        .scores(timefold.solver.score.SimpleScore.of(0))
+        .scores(SimpleScore.of(0))
 
     with pytest.raises(AssertionError):
         verifier.verify_that() \
             .given_solution(solution) \
-            .scores(timefold.solver.score.SimpleScore.of(1))
+            .scores(SimpleScore.of(1))
 
     with pytest.raises(AssertionError):
         verifier.verify_that() \
             .given_solution(solution) \
-            .scores(timefold.solver.score.SimpleScore.of(-1))
+            .scores(SimpleScore.of(-1))
 
     e1.value = v1
     e2.value = v2
     e3.value = v3
     verifier.verify_that() \
-            .given(e1, e2, e3) \
-            .scores(timefold.solver.score.SimpleScore.of(1))
+        .given(e1, e2, e3) \
+        .scores(SimpleScore.of(1))
 
     with pytest.raises(AssertionError):
         verifier.verify_that() \
             .given(e1, e2, e3) \
-            .scores(timefold.solver.score.SimpleScore.of(2))
+            .scores(SimpleScore.of(2))
 
     with pytest.raises(AssertionError):
         verifier.verify_that() \
             .given(e1, e2, e3) \
-            .scores(timefold.solver.score.SimpleScore.of(0))
+            .scores(SimpleScore.of(0))
 
     verifier.verify_that() \
         .given_solution(solution) \
-        .scores(timefold.solver.score.SimpleScore.of(1))
+        .scores(SimpleScore.of(1))
 
     with pytest.raises(AssertionError):
         verifier.verify_that() \
             .given_solution(solution) \
-            .scores(timefold.solver.score.SimpleScore.of(2))
+            .scores(SimpleScore.of(2))
 
     with pytest.raises(AssertionError):
         verifier.verify_that() \
             .given_solution(solution) \
-            .scores(timefold.solver.score.SimpleScore.of(0))
+            .scores(SimpleScore.of(0))
 
 
 def test_constraint_verifier_create():
@@ -198,50 +197,50 @@ def test_constraint_verifier_create():
     class Value:
         code: str
 
-    @timefold.solver.planning_entity
+    @planning_entity
     @dataclass
     class Entity:
         code: str
-        value: Annotated[Value, timefold.solver.PlanningVariable] = field(default=None)
+        value: Annotated[Value, PlanningVariable] = field(default=None)
 
-    def same_value(constraint_factory: timefold.solver.constraint.ConstraintFactory):
+    def same_value(constraint_factory: ConstraintFactory):
         return (constraint_factory.for_each(Entity)
-                    .join(Entity, timefold.solver.constraint.Joiners.less_than(lambda e: e.code),
-                                  timefold.solver.constraint.Joiners.equal(lambda e: e.value))
-                    .penalize('Same value', timefold.solver.score.SimpleScore.ONE)
+                .join(Entity, Joiners.less_than(lambda e: e.code),
+                      Joiners.equal(lambda e: e.value))
+                .penalize(SimpleScore.ONE)
+                .as_constraint('Same Value')
                 )
 
-    def is_value_one(constraint_factory: timefold.solver.constraint.ConstraintFactory):
+    def is_value_one(constraint_factory: ConstraintFactory):
         return (constraint_factory.for_each(Entity)
-                    .filter(lambda e: e.value.code == 'v1')
-                    .reward('Value 1', timefold.solver.score.SimpleScore.ONE)
+                .filter(lambda e: e.value.code == 'v1')
+                .reward(SimpleScore.ONE)
+                .as_constraint('Value 1')
                 )
 
-    @timefold.solver.constraint_provider
-    def my_constraints(constraint_factory: timefold.solver.constraint.ConstraintFactory):
+    @constraint_provider
+    def my_constraints(constraint_factory: ConstraintFactory):
         return [
             same_value(constraint_factory),
             is_value_one(constraint_factory)
         ]
 
-    @timefold.solver.planning_solution
+    @planning_solution
     @dataclass
     class Solution:
-        entities: Annotated[List[Entity], timefold.solver.PlanningEntityCollectionProperty]
-        values: Annotated[List[Value],
-                          timefold.solver.ProblemFactCollectionProperty,
-                          timefold.solver.ValueRangeProvider]
-        score: Annotated[timefold.solver.score.SimpleScore, timefold.solver.PlanningScore] = field(default=None)
+        entities: Annotated[List[Entity], PlanningEntityCollectionProperty]
+        values: Annotated[List[Value], ProblemFactCollectionProperty, ValueRangeProvider]
+        score: Annotated[SimpleScore, PlanningScore] = field(default=None)
 
-    solver_config = timefold.solver.config.SolverConfig(
+    solver_config = SolverConfig(
         solution_class=Solution,
         entity_class_list=[Entity],
-        score_director_factory_config=timefold.solver.config.ScoreDirectorFactoryConfig(
+        score_director_factory_config=ScoreDirectorFactoryConfig(
             constraint_provider_function=my_constraints
         )
     )
 
-    verifier = timefold.solver.test.ConstraintVerifier.create(solver_config)
+    verifier = ConstraintVerifier.create(solver_config)
 
     e1 = Entity('e1')
     e2 = Entity('e2')
@@ -256,7 +255,7 @@ def test_constraint_verifier_create():
     verifier_suite(verifier, same_value, is_value_one,
                    solution, e1, e2, e3, v1, v2, v3)
 
-    verifier = timefold.solver.test.ConstraintVerifier.build(my_constraints, Solution, Entity)
+    verifier = ConstraintVerifier.build(my_constraints, Solution, Entity)
 
     e1 = Entity('e1')
     e2 = Entity('e2')
