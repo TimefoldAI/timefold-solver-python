@@ -1,11 +1,10 @@
 from ..timefold_java_interop import ensure_init
 from typing import TYPE_CHECKING, List
-from jpype import JImplementationFor, JOverride
+from jpype import JImplementationFor
 import jpype.imports # noqa
 
 if TYPE_CHECKING:
-    class Score:
-        pass
+    from ai.timefold.solver.core.api.score import Score
 
     class SimpleScore(Score):
         ZERO: 'SimpleScore' = None
@@ -47,38 +46,59 @@ if TYPE_CHECKING:
         def soft_scores(self) -> List[int]:
             ...
 
-else:
+
+@JImplementationFor('ai.timefold.solver.core.api.score.buildin.hardsoft.HardSoftScore')
+class _HardSoftScoreImpl:
+    def hard_score(self):
+        return self.hardScore()  # noqa
+
+    def soft_score(self):
+        return self.softScore()  # noqa
+
+
+@JImplementationFor('ai.timefold.solver.core.api.score.buildin.hardmediumsoft.'
+                    'HardMediumSoftScore')
+class _HardMediumSoftScoreImpl:
+    def hard_score(self):
+        return self.hardScore()  # noqa
+
+    def medium_score(self):
+        return self.mediumScore()  # noqa
+
+    def soft_score(self):
+        return self.softScore()  # noqa
+
+
+@JImplementationFor('ai.timefold.solver.core.api.score.buildin.bendable.BendableScore')
+class _BendableScoreImpl:
+    def hard_scores(self):
+        return self.hardScores()  # noqa
+
+    def soft_scores(self):
+        return self.softScores()  # noqa
+
+
+def __getattr__(name: str):
     ensure_init()
+    import jpype.imports
+    from ai.timefold.solver.core.api.score import Score
     from ai.timefold.solver.core.api.score.buildin.simple import SimpleScore
     from ai.timefold.solver.core.api.score.buildin.hardsoft import HardSoftScore
     from ai.timefold.solver.core.api.score.buildin.hardmediumsoft import HardMediumSoftScore
     from ai.timefold.solver.core.api.score.buildin.bendable import BendableScore
+    match name:
+        case 'Score':
+            return Score
+        case 'SimpleScore':
+            return SimpleScore
+        case 'HardSoftScore':
+            return HardSoftScore
+        case 'HardMediumSoftScore':
+            return HardMediumSoftScore
+        case 'BendableScore':
+            return BendableScore
+        case _:
+            raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
 
-    @JImplementationFor(HardSoftScore.class_.getName())
-    class _HardSoftScoreImpl:
-        def hard_score(self):
-            return self.hardScore()  # noqa
-
-        def soft_score(self):
-            return self.softScore()  # noqa
-
-    @JImplementationFor(HardMediumSoftScore.class_.getName())
-    class _HardMediumSoftScoreImpl:
-        def hard_score(self):
-            return self.hardScore()  # noqa
-
-        def medium_score(self):
-            return self.mediumScore()  # noqa
-
-        def soft_score(self):
-            return self.softScore()  # noqa
-
-    @JImplementationFor(BendableScore.class_.getName())
-    class _BendableScoreImpl:
-        def hard_scores(self):
-            return self.hardScores()  # noqa
-
-        def soft_scores(self):
-            return self.softScores()  # noqa
 
 __all__ = ['Score', 'SimpleScore', 'HardSoftScore', 'HardMediumSoftScore', 'BendableScore']

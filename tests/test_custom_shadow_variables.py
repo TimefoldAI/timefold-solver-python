@@ -1,16 +1,15 @@
 from typing import Annotated, Optional, List
 from dataclasses import dataclass, field
 
-import timefold.solver
-from timefold.solver.annotations import *
-import timefold.solver.constraint
-import timefold.solver.score
-import timefold.solver.config
-# from timefold.solver import ScoreDirector
+from timefold.solver.api import *
+from timefold.solver.annotation import *
+from timefold.solver.config import *
+from timefold.solver.constraint import *
+from timefold.solver.score import *
 
 
 def test_custom_shadow_variable():
-    @timefold.solver.variable_listener
+    @variable_listener
     class MyVariableListener:
         def afterVariableChanged(self, score_director, entity):
             score_director.beforeVariableChanged(entity, 'value_squared')
@@ -35,42 +34,42 @@ def test_custom_shadow_variable():
         def afterEntityRemoved(self, score_director, entity):
             pass
 
-    @timefold.solver.planning_entity
+    @planning_entity
     @dataclass
     class MyPlanningEntity:
-        value: Annotated[Optional[int], timefold.solver.PlanningVariable]\
+        value: Annotated[Optional[int], PlanningVariable] \
             = field(default=None)
-        value_squared: Annotated[Optional[int],
-                        timefold.solver.ShadowVariable(variable_listener_class=MyVariableListener,
-                                                       source_variable_name='value')] = field(default=None)
+        value_squared: Annotated[Optional[int], ShadowVariable(variable_listener_class=MyVariableListener,
+                                                               source_variable_name='value')] = field(default=None)
 
-    @timefold.solver.constraint_provider
-    def my_constraints(constraint_factory: timefold.solver.constraint.ConstraintFactory):
+    @constraint_provider
+    def my_constraints(constraint_factory: ConstraintFactory):
         return [
             constraint_factory.for_each(MyPlanningEntity)
-                .filter(lambda entity: entity.value * 2 == entity.value_squared)
-                .reward('Double value is value squared', timefold.solver.score.SimpleScore.ONE)
+            .filter(lambda entity: entity.value * 2 == entity.value_squared)
+            .reward(SimpleScore.ONE)
+            .as_constraint('Double value is value squared')
         ]
 
-    @timefold.solver.planning_solution
+    @planning_solution
     @dataclass
     class MySolution:
-        entity_list: Annotated[List[MyPlanningEntity], timefold.solver.PlanningEntityCollectionProperty]
-        value_list: Annotated[List[int], timefold.solver.ValueRangeProvider]
-        score: Annotated[timefold.solver.score.SimpleScore, timefold.solver.PlanningScore] = field(default=None)
+        entity_list: Annotated[List[MyPlanningEntity], PlanningEntityCollectionProperty]
+        value_list: Annotated[List[int], ValueRangeProvider]
+        score: Annotated[SimpleScore, PlanningScore] = field(default=None)
 
-    solver_config = timefold.solver.config.SolverConfig(
+    solver_config = SolverConfig(
         solution_class=MySolution,
         entity_class_list=[MyPlanningEntity],
-        score_director_factory_config=timefold.solver.config.ScoreDirectorFactoryConfig(
+        score_director_factory_config=ScoreDirectorFactoryConfig(
             constraint_provider_function=my_constraints
         ),
-        termination_config=timefold.solver.config.TerminationConfig(
+        termination_config=TerminationConfig(
             best_score_limit='1'
         )
     )
 
-    solver_factory = timefold.solver.SolverFactory.create(solver_config)
+    solver_factory = SolverFactory.create(solver_config)
     solver = solver_factory.build_solver()
     problem = MySolution([MyPlanningEntity()], [1, 2, 3])
     solution: MySolution = solver.solve(problem)
@@ -80,7 +79,7 @@ def test_custom_shadow_variable():
 
 
 def test_custom_shadow_variable_with_variable_listener_ref():
-    @timefold.solver.variable_listener
+    @variable_listener
     class MyVariableListener:
         def afterVariableChanged(self, score_director, entity):
             score_director.beforeVariableChanged(entity, 'twice_value')
@@ -109,44 +108,45 @@ def test_custom_shadow_variable_with_variable_listener_ref():
         def afterEntityRemoved(self, score_director, entity):
             pass
 
-    @timefold.solver.planning_entity
+    @planning_entity
     @dataclass
     class MyPlanningEntity:
-        value: Annotated[Optional[int], timefold.solver.PlanningVariable] = \
-               field(default=None)
-        value_squared: Annotated[Optional[int], timefold.solver.ShadowVariable(
+        value: Annotated[Optional[int], PlanningVariable] = \
+            field(default=None)
+        value_squared: Annotated[Optional[int], ShadowVariable(
             variable_listener_class=MyVariableListener, source_variable_name='value')] = field(default=None)
         # TODO: Use PiggyBackShadowVariable
-        twice_value: Annotated[Optional[int], timefold.solver.ShadowVariable(
+        twice_value: Annotated[Optional[int], ShadowVariable(
             variable_listener_class=MyVariableListener, source_variable_name='value')] = field(default=None)
 
-    @timefold.solver.constraint_provider
-    def my_constraints(constraint_factory: timefold.solver.constraint.ConstraintFactory):
+    @constraint_provider
+    def my_constraints(constraint_factory: ConstraintFactory):
         return [
             constraint_factory.for_each(MyPlanningEntity)
             .filter(lambda entity: entity.twice_value == entity.value_squared)
-            .reward('Double value is value squared', timefold.solver.score.SimpleScore.ONE)
+            .reward(SimpleScore.ONE)
+            .as_constraint('Double value is value squared')
         ]
 
-    @timefold.solver.planning_solution
+    @planning_solution
     @dataclass
     class MySolution:
         entity_list: Annotated[List[MyPlanningEntity], PlanningEntityCollectionProperty]
         value_list: Annotated[List[int], ValueRangeProvider]
-        score: Annotated[timefold.solver.score.SimpleScore, PlanningScore] = field(default=None)
+        score: Annotated[SimpleScore, PlanningScore] = field(default=None)
 
-    solver_config = timefold.solver.config.SolverConfig(
+    solver_config = SolverConfig(
         solution_class=MySolution,
         entity_class_list=[MyPlanningEntity],
-        score_director_factory_config=timefold.solver.config.ScoreDirectorFactoryConfig(
+        score_director_factory_config=ScoreDirectorFactoryConfig(
             constraint_provider_function=my_constraints
         ),
-        termination_config=timefold.solver.config.TerminationConfig(
+        termination_config=TerminationConfig(
             best_score_limit='1'
         )
     )
 
-    solver_factory = timefold.solver.SolverFactory.create(solver_config)
+    solver_factory = SolverFactory.create(solver_config)
     solver = solver_factory.build_solver()
     problem = MySolution([MyPlanningEntity()], [1, 2, 3])
     solution: MySolution = solver.solve(problem)

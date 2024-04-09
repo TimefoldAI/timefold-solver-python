@@ -1,16 +1,16 @@
 import jpype
 
-from .timefold_java_interop import ensure_init, _generate_constraint_provider_class, \
+from ..timefold_java_interop import ensure_init, _generate_constraint_provider_class, \
     _generate_incremental_score_calculator_class, \
     _generate_variable_listener_class
 from jpyinterpreter import JavaAnnotation
 from jpype import JImplements, JOverride
 from typing import Union, List, Callable, Type, TYPE_CHECKING, TypeVar
-from .constraint_stream import BytecodeTranslation
 
 if TYPE_CHECKING:
     from ai.timefold.solver.core.api.solver.change import ProblemChange as _ProblemChange
-    from ai.timefold.solver.core.api.score.stream import Constraint as _Constraint, ConstraintFactory as _ConstraintFactory
+    from ai.timefold.solver.core.api.score.stream import (Constraint as _Constraint,
+                                                          ConstraintFactory as _ConstraintFactory)
     from ai.timefold.solver.core.api.score import Score as _Score
     from ai.timefold.solver.core.api.score.calculator import IncrementalScoreCalculator as _IncrementalScoreCalculator
     from ai.timefold.solver.core.api.domain.variable import PlanningVariableGraphType as _PlanningVariableGraphType, \
@@ -49,14 +49,13 @@ class PlanningVariable(JavaAnnotation):
 class PlanningListVariable(JavaAnnotation):
     def __init__(self, *,
                  value_range_provider_refs: List[str] = None,
-                 allows_unassigned: bool = False):
+                 allows_unassigned_values: bool = False):
         ensure_init()
         from ai.timefold.solver.core.api.domain.variable import PlanningListVariable as JavaPlanningListVariable
         super().__init__(JavaPlanningListVariable,
                          {
                              'valueRangeProviderRefs': value_range_provider_refs,
-                             # TODO: When updated to 1.8.0, add allowsUnassigned
-                             #'allowsUnassigned': allows_unassigned
+                             'allowsUnassignedValues': allows_unassigned_values
                          })
 
 
@@ -80,7 +79,7 @@ class ShadowVariable(JavaAnnotation):
                  source_variable_name: str,
                  source_entity_class: Type = None):
         ensure_init()
-        from .timefold_java_interop import get_class
+        from ..timefold_java_interop import get_class
         from ai.timefold.jpyinterpreter import PythonClassTranslator
         from ai.timefold.solver.core.api.domain.variable import (
             ShadowVariable as JavaShadowVariable)
@@ -230,7 +229,7 @@ def planning_entity(entity_class: Type = None, /, *, pinning_filter: Callable = 
     from ai.timefold.solver.core.api.domain.entity import PlanningEntity as JavaPlanningEntity
 
     def planning_entity_wrapper(entity_class_argument):
-        from .timefold_java_interop import _generate_planning_entity_class
+        from ..timefold_java_interop import _generate_planning_entity_class
         from ai.timefold.solver.core.api.domain.entity import PinningFilter
         from jpyinterpreter import add_class_annotation, translate_python_bytecode_to_java_bytecode
         from typing import get_type_hints, get_origin, Annotated
@@ -295,15 +294,15 @@ def planning_solution(planning_solution_class: Type[Solution_]) -> Type[Solution
     """
     ensure_init()
     from jpyinterpreter import add_class_annotation
-    from .timefold_java_interop import _generate_planning_solution_class
+    from ..timefold_java_interop import _generate_planning_solution_class
     from ai.timefold.solver.core.api.domain.solution import PlanningSolution as JavaPlanningSolution
     out = add_class_annotation(JavaPlanningSolution)(planning_solution_class)
     _generate_planning_solution_class(planning_solution_class)
     return out
 
 
-def constraint_provider(constraint_provider_function: Callable[['_ConstraintFactory'], List['_Constraint']] = None, /, *,
-                        function_bytecode_translation: BytecodeTranslation = BytecodeTranslation.IF_POSSIBLE) -> \
+def constraint_provider(constraint_provider_function: Callable[['_ConstraintFactory'], List['_Constraint']] = None, /) \
+        -> \
         Union[Callable[[Callable], Callable[['_ConstraintFactory'], List['_Constraint']]],
               Callable[['_ConstraintFactory'], List['_Constraint']]]:
     """Marks a function as a ConstraintProvider.
@@ -312,8 +311,6 @@ def constraint_provider(constraint_provider_function: Callable[['_ConstraintFact
     must return a list of Constraints.
     To create a Constraint, start with ConstraintFactory.from(get_class(PythonClass)).
 
-    :param function_bytecode_translation: Specifies how bytecode translator should occur.
-                                          Defaults to BytecodeTranslation.IF_POSSIBLE.
     :type constraint_provider_function: Callable[[ConstraintFactory], List[Constraint]]
     :rtype: Callable[[ConstraintFactory], List[Constraint]]
     """
@@ -321,23 +318,14 @@ def constraint_provider(constraint_provider_function: Callable[['_ConstraintFact
 
     def constraint_provider_wrapper(function):
         def wrapped_constraint_provider(constraint_factory):
-            from . import constraint_stream
-            try:
-                constraint_stream.convert_to_java = function_bytecode_translation
-                out = function(constraint_stream.PythonConstraintFactory(constraint_factory,
-                                                                         function_bytecode_translation))
-                return out
-            finally:
-                constraint_stream.convert_to_java = BytecodeTranslation.IF_POSSIBLE
-                constraint_stream.all_translated_successfully = True
+            from ..constraint import ConstraintFactory
+            out = function(ConstraintFactory(constraint_factory))
+            return out
         wrapped_constraint_provider.__timefold_java_class = (
             _generate_constraint_provider_class(function, wrapped_constraint_provider))
         return wrapped_constraint_provider
 
-    if constraint_provider_function:  # Called as @constraint_provider
-        return constraint_provider_wrapper(constraint_provider_function)
-    else:  # Called as @constraint_provider(function_bytecode_translation=True)
-        return constraint_provider_wrapper
+    return constraint_provider_wrapper(constraint_provider_function)
 
 
 def easy_score_calculator(easy_score_calculator_function: Callable[[Solution_], '_Score']) -> \
@@ -427,7 +415,8 @@ def incremental_score_calculator(incremental_score_calculator: Type['_Incrementa
     #     method_on_class = getattr(incremental_score_calculator, method, None
 
     translated_class = translate_python_class_to_java_class(incremental_score_calculator)
-    incremental_score_calculator.__timefold_java_class = generate_proxy_class_for_translated_class(base_interface, translated_class)
+    incremental_score_calculator.__timefold_java_class = generate_proxy_class_for_translated_class(base_interface,
+                                                                                                   translated_class)
     return incremental_score_calculator
 
 
@@ -501,7 +490,6 @@ def variable_listener(variable_listener_class: Type['_VariableListener'] = None,
 
             setattr(the_variable_listener_class, 'requiresUniqueEntityEvents', class_requires_unique_entity_events)
 
-
         method_on_class = getattr(the_variable_listener_class, 'close', None)
         if method_on_class is None:
             def close(self):
@@ -517,7 +505,8 @@ def variable_listener(variable_listener_class: Type['_VariableListener'] = None,
             setattr(the_variable_listener_class, 'resetWorkingSolution', reset_working_solution)
 
         translated_class = translate_python_class_to_java_class(the_variable_listener_class)
-        the_variable_listener_class.__timefold_java_class = generate_proxy_class_for_translated_class(VariableListener, translated_class)
+        the_variable_listener_class.__timefold_java_class = generate_proxy_class_for_translated_class(VariableListener,
+                                                                                                      translated_class)
         return the_variable_listener_class
 
     if variable_listener_class:  # Called as @variable_listener
@@ -549,6 +538,7 @@ def problem_change(problem_change_class: Type['_ProblemChange']) -> \
                          f'doChange(self, solution, problem_change_director).')
 
     class_doChange = getattr(problem_change_class, 'doChange', None)
+
     def wrapper_doChange(self, solution, problem_change_director):
         run_id = id(problem_change_director)
         solution.forceUpdate()
@@ -571,3 +561,14 @@ def problem_change(problem_change_class: Type['_ProblemChange']) -> \
     setattr(problem_change_class, 'doChange', JOverride()(wrapper_doChange))
     out = jpype.JImplements(ProblemChange)(problem_change_class)
     return out
+
+
+__all__ = ['PlanningId', 'PlanningScore', 'PlanningPin', 'PlanningVariable',
+           'PlanningListVariable', 'PlanningVariableReference', 'ShadowVariable',
+           'IndexShadowVariable', 'AnchorShadowVariable', 'InverseRelationShadowVariable',
+           'ProblemFactProperty', 'ProblemFactCollectionProperty',
+           'PlanningEntityProperty', 'PlanningEntityCollectionProperty',
+           'ValueRangeProvider', 'DeepPlanningClone',
+           'planning_entity', 'planning_solution',
+           'constraint_provider', 'easy_score_calculator', 'incremental_score_calculator',
+           'variable_listener', 'problem_change']

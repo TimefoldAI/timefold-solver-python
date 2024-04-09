@@ -1,39 +1,41 @@
-import timefold.solver
-import timefold.solver.score
-import timefold.solver.config
-import timefold.solver.constraint
+from timefold.solver.api import *
+from timefold.solver.annotation import *
+from timefold.solver.config import *
+from timefold.solver.score import *
+from timefold.solver.constraint import *
 
 from dataclasses import dataclass, field
 from typing import Annotated, List
 
 
-@timefold.solver.planning_entity
+@planning_entity
 @dataclass
 class Entity:
-    code: Annotated[str, timefold.solver.PlanningId]
-    value: Annotated[int, timefold.solver.PlanningVariable] = field(default=None)
+    code: Annotated[str, PlanningId]
+    value: Annotated[int, PlanningVariable] = field(default=None)
 
 
-@timefold.solver.constraint_provider
-def my_constraints(constraint_factory: timefold.solver.constraint.ConstraintFactory):
+@constraint_provider
+def my_constraints(constraint_factory: ConstraintFactory):
     return [
         constraint_factory.for_each(Entity)
-            .reward('Maximize Value', timefold.solver.score.SimpleScore.ONE, lambda entity: entity.value),
+                          .reward(SimpleScore.ONE, lambda entity: entity.value)
+                          .as_constraint('Maximize Value'),
     ]
 
 
-@timefold.solver.planning_solution
+@planning_solution
 @dataclass
 class Solution:
-    entity_list: Annotated[List[Entity], timefold.solver.PlanningEntityCollectionProperty]
-    value_range: Annotated[List[int], timefold.solver.ValueRangeProvider]
-    score: Annotated[timefold.solver.score.SimpleScore, timefold.solver.PlanningScore] = field(default=None)
+    entity_list: Annotated[List[Entity], PlanningEntityCollectionProperty]
+    value_range: Annotated[List[int], ValueRangeProvider]
+    score: Annotated[SimpleScore, PlanningScore] = field(default=None)
 
 
-solver_config = timefold.solver.config.SolverConfig(
+solver_config = SolverConfig(
     solution_class=Solution,
     entity_class_list=[Entity],
-    score_director_factory_config=timefold.solver.config.ScoreDirectorFactoryConfig(
+    score_director_factory_config=ScoreDirectorFactoryConfig(
         constraint_provider_function=my_constraints
     )
 )
@@ -50,14 +52,14 @@ def assert_score_manager(score_manager):
     assert score_explanation.get_solution() is problem
     assert score_explanation.get_score().score() == 3
     assert score_explanation.get_constraint_match_total_map() \
-                            .get(timefold.solver.compose_constraint_id(Solution, 'Maximize Value')) \
+                            .get(compose_constraint_id(Solution, 'Maximize Value')) \
                             .getConstraintMatchCount() == 3
 
 
 def test_solver_manager_score_manager():
-    with timefold.solver.SolverManager.create(timefold.solver.SolverFactory.create(solver_config)) as solver_manager:
-        assert_score_manager(timefold.solver.SolutionManager.create(solver_manager))
+    with SolverManager.create(SolverFactory.create(solver_config)) as solver_manager:
+        assert_score_manager(SolutionManager.create(solver_manager))
 
 
 def test_solver_factory_score_manager():
-    assert_score_manager(timefold.solver.SolutionManager.create(timefold.solver.SolverFactory.create(solver_config)))
+    assert_score_manager(SolutionManager.create(SolverFactory.create(solver_config)))

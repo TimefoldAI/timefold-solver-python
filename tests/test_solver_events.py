@@ -1,40 +1,42 @@
-import timefold.solver
-import timefold.solver.score
-import timefold.solver.config
-import timefold.solver.constraint
+from timefold.solver.api import *
+from timefold.solver.annotation import *
+from timefold.solver.config import *
+from timefold.solver.constraint import *
+from timefold.solver.score import *
 
 from dataclasses import dataclass, field
 from typing import Annotated, List
 
 
 def test_solver_events():
-    @timefold.solver.planning_entity
+    @planning_entity
     @dataclass
     class Entity:
         code: str
-        value: Annotated[int, timefold.solver.PlanningVariable] = field(default=None)
+        value: Annotated[int, PlanningVariable] = field(default=None)
 
-    @timefold.solver.constraint_provider
-    def my_constraints(constraint_factory: timefold.solver.constraint.ConstraintFactory):
+    @constraint_provider
+    def my_constraints(constraint_factory: ConstraintFactory):
         return [
             constraint_factory.for_each(Entity)
-                .reward('Maximize value', timefold.solver.score.SimpleScore.ONE, lambda entity: entity.value),
+                              .reward(SimpleScore.ONE, lambda entity: entity.value)
+                              .as_constraint('Maximize value'),
         ]
 
-    @timefold.solver.planning_solution
+    @planning_solution
     @dataclass
     class Solution:
-        entities: Annotated[List[Entity], timefold.solver.PlanningEntityCollectionProperty]
-        value_range: Annotated[List[int], timefold.solver.ValueRangeProvider]
-        score: Annotated[timefold.solver.score.SimpleScore, timefold.solver.PlanningScore] = field(default=None)
+        entities: Annotated[List[Entity], PlanningEntityCollectionProperty]
+        value_range: Annotated[List[int], ValueRangeProvider]
+        score: Annotated[SimpleScore, PlanningScore] = field(default=None)
 
-    solver_config = timefold.solver.config.SolverConfig(
+    solver_config = SolverConfig(
         solution_class=Solution,
         entity_class_list=[Entity],
-        score_director_factory_config=timefold.solver.config.ScoreDirectorFactoryConfig(
+        score_director_factory_config=ScoreDirectorFactoryConfig(
             constraint_provider_function=my_constraints,
         ),
-        termination_config=timefold.solver.config.TerminationConfig(
+        termination_config=TerminationConfig(
             best_score_limit='6'
         )
     )
@@ -47,7 +49,7 @@ def test_solver_events():
         solution_list.append(event.new_best_solution)
         score_list.append(event.new_best_score)
 
-    solver = timefold.solver.SolverFactory.create(solver_config).build_solver()
+    solver = SolverFactory.create(solver_config).build_solver()
     solver.add_event_listener(on_best_solution_changed)
     solution = solver.solve(problem)
 

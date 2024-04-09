@@ -1,45 +1,45 @@
-import timefold.solver
-import timefold.solver.score
-import timefold.solver.config
-import timefold.solver.constraint
+from timefold.solver.api import *
+from timefold.solver.annotation import *
+from timefold.solver.config import *
+from timefold.solver.score import *
 
 from typing import Annotated, List
 from dataclasses import dataclass, field
 
 
 def test_easy_score_calculator():
-    @timefold.solver.planning_entity
+    @planning_entity
     @dataclass
     class Entity:
         code: str
-        value: Annotated[int, timefold.solver.PlanningVariable] = field(default=None)
+        value: Annotated[int, PlanningVariable] = field(default=None)
 
-    @timefold.solver.planning_solution
+    @planning_solution
     @dataclass
     class Solution:
-        entity_list: Annotated[List[Entity], timefold.solver.PlanningEntityCollectionProperty]
-        value_range: Annotated[List[int], timefold.solver.ValueRangeProvider]
-        score: Annotated[timefold.solver.score.SimpleScore, timefold.solver.PlanningScore] = field(default=None)
+        entity_list: Annotated[List[Entity], PlanningEntityCollectionProperty]
+        value_range: Annotated[List[int], ValueRangeProvider]
+        score: Annotated[SimpleScore, PlanningScore] = field(default=None)
 
-    @timefold.solver.easy_score_calculator
-    def my_score_calculator(solution: Solution) -> timefold.solver.score.SimpleScore:
+    @easy_score_calculator
+    def my_score_calculator(solution: Solution) -> SimpleScore:
         total_score = 0
         for entity in solution.entity_list:
             total_score += 0 if entity.value is None else entity.value
-        return timefold.solver.score.SimpleScore.of(total_score)
+        return SimpleScore.of(total_score)
 
-    solver_config = timefold.solver.config.SolverConfig(
+    solver_config = SolverConfig(
         solution_class=Solution,
         entity_class_list=[Entity],
-        score_director_factory_config=timefold.solver.config.ScoreDirectorFactoryConfig(
+        score_director_factory_config=ScoreDirectorFactoryConfig(
             easy_score_calculator_function=my_score_calculator
         ),
-        termination_config=timefold.solver.config.TerminationConfig(
+        termination_config=TerminationConfig(
             best_score_limit='9'
         )
     )
     problem: Solution = Solution([Entity('A'), Entity('B'), Entity('C')], [1, 2, 3])
-    solver = timefold.solver.SolverFactory.create(solver_config).build_solver()
+    solver = SolverFactory.create(solver_config).build_solver()
     solution = solver.solve(problem)
     assert solution.score.score() == 9
     assert solution.entity_list[0].value == 3

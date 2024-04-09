@@ -1,16 +1,18 @@
-from decimal import Decimal
 from ..timefold_java_interop import ensure_init
-import jpype.imports # noqa
-
-ensure_init()
-
-from ai.timefold.solver.core.api.domain.valuerange import CountableValueRange
-from ai.timefold.solver.python import PythonValueRangeFactory
+from typing import TYPE_CHECKING
+from decimal import Decimal
+if TYPE_CHECKING:
+    from ai.timefold.solver.core.api.domain.valuerange import CountableValueRange
 
 
 class ValueRangeFactory:
+    # Return cannot be typed, since CountableValueRange does not exist in the globals dict
+    # since it is loaded lazily (to not start the JVM prematurely)
     @staticmethod
-    def create_int_value_range(start: int, end: int, step: int = None) -> CountableValueRange:
+    def create_int_value_range(start: int, end: int, step: int = None):
+        ensure_init()
+        import jpype.imports
+        from ai.timefold.solver.python import PythonValueRangeFactory
         from java.math import BigInteger
         if step is None:
             return PythonValueRangeFactory.createIntValueRange(BigInteger(str(start)), BigInteger(str(end)))
@@ -19,7 +21,10 @@ class ValueRangeFactory:
                                                                BigInteger(str(step)))
 
     @staticmethod
-    def create_float_value_range(start: Decimal, end: Decimal, step: Decimal = None) -> CountableValueRange:
+    def create_float_value_range(start: Decimal, end: Decimal, step: Decimal = None):
+        ensure_init()
+        import jpype.imports
+        from ai.timefold.solver.python import PythonValueRangeFactory
         from java.math import BigDecimal
         if step is None:
             return PythonValueRangeFactory.createFloatValueRange(BigDecimal(str(start)), BigDecimal(str(end)))
@@ -28,8 +33,23 @@ class ValueRangeFactory:
                                                                  BigDecimal(str(step)))
 
     @staticmethod
-    def create_bool_value_range() -> CountableValueRange:
+    def create_bool_value_range():
+        ensure_init()
+        import jpype.imports
+        from ai.timefold.solver.python import PythonValueRangeFactory
         return PythonValueRangeFactory.createBooleanValueRange()
+
+
+def __getattr__(name: str):
+    ensure_init()
+    import jpype.imports
+    from ai.timefold.solver.core.api.domain.valuerange import CountableValueRange
+    match name:
+        case 'CountableValueRange':
+            return CountableValueRange
+
+        case _:
+            raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
 
 
 __all__ = ['CountableValueRange', 'ValueRangeFactory']
