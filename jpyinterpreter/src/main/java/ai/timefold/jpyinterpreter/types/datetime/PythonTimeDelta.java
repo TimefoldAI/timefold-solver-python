@@ -20,6 +20,7 @@ import ai.timefold.jpyinterpreter.types.numeric.PythonFloat;
 import ai.timefold.jpyinterpreter.types.numeric.PythonInteger;
 import ai.timefold.jpyinterpreter.types.numeric.PythonNumber;
 import ai.timefold.jpyinterpreter.util.arguments.ArgumentSpec;
+import ai.timefold.solver.core.api.domain.lookup.PlanningId;
 
 /**
  * Python docs: <a href="https://docs.python.org/3/library/datetime.html#timedelta-objects">timedelta-objects</a>
@@ -106,6 +107,7 @@ public class PythonTimeDelta extends AbstractPythonLikeObject implements PythonL
         TIME_DELTA_TYPE.addMethod("total_seconds", PythonTimeDelta.class.getMethod("total_seconds"));
     }
 
+    @PlanningId
     final Duration duration;
 
     public final PythonInteger days;

@@ -6,6 +6,7 @@ import ai.timefold.jpyinterpreter.PythonOverloadImplementor;
 import ai.timefold.jpyinterpreter.PythonUnaryOperator;
 import ai.timefold.jpyinterpreter.builtins.GlobalBuiltins;
 import ai.timefold.jpyinterpreter.types.numeric.PythonBoolean;
+import ai.timefold.solver.core.api.domain.lookup.PlanningId;
 
 public class PythonNone extends AbstractPythonLikeObject {
     public static final PythonNone INSTANCE;
@@ -27,6 +28,11 @@ public class PythonNone extends AbstractPythonLikeObject {
 
     private PythonNone() {
         super(BuiltinTypes.NONE_TYPE);
+    }
+
+    @PlanningId
+    private int getPlanningId() {
+        return 0;
     }
 
     @Override

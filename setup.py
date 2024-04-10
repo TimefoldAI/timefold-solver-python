@@ -75,10 +75,11 @@ def find_stub_files(stub_root: str):
 
 this_directory = Path(__file__).parent
 long_description = (this_directory / "README.md").read_text()
+version = '999-dev0'
 
 setup(
     name='timefold-solver',
-    version='999-dev0',
+    version=version,
     license='Apache License Version 2.0',
     license_file='LICENSE',
     description='An AI constraint solver that optimizes planning and scheduling problems',
@@ -119,6 +120,9 @@ setup(
     install_requires=[
         'JPype1>=1.5.0',
     ],
+    extras_require={
+        'enterprise': [f'timefold-solver-enterprise=={version}'],
+    },
     cmdclass={'build_py': FetchDependencies},
     package_data={
         'timefold.solver.jars': ['*.jar'],

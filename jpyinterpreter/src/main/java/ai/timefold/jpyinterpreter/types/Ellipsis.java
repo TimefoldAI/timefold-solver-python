@@ -1,6 +1,7 @@
 package ai.timefold.jpyinterpreter.types;
 
 import ai.timefold.jpyinterpreter.builtins.GlobalBuiltins;
+import ai.timefold.solver.core.api.domain.lookup.PlanningId;
 
 public class Ellipsis extends AbstractPythonLikeObject {
     public static final Ellipsis INSTANCE;
@@ -15,6 +16,11 @@ public class Ellipsis extends AbstractPythonLikeObject {
 
     private Ellipsis() {
         super(ELLIPSIS_TYPE);
+    }
+
+    @PlanningId
+    private int getPlanningId() {
+        return 0;
     }
 
     @Override

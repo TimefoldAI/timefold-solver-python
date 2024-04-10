@@ -1,4 +1,5 @@
 from ..constraint import ConstraintFactory
+from ..timefold_java_interop import is_enterprise_installed
 
 from typing import Any, Optional, List, Type, Callable, TYPE_CHECKING
 from dataclasses import dataclass, field
@@ -83,12 +84,25 @@ class TerminationCompositionStyle(Enum):
         return _lookup_on_java_class(_java_termination_composition_style, self.name)
 
 
+class MoveThreadCount(Enum):
+    AUTO = auto()
+
+
+class RequiresEnterpriseError(EnvironmentError):
+    def __init__(self, feature):
+        super().__init__(f'Feature {feature} requires timefold-solver-enterprise to be installed. '
+                         f'See https://docs.timefold.ai/timefold-solver/latest/enterprise-edition/'
+                         f'enterprise-edition#switchToEnterpriseEdition for instructions on how to '
+                         f'install timefold-solver-enterprise.')
+
+
 @dataclass(kw_only=True)
 class SolverConfig:
     solution_class: Optional[Type] = field(default=None)
     entity_class_list: Optional[List[Type]] = field(default=None)
     environment_mode: Optional[EnvironmentMode] = field(default=EnvironmentMode.REPRODUCIBLE)
     random_seed: Optional[int] = field(default=None)
+    move_thread_count: Optional[int | MoveThreadCount] = field(default=None)
     termination_config: Optional['TerminationConfig'] = field(default=None)
     score_director_factory_config: Optional['ScoreDirectorFactoryConfig'] = field(default=None)
     xml_source_text: Optional[str] = field(default=None)
@@ -124,6 +138,16 @@ class SolverConfig:
                     raise FileNotFoundError(e.getMessage()) from e
 
             # Next, override fields
+            if self.move_thread_count is not None:
+                if not is_enterprise_installed():
+                    raise RequiresEnterpriseError('multithreaded solving')
+                if isinstance(self.move_thread_count, MoveThreadCount):
+                    out.setMoveThreadCount(self.move_thread_count.name)
+                else:
+                    out.setMoveThreadCount(str(self.move_thread_count))
+            elif out.getMoveThreadCount() is not None and not is_enterprise_installed():
+                raise RequiresEnterpriseError('multithreaded solving')
+
             if self.solution_class is not None:
                 from ai.timefold.solver.core.api.domain.solution import PlanningSolution as JavaPlanningSolution
                 java_class = get_class(self.solution_class)
@@ -133,6 +157,7 @@ class SolverConfig:
                     raise TypeError(f'{self.solution_class} is not a @planning_solution class. '
                                     f'Maybe move the @planning_solution decorator to the top of the decorator list?')
                 out.setSolutionClass(get_class(self.solution_class))
+
             if self.entity_class_list is not None:
                 from ai.timefold.solver.core.api.domain.entity import PlanningEntity as JavaPlanningEntity
                 entity_class_list = ArrayList()
@@ -145,16 +170,21 @@ class SolverConfig:
                                         f'Maybe move the @planning_entity decorator to the top of the decorator list?')
                     entity_class_list.add(java_class)
                 out.setEntityClassList(entity_class_list)
+
             if self.environment_mode is not None:
                 out.setEnvironmentMode(self.environment_mode._get_java_enum())
+
             if self.random_seed is not None:
                 out.setRandomSeed(self.random_seed)
+
             if self.score_director_factory_config is not None:
                 out.setScoreDirectorFactoryConfig(
                     self.score_director_factory_config._to_java_score_director_factory_config())
+
             if self.termination_config is not None:
                 out.setTerminationConfig(
                     self.termination_config._to_java_termination_config(out.getTerminationConfig()))
+
             return out
 
 
@@ -234,4 +264,5 @@ class TerminationConfig:
 
 
 __all__ = ['Duration', 'EnvironmentMode', 'TerminationCompositionStyle',
+           'RequiresEnterpriseError', 'MoveThreadCount',
            'SolverConfig', 'ScoreDirectorFactoryConfig', 'TerminationConfig']

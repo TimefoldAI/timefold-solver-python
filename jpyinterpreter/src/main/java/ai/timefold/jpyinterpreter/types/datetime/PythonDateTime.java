@@ -32,6 +32,7 @@ import ai.timefold.jpyinterpreter.types.numeric.PythonFloat;
 import ai.timefold.jpyinterpreter.types.numeric.PythonInteger;
 import ai.timefold.jpyinterpreter.types.numeric.PythonNumber;
 import ai.timefold.jpyinterpreter.util.arguments.ArgumentSpec;
+import ai.timefold.solver.core.api.domain.lookup.PlanningId;
 
 /**
  * Python docs: <a href="https://docs.python.org/3/library/datetime.html#datetime.datetime">datetime objects</a>
@@ -209,6 +210,7 @@ public class PythonDateTime extends PythonDate<PythonDateTime> {
         // toordinal, weekday, isoweekday, isocalendar
     }
 
+    @PlanningId
     final Temporal dateTime;
     final ZoneId zoneId;
 

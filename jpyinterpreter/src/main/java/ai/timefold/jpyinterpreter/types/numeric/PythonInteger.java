@@ -24,11 +24,13 @@ import ai.timefold.jpyinterpreter.types.errors.ValueError;
 import ai.timefold.jpyinterpreter.types.errors.arithmetic.ZeroDivisionError;
 import ai.timefold.jpyinterpreter.util.DefaultFormatSpec;
 import ai.timefold.jpyinterpreter.util.StringFormatter;
+import ai.timefold.solver.core.api.domain.lookup.PlanningId;
 
 public class PythonInteger extends AbstractPythonLikeObject implements PythonNumber {
     private static final BigInteger MIN_BYTE = BigInteger.valueOf(0);
     private static final BigInteger MAX_BYTE = BigInteger.valueOf(255);
 
+    @PlanningId
     public final BigInteger value;
 
     public final static PythonInteger ZERO = new PythonInteger(BigInteger.ZERO);

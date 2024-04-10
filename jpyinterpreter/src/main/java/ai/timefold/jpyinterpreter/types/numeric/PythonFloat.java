@@ -27,8 +27,10 @@ import ai.timefold.jpyinterpreter.types.errors.ValueError;
 import ai.timefold.jpyinterpreter.types.errors.arithmetic.ZeroDivisionError;
 import ai.timefold.jpyinterpreter.util.DefaultFormatSpec;
 import ai.timefold.jpyinterpreter.util.StringFormatter;
+import ai.timefold.solver.core.api.domain.lookup.PlanningId;
 
 public class PythonFloat extends AbstractPythonLikeObject implements PythonNumber {
+    @PlanningId
     public final double value;
 
     static {

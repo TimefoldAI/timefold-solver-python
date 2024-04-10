@@ -5,19 +5,25 @@ from jpype.types import *
 from jpype import JOverride, JImplements
 import importlib.resources
 from typing import cast, List, Type, TypeVar, Callable, Union, TYPE_CHECKING
-from .timefold_python_logger import timefold_logger
 from .jpype_type_conversions import PythonSupplier, ConstraintProviderFunction
 
 if TYPE_CHECKING:
     # These imports require a JVM to be running, so only import if type checking
     from java.lang import ClassLoader
-    from ai.timefold.solver.core.api.score.stream import Constraint as _Constraint, ConstraintFactory as _ConstraintFactory
+    from ai.timefold.solver.core.api.score.stream import (Constraint as _Constraint,
+                                                          ConstraintFactory as _ConstraintFactory)
     from ai.timefold.solver.core.api.score.calculator import IncrementalScoreCalculator as _IncrementalScoreCalculator
     from ai.timefold.solver.core.api.domain.variable import VariableListener as _VariableListener
 
 Solution_ = TypeVar('Solution_')
 ProblemId_ = TypeVar('ProblemId_')
 Score_ = TypeVar('Score_')
+_enterprise_installed: bool = False
+
+
+def is_enterprise_installed() -> bool:
+    global _enterprise_installed
+    return _enterprise_installed
 
 
 def extract_timefold_jars() -> list[str]:
@@ -30,9 +36,20 @@ def extract_timefold_jars() -> list[str]:
 
     :return: None
     """
+    global _enterprise_installed
+    try:
+
+        enterprise_dependencies = [str(importlib.resources.path('timefold.solver.enterprise.jars',
+                                                                p.name).__enter__())
+                                   for p in importlib.resources.files('timefold.solver.enterprise.jars').iterdir()
+                                   if p.name.endswith(".jar")]
+        _enterprise_installed = True
+    except ModuleNotFoundError:
+        enterprise_dependencies = []
+        _enterprise_installed = False
     return [str(importlib.resources.path('timefold.solver.jars', p.name).__enter__())
             for p in importlib.resources.files('timefold.solver.jars').iterdir()
-            if p.name.endswith(".jar")]
+            if p.name.endswith(".jar")] + enterprise_dependencies
 
 
 def init(*args, path: List[str] = None, include_timefold_jars: bool = True, log_level='INFO'):

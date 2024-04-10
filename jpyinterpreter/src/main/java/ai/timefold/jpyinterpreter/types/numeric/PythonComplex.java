@@ -5,6 +5,8 @@ import java.util.List;
 import ai.timefold.jpyinterpreter.PythonOverloadImplementor;
 import ai.timefold.jpyinterpreter.types.AbstractPythonLikeObject;
 import ai.timefold.jpyinterpreter.types.PythonLikeType;
+import ai.timefold.jpyinterpreter.util.ComparableFixedList;
+import ai.timefold.solver.core.api.domain.lookup.PlanningId;
 
 public class PythonComplex extends AbstractPythonLikeObject implements PythonNumber {
     final PythonNumber real;
@@ -43,5 +45,10 @@ public class PythonComplex extends AbstractPythonLikeObject implements PythonNum
 
     public PythonNumber getImaginary() {
         return imaginary;
+    }
+
+    @PlanningId
+    private ComparableFixedList<PythonNumber> getPlanningId() {
+        return new ComparableFixedList<>(real, imaginary);
     }
 }

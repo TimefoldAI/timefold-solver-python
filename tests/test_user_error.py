@@ -104,3 +104,10 @@ def test_non_proxied_function_passed():
                 constraint_provider_function=not_proxied  # noqa
             )
         )._to_java_solver_config()
+
+
+def test_missing_enterprise():
+    with pytest.raises(RequiresEnterpriseError, match=re.escape('multithreaded solving')):
+        solver_config = SolverConfig(
+            move_thread_count=MoveThreadCount.AUTO
+        )._to_java_solver_config()

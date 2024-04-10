@@ -21,6 +21,7 @@ import ai.timefold.jpyinterpreter.types.PythonString;
 import ai.timefold.jpyinterpreter.types.errors.ValueError;
 import ai.timefold.jpyinterpreter.types.numeric.PythonInteger;
 import ai.timefold.jpyinterpreter.util.arguments.ArgumentSpec;
+import ai.timefold.solver.core.api.domain.lookup.PlanningId;
 
 public class PythonTime extends AbstractPythonLikeObject {
     // Taken from https://docs.python.org/3/library/datetime.html#datetime.time.fromisoformat
@@ -100,6 +101,7 @@ public class PythonTime extends AbstractPythonLikeObject {
 
     }
 
+    @PlanningId
     final LocalTime localTime;
     final ZoneId zoneId;
 
