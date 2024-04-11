@@ -25,13 +25,13 @@ import ai.timefold.jpyinterpreter.types.errors.ValueError;
 import ai.timefold.jpyinterpreter.types.errors.lookup.IndexError;
 import ai.timefold.jpyinterpreter.types.numeric.PythonBoolean;
 import ai.timefold.jpyinterpreter.types.numeric.PythonInteger;
-import ai.timefold.jpyinterpreter.util.ComparableFixedList;
-import ai.timefold.solver.core.api.domain.lookup.PlanningId;
 import ai.timefold.solver.core.impl.domain.solution.cloner.PlanningCloneable;
+import ai.timefold.solver.core.impl.domain.solution.cloner.PlanningImmutable;
 
 public class PythonLikeTuple<T extends PythonLikeObject> extends AbstractPythonLikeObject implements List<T>,
         PlanningCloneable<PythonLikeTuple<T>>,
         PythonLikeComparable<PythonLikeTuple>,
+        PlanningImmutable,
         RandomAccess {
     public static PythonLikeTuple EMPTY = PythonLikeTuple.fromList(Collections.emptyList());
 
@@ -105,12 +105,6 @@ public class PythonLikeTuple<T extends PythonLikeObject> extends AbstractPythonL
         for (int i = 0; i < size; i++) {
             delegate.add(null);
         }
-    }
-
-    @PlanningId
-    @SuppressWarnings({ "rawtypes", "unchecked" })
-    private ComparableFixedList<?> getPlanningId() {
-        return new ComparableFixedList<>(delegate);
     }
 
     @Override

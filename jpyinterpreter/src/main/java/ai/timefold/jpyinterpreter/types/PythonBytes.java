@@ -28,12 +28,10 @@ import ai.timefold.jpyinterpreter.types.errors.unicode.UnicodeDecodeError;
 import ai.timefold.jpyinterpreter.types.numeric.PythonBoolean;
 import ai.timefold.jpyinterpreter.types.numeric.PythonInteger;
 import ai.timefold.jpyinterpreter.util.ByteCharSequence;
-import ai.timefold.jpyinterpreter.util.ComparableFixedList;
-import ai.timefold.jpyinterpreter.util.PrimitiveNumberArrayList;
 import ai.timefold.jpyinterpreter.util.StringFormatter;
-import ai.timefold.solver.core.api.domain.lookup.PlanningId;
+import ai.timefold.solver.core.impl.domain.solution.cloner.PlanningImmutable;
 
-public class PythonBytes extends AbstractPythonLikeObject implements PythonBytesLikeObject {
+public class PythonBytes extends AbstractPythonLikeObject implements PythonBytesLikeObject, PlanningImmutable {
 
     public static final PythonBytes EMPTY = new PythonBytes(new byte[0]);
 
@@ -351,11 +349,6 @@ public class PythonBytes extends AbstractPythonLikeObject implements PythonBytes
     public PythonBytes(byte[] value) {
         super(BuiltinTypes.BYTES_TYPE);
         this.value = value;
-    }
-
-    @PlanningId
-    private ComparableFixedList<Byte> getPlanningId() {
-        return new ComparableFixedList<>(new PrimitiveNumberArrayList<Byte>(value));
     }
 
     @Override
