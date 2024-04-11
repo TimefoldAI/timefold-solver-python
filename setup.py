@@ -120,9 +120,6 @@ setup(
     install_requires=[
         'JPype1>=1.5.0',
     ],
-    extras_require={
-        'enterprise': [f'timefold-solver-enterprise=={version}'],
-    },
     cmdclass={'build_py': FetchDependencies},
     package_data={
         'timefold.solver.jars': ['*.jar'],
