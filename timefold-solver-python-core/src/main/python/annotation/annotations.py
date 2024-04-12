@@ -1,16 +1,14 @@
 import jpype
 
-from ..timefold_java_interop import ensure_init, _generate_constraint_provider_class, \
-    _generate_incremental_score_calculator_class, \
-    _generate_variable_listener_class
+from ..constraint import ConstraintFactory
+from ..timefold_java_interop import ensure_init, _generate_constraint_provider_class, register_java_class
 from jpyinterpreter import JavaAnnotation
 from jpype import JImplements, JOverride
 from typing import Union, List, Callable, Type, TYPE_CHECKING, TypeVar
 
 if TYPE_CHECKING:
     from ai.timefold.solver.core.api.solver.change import ProblemChange as _ProblemChange
-    from ai.timefold.solver.core.api.score.stream import (Constraint as _Constraint,
-                                                          ConstraintFactory as _ConstraintFactory)
+    from ai.timefold.solver.core.api.score.stream import Constraint as _Constraint
     from ai.timefold.solver.core.api.score import Score as _Score
     from ai.timefold.solver.core.api.score.calculator import IncrementalScoreCalculator as _IncrementalScoreCalculator
     from ai.timefold.solver.core.api.domain.variable import PlanningVariableGraphType as _PlanningVariableGraphType, \
@@ -18,6 +16,8 @@ if TYPE_CHECKING:
 
 
 Solution_ = TypeVar('Solution_')
+Origin_ = TypeVar('Origin_')
+Destination_ = TypeVar('Destination_')
 
 
 class PlanningId(JavaAnnotation):
@@ -301,10 +301,20 @@ def planning_solution(planning_solution_class: Type[Solution_]) -> Type[Solution
     return out
 
 
-def constraint_provider(constraint_provider_function: Callable[['_ConstraintFactory'], List['_Constraint']] = None, /) \
-        -> \
-        Union[Callable[[Callable], Callable[['_ConstraintFactory'], List['_Constraint']]],
-              Callable[['_ConstraintFactory'], List['_Constraint']]]:
+def nearby_distance_meter(distance_function: Callable[[Origin_, Destination_], float], /) \
+        -> Callable[[Origin_, Destination_], float]:
+    ensure_init()
+    from jpyinterpreter import translate_python_bytecode_to_java_bytecode, generate_proxy_class_for_translated_function
+    from ai.timefold.solver.core.impl.heuristic.selector.common.nearby import NearbyDistanceMeter  # noqa
+    java_class = generate_proxy_class_for_translated_function(NearbyDistanceMeter,
+                                                              translate_python_bytecode_to_java_bytecode(
+                                                                  distance_function,
+                                                                  NearbyDistanceMeter))
+    return register_java_class(distance_function, java_class)
+
+
+def constraint_provider(constraint_provider_function: Callable[[ConstraintFactory], List['_Constraint']], /) \
+        -> Callable[[ConstraintFactory], List['_Constraint']]:
     """Marks a function as a ConstraintProvider.
 
     The function takes a single parameter, the ConstraintFactory, and
@@ -321,9 +331,8 @@ def constraint_provider(constraint_provider_function: Callable[['_ConstraintFact
             from ..constraint import ConstraintFactory
             out = function(ConstraintFactory(constraint_factory))
             return out
-        wrapped_constraint_provider.__timefold_java_class = (
-            _generate_constraint_provider_class(function, wrapped_constraint_provider))
-        return wrapped_constraint_provider
+        java_class = _generate_constraint_provider_class(function, wrapped_constraint_provider)
+        return register_java_class(wrapped_constraint_provider, java_class)
 
     return constraint_provider_wrapper(constraint_provider_function)
 
@@ -342,10 +351,10 @@ def easy_score_calculator(easy_score_calculator_function: Callable[[Solution_], 
     ensure_init()
     from jpyinterpreter import translate_python_bytecode_to_java_bytecode, generate_proxy_class_for_translated_function
     from ai.timefold.solver.core.api.score.calculator import EasyScoreCalculator
-    easy_score_calculator_function.__timefold_java_class = \
-        generate_proxy_class_for_translated_function(EasyScoreCalculator,
-            translate_python_bytecode_to_java_bytecode(easy_score_calculator_function, EasyScoreCalculator))
-    return easy_score_calculator_function
+    java_class = generate_proxy_class_for_translated_function(EasyScoreCalculator,
+                                                              translate_python_bytecode_to_java_bytecode(
+                                                                  easy_score_calculator_function, EasyScoreCalculator))
+    return register_java_class(easy_score_calculator_function, java_class)
 
 
 def incremental_score_calculator(incremental_score_calculator: Type['_IncrementalScoreCalculator']) -> \
@@ -415,9 +424,8 @@ def incremental_score_calculator(incremental_score_calculator: Type['_Incrementa
     #     method_on_class = getattr(incremental_score_calculator, method, None
 
     translated_class = translate_python_class_to_java_class(incremental_score_calculator)
-    incremental_score_calculator.__timefold_java_class = generate_proxy_class_for_translated_class(base_interface,
-                                                                                                   translated_class)
-    return incremental_score_calculator
+    java_class = generate_proxy_class_for_translated_class(base_interface, translated_class)
+    return register_java_class(incremental_score_calculator, java_class)
 
 
 def variable_listener(variable_listener_class: Type['_VariableListener'] = None, /, *,
@@ -505,9 +513,8 @@ def variable_listener(variable_listener_class: Type['_VariableListener'] = None,
             setattr(the_variable_listener_class, 'resetWorkingSolution', reset_working_solution)
 
         translated_class = translate_python_class_to_java_class(the_variable_listener_class)
-        the_variable_listener_class.__timefold_java_class = generate_proxy_class_for_translated_class(VariableListener,
-                                                                                                      translated_class)
-        return the_variable_listener_class
+        java_class = generate_proxy_class_for_translated_class(VariableListener, translated_class)
+        return register_java_class(the_variable_listener_class, java_class)
 
     if variable_listener_class:  # Called as @variable_listener
         return variable_listener_wrapper(variable_listener_class)
@@ -570,5 +577,6 @@ __all__ = ['PlanningId', 'PlanningScore', 'PlanningPin', 'PlanningVariable',
            'PlanningEntityProperty', 'PlanningEntityCollectionProperty',
            'ValueRangeProvider', 'DeepPlanningClone',
            'planning_entity', 'planning_solution',
+           'nearby_distance_meter',
            'constraint_provider', 'easy_score_calculator', 'incremental_score_calculator',
            'variable_listener', 'problem_change']

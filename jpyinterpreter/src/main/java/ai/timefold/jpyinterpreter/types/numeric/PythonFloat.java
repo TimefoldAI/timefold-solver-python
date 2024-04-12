@@ -15,6 +15,7 @@ import ai.timefold.jpyinterpreter.PythonOverloadImplementor;
 import ai.timefold.jpyinterpreter.PythonUnaryOperator;
 import ai.timefold.jpyinterpreter.types.AbstractPythonLikeObject;
 import ai.timefold.jpyinterpreter.types.BuiltinTypes;
+import ai.timefold.jpyinterpreter.types.Coercible;
 import ai.timefold.jpyinterpreter.types.NotImplemented;
 import ai.timefold.jpyinterpreter.types.PythonLikeComparable;
 import ai.timefold.jpyinterpreter.types.PythonLikeFunction;
@@ -29,7 +30,8 @@ import ai.timefold.jpyinterpreter.util.DefaultFormatSpec;
 import ai.timefold.jpyinterpreter.util.StringFormatter;
 import ai.timefold.solver.core.impl.domain.solution.cloner.PlanningImmutable;
 
-public class PythonFloat extends AbstractPythonLikeObject implements PythonNumber, PlanningImmutable {
+public class PythonFloat extends AbstractPythonLikeObject implements PythonNumber, PlanningImmutable,
+        Coercible {
     public final double value;
 
     static {
@@ -792,5 +794,13 @@ public class PythonFloat extends AbstractPythonLikeObject implements PythonNumbe
         out.append(numberFormat.format(value));
         StringFormatter.align(out, formatSpec, DefaultFormatSpec.AlignmentOption.RIGHT_ALIGN);
         return PythonString.valueOf(out.toString());
+    }
+
+    @Override
+    public <T> T coerce(Class<T> targetType) {
+        if (targetType.equals(PythonInteger.class)) {
+            return (T) PythonInteger.valueOf((long) value);
+        }
+        return null;
     }
 }

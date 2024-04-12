@@ -24,6 +24,28 @@ def test_create_instance():
     verifier.verify(3, expected_result=A(3))
 
 
+def test_type_coercing():
+    class A:
+        value: float
+
+        def __init__(self, value):
+            self.value = value
+
+        def __eq__(self, other):
+            if not isinstance(other, A):
+                return False
+            return self.value == other.value
+
+    def create_instance(x: int) -> A:
+        return A(x)
+
+    verifier = verifier_for(create_instance)
+
+    verifier.verify(1, expected_result=A(1))
+    verifier.verify(2, expected_result=A(2))
+    verifier.verify(3, expected_result=A(3))
+
+
 def test_deleted_field():
     class A:
         value: int

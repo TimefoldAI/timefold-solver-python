@@ -23,6 +23,7 @@ import ai.timefold.jpyinterpreter.implementors.JavaComparableImplementor;
 import ai.timefold.jpyinterpreter.implementors.JavaEqualsImplementor;
 import ai.timefold.jpyinterpreter.implementors.JavaHashCodeImplementor;
 import ai.timefold.jpyinterpreter.implementors.JavaInterfaceImplementor;
+import ai.timefold.jpyinterpreter.implementors.JavaPythonTypeConversionImplementor;
 import ai.timefold.jpyinterpreter.implementors.PythonConstantsImplementor;
 import ai.timefold.jpyinterpreter.opcodes.AbstractOpcode;
 import ai.timefold.jpyinterpreter.opcodes.Opcode;
@@ -1096,6 +1097,13 @@ public class PythonClassTranslator {
                 getUnwrappedJavaObject(methodVisitor, type);
                 typeDescriptor = Type.getDescriptor(type.getJavaObjectWrapperType());
             } else {
+                methodVisitor.visitLdcInsn(Type.getType(type.getJavaTypeDescriptor()));
+                methodVisitor.visitMethodInsn(Opcodes.INVOKESTATIC,
+                        Type.getInternalName(JavaPythonTypeConversionImplementor.class),
+                        "coerceToType", Type.getMethodDescriptor(Type.getType(Object.class),
+                                Type.getType(PythonLikeObject.class),
+                                Type.getType(Class.class)),
+                        false);
                 methodVisitor.visitTypeInsn(Opcodes.CHECKCAST, type.getJavaTypeInternalName());
             }
             methodVisitor.visitFieldInsn(Opcodes.PUTFIELD, classInternalName, getJavaFieldName(field),
@@ -1231,6 +1239,12 @@ public class PythonClassTranslator {
             }
 
             var attributeType = attributeNameToType.get(field);
+            methodVisitor.visitLdcInsn(Type.getType(attributeType.getJavaTypeDescriptor()));
+            methodVisitor.visitMethodInsn(Opcodes.INVOKESTATIC, Type.getInternalName(JavaPythonTypeConversionImplementor.class),
+                    "coerceToType", Type.getMethodDescriptor(Type.getType(Object.class),
+                            Type.getType(PythonLikeObject.class),
+                            Type.getType(Class.class)),
+                    false);
             methodVisitor.visitTypeInsn(Opcodes.CHECKCAST, attributeNameToType.get(field).getJavaTypeInternalName());
 
             if (attributeType.getJavaTypeInternalName().equals(Type.getInternalName(JavaObjectWrapper.class))) {

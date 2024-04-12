@@ -140,6 +140,12 @@ public class ObjectImplementor {
             FieldDescriptor fieldDescriptor = maybeFieldDescriptor.get();
             methodVisitor.visitTypeInsn(Opcodes.CHECKCAST, fieldDescriptor.declaringClassInternalName());
             StackManipulationImplementor.swap(methodVisitor);
+            methodVisitor.visitLdcInsn(Type.getType(fieldDescriptor.fieldPythonLikeType().getJavaTypeDescriptor()));
+            methodVisitor.visitMethodInsn(Opcodes.INVOKESTATIC, Type.getInternalName(JavaPythonTypeConversionImplementor.class),
+                    "coerceToType", Type.getMethodDescriptor(Type.getType(Object.class),
+                            Type.getType(PythonLikeObject.class),
+                            Type.getType(Class.class)),
+                    false);
             methodVisitor.visitTypeInsn(Opcodes.CHECKCAST, fieldDescriptor.fieldPythonLikeType().getJavaTypeInternalName());
             if (fieldDescriptor.isJavaType()) {
                 // Need to unwrap the object
