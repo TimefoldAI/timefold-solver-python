@@ -1,8 +1,9 @@
 package ai.timefold.jpyinterpreter.types;
 
 import ai.timefold.jpyinterpreter.builtins.GlobalBuiltins;
+import ai.timefold.solver.core.impl.domain.solution.cloner.PlanningImmutable;
 
-public class Ellipsis extends AbstractPythonLikeObject {
+public class Ellipsis extends AbstractPythonLikeObject implements PlanningImmutable {
     public static final Ellipsis INSTANCE;
     public static final PythonLikeType ELLIPSIS_TYPE = new PythonLikeType("EllipsisType", Ellipsis.class);
     public static final PythonLikeType $TYPE = ELLIPSIS_TYPE;

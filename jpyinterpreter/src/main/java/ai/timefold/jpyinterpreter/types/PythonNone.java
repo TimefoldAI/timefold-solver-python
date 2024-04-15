@@ -6,8 +6,9 @@ import ai.timefold.jpyinterpreter.PythonOverloadImplementor;
 import ai.timefold.jpyinterpreter.PythonUnaryOperator;
 import ai.timefold.jpyinterpreter.builtins.GlobalBuiltins;
 import ai.timefold.jpyinterpreter.types.numeric.PythonBoolean;
+import ai.timefold.solver.core.impl.domain.solution.cloner.PlanningImmutable;
 
-public class PythonNone extends AbstractPythonLikeObject {
+public class PythonNone extends AbstractPythonLikeObject implements PlanningImmutable {
     public static final PythonNone INSTANCE;
 
     static {

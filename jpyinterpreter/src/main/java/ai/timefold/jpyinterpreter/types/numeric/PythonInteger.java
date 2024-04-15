@@ -24,8 +24,9 @@ import ai.timefold.jpyinterpreter.types.errors.ValueError;
 import ai.timefold.jpyinterpreter.types.errors.arithmetic.ZeroDivisionError;
 import ai.timefold.jpyinterpreter.util.DefaultFormatSpec;
 import ai.timefold.jpyinterpreter.util.StringFormatter;
+import ai.timefold.solver.core.impl.domain.solution.cloner.PlanningImmutable;
 
-public class PythonInteger extends AbstractPythonLikeObject implements PythonNumber {
+public class PythonInteger extends AbstractPythonLikeObject implements PythonNumber, PlanningImmutable {
     private static final BigInteger MIN_BYTE = BigInteger.valueOf(0);
     private static final BigInteger MAX_BYTE = BigInteger.valueOf(255);
 

@@ -29,8 +29,9 @@ import ai.timefold.jpyinterpreter.types.numeric.PythonBoolean;
 import ai.timefold.jpyinterpreter.types.numeric.PythonInteger;
 import ai.timefold.jpyinterpreter.util.ByteCharSequence;
 import ai.timefold.jpyinterpreter.util.StringFormatter;
+import ai.timefold.solver.core.impl.domain.solution.cloner.PlanningImmutable;
 
-public class PythonBytes extends AbstractPythonLikeObject implements PythonBytesLikeObject {
+public class PythonBytes extends AbstractPythonLikeObject implements PythonBytesLikeObject, PlanningImmutable {
 
     public static final PythonBytes EMPTY = new PythonBytes(new byte[0]);
 

@@ -26,10 +26,12 @@ import ai.timefold.jpyinterpreter.types.errors.lookup.IndexError;
 import ai.timefold.jpyinterpreter.types.numeric.PythonBoolean;
 import ai.timefold.jpyinterpreter.types.numeric.PythonInteger;
 import ai.timefold.solver.core.impl.domain.solution.cloner.PlanningCloneable;
+import ai.timefold.solver.core.impl.domain.solution.cloner.PlanningImmutable;
 
 public class PythonLikeTuple<T extends PythonLikeObject> extends AbstractPythonLikeObject implements List<T>,
         PlanningCloneable<PythonLikeTuple<T>>,
         PythonLikeComparable<PythonLikeTuple>,
+        PlanningImmutable,
         RandomAccess {
     public static PythonLikeTuple EMPTY = PythonLikeTuple.fromList(Collections.emptyList());
 

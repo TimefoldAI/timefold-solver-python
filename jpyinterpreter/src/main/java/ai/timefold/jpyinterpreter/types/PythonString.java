@@ -37,8 +37,9 @@ import ai.timefold.jpyinterpreter.types.numeric.PythonInteger;
 import ai.timefold.jpyinterpreter.util.DefaultFormatSpec;
 import ai.timefold.jpyinterpreter.util.StringFormatter;
 import ai.timefold.jpyinterpreter.util.arguments.ArgumentSpec;
+import ai.timefold.solver.core.impl.domain.solution.cloner.PlanningImmutable;
 
-public class PythonString extends AbstractPythonLikeObject implements PythonLikeComparable<PythonString> {
+public class PythonString extends AbstractPythonLikeObject implements PythonLikeComparable<PythonString>, PlanningImmutable {
     public final String value;
 
     public final static PythonString EMPTY = new PythonString("");

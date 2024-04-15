@@ -10,8 +10,9 @@ import ai.timefold.jpyinterpreter.types.AbstractPythonLikeObject;
 import ai.timefold.jpyinterpreter.types.BuiltinTypes;
 import ai.timefold.jpyinterpreter.types.PythonLikeType;
 import ai.timefold.jpyinterpreter.types.PythonString;
+import ai.timefold.solver.core.impl.domain.solution.cloner.PlanningImmutable;
 
-public class PythonTzinfo extends AbstractPythonLikeObject {
+public class PythonTzinfo extends AbstractPythonLikeObject implements PlanningImmutable {
     public static PythonLikeType TZ_INFO_TYPE = new PythonLikeType("tzinfo",
             PythonTzinfo.class);
 

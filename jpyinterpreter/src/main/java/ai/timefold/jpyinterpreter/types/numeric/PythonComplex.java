@@ -5,8 +5,9 @@ import java.util.List;
 import ai.timefold.jpyinterpreter.PythonOverloadImplementor;
 import ai.timefold.jpyinterpreter.types.AbstractPythonLikeObject;
 import ai.timefold.jpyinterpreter.types.PythonLikeType;
+import ai.timefold.solver.core.impl.domain.solution.cloner.PlanningImmutable;
 
-public class PythonComplex extends AbstractPythonLikeObject implements PythonNumber {
+public class PythonComplex extends AbstractPythonLikeObject implements PythonNumber, PlanningImmutable {
     final PythonNumber real;
     final PythonNumber imaginary;
 

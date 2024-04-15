@@ -32,11 +32,12 @@ import ai.timefold.jpyinterpreter.types.numeric.PythonFloat;
 import ai.timefold.jpyinterpreter.types.numeric.PythonInteger;
 import ai.timefold.jpyinterpreter.types.numeric.PythonNumber;
 import ai.timefold.jpyinterpreter.util.arguments.ArgumentSpec;
+import ai.timefold.solver.core.impl.domain.solution.cloner.PlanningImmutable;
 
 /**
  * Python docs: <a href="https://docs.python.org/3/library/datetime.html#datetime.datetime">datetime objects</a>
  */
-public class PythonDateTime extends PythonDate<PythonDateTime> {
+public class PythonDateTime extends PythonDate<PythonDateTime> implements PlanningImmutable {
     // Taken from https://docs.python.org/3/library/datetime.html#datetime.datetime.fromisoformat
     private static final Pattern ISO_FORMAT_PATTERN = Pattern.compile("^(?<year>\\d\\d\\d\\d)-(?<month>\\d\\d)-(?<day>\\d\\d)" +
             "(.(?<hour>\\d\\d)" +
