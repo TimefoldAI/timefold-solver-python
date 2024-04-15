@@ -86,6 +86,7 @@ class TerminationCompositionStyle(Enum):
 
 class MoveThreadCount(Enum):
     AUTO = auto()
+    NONE = auto()
 
 
 class RequiresEnterpriseError(EnvironmentError):
@@ -102,7 +103,7 @@ class SolverConfig:
     entity_class_list: Optional[List[Type]] = field(default=None)
     environment_mode: Optional[EnvironmentMode] = field(default=EnvironmentMode.REPRODUCIBLE)
     random_seed: Optional[int] = field(default=None)
-    move_thread_count: Optional[int | MoveThreadCount] = field(default=None)
+    move_thread_count: int | MoveThreadCount = field(default=MoveThreadCount.NONE)
     termination_config: Optional['TerminationConfig'] = field(default=None)
     score_director_factory_config: Optional['ScoreDirectorFactoryConfig'] = field(default=None)
     xml_source_text: Optional[str] = field(default=None)
@@ -138,7 +139,7 @@ class SolverConfig:
                     raise FileNotFoundError(e.getMessage()) from e
 
             # Next, override fields
-            if self.move_thread_count is not None:
+            if self.move_thread_count is not MoveThreadCount.NONE:
                 if not is_enterprise_installed():
                     raise RequiresEnterpriseError('multithreaded solving')
                 if isinstance(self.move_thread_count, MoveThreadCount):
