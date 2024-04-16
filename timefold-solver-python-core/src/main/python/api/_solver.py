@@ -59,10 +59,10 @@ class Solver(Generic[Solution_]):
     def is_terminate_early(self) -> bool:
         return self._delegate.isTerminateEarly()
 
-    def add_problem_change(self, problem_change: ProblemChange) -> None:
+    def add_problem_change(self, problem_change: ProblemChange[Solution_]) -> None:
         self._delegate.addProblemChange(ProblemChangeWrapper(problem_change))  # noqa
 
-    def add_problem_changes(self, problem_changes: List[ProblemChange]) -> None:
+    def add_problem_changes(self, problem_changes: List[ProblemChange[Solution_]]) -> None:
         self._delegate.addProblemChanges([ProblemChangeWrapper(problem_change) for problem_change in problem_changes])  # noqa
 
     def is_every_problem_change_processed(self) -> bool:

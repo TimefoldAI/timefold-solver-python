@@ -1,7 +1,7 @@
 from ..constraint import ConstraintFactory
 from .._timefold_java_interop import is_enterprise_installed
 
-from typing import Any, Optional, List, Type, Callable, TYPE_CHECKING
+from typing import Any, Optional, List, Type, Callable, TypeVar, Generic, TYPE_CHECKING
 from dataclasses import dataclass, field
 from enum import Enum, auto
 from pathlib import Path
@@ -97,9 +97,12 @@ class RequiresEnterpriseError(EnvironmentError):
                          f'install timefold-solver-enterprise.')
 
 
+Solution_ = TypeVar('Solution_')
+
+
 @dataclass(kw_only=True)
-class SolverConfig:
-    solution_class: Optional[Type] = field(default=None)
+class SolverConfig(Generic[Solution_]):
+    solution_class: Optional[Type[Solution_]] = field(default=None)
     entity_class_list: Optional[List[Type]] = field(default=None)
     environment_mode: Optional[EnvironmentMode] = field(default=EnvironmentMode.REPRODUCIBLE)
     random_seed: Optional[int] = field(default=None)
@@ -111,11 +114,11 @@ class SolverConfig:
     xml_source_file: Optional[Path] = field(default=None)
 
     @staticmethod
-    def create_from_xml_resource(path: Path):
+    def create_from_xml_resource(path: Path) -> 'SolverConfig':
         return SolverConfig(xml_source_file=path)
 
     @staticmethod
-    def create_from_xml_text(xml_text: str):
+    def create_from_xml_text(xml_text: str) -> 'SolverConfig':
         return SolverConfig(xml_source_text=xml_text)
 
     def _to_java_solver_config(self) -> '_JavaSolverConfig':
@@ -272,6 +275,18 @@ class TerminationConfig:
         return out
 
 
+@dataclass(kw_only=True)
+class SolverConfigOverride:
+    termination_config: Optional[TerminationConfig] = field(default=None)
+
+    def _to_java_solver_config_override(self):
+        from ai.timefold.solver.core.api.solver import SolverConfigOverride
+        out = SolverConfigOverride()
+        if self.termination_config is not None:
+            out = out.withTerminationConfig(self.termination_config._to_java_termination_config())
+        return out
+
+
 __all__ = ['Duration', 'EnvironmentMode', 'TerminationCompositionStyle',
            'RequiresEnterpriseError', 'MoveThreadCount',
-           'SolverConfig', 'ScoreDirectorFactoryConfig', 'TerminationConfig']
+           'SolverConfig', 'SolverConfigOverride', 'ScoreDirectorFactoryConfig', 'TerminationConfig']

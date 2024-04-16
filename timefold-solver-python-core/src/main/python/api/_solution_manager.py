@@ -1,7 +1,7 @@
 from ._solver_factory import SolverFactory
 from .._timefold_java_interop import get_class
 
-from typing import TypeVar, Union, TYPE_CHECKING
+from typing import TypeVar, Generic, Union, TYPE_CHECKING
 
 
 if TYPE_CHECKING:
@@ -15,18 +15,18 @@ Solution_ = TypeVar('Solution_')
 ProblemId_ = TypeVar('ProblemId_')
 
 
-class SolutionManager:
+class SolutionManager(Generic[Solution_]):
     _delegate: '_JavaSolutionManager'
 
     def __init__(self, delegate: '_JavaSolutionManager'):
         self._delegate = delegate
 
     @staticmethod
-    def create(solver_factory: 'SolverFactory'):
+    def create(solver_factory: 'SolverFactory[Solution_]') -> 'SolutionManager[Solution_]':
         from ai.timefold.solver.core.api.solver import SolutionManager as JavaSolutionManager
         return SolutionManager(JavaSolutionManager.create(solver_factory._delegate))
 
-    def update(self, solution, solution_update_policy=None) -> 'Score':
+    def update(self, solution: Solution_, solution_update_policy=None) -> 'Score':
         #  TODO handle solution_update_policy
         from jpyinterpreter import convert_to_java_python_like_object, update_python_object_from_java
         java_solution = convert_to_java_python_like_object(solution)
@@ -34,22 +34,24 @@ class SolutionManager:
         update_python_object_from_java(java_solution)
         return out
 
-    def analyze(self, solution, score_analysis_fetch_policy=None, solution_update_policy=None) -> 'ScoreAnalysis':
+    def analyze(self, solution: Solution_, score_analysis_fetch_policy=None, solution_update_policy=None) \
+            -> 'ScoreAnalysis':
         #  TODO handle policies
         from jpyinterpreter import convert_to_java_python_like_object
         return ScoreAnalysis(self._delegate.analyze(convert_to_java_python_like_object(solution)))
 
-    def explain(self, solution, solution_update_policy=None) -> 'ScoreExplanation':
+    def explain(self, solution: Solution_, solution_update_policy=None) -> 'ScoreExplanation':
         #  TODO handle policies
         from jpyinterpreter import convert_to_java_python_like_object
         return ScoreExplanation(self._delegate.explain(convert_to_java_python_like_object(solution)))
 
-    def recommend_fit(self, solution, entity_or_element, proposition_function, score_analysis_fetch_policy=None):
+    def recommend_fit(self, solution: Solution_, entity_or_element, proposition_function,
+                      score_analysis_fetch_policy=None):
         #  TODO
         raise NotImplementedError
 
 
-class ScoreExplanation:
+class ScoreExplanation(Generic[Solution_]):
     _delegate: '_JavaScoreExplanation'
 
     def __init__(self, delegate: '_JavaScoreExplanation'):
@@ -70,7 +72,7 @@ class ScoreExplanation:
     def get_score(self) -> 'Score':
         return self._delegate.getScore()
 
-    def get_solution(self):
+    def get_solution(self) -> Solution_:
         from jpyinterpreter import unwrap_python_like_object
         return unwrap_python_like_object(self._delegate.getSolution())
 
