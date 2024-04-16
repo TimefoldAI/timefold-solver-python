@@ -64,10 +64,10 @@ def test_solve():
             entities_to_remove = solution.entity_list.copy()
             for problem_fact in problem_facts_to_remove:
                 problem_change_director.remove_problem_fact(problem_fact,
-                                                            lambda value: solution.value_list.remove(problem_fact))
+                                                            lambda value: solution.value_list.remove(value))
             for removed_entity in entities_to_remove:
                 problem_change_director.remove_entity(removed_entity,
-                                                      lambda entity: solution.entity_list.remove(removed_entity))
+                                                      lambda entity: solution.entity_list.remove(entity))
             problem_change_director.add_entity(self.entity, lambda entity: solution.entity_list.append(entity))
             problem_change_director.add_problem_fact(self.value, lambda value: solution.value_list.append(value))
 
