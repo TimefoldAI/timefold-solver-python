@@ -185,6 +185,10 @@ def test_solve():
                       .with_final_best_solution_consumer(on_best_solution_changed)
                       ).run()
         assert_problem_change_solver_run(solver_manager, solver_job)
+        # Wait for 2 acquires, one for best solution consumer,
+        # another for final best solution consumer
+        assert semaphore.acquire(timeout=1)
+        assert semaphore.acquire(timeout=1)
         assert len(solution_list) == 2
 
 
