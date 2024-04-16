@@ -117,7 +117,10 @@ def is_c_native(item):
             or module == '':  # if we cannot find module, assume it is not native
         return False
 
-    return is_native_module(importlib.import_module(module))
+    try:
+        return is_native_module(importlib.import_module(module))
+    except:
+        return True
 
 
 def init_type_to_compiled_java_class():

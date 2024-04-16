@@ -1,5 +1,8 @@
+from .problem_change import ProblemChange, ProblemChangeWrapper
 from .solver_factory import SolverFactory
+from .future import wrap_completable_future
 
+from asyncio import Future
 from typing import TypeVar, TYPE_CHECKING
 from datetime import timedelta
 from enum import Enum, auto as auto_enum
@@ -50,9 +53,8 @@ class SolverJob:
     def is_terminated_early(self) -> bool:
         return self._delegate.isTerminatedEarly()
 
-    def add_problem_change(self, problem_change):
-        # TODO
-        raise NotImplementedError
+    def add_problem_change(self, problem_change: ProblemChange) -> Future[None]:
+        return wrap_completable_future(self._delegate.addProblemChange(ProblemChangeWrapper(problem_change)))
 
 
 class SolverJobBuilder:
@@ -148,9 +150,10 @@ class SolverManager:
         from jpyinterpreter import convert_to_java_python_like_object
         self._delegate.terminateEarly(convert_to_java_python_like_object(problem_id))
 
-    def add_problem_change(self, problem_id, problem_change):
-        # TODO
-        raise NotImplementedError
+    def add_problem_change(self, problem_id, problem_change: ProblemChange) -> Future[None]:
+        from jpyinterpreter import convert_to_java_python_like_object
+        return wrap_completable_future(self._delegate.addProblemChange(convert_to_java_python_like_object(problem_id),
+                                                                       ProblemChangeWrapper(problem_change)))
 
     def close(self):
         self._delegate.close()
