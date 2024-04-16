@@ -2,7 +2,6 @@ import pathlib
 import jpype
 import jpype.imports
 from jpype.types import *
-from jpype import JOverride, JImplements
 import importlib.resources
 from typing import cast, List, Type, TypeVar, Callable, Union, TYPE_CHECKING
 from .jpype_type_conversions import PythonSupplier, ConstraintProviderFunction
@@ -130,13 +129,21 @@ def get_class(python_class: Union[Type, Callable]) -> JClass:
     if python_class == bool:
         from java.lang import Boolean
         return cast(JClass, Boolean).class_
-    if hasattr(python_class, '__timefold_java_class'):
-        return cast(JClass, python_class.__timefold_java_class)
+    if hasattr(python_class, '_timefold_java_class'):
+        return cast(JClass, python_class._timefold_java_class)
     if isinstance(python_class, type):
         return cast(JClass, get_java_type_for_python_type(python_class).getJavaClass())
     if is_c_native(python_class):
         return cast(JClass, OpaquePythonReference.class_)
     return cast(JClass, Object)
+
+
+def register_java_class(python_object: Solution_,
+                        java_class: JClass) -> Solution_:
+    python_object._timefold_java_class = java_class
+    class_identifier = _get_class_identifier_for_object(python_object)
+    class_identifier_to_java_class_map[class_identifier] = java_class
+    return python_object
 
 
 unique_class_id = 0
@@ -230,57 +237,5 @@ def _generate_constraint_provider_class(original_function: Callable[['_Constrain
         _compose_unique_class_name(class_identifier),
         JObject(ConstraintProviderFunction(lambda cf: _to_constraint_java_array(wrapped_constraint_provider(cf))),
                 ConstraintProvider))
-    class_identifier_to_java_class_map[class_identifier] = out
-    return out
-
-
-def _generate_easy_score_calculator_class(easy_score_calculator: Callable[[Solution_], Score_]) -> JClass:
-    ensure_init()
-    from ai.timefold.solver.python import PythonWrapperGenerator  # noqa
-    from ai.timefold.solver.core.api.score.calculator import EasyScoreCalculator
-
-    class_identifier = _get_class_identifier_for_object(easy_score_calculator)
-
-    @JImplements(EasyScoreCalculator)
-    class EasyScoreCalculatorClass:
-        def __init__(self, easy_score_calculator_impl):
-            self.easy_score_calculator_impl = easy_score_calculator_impl
-
-        @JOverride
-        def calculateScore(self, solution):
-            return self.easy_score_calculator_impl(solution)
-
-    out = PythonWrapperGenerator.defineEasyScoreCalculatorClass(
-        _compose_unique_class_name(class_identifier),
-        EasyScoreCalculatorClass(easy_score_calculator))
-    class_identifier_to_java_class_map[class_identifier] = out
-    return out
-
-
-def _generate_incremental_score_calculator_class(incremental_score_calculator: Type['_IncrementalScoreCalculator'],
-                                                 constraint_match_aware: bool) -> JClass:
-    from ai.timefold.solver.python import PythonWrapperGenerator  # noqa
-    from java.util.function import Supplier
-    ensure_init()
-
-    class_identifier = _get_class_identifier_for_object(incremental_score_calculator)
-    out = PythonWrapperGenerator.defineIncrementalScoreCalculatorClass(
-        _compose_unique_class_name(class_identifier),
-        JObject(PythonSupplier(lambda: incremental_score_calculator()),
-                Supplier), constraint_match_aware)
-    class_identifier_to_java_class_map[class_identifier] = out
-    return out
-
-
-def _generate_variable_listener_class(variable_listener: Type['_VariableListener']) -> JClass:
-    from ai.timefold.solver.python import PythonWrapperGenerator  # noqa
-    from java.util.function import Supplier
-    ensure_init()
-
-    class_identifier = _get_class_identifier_for_object(variable_listener)
-    out = PythonWrapperGenerator.defineVariableListenerClass(
-        _compose_unique_class_name(class_identifier),
-        JObject(PythonSupplier(lambda: variable_listener()),
-                Supplier))
     class_identifier_to_java_class_map[class_identifier] = out
     return out

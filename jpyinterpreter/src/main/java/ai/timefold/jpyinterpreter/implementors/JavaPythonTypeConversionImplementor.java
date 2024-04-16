@@ -14,6 +14,7 @@ import ai.timefold.jpyinterpreter.PythonClassTranslator;
 import ai.timefold.jpyinterpreter.PythonLikeObject;
 import ai.timefold.jpyinterpreter.StackMetadata;
 import ai.timefold.jpyinterpreter.types.BuiltinTypes;
+import ai.timefold.jpyinterpreter.types.Coercible;
 import ai.timefold.jpyinterpreter.types.PythonByteArray;
 import ai.timefold.jpyinterpreter.types.PythonBytes;
 import ai.timefold.jpyinterpreter.types.PythonCode;
@@ -445,6 +446,31 @@ public class JavaPythonTypeConversionImplementor {
                 false);
         methodVisitor.visitTypeInsn(Opcodes.CHECKCAST, returnAsmType.getInternalName());
         methodVisitor.visitInsn(Opcodes.ARETURN);
+    }
+
+    /**
+     * Coerce a value to a given type
+     */
+    public static <T> T coerceToType(PythonLikeObject value, Class<T> type) {
+        if (value == null) {
+            return null;
+        }
+
+        if (type.isAssignableFrom(value.getClass())) {
+            return (T) value;
+        }
+
+        if (value instanceof Coercible coercible) {
+            var out = coercible.coerce(type);
+            if (out == null) {
+                throw new TypeError("%s cannot be coerced to %s."
+                        .formatted(value.$getType(), type));
+            }
+            return out;
+        }
+
+        throw new TypeError("%s cannot be coerced to %s."
+                .formatted(value.$getType(), type));
     }
 
     /**

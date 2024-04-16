@@ -104,6 +104,7 @@ class SolverConfig:
     environment_mode: Optional[EnvironmentMode] = field(default=EnvironmentMode.REPRODUCIBLE)
     random_seed: Optional[int] = field(default=None)
     move_thread_count: int | MoveThreadCount = field(default=MoveThreadCount.NONE)
+    nearby_distance_meter_function: Optional[Callable[[Any, Any], float]] = field(default=None)
     termination_config: Optional['TerminationConfig'] = field(default=None)
     score_director_factory_config: Optional['ScoreDirectorFactoryConfig'] = field(default=None)
     xml_source_text: Optional[str] = field(default=None)
@@ -148,6 +149,13 @@ class SolverConfig:
                     out.setMoveThreadCount(str(self.move_thread_count))
             elif out.getMoveThreadCount() is not None and not is_enterprise_installed():
                 raise RequiresEnterpriseError('multithreaded solving')
+
+            if self.nearby_distance_meter_function is not None:
+                if not is_enterprise_installed():
+                    raise RequiresEnterpriseError('nearby selection')
+                out.setNearbyDistanceMeterClass(get_class(self.nearby_distance_meter_function))
+            elif out.getNearbyDistanceMeterClass() is not None and not is_enterprise_installed():
+                raise RequiresEnterpriseError('nearby selection')
 
             if self.solution_class is not None:
                 from ai.timefold.solver.core.api.domain.solution import PlanningSolution as JavaPlanningSolution

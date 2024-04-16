@@ -111,3 +111,12 @@ def test_missing_enterprise():
         solver_config = SolverConfig(
             move_thread_count=MoveThreadCount.AUTO
         )._to_java_solver_config()
+
+    @nearby_distance_meter
+    def my_distance_meter(entity: Entity, value: str) -> float:
+        return 0.0
+
+    with pytest.raises(RequiresEnterpriseError, match=re.escape('nearby selection')):
+        solver_config = SolverConfig(
+            nearby_distance_meter_function=my_distance_meter
+        )._to_java_solver_config()

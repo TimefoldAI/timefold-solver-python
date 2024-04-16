@@ -113,6 +113,12 @@ public class KnownCallImplementor {
         // Now load and typecheck the local variables
         for (int i = 0; i < Math.min(specPositionalArgumentCount, argumentCount); i++) {
             localVariableHelper.readTemp(methodVisitor, Type.getType(PythonLikeObject.class), argumentLocals[i]);
+            methodVisitor.visitLdcInsn(Type.getType(pythonFunctionSignature.getArgumentSpec().getArgumentType(i)));
+            methodVisitor.visitMethodInsn(Opcodes.INVOKESTATIC, Type.getInternalName(JavaPythonTypeConversionImplementor.class),
+                    "coerceToType", Type.getMethodDescriptor(Type.getType(Object.class),
+                            Type.getType(PythonLikeObject.class),
+                            Type.getType(Class.class)),
+                    false);
             methodVisitor.visitTypeInsn(Opcodes.CHECKCAST,
                     Type.getInternalName(pythonFunctionSignature.getArgumentSpec().getArgumentType(i)));
         }
@@ -279,6 +285,12 @@ public class KnownCallImplementor {
         // Load arguments in proper order and typecast them
         for (int i = 0; i < specTotalArgumentCount; i++) {
             localVariableHelper.readTemp(methodVisitor, Type.getType(PythonLikeObject.class), argumentLocals[i]);
+            methodVisitor.visitLdcInsn(Type.getType(pythonFunctionSignature.getArgumentSpec().getArgumentType(i)));
+            methodVisitor.visitMethodInsn(Opcodes.INVOKESTATIC, Type.getInternalName(JavaPythonTypeConversionImplementor.class),
+                    "coerceToType", Type.getMethodDescriptor(Type.getType(Object.class),
+                            Type.getType(PythonLikeObject.class),
+                            Type.getType(Class.class)),
+                    false);
             methodVisitor.visitTypeInsn(Opcodes.CHECKCAST,
                     Type.getInternalName(pythonFunctionSignature.getArgumentSpec().getArgumentType(i)));
         }
@@ -480,6 +492,12 @@ public class KnownCallImplementor {
             methodVisitor.visitMethodInsn(Opcodes.INVOKEINTERFACE, Type.getInternalName(List.class),
                     "get", Type.getMethodDescriptor(Type.getType(Object.class), Type.INT_TYPE),
                     true);
+            methodVisitor.visitLdcInsn(descriptorParameterTypes[i]);
+            methodVisitor.visitMethodInsn(Opcodes.INVOKESTATIC, Type.getInternalName(JavaPythonTypeConversionImplementor.class),
+                    "coerceToType", Type.getMethodDescriptor(Type.getType(Object.class),
+                            Type.getType(PythonLikeObject.class),
+                            Type.getType(Class.class)),
+                    false);
             methodVisitor.visitTypeInsn(Opcodes.CHECKCAST, descriptorParameterTypes[i].getInternalName());
             methodVisitor.visitInsn(Opcodes.SWAP);
         }

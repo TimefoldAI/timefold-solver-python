@@ -55,7 +55,7 @@ def test_load_from_solver_config_file():
     assert entity_class_list.size() == 1
     assert entity_class_list.get(0) == get_java_type_for_python_type(Entity).getJavaClass()
     assert solver_config.getScoreDirectorFactoryConfig().getConstraintProviderClass() == \
-           my_constraints.__timefold_java_class  # noqa
+           my_constraints._timefold_java_class  # noqa
     assert solver_config.getTerminationConfig().getBestScoreLimit() == '0hard/0soft'
 
 
