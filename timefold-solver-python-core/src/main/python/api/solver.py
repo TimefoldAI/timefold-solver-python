@@ -1,3 +1,4 @@
+from .problem_change import ProblemChange, ProblemChangeWrapper
 from typing import TypeVar, TYPE_CHECKING, Generic, Callable, List
 from datetime import timedelta
 from jpype import JClass, JImplements, JOverride
@@ -58,11 +59,11 @@ class Solver(Generic[Solution_]):
     def is_terminate_early(self) -> bool:
         return self._delegate.isTerminateEarly()
 
-    def add_problem_change(self, problem_change):
-        pass  # TODO
+    def add_problem_change(self, problem_change: ProblemChange) -> None:
+        self._delegate.addProblemChange(ProblemChangeWrapper(problem_change))  # noqa
 
-    def add_problem_changes(self, problem_changes):
-        pass  # TODO
+    def add_problem_changes(self, problem_changes: List[ProblemChange]) -> None:
+        self._delegate.addProblemChanges([ProblemChangeWrapper(problem_change) for problem_change in problem_changes])  # noqa
 
     def is_every_problem_change_processed(self) -> bool:
         return self._delegate.isEveryProblemChangeProcessed()
