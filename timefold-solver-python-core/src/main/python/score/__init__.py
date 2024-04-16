@@ -1,4 +1,4 @@
-from ..timefold_java_interop import ensure_init
+from .._timefold_java_interop import ensure_init
 from typing import TYPE_CHECKING, List
 from jpype import JImplementationFor
 import jpype.imports # noqa

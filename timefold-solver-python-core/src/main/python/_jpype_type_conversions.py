@@ -197,7 +197,7 @@ def _convert_to_java_compatible_object(item):
 
 @JConversion('java.lang.Class', exact=type)
 def _convert_type_to_class(jcls, type_obj):
-    from .timefold_java_interop import get_class
+    from ._timefold_java_interop import get_class
     from java.lang import Object
     out = get_class(type_obj)
     if out == Object and type_obj != Object:
@@ -209,7 +209,7 @@ def _convert_type_to_class(jcls, type_obj):
 
 @JConversion('java.lang.Class', exact=FunctionType)
 def _convert_function_to_class(jcls, function_obj):
-    from .timefold_java_interop import get_class
+    from ._timefold_java_interop import get_class
     from java.lang import Object
     out = get_class(function_obj)
     if out == Object and function_obj != Object:

@@ -1,10 +1,10 @@
 import sys
 
-from ..jpype_type_conversions import (_convert_to_java_compatible_object, PythonFunction, PythonBiFunction,
-                                      PythonTriFunction, PythonQuadFunction, PythonPentaFunction, PythonToIntFunction,
-                                      PythonToIntBiFunction, PythonToIntTriFunction, PythonToIntQuadFunction,
-                                      PythonPredicate, PythonBiPredicate, PythonTriPredicate, PythonQuadPredicate,
-                                      PythonPentaPredicate)
+from .._jpype_type_conversions import (_convert_to_java_compatible_object, PythonFunction, PythonBiFunction,
+                                       PythonTriFunction, PythonQuadFunction, PythonPentaFunction, PythonToIntFunction,
+                                       PythonToIntBiFunction, PythonToIntTriFunction, PythonToIntQuadFunction,
+                                       PythonPredicate, PythonBiPredicate, PythonTriPredicate, PythonQuadPredicate,
+                                       PythonPentaPredicate)
 from jpyinterpreter import translate_python_bytecode_to_java_bytecode, check_current_python_version_supported
 from enum import Enum
 import jpype.imports  # noqa

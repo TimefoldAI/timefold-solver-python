@@ -1,7 +1,7 @@
 import jpype
 
 from ..constraint import ConstraintFactory
-from ..timefold_java_interop import ensure_init, _generate_constraint_provider_class, register_java_class
+from .._timefold_java_interop import ensure_init, _generate_constraint_provider_class, register_java_class
 from jpyinterpreter import JavaAnnotation
 from jpype import JImplements, JOverride
 from typing import Union, List, Callable, Type, TYPE_CHECKING, TypeVar
@@ -79,7 +79,7 @@ class ShadowVariable(JavaAnnotation):
                  source_variable_name: str,
                  source_entity_class: Type = None):
         ensure_init()
-        from ..timefold_java_interop import get_class
+        from .._timefold_java_interop import get_class
         from ai.timefold.jpyinterpreter import PythonClassTranslator
         from ai.timefold.solver.core.api.domain.variable import (
             ShadowVariable as JavaShadowVariable)
@@ -229,7 +229,7 @@ def planning_entity(entity_class: Type = None, /, *, pinning_filter: Callable = 
     from ai.timefold.solver.core.api.domain.entity import PlanningEntity as JavaPlanningEntity
 
     def planning_entity_wrapper(entity_class_argument):
-        from ..timefold_java_interop import _generate_planning_entity_class
+        from .._timefold_java_interop import _generate_planning_entity_class
         from ai.timefold.solver.core.api.domain.entity import PinningFilter
         from jpyinterpreter import add_class_annotation, translate_python_bytecode_to_java_bytecode
         from typing import get_type_hints, get_origin, Annotated
@@ -294,7 +294,7 @@ def planning_solution(planning_solution_class: Type[Solution_]) -> Type[Solution
     """
     ensure_init()
     from jpyinterpreter import add_class_annotation
-    from ..timefold_java_interop import _generate_planning_solution_class
+    from .._timefold_java_interop import _generate_planning_solution_class
     from ai.timefold.solver.core.api.domain.solution import PlanningSolution as JavaPlanningSolution
     out = add_class_annotation(JavaPlanningSolution)(planning_solution_class)
     _generate_planning_solution_class(planning_solution_class)

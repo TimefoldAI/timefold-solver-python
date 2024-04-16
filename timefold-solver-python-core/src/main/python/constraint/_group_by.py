@@ -141,7 +141,7 @@ class ConstraintCollectors:
 
     @staticmethod
     def _delegate():
-        from ..timefold_java_interop import ensure_init
+        from .._timefold_java_interop import ensure_init
         ensure_init()
         from ai.timefold.solver.core.api.score.stream import ConstraintCollectors
         return ConstraintCollectors
@@ -1055,8 +1055,8 @@ class ConstraintCollectors:
 
 
 # Must be at the bottom, constraint_stream depends on this module
-from .constraint_stream import *
-from .function_translator import *
+from ._constraint_stream import *
+from ._function_translator import *
 __all__ = [
     'NoArgsConstraintCollector',
     'GroupMappingSingleArgConstraintCollector',

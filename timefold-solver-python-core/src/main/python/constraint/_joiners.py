@@ -1,4 +1,4 @@
-from .function_translator import *
+from ._function_translator import *
 import dataclasses
 import jpype.imports  # noqa
 from typing import TYPE_CHECKING, Callable, TypeVar, overload
@@ -120,7 +120,7 @@ class Joiners:
 
     @staticmethod
     def _delegate():
-        from ..timefold_java_interop import ensure_init
+        from .._timefold_java_interop import ensure_init
         ensure_init()
         from ai.timefold.solver.core.api.score.stream import Joiners
         return Joiners
