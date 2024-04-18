@@ -1,4 +1,4 @@
-from ..timefold_java_interop import get_class
+from .._timefold_java_interop import get_class
 from typing import TYPE_CHECKING, Type, TypeVar, cast
 if TYPE_CHECKING:
     import jpype.imports  # noqa
@@ -69,8 +69,8 @@ class ConstraintFactory:
                                   cast(Type['A_'], source_class))
 
 
-from .constraint_stream import *
-from .joiners import extract_joiners
+from ._constraint_stream import *
+from ._joiners import extract_joiners
 
 __all__ = [
     'ConstraintFactory'

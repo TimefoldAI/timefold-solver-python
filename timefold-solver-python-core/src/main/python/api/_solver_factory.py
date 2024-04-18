@@ -1,4 +1,4 @@
-from .solver import Solver
+from ._solver import Solver
 from ..config import SolverConfig
 
 from typing import TypeVar, TYPE_CHECKING

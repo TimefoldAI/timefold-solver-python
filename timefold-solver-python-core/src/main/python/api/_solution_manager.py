@@ -1,5 +1,5 @@
-from .solver_factory import SolverFactory
-from ..timefold_java_interop import get_class
+from ._solver_factory import SolverFactory
+from .._timefold_java_interop import get_class
 
 from typing import TypeVar, Union, TYPE_CHECKING
 

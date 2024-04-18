@@ -1,4 +1,4 @@
-from .problem_change import ProblemChange, ProblemChangeWrapper
+from ._problem_change import ProblemChange, ProblemChangeWrapper
 from typing import TypeVar, TYPE_CHECKING, Generic, Callable, List
 from datetime import timedelta
 from jpype import JClass, JImplements, JOverride

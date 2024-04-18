@@ -4,7 +4,7 @@ import jpype.imports
 from jpype.types import *
 import importlib.resources
 from typing import cast, List, Type, TypeVar, Callable, Union, TYPE_CHECKING
-from .jpype_type_conversions import PythonSupplier, ConstraintProviderFunction
+from ._jpype_type_conversions import PythonSupplier, ConstraintProviderFunction
 
 if TYPE_CHECKING:
     # These imports require a JVM to be running, so only import if type checking

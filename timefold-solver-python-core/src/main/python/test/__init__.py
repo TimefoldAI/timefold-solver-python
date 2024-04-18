@@ -1,7 +1,7 @@
 from typing import Callable, Generic, List, Type, TypeVar, TYPE_CHECKING, overload, Union
 
-from ..jpype_type_conversions import PythonBiFunction
-from ..timefold_java_interop import get_class
+from .._jpype_type_conversions import PythonBiFunction
+from .._timefold_java_interop import get_class
 from ..constraint import ConstraintFactory
 from ..config import SolverConfig
 

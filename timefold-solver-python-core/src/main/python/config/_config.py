@@ -1,5 +1,5 @@
 from ..constraint import ConstraintFactory
-from ..timefold_java_interop import is_enterprise_installed
+from .._timefold_java_interop import is_enterprise_installed
 
 from typing import Any, Optional, List, Type, Callable, TYPE_CHECKING
 from dataclasses import dataclass, field
@@ -119,7 +119,7 @@ class SolverConfig:
         return SolverConfig(xml_source_text=xml_text)
 
     def _to_java_solver_config(self) -> '_JavaSolverConfig':
-        from ..timefold_java_interop import OverrideClassLoader, get_class
+        from .._timefold_java_interop import OverrideClassLoader, get_class
         from ai.timefold.solver.core.config.solver import SolverConfig as JavaSolverConfig
         from java.io import File, ByteArrayInputStream  # noqa
         from java.lang import IllegalArgumentException
@@ -207,7 +207,7 @@ class ScoreDirectorFactoryConfig:
     def _to_java_score_director_factory_config(self, inherited_config: '_JavaScoreDirectorFactoryConfig' = None):
         from ai.timefold.solver.core.config.score.director import (
             ScoreDirectorFactoryConfig as JavaScoreDirectorFactoryConfig)
-        from ..timefold_java_interop import get_class
+        from .._timefold_java_interop import get_class
         out = JavaScoreDirectorFactoryConfig()
         if inherited_config is not None:
             out.inherit(inherited_config)

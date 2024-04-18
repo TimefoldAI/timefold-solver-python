@@ -1,6 +1,6 @@
-from .problem_change import ProblemChange, ProblemChangeWrapper
-from .solver_factory import SolverFactory
-from .future import wrap_completable_future
+from ._problem_change import ProblemChange, ProblemChangeWrapper
+from ._solver_factory import SolverFactory
+from ._future import wrap_completable_future
 
 from asyncio import Future
 from typing import TypeVar, TYPE_CHECKING

@@ -1,4 +1,4 @@
-from ..timefold_java_interop import get_class
+from .._timefold_java_interop import get_class
 
 from abc import ABC, abstractmethod
 from typing import TypeVar, Optional, Callable, TYPE_CHECKING, Generic

@@ -1,4 +1,4 @@
-from ..timefold_java_interop import get_class
+from .._timefold_java_interop import get_class
 import jpype.imports  # noqa
 from jpype import JClass
 from typing import TYPE_CHECKING, Type, Callable, overload, TypeVar, Generic, Any, Union, cast
@@ -2063,11 +2063,11 @@ class QuadConstraintStream(Generic[A, B, C, D]):
 
 
 # Must be on the bottom, .group_by depends on this module
-from .constraint_factory import *
-from .joiners import *
-from .group_by import *
-from .constraint_builder import *
-from .function_translator import *
+from ._constraint_factory import *
+from ._joiners import *
+from ._group_by import *
+from ._constraint_builder import *
+from ._function_translator import *
 
 __all__ = [
     'UniConstraintStream',

@@ -14,7 +14,7 @@ import timefold.solver.constraint as constraint
 import timefold.solver.test as test
 import timefold.solver.valuerange as valuerange
 
-from .timefold_java_interop import init, set_class_output_directory
+from ._timefold_java_interop import init, set_class_output_directory
 
 __all__ = [# Subpackages
            'api', 'annotation', 'config', 'constraint', 'test', 'valuerange',

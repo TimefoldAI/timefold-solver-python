@@ -1,1 +1,1 @@
-from .annotations import *
+from ._annotations import *
