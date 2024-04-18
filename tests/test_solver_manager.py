@@ -272,3 +272,59 @@ def test_error():
 
         assert the_problem_id == 1
         assert the_exception is not None
+
+
+def test_solver_config_override():
+    @dataclass
+    class Value:
+        value: Annotated[int, PlanningId]
+
+    @planning_entity
+    @dataclass
+    class Entity:
+        code: Annotated[str, PlanningId]
+        value: Annotated[Value, PlanningVariable] = field(default=None)
+
+    @constraint_provider
+    def my_constraints(constraint_factory: ConstraintFactory):
+        return [
+            constraint_factory.for_each(Entity)
+            .reward(SimpleScore.ONE, lambda entity: entity.value.value)
+            .as_constraint('Maximize Value')
+        ]
+
+    @planning_solution
+    @dataclass
+    class Solution:
+        entity_list: Annotated[List[Entity], PlanningEntityCollectionProperty]
+        value_list: Annotated[List[Value],
+        DeepPlanningClone,
+        ProblemFactCollectionProperty,
+        ValueRangeProvider]
+        score: Annotated[SimpleScore, PlanningScore] = field(default=None)
+
+    solver_config = SolverConfig(
+        solution_class=Solution,
+        entity_class_list=[Entity],
+        score_director_factory_config=ScoreDirectorFactoryConfig(
+            constraint_provider_function=my_constraints
+        ),
+        termination_config=TerminationConfig(
+            best_score_limit='9'
+        )
+    )
+    problem: Solution = Solution([Entity('A')], [Value(1), Value(2), Value(3)],
+                                 SimpleScore.ONE)
+    with SolverManager.create(SolverFactory.create(solver_config)) as solver_manager:
+        solver_job = (solver_manager.solve_builder()
+                      .with_problem_id(1)
+                      .with_problem(problem)
+                      .with_config_override(SolverConfigOverride(
+                           termination_config=TerminationConfig(
+                               best_score_limit='3'
+                           )
+                      ))
+                      .run())
+
+        solution = solver_job.get_final_best_solution()
+        assert solution.score.score() == 3
