@@ -500,26 +500,6 @@ class UniConstraintStream(Generic[A]):
 
     def penalize(self, constraint_weight: ScoreType, match_weigher: Callable[[A], int] = None) -> \
             'UniConstraintBuilder[A, ScoreType]':
-        """Negatively impact the Score: subtract the constraint_weight for each match (multiplied by an optional
-        match_weigher function).
-
-        To avoid hard-coding the constraint_weight, to allow end-users to tweak it,
-        use penalize_configurable and a ConstraintConfiguration instead.
-
-        There are four overloads available for this method:
-
-            - penalize(constraint_name: str, constraint_weight: Score)
-
-            - penalize(constraint_package: str, constraint_name: str, constraint_weight: Score)
-
-            - penalize(constraint_name: str, constraint_weight: Score, match_weigher: A -> int)
-
-            - penalize(constraint_package: str, constraint_name: str, constraint_weight: Score, match_weigher: A -> int)
-
-        The Constraint.getConstraintPackage() defaults to the package of the PlanningSolution class.
-
-        :return:
-        """
         if match_weigher is None:
             return UniConstraintBuilder(self.delegate.penalize(constraint_weight))
         else:
@@ -528,26 +508,6 @@ class UniConstraintStream(Generic[A]):
 
     def reward(self, constraint_weight: ScoreType, match_weigher: Callable[[A], int] = None) -> \
             'UniConstraintBuilder[A, ScoreType]':
-        """Positively impact the Score: add the constraint_weight for each match (multiplied by an optional
-        match_weigher function).
-
-        To avoid hard-coding the constraint_weight, to allow end-users to tweak it,
-        use reward_configurable and a ConstraintConfiguration instead.
-
-        There are four overloads available for this method:
-
-            - reward(constraint_name: str, constraint_weight: Score)
-
-            - reward(constraint_package: str, constraint_name: str, constraint_weight: Score)
-
-            - reward(constraint_name: str, constraint_weight: Score, match_weigher: A -> int)
-
-            - reward(constraint_package: str, constraint_name: str, constraint_weight: Score, match_weigher: A -> int)
-
-        The Constraint.getConstraintPackage() defaults to the package of the PlanningSolution class.
-
-        :return:
-        """
         if match_weigher is None:
             return UniConstraintBuilder(self.delegate.reward(constraint_weight))
         else:
@@ -556,33 +516,35 @@ class UniConstraintStream(Generic[A]):
 
     def impact(self, constraint_weight: ScoreType, match_weigher: Callable[[A], int] = None) -> \
             'UniConstraintBuilder[A, ScoreType]':
-        """Positively or negatively impact the Score: add the constraint_weight for each match
-        (multiplied by an optional match_weigher function).
-
-        Use penalize(...) or reward(...) instead, unless this constraint can both have positive and negative weights.
-
-        To avoid hard-coding the constraint_weight, to allow end-users to tweak it,
-        use impact_configurable and a ConstraintConfiguration instead.
-
-        There are four overloads available for this method:
-
-            - impact(constraint_name: str, constraint_weight: Score)
-
-            - impact(constraint_package: str, constraint_name: str, constraint_weight: Score)
-
-            - impact(constraint_name: str, constraint_weight: Score, match_weigher: A -> int)
-
-            - impact(constraint_package: str, constraint_name: str, constraint_weight: Score, match_weigher: A -> int)
-
-        The Constraint.getConstraintPackage() defaults to the package of the PlanningSolution class.
-
-        :return:
-        """
         if match_weigher is None:
             return UniConstraintBuilder(self.delegate.impact(constraint_weight))
         else:
             return UniConstraintBuilder(self.delegate.impact(constraint_weight,
                                                              to_int_function_cast(match_weigher, self.a_type)))
+
+    def penalize_configurable(self, match_weigher: Callable[[A], int] = None) -> \
+            'UniConstraintBuilder[A, ScoreType]':
+        if match_weigher is None:
+            return UniConstraintBuilder(self.delegate.penalizeConfigurable())
+        else:
+            return UniConstraintBuilder(self.delegate.penalizeConfigurable(to_int_function_cast(match_weigher,
+                                                                                                self.a_type)))
+
+    def reward_configurable(self, match_weigher: Callable[[A], int] = None) -> \
+            'UniConstraintBuilder[A, ScoreType]':
+        if match_weigher is None:
+            return UniConstraintBuilder(self.delegate.rewardConfigurable())
+        else:
+            return UniConstraintBuilder(self.delegate.rewardConfigurable(to_int_function_cast(match_weigher,
+                                                                                              self.a_type)))
+
+    def impact_configurable(self, match_weigher: Callable[[A], int] = None) -> \
+            'UniConstraintBuilder[A, ScoreType]':
+        if match_weigher is None:
+            return UniConstraintBuilder(self.delegate.impactConfigurable())
+        else:
+            return UniConstraintBuilder(self.delegate.impactConfigurable(to_int_function_cast(match_weigher,
+                                                                                              self.a_type)))
 
 
 class BiConstraintStream(Generic[A, B]):
@@ -999,26 +961,6 @@ class BiConstraintStream(Generic[A, B]):
 
     def penalize(self, constraint_weight: ScoreType, match_weigher: Callable[[A, B], int] = None) -> \
             'BiConstraintBuilder[A, B, ScoreType]':
-        """Negatively impact the Score: subtract the constraint_weight for each match (multiplied by an optional
-        match_weigher function).
-
-        To avoid hard-coding the constraint_weight, to allow end-users to tweak it,
-        use penalize_configurable and a ConstraintConfiguration instead.
-
-        There are four overloads available for this method:
-
-            - penalize(constraint_name: str, constraint_weight: Score)
-
-            - penalize(constraint_package: str, constraint_name: str, constraint_weight: Score)
-
-            - penalize(constraint_name: str, constraint_weight: Score, match_weigher: A -> int)
-
-            - penalize(constraint_package: str, constraint_name: str, constraint_weight: Score, match_weigher: A -> int)
-
-        The Constraint.getConstraintPackage() defaults to the package of the PlanningSolution class.
-
-        :return:
-        """
         if match_weigher is None:
             return BiConstraintBuilder(self.delegate.penalize(constraint_weight))
         else:
@@ -1029,26 +971,6 @@ class BiConstraintStream(Generic[A, B]):
 
     def reward(self, constraint_weight: ScoreType, match_weigher: Callable[[A, B], int] = None) -> \
             'BiConstraintBuilder[A, B, ScoreType]':
-        """Positively impact the Score: add the constraint_weight for each match (multiplied by an optional
-        match_weigher function).
-
-        To avoid hard-coding the constraint_weight, to allow end-users to tweak it,
-        use reward_configurable and a ConstraintConfiguration instead.
-
-        There are four overloads available for this method:
-
-            - reward(constraint_name: str, constraint_weight: Score)
-
-            - reward(constraint_package: str, constraint_name: str, constraint_weight: Score)
-
-            - reward(constraint_name: str, constraint_weight: Score, match_weigher: A -> int)
-
-            - reward(constraint_package: str, constraint_name: str, constraint_weight: Score, match_weigher: A -> int)
-
-        The Constraint.getConstraintPackage() defaults to the package of the PlanningSolution class.
-
-        :return:
-        """
         if match_weigher is None:
             return BiConstraintBuilder(self.delegate.reward(constraint_weight))
         else:
@@ -1059,32 +981,40 @@ class BiConstraintStream(Generic[A, B]):
 
     def impact(self, constraint_weight: ScoreType, match_weigher: Callable[[A, B], int] = None) -> \
             'BiConstraintBuilder[A, B, ScoreType]':
-        """Positively or negatively impact the Score: add the constraint_weight for each match
-        (multiplied by an optional match_weigher function).
-
-        Use penalize(...) or reward(...) instead, unless this constraint can both have positive and negative weights.
-
-        To avoid hard-coding the constraint_weight, to allow end-users to tweak it,
-        use impact_configurable and a ConstraintConfiguration instead.
-
-        There are four overloads available for this method:
-
-            - impact(constraint_name: str, constraint_weight: Score)
-
-            - impact(constraint_package: str, constraint_name: str, constraint_weight: Score)
-
-            - impact(constraint_name: str, constraint_weight: Score, match_weigher: A -> int)
-
-            - impact(constraint_package: str, constraint_name: str, constraint_weight: Score, match_weigher: A -> int)
-
-        The Constraint.getConstraintPackage() defaults to the package of the PlanningSolution class.
-
-        :return:
-        """
         if match_weigher is None:
             return BiConstraintBuilder(self.delegate.impact(constraint_weight))
         else:
             return BiConstraintBuilder(self.delegate.impact(constraint_weight,
+                                                            to_int_function_cast(match_weigher,
+                                                                                 self.a_type,
+                                                                                 self.b_type)))
+
+    def penalize_configurable(self, match_weigher: Callable[[A, B], int] = None) -> \
+            'BiConstraintBuilder[A, B, ScoreType]':
+        if match_weigher is None:
+            return BiConstraintBuilder(self.delegate.penalizeConfigurable())
+        else:
+            return BiConstraintBuilder(self.delegate.penalizeConfigurable(
+                                                              to_int_function_cast(match_weigher,
+                                                                                   self.a_type,
+                                                                                   self.b_type)))
+
+    def reward_configurable(self, match_weigher: Callable[[A, B], int] = None) -> \
+            'BiConstraintBuilder[A, B, ScoreType]':
+        if match_weigher is None:
+            return BiConstraintBuilder(self.delegate.rewardConfigurable())
+        else:
+            return BiConstraintBuilder(self.delegate.rewardConfigurable(
+                                                            to_int_function_cast(match_weigher,
+                                                                                 self.a_type,
+                                                                                 self.b_type)))
+
+    def impact_configurable(self, match_weigher: Callable[[A, B], int] = None) -> \
+            'BiConstraintBuilder[A, B, ScoreType]':
+        if match_weigher is None:
+            return BiConstraintBuilder(self.delegate.impactConfigurable())
+        else:
+            return BiConstraintBuilder(self.delegate.impactConfigurable(
                                                             to_int_function_cast(match_weigher,
                                                                                  self.a_type,
                                                                                  self.b_type)))
@@ -1492,26 +1422,6 @@ class TriConstraintStream(Generic[A, B, C]):
 
     def penalize(self, constraint_weight: ScoreType,
                  match_weigher: Callable[[A, B, C], int] = None) -> 'TriConstraintBuilder[A, B, C, ScoreType]':
-        """Negatively impact the Score: subtract the constraint_weight for each match (multiplied by an optional
-        match_weigher function).
-
-        To avoid hard-coding the constraint_weight, to allow end-users to tweak it,
-        use penalize_configurable and a ConstraintConfiguration instead.
-
-        There are four overloads available for this method:
-
-            - penalize(constraint_name: str, constraint_weight: Score)
-
-            - penalize(constraint_package: str, constraint_name: str, constraint_weight: Score)
-
-            - penalize(constraint_name: str, constraint_weight: Score, match_weigher: A -> int)
-
-            - penalize(constraint_package: str, constraint_name: str, constraint_weight: Score, match_weigher: A -> int)
-
-        The Constraint.getConstraintPackage() defaults to the package of the PlanningSolution class.
-
-        :return:
-        """
         if match_weigher is None:
             return TriConstraintBuilder(self.delegate.penalize(constraint_weight))
         else:
@@ -1523,26 +1433,6 @@ class TriConstraintStream(Generic[A, B, C]):
 
     def reward(self, constraint_weight: ScoreType, match_weigher: Callable[[A, B, C], int] = None) -> \
             'TriConstraintBuilder[A, B, C, ScoreType]':
-        """Positively impact the Score: add the constraint_weight for each match (multiplied by an optional
-        match_weigher function).
-
-        To avoid hard-coding the constraint_weight, to allow end-users to tweak it,
-        use reward_configurable and a ConstraintConfiguration instead.
-
-        There are four overloads available for this method:
-
-            - reward(constraint_name: str, constraint_weight: Score)
-
-            - reward(constraint_package: str, constraint_name: str, constraint_weight: Score)
-
-            - reward(constraint_name: str, constraint_weight: Score, match_weigher: A -> int)
-
-            - reward(constraint_package: str, constraint_name: str, constraint_weight: Score, match_weigher: A -> int)
-
-        The Constraint.getConstraintPackage() defaults to the package of the PlanningSolution class.
-
-        :return:
-        """
         if match_weigher is None:
             return TriConstraintBuilder(self.delegate.reward(constraint_weight))
         else:
@@ -1554,32 +1444,43 @@ class TriConstraintStream(Generic[A, B, C]):
 
     def impact(self, constraint_weight: ScoreType,
                match_weigher: Callable[[A, B, C], int] = None) -> 'TriConstraintBuilder[A, B, C, ScoreType]':
-        """Positively or negatively impact the Score: add the constraint_weight for each match
-        (multiplied by an optional match_weigher function).
-
-        Use penalize(...) or reward(...) instead, unless this constraint can both have positive and negative weights.
-
-        To avoid hard-coding the constraint_weight, to allow end-users to tweak it,
-        use impact_configurable and a ConstraintConfiguration instead.
-
-        There are four overloads available for this method:
-
-            - impact(constraint_name: str, constraint_weight: Score)
-
-            - impact(constraint_package: str, constraint_name: str, constraint_weight: Score)
-
-            - impact(constraint_name: str, constraint_weight: Score, match_weigher: A -> int)
-
-            - impact(constraint_package: str, constraint_name: str, constraint_weight: Score, match_weigher: A -> int)
-
-        The Constraint.getConstraintPackage() defaults to the package of the PlanningSolution class.
-
-        :return:
-        """
         if match_weigher is None:
             return TriConstraintBuilder(self.delegate.impact(constraint_weight))
         else:
             return TriConstraintBuilder(self.delegate.impact(constraint_weight,
+                                                             to_int_function_cast(match_weigher,
+                                                                                  self.a_type,
+                                                                                  self.b_type,
+                                                                                  self.c_type)))
+
+    def penalize_configurable(self, match_weigher: Callable[[A, B, C], int] = None) \
+            -> 'TriConstraintBuilder[A, B, C, ScoreType]':
+        if match_weigher is None:
+            return TriConstraintBuilder(self.delegate.penalizeConfigurable())
+        else:
+            return TriConstraintBuilder(self.delegate.penalizeConfigurable(
+                                                               to_int_function_cast(match_weigher,
+                                                                                    self.a_type,
+                                                                                    self.b_type,
+                                                                                    self.c_type)))
+
+    def reward_configurable(self, match_weigher: Callable[[A, B, C], int] = None) -> \
+            'TriConstraintBuilder[A, B, C, ScoreType]':
+        if match_weigher is None:
+            return TriConstraintBuilder(self.delegate.rewardConfigurable())
+        else:
+            return TriConstraintBuilder(self.delegate.rewardConfigurable(
+                                                             to_int_function_cast(match_weigher,
+                                                                                  self.a_type,
+                                                                                  self.b_type,
+                                                                                  self.c_type)))
+
+    def impact_configurable(self, match_weigher: Callable[[A, B, C], int] = None) \
+            -> 'TriConstraintBuilder[A, B, C, ScoreType]':
+        if match_weigher is None:
+            return TriConstraintBuilder(self.delegate.impactConfigurable())
+        else:
+            return TriConstraintBuilder(self.delegate.impactConfigurable(
                                                              to_int_function_cast(match_weigher,
                                                                                   self.a_type,
                                                                                   self.b_type,
@@ -1965,26 +1866,6 @@ class QuadConstraintStream(Generic[A, B, C, D]):
 
     def penalize(self, constraint_weight: ScoreType,
                  match_weigher: Callable[[A, B, C, D], int] = None) -> 'QuadConstraintBuilder[A, B, C, D, ScoreType]':
-        """Negatively impact the Score: subtract the constraint_weight for each match (multiplied by an optional
-        match_weigher function).
-
-        To avoid hard-coding the constraint_weight, to allow end-users to tweak it,
-        use penalize_configurable and a ConstraintConfiguration instead.
-
-        There are four overloads available for this method:
-
-            - penalize(constraint_name: str, constraint_weight: Score)
-
-            - penalize(constraint_package: str, constraint_name: str, constraint_weight: Score)
-
-            - penalize(constraint_name: str, constraint_weight: Score, match_weigher: A -> int)
-
-            - penalize(constraint_package: str, constraint_name: str, constraint_weight: Score, match_weigher: A -> int)
-
-        The Constraint.getConstraintPackage() defaults to the package of the PlanningSolution class.
-
-        :return:
-        """
         if match_weigher is None:
             return QuadConstraintBuilder(self.delegate.penalize(constraint_weight))
         else:
@@ -1997,26 +1878,6 @@ class QuadConstraintStream(Generic[A, B, C, D]):
 
     def reward(self, constraint_weight: ScoreType,
                match_weigher: Callable[[A, B, C, D], int] = None) -> 'QuadConstraintBuilder[A, B, C, D, ScoreType]':
-        """Positively impact the Score: add the constraint_weight for each match (multiplied by an optional
-        match_weigher function).
-
-        To avoid hard-coding the constraint_weight, to allow end-users to tweak it,
-        use reward_configurable and a ConstraintConfiguration instead.
-
-        There are four overloads available for this method:
-
-            - reward(constraint_name: str, constraint_weight: Score)
-
-            - reward(constraint_package: str, constraint_name: str, constraint_weight: Score)
-
-            - reward(constraint_name: str, constraint_weight: Score, match_weigher: A -> int)
-
-            - reward(constraint_package: str, constraint_name: str, constraint_weight: Score, match_weigher: A -> int)
-
-        The Constraint.getConstraintPackage() defaults to the package of the PlanningSolution class.
-
-        :return:
-        """
         if match_weigher is None:
             return QuadConstraintBuilder(self.delegate.reward(constraint_weight))
         else:
@@ -2029,32 +1890,46 @@ class QuadConstraintStream(Generic[A, B, C, D]):
 
     def impact(self, constraint_weight: ScoreType,
                match_weigher: Callable[[A, B, C, D], int] = None) -> 'QuadConstraintBuilder[A, B, C, D, ScoreType]':
-        """Positively or negatively impact the Score: add the constraint_weight for each match
-        (multiplied by an optional match_weigher function).
-
-        Use penalize(...) or reward(...) instead, unless this constraint can both have positive and negative weights.
-
-        To avoid hard-coding the constraint_weight, to allow end-users to tweak it,
-        use impact_configurable and a ConstraintConfiguration instead.
-
-        There are four overloads available for this method:
-
-            - impact(constraint_name: str, constraint_weight: Score)
-
-            - impact(constraint_package: str, constraint_name: str, constraint_weight: Score)
-
-            - impact(constraint_name: str, constraint_weight: Score, match_weigher: A -> int)
-
-            - impact(constraint_package: str, constraint_name: str, constraint_weight: Score, match_weigher: A -> int)
-
-        The Constraint.getConstraintPackage() defaults to the package of the PlanningSolution class.
-
-        :return:
-        """
         if match_weigher is None:
             return QuadConstraintBuilder(self.delegate.impact(constraint_weight))
         else:
             return QuadConstraintBuilder(self.delegate.impact(constraint_weight,
+                                                              to_int_function_cast(match_weigher,
+                                                                                   self.a_type,
+                                                                                   self.b_type,
+                                                                                   self.c_type,
+                                                                                   self.d_type)))
+
+    def penalize_configurable(self, match_weigher: Callable[[A, B, C, D], int] = None) \
+            -> 'QuadConstraintBuilder[A, B, C, D, ScoreType]':
+        if match_weigher is None:
+            return QuadConstraintBuilder(self.delegate.penalizeConfigurable())
+        else:
+            return QuadConstraintBuilder(self.delegate.penalizeConfigurable(
+                                                                to_int_function_cast(match_weigher,
+                                                                                     self.a_type,
+                                                                                     self.b_type,
+                                                                                     self.c_type,
+                                                                                     self.d_type)))
+
+    def reward_configurable(self, match_weigher: Callable[[A, B, C, D], int] = None) \
+            -> 'QuadConstraintBuilder[A, B, C, D, ScoreType]':
+        if match_weigher is None:
+            return QuadConstraintBuilder(self.delegate.rewardConfigurable())
+        else:
+            return QuadConstraintBuilder(self.delegate.rewardConfigurable(
+                                                              to_int_function_cast(match_weigher,
+                                                                                   self.a_type,
+                                                                                   self.b_type,
+                                                                                   self.c_type,
+                                                                                   self.d_type)))
+
+    def impact_configurable(self, match_weigher: Callable[[A, B, C, D], int] = None) \
+            -> 'QuadConstraintBuilder[A, B, C, D, ScoreType]':
+        if match_weigher is None:
+            return QuadConstraintBuilder(self.delegate.impactConfigurable())
+        else:
+            return QuadConstraintBuilder(self.delegate.impactConfigurable(
                                                               to_int_function_cast(match_weigher,
                                                                                    self.a_type,
                                                                                    self.b_type,

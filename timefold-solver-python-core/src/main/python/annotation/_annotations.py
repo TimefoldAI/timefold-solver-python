@@ -194,6 +194,24 @@ class DeepPlanningClone(JavaAnnotation):
         super().__init__(JavaDeepPlanningClone, {})
 
 
+class ConstraintConfigurationProvider(JavaAnnotation):
+    def __init__(self):
+        ensure_init()
+        from ai.timefold.solver.core.api.domain.constraintweight import (
+            ConstraintConfigurationProvider as JavaConstraintConfigurationProvider)
+        super().__init__(JavaConstraintConfigurationProvider, {})
+
+
+class ConstraintWeight(JavaAnnotation):
+    def __init__(self, constraint_name: str, *, constraint_package: str = None):
+        ensure_init()
+        from ai.timefold.solver.core.api.domain.constraintweight import ConstraintWeight as JavaConstraintWeight
+        super().__init__(JavaConstraintWeight, {
+            'value': constraint_name,
+            'constraintPackage': constraint_package
+        })
+
+
 @JImplements('ai.timefold.solver.core.api.domain.entity.PinningFilter', deferred=True)
 class _PythonPinningFilter:
     def __init__(self, delegate):
@@ -298,6 +316,15 @@ def planning_solution(planning_solution_class: Type[Solution_]) -> Type[Solution
     from ai.timefold.solver.core.api.domain.solution import PlanningSolution as JavaPlanningSolution
     out = add_class_annotation(JavaPlanningSolution)(planning_solution_class)
     _generate_planning_solution_class(planning_solution_class)
+    return out
+
+
+def constraint_configuration(constraint_configuration_class: Type[Solution_]) -> Type[Solution_]:
+    ensure_init()
+    from jpyinterpreter import add_class_annotation
+    from ai.timefold.solver.core.api.domain.constraintweight import (
+        ConstraintConfiguration as JavaConstraintConfiguration)
+    out = add_class_annotation(JavaConstraintConfiguration)(constraint_configuration_class)
     return out
 
 
@@ -575,8 +602,9 @@ __all__ = ['PlanningId', 'PlanningScore', 'PlanningPin', 'PlanningVariable',
            'IndexShadowVariable', 'AnchorShadowVariable', 'InverseRelationShadowVariable',
            'ProblemFactProperty', 'ProblemFactCollectionProperty',
            'PlanningEntityProperty', 'PlanningEntityCollectionProperty',
-           'ValueRangeProvider', 'DeepPlanningClone',
-           'planning_entity', 'planning_solution',
+           'ValueRangeProvider', 'DeepPlanningClone', 'ConstraintConfigurationProvider',
+           'ConstraintWeight',
+           'planning_entity', 'planning_solution', 'constraint_configuration',
            'nearby_distance_meter',
            'constraint_provider', 'easy_score_calculator', 'incremental_score_calculator',
            'variable_listener', 'problem_change']
