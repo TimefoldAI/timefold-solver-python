@@ -60,15 +60,15 @@ def test_min():
     entity_a.value = value_1
     entity_b.value = value_1
 
-    assert score_manager.explain(problem).get_score() == SimpleScore.of(1)
+    assert score_manager.explain(problem).score == SimpleScore.of(1)
 
     entity_a.value = value_2
 
-    assert score_manager.explain(problem).get_score() == SimpleScore.of(1)
+    assert score_manager.explain(problem).score == SimpleScore.of(1)
 
     entity_b.value = value_2
 
-    assert score_manager.explain(problem).get_score() == SimpleScore.of(2)
+    assert score_manager.explain(problem).score == SimpleScore.of(2)
 
 
 def test_max():
@@ -93,15 +93,15 @@ def test_max():
     entity_a.value = value_1
     entity_b.value = value_1
 
-    assert score_manager.explain(problem).get_score() == SimpleScore.of(1)
+    assert score_manager.explain(problem).score == SimpleScore.of(1)
 
     entity_a.value = value_2
 
-    assert score_manager.explain(problem).get_score() == SimpleScore.of(2)
+    assert score_manager.explain(problem).score == SimpleScore.of(2)
 
     entity_b.value = value_2
 
-    assert score_manager.explain(problem).get_score() == SimpleScore.of(2)
+    assert score_manager.explain(problem).score == SimpleScore.of(2)
 
 
 def test_sum():
@@ -126,15 +126,15 @@ def test_sum():
     entity_a.value = value_1
     entity_b.value = value_1
 
-    assert score_manager.explain(problem).get_score() == SimpleScore.of(2)
+    assert score_manager.explain(problem).score == SimpleScore.of(2)
 
     entity_a.value = value_2
 
-    assert score_manager.explain(problem).get_score() == SimpleScore.of(3)
+    assert score_manager.explain(problem).score == SimpleScore.of(3)
 
     entity_b.value = value_2
 
-    assert score_manager.explain(problem).get_score() == SimpleScore.of(4)
+    assert score_manager.explain(problem).score == SimpleScore.of(4)
 
 
 def test_average():
@@ -159,15 +159,15 @@ def test_average():
     entity_a.value = value_1
     entity_b.value = value_1
 
-    assert score_manager.explain(problem).get_score() == SimpleScore.of(10)
+    assert score_manager.explain(problem).score == SimpleScore.of(10)
 
     entity_a.value = value_2
 
-    assert score_manager.explain(problem).get_score() == SimpleScore.of(15)
+    assert score_manager.explain(problem).score == SimpleScore.of(15)
 
     entity_b.value = value_2
 
-    assert score_manager.explain(problem).get_score() == SimpleScore.of(20)
+    assert score_manager.explain(problem).score == SimpleScore.of(20)
 
 
 def test_count():
@@ -195,7 +195,7 @@ def test_count():
     entity_a2.value = value_1
     entity_b.value = value_1
 
-    assert score_manager.explain(problem).get_score() == SimpleScore.of(2)
+    assert score_manager.explain(problem).score == SimpleScore.of(2)
 
 
 def test_count_distinct():
@@ -220,15 +220,15 @@ def test_count_distinct():
     entity_a.value = value_1
     entity_b.value = value_1
 
-    assert score_manager.explain(problem).get_score() == SimpleScore.of(1)
+    assert score_manager.explain(problem).score == SimpleScore.of(1)
 
     entity_b.value = value_2
 
-    assert score_manager.explain(problem).get_score() == SimpleScore.of(2)
+    assert score_manager.explain(problem).score == SimpleScore.of(2)
 
     entity_a.value = value_2
 
-    assert score_manager.explain(problem).get_score() == SimpleScore.of(1)
+    assert score_manager.explain(problem).score == SimpleScore.of(1)
 
 
 def test_to_consecutive_sequences():
@@ -271,7 +271,7 @@ def test_to_consecutive_sequences():
     entity_d.value = value_7
     entity_e.value = value_9
 
-    assert score_manager.explain(problem).get_score().score() == 5
+    assert score_manager.explain(problem).score.score() == 5
 
     entity_a.value = value_1
     entity_b.value = value_2
@@ -279,7 +279,7 @@ def test_to_consecutive_sequences():
     entity_d.value = value_4
     entity_e.value = value_5
 
-    assert score_manager.explain(problem).get_score().score() == 25
+    assert score_manager.explain(problem).score.score() == 25
 
     entity_a.value = value_1
     entity_b.value = value_2
@@ -287,7 +287,7 @@ def test_to_consecutive_sequences():
     entity_d.value = value_5
     entity_e.value = value_6
 
-    assert score_manager.explain(problem).get_score().score() == 13
+    assert score_manager.explain(problem).score.score() == 13
 
 
 def test_to_list():
@@ -312,15 +312,15 @@ def test_to_list():
     entity_a.value = value_1
     entity_b.value = value_1
 
-    assert score_manager.explain(problem).get_score() == SimpleScore.of(2)
+    assert score_manager.explain(problem).score == SimpleScore.of(2)
 
     entity_b.value = value_2
 
-    assert score_manager.explain(problem).get_score() == SimpleScore.of(2)
+    assert score_manager.explain(problem).score == SimpleScore.of(2)
 
     entity_a.value = value_2
 
-    assert score_manager.explain(problem).get_score() == SimpleScore.of(2)
+    assert score_manager.explain(problem).score == SimpleScore.of(2)
 
 
 def test_to_set():
@@ -345,15 +345,15 @@ def test_to_set():
     entity_a.value = value_1
     entity_b.value = value_1
 
-    assert score_manager.explain(problem).get_score() == SimpleScore.of(1)
+    assert score_manager.explain(problem).score == SimpleScore.of(1)
 
     entity_b.value = value_2
 
-    assert score_manager.explain(problem).get_score() == SimpleScore.of(2)
+    assert score_manager.explain(problem).score == SimpleScore.of(2)
 
     entity_a.value = value_2
 
-    assert score_manager.explain(problem).get_score() == SimpleScore.of(1)
+    assert score_manager.explain(problem).score == SimpleScore.of(1)
 
 
 def test_to_map():
@@ -379,15 +379,15 @@ def test_to_map():
     entity_a.value = value_1
     entity_b.value = value_1
 
-    assert score_manager.explain(problem).get_score() == SimpleScore.of(1)
+    assert score_manager.explain(problem).score == SimpleScore.of(1)
 
     entity_b.value = value_2
 
-    assert score_manager.explain(problem).get_score() == SimpleScore.of(2)
+    assert score_manager.explain(problem).score == SimpleScore.of(2)
 
     entity_a.value = value_2
 
-    assert score_manager.explain(problem).get_score() == SimpleScore.of(0)
+    assert score_manager.explain(problem).score == SimpleScore.of(0)
 
 
 def test_to_sorted_set():
@@ -412,15 +412,15 @@ def test_to_sorted_set():
     entity_a.value = value_1
     entity_b.value = value_1
 
-    assert score_manager.explain(problem).get_score() == SimpleScore.of(1)
+    assert score_manager.explain(problem).score == SimpleScore.of(1)
 
     entity_b.value = value_2
 
-    assert score_manager.explain(problem).get_score() == SimpleScore.of(1)
+    assert score_manager.explain(problem).score == SimpleScore.of(1)
 
     entity_a.value = value_2
 
-    assert score_manager.explain(problem).get_score() == SimpleScore.of(2)
+    assert score_manager.explain(problem).score == SimpleScore.of(2)
 
 
 def test_to_sorted_map():
@@ -447,19 +447,19 @@ def test_to_sorted_map():
     entity_a.value = value_1
     entity_b.value = value_1
 
-    assert score_manager.explain(problem).get_score() == SimpleScore.of(1)
+    assert score_manager.explain(problem).score == SimpleScore.of(1)
 
     entity_b.value = value_2
 
-    assert score_manager.explain(problem).get_score() == SimpleScore.of(0)
+    assert score_manager.explain(problem).score == SimpleScore.of(0)
 
     entity_a.value = value_2
 
-    assert score_manager.explain(problem).get_score() == SimpleScore.of(0)
+    assert score_manager.explain(problem).score == SimpleScore.of(0)
 
     entity_b.value = value_1
 
-    assert score_manager.explain(problem).get_score() == SimpleScore.of(2)
+    assert score_manager.explain(problem).score == SimpleScore.of(2)
 
 
 def test_conditionally():
@@ -487,7 +487,7 @@ def test_conditionally():
     entity_a2.value = value_1
     entity_b.value = value_1
 
-    assert score_manager.explain(problem).get_score() == SimpleScore.of(2)
+    assert score_manager.explain(problem).score == SimpleScore.of(2)
 
 
 def test_compose():
@@ -517,15 +517,15 @@ def test_compose():
     entity_a.value = value_1
     entity_b.value = value_1
 
-    assert score_manager.explain(problem).get_score() == SimpleScore.of(11)
+    assert score_manager.explain(problem).score == SimpleScore.of(11)
 
     entity_a.value = value_2
 
-    assert score_manager.explain(problem).get_score() == SimpleScore.of(21)
+    assert score_manager.explain(problem).score == SimpleScore.of(21)
 
     entity_b.value = value_2
 
-    assert score_manager.explain(problem).get_score() == SimpleScore.of(22)
+    assert score_manager.explain(problem).score == SimpleScore.of(22)
 
 
 def test_collect_and_then():
@@ -553,15 +553,15 @@ def test_collect_and_then():
     entity_a.value = value_1
     entity_b.value = value_1
 
-    assert score_manager.explain(problem).get_score() == SimpleScore.of(2)
+    assert score_manager.explain(problem).score == SimpleScore.of(2)
 
     entity_a.value = value_2
 
-    assert score_manager.explain(problem).get_score() == SimpleScore.of(2)
+    assert score_manager.explain(problem).score == SimpleScore.of(2)
 
     entity_b.value = value_2
 
-    assert score_manager.explain(problem).get_score() == SimpleScore.of(4)
+    assert score_manager.explain(problem).score == SimpleScore.of(4)
 
 
 def test_flatten_last():
@@ -584,4 +584,4 @@ def test_flatten_last():
     problem = Solution([entity_a], [value_1])
     entity_a.value = value_1
 
-    assert score_manager.explain(problem).get_score() == SimpleScore.of(3)
+    assert score_manager.explain(problem).score == SimpleScore.of(3)

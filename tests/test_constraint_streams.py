@@ -67,15 +67,15 @@ def test_for_each():
 
     problem = Solution([entity_a, entity_b], [value_1])
 
-    assert score_manager.explain(problem).get_score().score() == 0
+    assert score_manager.explain(problem).score.score() == 0
 
     entity_a.value = value_1
 
-    assert score_manager.explain(problem).get_score().score() == 1
+    assert score_manager.explain(problem).score.score() == 1
 
     entity_b.value = value_1
 
-    assert score_manager.explain(problem).get_score().score() == 2
+    assert score_manager.explain(problem).score.score() == 2
 
 
 def test_filter_uni():
@@ -97,16 +97,16 @@ def test_filter_uni():
 
     problem = Solution([entity_a, entity_b], [value_1, value_2])
 
-    assert score_manager.explain(problem).get_score().score() == 0
+    assert score_manager.explain(problem).score.score() == 0
     entity_a.value = value_1
 
-    assert score_manager.explain(problem).get_score().score() == 1
+    assert score_manager.explain(problem).score.score() == 1
 
     entity_b.value = value_2
-    assert score_manager.explain(problem).get_score().score() == 1
+    assert score_manager.explain(problem).score.score() == 1
 
     entity_b.value = value_1
-    assert score_manager.explain(problem).get_score().score() == 2
+    assert score_manager.explain(problem).score.score() == 2
 
 
 def test_filter_bi():
@@ -129,16 +129,16 @@ def test_filter_bi():
 
     problem = Solution([entity_a, entity_b], [value_1, value_2])
 
-    assert score_manager.explain(problem).get_score().score() == 0
+    assert score_manager.explain(problem).score.score() == 0
     entity_a.value = value_1
 
-    assert score_manager.explain(problem).get_score().score() == 0
+    assert score_manager.explain(problem).score.score() == 0
 
     entity_b.value = value_1
-    assert score_manager.explain(problem).get_score().score() == 0
+    assert score_manager.explain(problem).score.score() == 0
 
     entity_b.value = value_2
-    assert score_manager.explain(problem).get_score().score() == 1
+    assert score_manager.explain(problem).score.score() == 1
 
 
 def test_filter_tri():
@@ -164,19 +164,19 @@ def test_filter_tri():
 
     problem = Solution([entity_a, entity_b, entity_c], [value_1, value_2, value_3])
 
-    assert score_manager.explain(problem).get_score().score() == 0
+    assert score_manager.explain(problem).score.score() == 0
     entity_a.value = value_1
 
-    assert score_manager.explain(problem).get_score().score() == 0
+    assert score_manager.explain(problem).score.score() == 0
 
     entity_b.value = value_2
-    assert score_manager.explain(problem).get_score().score() == 0
+    assert score_manager.explain(problem).score.score() == 0
 
     entity_c.value = value_1
-    assert score_manager.explain(problem).get_score().score() == 0
+    assert score_manager.explain(problem).score.score() == 0
 
     entity_c.value = value_3
-    assert score_manager.explain(problem).get_score().score() == 1
+    assert score_manager.explain(problem).score.score() == 1
 
 
 def test_filter_quad():
@@ -206,22 +206,22 @@ def test_filter_quad():
 
     problem = Solution([entity_a, entity_b, entity_c, entity_d], [value_1, value_2, value_3, value_4])
 
-    assert score_manager.explain(problem).get_score().score() == 0
+    assert score_manager.explain(problem).score.score() == 0
     entity_a.value = value_1
 
-    assert score_manager.explain(problem).get_score().score() == 0
+    assert score_manager.explain(problem).score.score() == 0
 
     entity_b.value = value_2
-    assert score_manager.explain(problem).get_score().score() == 0
+    assert score_manager.explain(problem).score.score() == 0
 
     entity_c.value = value_3
-    assert score_manager.explain(problem).get_score().score() == 0
+    assert score_manager.explain(problem).score.score() == 0
 
     entity_d.value = value_1
-    assert score_manager.explain(problem).get_score().score() == 0
+    assert score_manager.explain(problem).score.score() == 0
 
     entity_d.value = value_4
-    assert score_manager.explain(problem).get_score().score() == 1
+    assert score_manager.explain(problem).score.score() == 1
 
 
 def test_join_uni():
@@ -248,7 +248,7 @@ def test_join_uni():
 
     entity_a1.value = value_1
 
-    assert score_manager.explain(problem).get_score().score() == 0
+    assert score_manager.explain(problem).score.score() == 0
 
     entity_a1.value = value_1
     entity_a2.value = value_1
@@ -257,13 +257,13 @@ def test_join_uni():
     entity_b2.value = value_2
 
     # 1 * 1 + 1 * 1 + 2 * 2 + 2 * 2
-    assert score_manager.explain(problem).get_score().score() == 10
+    assert score_manager.explain(problem).score.score() == 10
 
     entity_a1.value = value_2
     entity_b1.value = value_1
 
     # 1 * 2 + 1 * 2 + 1 * 2 + 1 * 2
-    assert score_manager.explain(problem).get_score().score() == 8
+    assert score_manager.explain(problem).score.score() == 8
 
 
 def test_map():
@@ -285,19 +285,19 @@ def test_map():
 
     problem = Solution([entity_a, entity_b], [value_1, value_2])
 
-    assert score_manager.explain(problem).get_score().score() == 0
+    assert score_manager.explain(problem).score.score() == 0
 
     entity_a.value = value_1
 
-    assert score_manager.explain(problem).get_score().score() == 1
+    assert score_manager.explain(problem).score.score() == 1
 
     entity_b.value = value_1
 
-    assert score_manager.explain(problem).get_score().score() == 2
+    assert score_manager.explain(problem).score.score() == 2
 
     entity_b.value = value_2
 
-    assert score_manager.explain(problem).get_score().score() == 3
+    assert score_manager.explain(problem).score.score() == 3
 
 
 def test_multi_map():
@@ -319,19 +319,19 @@ def test_multi_map():
 
     problem = Solution([entity_a, entity_b], [value_1, value_2])
 
-    assert score_manager.explain(problem).get_score().score() == 0
+    assert score_manager.explain(problem).score.score() == 0
 
     entity_a.value = value_1
 
-    assert score_manager.explain(problem).get_score().score() == 11
+    assert score_manager.explain(problem).score.score() == 11
 
     entity_b.value = value_1
 
-    assert score_manager.explain(problem).get_score().score() == 23
+    assert score_manager.explain(problem).score.score() == 23
 
     entity_b.value = value_2
 
-    assert score_manager.explain(problem).get_score().score() == 33
+    assert score_manager.explain(problem).score.score() == 33
 
 
 def test_expand():
@@ -353,19 +353,19 @@ def test_expand():
 
     problem = Solution([entity_a, entity_b], [value_1, value_2])
 
-    assert score_manager.explain(problem).get_score().score() == 0
+    assert score_manager.explain(problem).score.score() == 0
 
     entity_a.value = value_1
 
-    assert score_manager.explain(problem).get_score().score() == 1
+    assert score_manager.explain(problem).score.score() == 1
 
     entity_b.value = value_1
 
-    assert score_manager.explain(problem).get_score().score() == 2
+    assert score_manager.explain(problem).score.score() == 2
 
     entity_b.value = value_2
 
-    assert score_manager.explain(problem).get_score().score() == 3
+    assert score_manager.explain(problem).score.score() == 3
 
 
 def test_multi_expand():
@@ -387,19 +387,19 @@ def test_multi_expand():
 
     problem = Solution([entity_a, entity_b], [value_1, value_2])
 
-    assert score_manager.explain(problem).get_score().score() == 0
+    assert score_manager.explain(problem).score.score() == 0
 
     entity_a.value = value_1
 
-    assert score_manager.explain(problem).get_score().score() == 11
+    assert score_manager.explain(problem).score.score() == 11
 
     entity_b.value = value_1
 
-    assert score_manager.explain(problem).get_score().score() == 23
+    assert score_manager.explain(problem).score.score() == 23
 
     entity_b.value = value_2
 
-    assert score_manager.explain(problem).get_score().score() == 33
+    assert score_manager.explain(problem).score.score() == 33
 
 
 def test_concat():
@@ -423,19 +423,98 @@ def test_concat():
 
     problem = Solution([entity_a, entity_b], [value_1, value_2, value_3])
 
-    assert score_manager.explain(problem).get_score().score() == 0
+    assert score_manager.explain(problem).score.score() == 0
 
     entity_a.value = value_1
 
-    assert score_manager.explain(problem).get_score().score() == 1
+    assert score_manager.explain(problem).score.score() == 1
 
     entity_b.value = value_2
 
-    assert score_manager.explain(problem).get_score().score() == 2
+    assert score_manager.explain(problem).score.score() == 2
 
     entity_b.value = value_3
 
-    assert score_manager.explain(problem).get_score().score() == 1
+    assert score_manager.explain(problem).score.score() == 1
+
+
+def test_custom_indictments():
+    @dataclass(unsafe_hash=True)
+    class MyIndictment:
+        code: str
+
+    @constraint_provider
+    def define_constraints(constraint_factory: ConstraintFactory):
+        return [
+            constraint_factory.for_each(Entity)
+            .reward(SimpleScore.ONE, lambda e: e.value.number)
+            .indict_with(lambda e: [MyIndictment(e.code), e.value.number])
+            .as_constraint('my_package', 'Maximize value')
+        ]
+
+    score_manager = create_score_manager(define_constraints)
+    entity_a: Entity = Entity('A')
+    entity_b: Entity = Entity('B')
+
+    value_1 = Value(1)
+    value_2 = Value(2)
+    value_3 = Value(3)
+
+    entity_a.value = value_1
+    entity_b.value = value_1
+
+    problem = Solution([entity_a, entity_b], [value_1, value_2, value_3])
+
+    indictments = score_manager.explain(problem).indictment_map
+    a_indictment = indictments[MyIndictment('A')]
+    b_indictment = indictments[MyIndictment('B')]
+    value_indictment = indictments[1]
+
+    assert a_indictment.indicted_object == MyIndictment('A')
+    assert a_indictment.score.score() == 1
+    assert a_indictment.constraint_match_count == 1
+    assert a_indictment.constraint_match_set == {
+        ConstraintMatch(constraint_ref=ConstraintRef(package_name='my_package', constraint_name='Maximize value'),
+                        justification=DefaultConstraintJustification(
+                            facts=(entity_a,),
+                            impact=a_indictment.score
+                        ),
+                        indicted_objects=(MyIndictment('A'), 1),
+                        score=a_indictment.score)
+    }
+
+    assert b_indictment.indicted_object == MyIndictment('B')
+    assert b_indictment.score.score() == 1
+    assert b_indictment.constraint_match_count == 1
+    assert b_indictment.constraint_match_set == {
+        ConstraintMatch(constraint_ref=ConstraintRef(package_name='my_package', constraint_name='Maximize value'),
+                        justification=DefaultConstraintJustification(
+                            facts=(entity_b,),
+                            impact=b_indictment.score
+                        ),
+                        indicted_objects=(MyIndictment('B'), 1),
+                        score=b_indictment.score)
+    }
+
+    assert value_indictment.indicted_object == 1
+    assert value_indictment.score.score() == 2
+    assert value_indictment.constraint_match_count == 2
+    assert value_indictment.constraint_match_set == {
+        ConstraintMatch(constraint_ref=ConstraintRef(package_name='my_package', constraint_name='Maximize value'),
+                        justification=DefaultConstraintJustification(
+                            facts=(entity_a,),
+                            impact=a_indictment.score
+                        ),
+                        indicted_objects=(MyIndictment('A'), 1),
+                        score=a_indictment.score),
+        ConstraintMatch(constraint_ref=ConstraintRef(package_name='my_package', constraint_name='Maximize value'),
+                        justification=DefaultConstraintJustification(
+                            facts=(entity_b,),
+                            impact=b_indictment.score
+                        ),
+                        indicted_objects=(MyIndictment('B'), 1),
+                        score=b_indictment.score)
+    }
 
 
 ignored_python_functions = {
@@ -511,4 +590,6 @@ def test_has_all_methods():
             if not hasattr(python_type, snake_case_name):
                 missing.append(snake_case_name)
 
-        assert missing == []
+        if missing:
+            raise AssertionError(f'{python_type} is missing methods ({missing}) '
+                                 f'from java_type ({java_type}).)')
