@@ -501,50 +501,56 @@ class UniConstraintStream(Generic[A]):
     def penalize(self, constraint_weight: ScoreType, match_weigher: Callable[[A], int] = None) -> \
             'UniConstraintBuilder[A, ScoreType]':
         if match_weigher is None:
-            return UniConstraintBuilder(self.delegate.penalize(constraint_weight))
+            return UniConstraintBuilder(self.delegate.penalize(constraint_weight), self.a_type)
         else:
             return UniConstraintBuilder(self.delegate.penalize(constraint_weight,
-                                                               to_int_function_cast(match_weigher, self.a_type)))
+                                                               to_int_function_cast(match_weigher, self.a_type)),
+                                        self.a_type)
 
     def reward(self, constraint_weight: ScoreType, match_weigher: Callable[[A], int] = None) -> \
             'UniConstraintBuilder[A, ScoreType]':
         if match_weigher is None:
-            return UniConstraintBuilder(self.delegate.reward(constraint_weight))
+            return UniConstraintBuilder(self.delegate.reward(constraint_weight), self.a_type)
         else:
             return UniConstraintBuilder(self.delegate.reward(constraint_weight,
-                                                             to_int_function_cast(match_weigher, self.a_type)))
+                                                             to_int_function_cast(match_weigher, self.a_type)),
+                                        self.a_type)
 
     def impact(self, constraint_weight: ScoreType, match_weigher: Callable[[A], int] = None) -> \
             'UniConstraintBuilder[A, ScoreType]':
         if match_weigher is None:
-            return UniConstraintBuilder(self.delegate.impact(constraint_weight))
+            return UniConstraintBuilder(self.delegate.impact(constraint_weight), self.a_type)
         else:
             return UniConstraintBuilder(self.delegate.impact(constraint_weight,
-                                                             to_int_function_cast(match_weigher, self.a_type)))
+                                                             to_int_function_cast(match_weigher, self.a_type)),
+                                        self.a_type)
 
     def penalize_configurable(self, match_weigher: Callable[[A], int] = None) -> \
             'UniConstraintBuilder[A, ScoreType]':
         if match_weigher is None:
-            return UniConstraintBuilder(self.delegate.penalizeConfigurable())
+            return UniConstraintBuilder(self.delegate.penalizeConfigurable(), self.a_type)
         else:
             return UniConstraintBuilder(self.delegate.penalizeConfigurable(to_int_function_cast(match_weigher,
-                                                                                                self.a_type)))
+                                                                                                self.a_type)),
+                                        self.a_type)
 
     def reward_configurable(self, match_weigher: Callable[[A], int] = None) -> \
             'UniConstraintBuilder[A, ScoreType]':
         if match_weigher is None:
-            return UniConstraintBuilder(self.delegate.rewardConfigurable())
+            return UniConstraintBuilder(self.delegate.rewardConfigurable(), self.a_type)
         else:
             return UniConstraintBuilder(self.delegate.rewardConfigurable(to_int_function_cast(match_weigher,
-                                                                                              self.a_type)))
+                                                                                              self.a_type)),
+                                        self.a_type)
 
     def impact_configurable(self, match_weigher: Callable[[A], int] = None) -> \
             'UniConstraintBuilder[A, ScoreType]':
         if match_weigher is None:
-            return UniConstraintBuilder(self.delegate.impactConfigurable())
+            return UniConstraintBuilder(self.delegate.impactConfigurable(), self.a_type)
         else:
             return UniConstraintBuilder(self.delegate.impactConfigurable(to_int_function_cast(match_weigher,
-                                                                                              self.a_type)))
+                                                                                              self.a_type)),
+                                        self.a_type)
 
 
 class BiConstraintStream(Generic[A, B]):
@@ -962,62 +968,68 @@ class BiConstraintStream(Generic[A, B]):
     def penalize(self, constraint_weight: ScoreType, match_weigher: Callable[[A, B], int] = None) -> \
             'BiConstraintBuilder[A, B, ScoreType]':
         if match_weigher is None:
-            return BiConstraintBuilder(self.delegate.penalize(constraint_weight))
+            return BiConstraintBuilder(self.delegate.penalize(constraint_weight), self.a_type, self.b_type)
         else:
             return BiConstraintBuilder(self.delegate.penalize(constraint_weight,
                                                               to_int_function_cast(match_weigher,
                                                                                    self.a_type,
-                                                                                   self.b_type)))
+                                                                                   self.b_type)),
+                                       self.a_type, self.b_type)
 
     def reward(self, constraint_weight: ScoreType, match_weigher: Callable[[A, B], int] = None) -> \
             'BiConstraintBuilder[A, B, ScoreType]':
         if match_weigher is None:
-            return BiConstraintBuilder(self.delegate.reward(constraint_weight))
+            return BiConstraintBuilder(self.delegate.reward(constraint_weight), self.a_type, self.b_type)
         else:
             return BiConstraintBuilder(self.delegate.reward(constraint_weight,
                                                             to_int_function_cast(match_weigher,
                                                                                  self.a_type,
-                                                                                 self.b_type)))
+                                                                                 self.b_type)),
+                                       self.a_type, self.b_type)
 
     def impact(self, constraint_weight: ScoreType, match_weigher: Callable[[A, B], int] = None) -> \
             'BiConstraintBuilder[A, B, ScoreType]':
         if match_weigher is None:
-            return BiConstraintBuilder(self.delegate.impact(constraint_weight))
+            return BiConstraintBuilder(self.delegate.impact(constraint_weight), self.a_type, self.b_type)
         else:
             return BiConstraintBuilder(self.delegate.impact(constraint_weight,
                                                             to_int_function_cast(match_weigher,
                                                                                  self.a_type,
-                                                                                 self.b_type)))
+                                                                                 self.b_type)),
+                                       self.a_type, self.b_type)
 
     def penalize_configurable(self, match_weigher: Callable[[A, B], int] = None) -> \
             'BiConstraintBuilder[A, B, ScoreType]':
         if match_weigher is None:
-            return BiConstraintBuilder(self.delegate.penalizeConfigurable())
+            return BiConstraintBuilder(self.delegate.penalizeConfigurable(), self.a_type, self.b_type)
         else:
             return BiConstraintBuilder(self.delegate.penalizeConfigurable(
                                                               to_int_function_cast(match_weigher,
                                                                                    self.a_type,
-                                                                                   self.b_type)))
+                                                                                   self.b_type)),
+                self.a_type, self.b_type)
 
     def reward_configurable(self, match_weigher: Callable[[A, B], int] = None) -> \
             'BiConstraintBuilder[A, B, ScoreType]':
         if match_weigher is None:
-            return BiConstraintBuilder(self.delegate.rewardConfigurable())
+            return BiConstraintBuilder(self.delegate.rewardConfigurable(), self.a_type, self.b_type)
         else:
             return BiConstraintBuilder(self.delegate.rewardConfigurable(
                                                             to_int_function_cast(match_weigher,
                                                                                  self.a_type,
-                                                                                 self.b_type)))
+                                                                                 self.b_type)),
+                self.a_type, self.b_type)
 
     def impact_configurable(self, match_weigher: Callable[[A, B], int] = None) -> \
             'BiConstraintBuilder[A, B, ScoreType]':
         if match_weigher is None:
-            return BiConstraintBuilder(self.delegate.impactConfigurable())
+            return BiConstraintBuilder(self.delegate.impactConfigurable(), self.a_type, self.b_type)
         else:
             return BiConstraintBuilder(self.delegate.impactConfigurable(
                                                             to_int_function_cast(match_weigher,
                                                                                  self.a_type,
-                                                                                 self.b_type)))
+                                                                                 self.b_type)),
+                self.a_type, self.b_type)
 
 
 class TriConstraintStream(Generic[A, B, C]):
@@ -1423,68 +1435,79 @@ class TriConstraintStream(Generic[A, B, C]):
     def penalize(self, constraint_weight: ScoreType,
                  match_weigher: Callable[[A, B, C], int] = None) -> 'TriConstraintBuilder[A, B, C, ScoreType]':
         if match_weigher is None:
-            return TriConstraintBuilder(self.delegate.penalize(constraint_weight))
+            return TriConstraintBuilder(self.delegate.penalize(constraint_weight),
+                                        self.a_type, self.b_type, self.c_type)
         else:
             return TriConstraintBuilder(self.delegate.penalize(constraint_weight,
                                                                to_int_function_cast(match_weigher,
                                                                                     self.a_type,
                                                                                     self.b_type,
-                                                                                    self.c_type)))
+                                                                                    self.c_type)),
+                                        self.a_type, self.b_type, self.c_type)
 
     def reward(self, constraint_weight: ScoreType, match_weigher: Callable[[A, B, C], int] = None) -> \
             'TriConstraintBuilder[A, B, C, ScoreType]':
         if match_weigher is None:
-            return TriConstraintBuilder(self.delegate.reward(constraint_weight))
+            return TriConstraintBuilder(self.delegate.reward(constraint_weight), self.a_type, self.b_type, self.c_type)
         else:
             return TriConstraintBuilder(self.delegate.reward(constraint_weight,
                                                              to_int_function_cast(match_weigher,
                                                                                   self.a_type,
                                                                                   self.b_type,
-                                                                                  self.c_type)))
+                                                                                  self.c_type)),
+                                        self.a_type, self.b_type, self.c_type)
 
     def impact(self, constraint_weight: ScoreType,
                match_weigher: Callable[[A, B, C], int] = None) -> 'TriConstraintBuilder[A, B, C, ScoreType]':
         if match_weigher is None:
-            return TriConstraintBuilder(self.delegate.impact(constraint_weight))
+            return TriConstraintBuilder(self.delegate.impact(constraint_weight),
+                                        self.a_type, self.b_type, self.c_type)
         else:
             return TriConstraintBuilder(self.delegate.impact(constraint_weight,
                                                              to_int_function_cast(match_weigher,
                                                                                   self.a_type,
                                                                                   self.b_type,
-                                                                                  self.c_type)))
+                                                                                  self.c_type)),
+                                        self.a_type, self.b_type, self.c_type)
 
     def penalize_configurable(self, match_weigher: Callable[[A, B, C], int] = None) \
             -> 'TriConstraintBuilder[A, B, C, ScoreType]':
         if match_weigher is None:
-            return TriConstraintBuilder(self.delegate.penalizeConfigurable())
+            return TriConstraintBuilder(self.delegate.penalizeConfigurable(),
+                                        self.a_type, self.b_type, self.c_type)
         else:
             return TriConstraintBuilder(self.delegate.penalizeConfigurable(
                                                                to_int_function_cast(match_weigher,
                                                                                     self.a_type,
                                                                                     self.b_type,
-                                                                                    self.c_type)))
+                                                                                    self.c_type)),
+                self.a_type, self.b_type, self.c_type)
 
     def reward_configurable(self, match_weigher: Callable[[A, B, C], int] = None) -> \
             'TriConstraintBuilder[A, B, C, ScoreType]':
         if match_weigher is None:
-            return TriConstraintBuilder(self.delegate.rewardConfigurable())
+            return TriConstraintBuilder(self.delegate.rewardConfigurable(),
+                                        self.a_type, self.b_type, self.c_type)
         else:
             return TriConstraintBuilder(self.delegate.rewardConfigurable(
                                                              to_int_function_cast(match_weigher,
                                                                                   self.a_type,
                                                                                   self.b_type,
-                                                                                  self.c_type)))
+                                                                                  self.c_type)),
+                self.a_type, self.b_type, self.c_type)
 
     def impact_configurable(self, match_weigher: Callable[[A, B, C], int] = None) \
             -> 'TriConstraintBuilder[A, B, C, ScoreType]':
         if match_weigher is None:
-            return TriConstraintBuilder(self.delegate.impactConfigurable())
+            return TriConstraintBuilder(self.delegate.impactConfigurable(),
+                                        self.a_type, self.b_type, self.c_type)
         else:
             return TriConstraintBuilder(self.delegate.impactConfigurable(
                                                              to_int_function_cast(match_weigher,
                                                                                   self.a_type,
                                                                                   self.b_type,
-                                                                                  self.c_type)))
+                                                                                  self.c_type)),
+                self.a_type, self.b_type, self.c_type)
 
 
 class QuadConstraintStream(Generic[A, B, C, D]):
@@ -1867,74 +1890,86 @@ class QuadConstraintStream(Generic[A, B, C, D]):
     def penalize(self, constraint_weight: ScoreType,
                  match_weigher: Callable[[A, B, C, D], int] = None) -> 'QuadConstraintBuilder[A, B, C, D, ScoreType]':
         if match_weigher is None:
-            return QuadConstraintBuilder(self.delegate.penalize(constraint_weight))
+            return QuadConstraintBuilder(self.delegate.penalize(constraint_weight),
+                                         self.a_type, self.b_type, self.c_type, self.d_type)
         else:
             return QuadConstraintBuilder(self.delegate.penalize(constraint_weight,
                                                                 to_int_function_cast(match_weigher,
                                                                                      self.a_type,
                                                                                      self.b_type,
                                                                                      self.c_type,
-                                                                                     self.d_type)))
+                                                                                     self.d_type)),
+                                         self.a_type, self.b_type, self.c_type, self.d_type)
 
     def reward(self, constraint_weight: ScoreType,
                match_weigher: Callable[[A, B, C, D], int] = None) -> 'QuadConstraintBuilder[A, B, C, D, ScoreType]':
         if match_weigher is None:
-            return QuadConstraintBuilder(self.delegate.reward(constraint_weight))
+            return QuadConstraintBuilder(self.delegate.reward(constraint_weight),
+                                         self.a_type, self.b_type, self.c_type, self.d_type)
         else:
             return QuadConstraintBuilder(self.delegate.reward(constraint_weight,
                                                               to_int_function_cast(match_weigher,
                                                                                    self.a_type,
                                                                                    self.b_type,
                                                                                    self.c_type,
-                                                                                   self.d_type)))
+                                                                                   self.d_type)),
+                                         self.a_type, self.b_type, self.c_type, self.d_type)
 
     def impact(self, constraint_weight: ScoreType,
                match_weigher: Callable[[A, B, C, D], int] = None) -> 'QuadConstraintBuilder[A, B, C, D, ScoreType]':
         if match_weigher is None:
-            return QuadConstraintBuilder(self.delegate.impact(constraint_weight))
+            return QuadConstraintBuilder(self.delegate.impact(constraint_weight),
+                                         self.a_type, self.b_type, self.c_type, self.d_type)
         else:
             return QuadConstraintBuilder(self.delegate.impact(constraint_weight,
                                                               to_int_function_cast(match_weigher,
                                                                                    self.a_type,
                                                                                    self.b_type,
                                                                                    self.c_type,
-                                                                                   self.d_type)))
+                                                                                   self.d_type)),
+                                         self.a_type, self.b_type, self.c_type, self.d_type)
 
     def penalize_configurable(self, match_weigher: Callable[[A, B, C, D], int] = None) \
             -> 'QuadConstraintBuilder[A, B, C, D, ScoreType]':
         if match_weigher is None:
-            return QuadConstraintBuilder(self.delegate.penalizeConfigurable())
+            return QuadConstraintBuilder(self.delegate.penalizeConfigurable(),
+                                         self.a_type, self.b_type, self.c_type, self.d_type)
         else:
             return QuadConstraintBuilder(self.delegate.penalizeConfigurable(
                                                                 to_int_function_cast(match_weigher,
                                                                                      self.a_type,
                                                                                      self.b_type,
                                                                                      self.c_type,
-                                                                                     self.d_type)))
+                                                                                     self.d_type)),
+                self.a_type, self.b_type, self.c_type, self.d_type)
 
     def reward_configurable(self, match_weigher: Callable[[A, B, C, D], int] = None) \
             -> 'QuadConstraintBuilder[A, B, C, D, ScoreType]':
         if match_weigher is None:
-            return QuadConstraintBuilder(self.delegate.rewardConfigurable())
+            return QuadConstraintBuilder(self.delegate.rewardConfigurable(),
+                                         self.a_type, self.b_type, self.c_type, self.d_type)
         else:
             return QuadConstraintBuilder(self.delegate.rewardConfigurable(
                                                               to_int_function_cast(match_weigher,
                                                                                    self.a_type,
                                                                                    self.b_type,
                                                                                    self.c_type,
-                                                                                   self.d_type)))
+                                                                                   self.d_type)),
+                self.a_type, self.b_type, self.c_type, self.d_type)
 
     def impact_configurable(self, match_weigher: Callable[[A, B, C, D], int] = None) \
             -> 'QuadConstraintBuilder[A, B, C, D, ScoreType]':
         if match_weigher is None:
-            return QuadConstraintBuilder(self.delegate.impactConfigurable())
+            return QuadConstraintBuilder(self.delegate.impactConfigurable(),
+                                         self.a_type, self.b_type, self.c_type, self.d_type)
         else:
             return QuadConstraintBuilder(self.delegate.impactConfigurable(
                                                               to_int_function_cast(match_weigher,
                                                                                    self.a_type,
                                                                                    self.b_type,
                                                                                    self.c_type,
-                                                                                   self.d_type)))
+                                                                                   self.d_type)),
+                self.a_type, self.b_type, self.c_type, self.d_type)
 
 
 # Must be on the bottom, .group_by depends on this module
