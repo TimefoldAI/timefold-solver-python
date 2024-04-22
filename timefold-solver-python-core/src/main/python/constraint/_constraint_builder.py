@@ -1,4 +1,5 @@
 from ._function_translator import function_cast
+import timefold.solver.api as api
 from typing import TypeVar, Callable, Generic, Collection, Any, TYPE_CHECKING, Type
 
 if TYPE_CHECKING:
@@ -31,10 +32,11 @@ class UniConstraintBuilder(Generic[A, ScoreType]):
         return UniConstraintBuilder(self.delegate.indictWith(
             function_cast(indictment_function, self.a_type)), self.a_type)
 
-    def justify_with(self, justification_function: Callable[[A, ScoreType], Any]) -> \
+    def justify_with(self, justification_function: Callable[[A, ScoreType], 'api.ConstraintJustification']) -> \
             'UniConstraintBuilder[A, ScoreType]':
+        from ai.timefold.solver.core.api.score import Score
         return UniConstraintBuilder(self.delegate.justifyWith(
-            function_cast(justification_function, self.a_type)), self.a_type)
+            function_cast(justification_function, self.a_type, Score)), self.a_type)
 
     def as_constraint(self, constraint_package_or_name: str, constraint_name: str = None) -> '_JavaConstraint':
         if constraint_name is None:
@@ -58,10 +60,11 @@ class BiConstraintBuilder(Generic[A, B, ScoreType]):
         return BiConstraintBuilder(self.delegate.indictWith(
             function_cast(indictment_function, self.a_type, self.b_type)), self.a_type, self.b_type)
 
-    def justify_with(self, justification_function: Callable[[A, B, ScoreType], Any]) -> \
+    def justify_with(self, justification_function: Callable[[A, B, ScoreType], 'api.ConstraintJustification']) -> \
             'BiConstraintBuilder[A, B, ScoreType]':
+        from ai.timefold.solver.core.api.score import Score
         return BiConstraintBuilder(self.delegate.justifyWith(
-            function_cast(justification_function, self.a_type, self.b_type)), self.a_type, self.b_type)
+            function_cast(justification_function, self.a_type, self.b_type, Score)), self.a_type, self.b_type)
 
     def as_constraint(self, constraint_package_or_name: str, constraint_name: str = None) -> '_JavaConstraint':
         if constraint_name is None:
@@ -89,11 +92,12 @@ class TriConstraintBuilder(Generic[A, B, C, ScoreType]):
             function_cast(indictment_function, self.a_type, self.b_type, self.c_type)), self.a_type, self.b_type,
                                     self.c_type)
 
-    def justify_with(self, justification_function: Callable[[A, B, C, ScoreType], Any]) -> \
+    def justify_with(self, justification_function: Callable[[A, B, C, ScoreType], 'api.ConstraintJustification']) -> \
             'TriConstraintBuilder[A, B, C, ScoreType]':
+        from ai.timefold.solver.core.api.score import Score
         return TriConstraintBuilder(self.delegate.justifyWith(
-            function_cast(justification_function, self.a_type, self.b_type, self.c_type)), self.a_type, self.b_type,
-                                    self.c_type)
+            function_cast(justification_function, self.a_type, self.b_type, self.c_type, Score)),
+            self.a_type, self.b_type, self.c_type)
 
     def as_constraint(self, constraint_package_or_name: str, constraint_name: str = None) -> '_JavaConstraint':
         if constraint_name is None:
@@ -123,10 +127,11 @@ class QuadConstraintBuilder(Generic[A, B, C, D, ScoreType]):
             function_cast(indictment_function, self.a_type, self.b_type, self.c_type, self.d_type)),
             self.a_type, self.b_type, self.c_type, self.d_type)
 
-    def justify_with(self, justification_function: Callable[[A, B, C, D, ScoreType], Any]) -> \
-            'QuadConstraintBuilder[A, B, C, D, ScoreType]':
+    def justify_with(self, justification_function: Callable[[A, B, C, D, ScoreType], 'api.ConstraintJustification']) \
+            -> 'QuadConstraintBuilder[A, B, C, D, ScoreType]':
+        from ai.timefold.solver.core.api.score import Score
         return QuadConstraintBuilder(self.delegate.justifyWith(
-            function_cast(justification_function, self.a_type, self.b_type, self.c_type, self.d_type)),
+            function_cast(justification_function, self.a_type, self.b_type, self.c_type, self.d_type, Score)),
             self.a_type, self.b_type, self.c_type, self.d_type)
 
     def as_constraint(self, constraint_package_or_name: str, constraint_name: str = None) -> '_JavaConstraint':

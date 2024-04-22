@@ -2,6 +2,7 @@ package ai.timefold.jpyinterpreter;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -41,7 +42,8 @@ public class PythonClassTranslatorTest {
                 .op(ControlOpDescriptor.RETURN_VALUE)
                 .build();
 
-        compiledClass.annotations = List.of();
+        compiledClass.annotations = Collections.emptyList();
+        compiledClass.markerInterfaces = Collections.emptyList();
         compiledClass.className = "MyClass";
         compiledClass.superclassList = List.of(BuiltinTypes.BASE_TYPE);
         compiledClass.staticAttributeNameToObject = Map.of("type_variable", new PythonString("type_value"));
@@ -94,7 +96,8 @@ public class PythonClassTranslatorTest {
             PythonCompiledFunction comparisonFunction = getCompareFunction.apply(compareOp);
 
             PythonCompiledClass compiledClass = new PythonCompiledClass();
-            compiledClass.annotations = List.of();
+            compiledClass.annotations = Collections.emptyList();
+            compiledClass.markerInterfaces = Collections.emptyList();
             compiledClass.className = "MyClass";
             compiledClass.superclassList = List.of(BuiltinTypes.BASE_TYPE);
             compiledClass.staticAttributeNameToObject = Map.of();
@@ -163,7 +166,8 @@ public class PythonClassTranslatorTest {
                 .build();
 
         PythonCompiledClass compiledClass = new PythonCompiledClass();
-        compiledClass.annotations = List.of();
+        compiledClass.annotations = Collections.emptyList();
+        compiledClass.markerInterfaces = Collections.emptyList();
         compiledClass.className = "MyClass";
         compiledClass.superclassList = List.of(BuiltinTypes.BASE_TYPE);
         compiledClass.staticAttributeNameToObject = Map.of();

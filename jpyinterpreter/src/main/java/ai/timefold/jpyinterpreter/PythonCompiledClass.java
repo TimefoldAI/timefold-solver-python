@@ -37,6 +37,11 @@ public class PythonCompiledClass {
     public Map<String, TypeHint> typeAnnotations;
 
     /**
+     * Marker interfaces the class implement
+     */
+    public List<Class<?>> markerInterfaces;
+
+    /**
      * The binary type of this PythonCompiledClass;
      * typically {@link CPythonType}. Used when methods
      * cannot be generated.

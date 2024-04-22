@@ -962,3 +962,27 @@ def test_generic_field_type():
     translated_class = translate_python_class_to_java_class(A).getJavaClass()
     field_type = translated_class.getField('my_field').getGenericType()
     assert field_type.getActualTypeArguments()[0].getName() == PythonString.class_.getName()
+
+
+def test_marker_interface():
+    from ai.timefold.jpyinterpreter.types.wrappers import OpaquePythonReference
+    from jpyinterpreter import translate_python_class_to_java_class, add_marker_interface
+
+    @add_marker_interface(OpaquePythonReference)
+    class A:
+        pass
+
+    translated_class = translate_python_class_to_java_class(A).getJavaClass()
+    assert OpaquePythonReference.class_.isAssignableFrom(translated_class)
+
+
+def test_marker_interface_string():
+    from ai.timefold.jpyinterpreter.types.wrappers import OpaquePythonReference
+    from jpyinterpreter import translate_python_class_to_java_class, add_marker_interface
+
+    @add_marker_interface('ai.timefold.jpyinterpreter.types.wrappers.OpaquePythonReference')
+    class A:
+        pass
+
+    translated_class = translate_python_class_to_java_class(A).getJavaClass()
+    assert OpaquePythonReference.class_.isAssignableFrom(translated_class)

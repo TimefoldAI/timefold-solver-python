@@ -30,6 +30,19 @@ def add_class_annotation(annotation_type, /, **annotation_values: Any) -> Callab
     return decorator
 
 
+def add_marker_interface(marker_interface: JClass | str, /) -> Callable[[Type[T]], Type[T]]:
+    def decorator(_cls: Type[T]) -> Type[T]:
+        from .translator import type_to_compiled_java_class, type_to_marker_interfaces
+        if _cls in type_to_compiled_java_class:
+            raise RuntimeError('Cannot add a marker interface after a class been compiled.')
+        marker_interfaces = type_to_marker_interfaces.get(_cls, [])
+        marker_interfaces.append(marker_interface)
+        type_to_marker_interfaces[_cls] = marker_interfaces
+        return _cls
+
+    return decorator
+
+
 def copy_type_annotations(hinted_object, default_args, vargs_name, kwargs_name):
     from java.util import HashMap, Collections
     from ai.timefold.jpyinterpreter import TypeHint

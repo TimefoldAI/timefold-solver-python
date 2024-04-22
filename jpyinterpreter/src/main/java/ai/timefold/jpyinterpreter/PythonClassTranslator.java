@@ -159,10 +159,18 @@ public class PythonClassTranslator {
 
         List<JavaInterfaceImplementor> nonObjectInterfaceImplementors = javaInterfaceImplementorSet.stream()
                 .filter(implementor -> !Object.class.equals(implementor.getInterfaceClass()))
-                .collect(Collectors.toList());
-        String[] interfaces = new String[nonObjectInterfaceImplementors.size()];
+                .toList();
+
+        String[] interfaces = new String[nonObjectInterfaceImplementors.size() + pythonCompiledClass.markerInterfaces.size()];
         for (int i = 0; i < nonObjectInterfaceImplementors.size(); i++) {
             interfaces[i] = Type.getInternalName(nonObjectInterfaceImplementors.get(i).getInterfaceClass());
+        }
+        for (int i = 0; i < pythonCompiledClass.markerInterfaces.size(); i++) {
+            var markerInterface = pythonCompiledClass.markerInterfaces.get(i);
+            if (!markerInterface.isInterface()) {
+                throw new IllegalArgumentException("%s is not an interface".formatted(markerInterface));
+            }
+            interfaces[i + nonObjectInterfaceImplementors.size()] = Type.getInternalName(markerInterface);
         }
 
         ClassWriter classWriter = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
