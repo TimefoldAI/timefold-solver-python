@@ -20,7 +20,7 @@ def add_class_annotation(annotation_type, /, **annotation_values: Any) -> Callab
     def decorator(_cls: Type[T]) -> Type[T]:
         from .translator import type_to_compiled_java_class, type_to_annotations
         if _cls in type_to_compiled_java_class:
-            raise RuntimeError('Cannot add an annotation after a class been compiled.')
+            raise RuntimeError('Cannot add an annotation after a class has been compiled.')
         annotations = type_to_annotations.get(_cls, [])
         annotation = JavaAnnotation(annotation_type, annotation_values)
         annotations.append(annotation)
@@ -34,7 +34,7 @@ def add_java_interface(java_interface: JClass | str, /) -> Callable[[Type[T]], T
     def decorator(_cls: Type[T]) -> Type[T]:
         from .translator import type_to_compiled_java_class, type_to_java_interfaces
         if _cls in type_to_compiled_java_class:
-            raise RuntimeError('Cannot add a marker interface after a class been compiled.')
+            raise RuntimeError('Cannot add a interface after a class has been compiled.')
         marker_interfaces = type_to_java_interfaces.get(_cls, [])
         marker_interfaces.append(java_interface)
         type_to_java_interfaces[_cls] = marker_interfaces
