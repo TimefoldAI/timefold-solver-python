@@ -37,9 +37,9 @@ public class PythonCompiledClass {
     public Map<String, TypeHint> typeAnnotations;
 
     /**
-     * Marker interfaces the class implement
+     * Java interfaces the class implement
      */
-    public List<Class<?>> markerInterfaces;
+    public List<Class<?>> javaInterfaces;
 
     /**
      * The binary type of this PythonCompiledClass;

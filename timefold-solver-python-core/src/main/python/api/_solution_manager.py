@@ -1,7 +1,7 @@
 from ._solver_factory import SolverFactory
 from ._solver_manager import SolverManager
 from .._timefold_java_interop import get_class
-from jpyinterpreter import unwrap_python_like_object, add_marker_interface
+from jpyinterpreter import unwrap_python_like_object, add_java_interface
 from dataclasses import dataclass
 
 from typing import TypeVar, Generic, Union, TYPE_CHECKING, Any, cast, Optional, Type
@@ -101,7 +101,7 @@ class ConstraintMatchTotal(Generic[Score_]):
         return combined_hash
 
 
-@add_marker_interface('ai.timefold.solver.core.api.score.stream.ConstraintJustification')
+@add_java_interface('ai.timefold.solver.core.api.score.stream.ConstraintJustification')
 class ConstraintJustification:
     pass
 

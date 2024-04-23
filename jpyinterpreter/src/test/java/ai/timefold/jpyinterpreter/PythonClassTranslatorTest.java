@@ -6,8 +6,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.function.ToIntFunction;
 
 import ai.timefold.jpyinterpreter.opcodes.descriptor.ControlOpDescriptor;
+import ai.timefold.jpyinterpreter.opcodes.descriptor.DunderOpDescriptor;
 import ai.timefold.jpyinterpreter.types.BuiltinTypes;
 import ai.timefold.jpyinterpreter.types.PythonLikeFunction;
 import ai.timefold.jpyinterpreter.types.PythonLikeType;
@@ -43,7 +45,7 @@ public class PythonClassTranslatorTest {
                 .build();
 
         compiledClass.annotations = Collections.emptyList();
-        compiledClass.markerInterfaces = Collections.emptyList();
+        compiledClass.javaInterfaces = Collections.emptyList();
         compiledClass.className = "MyClass";
         compiledClass.superclassList = List.of(BuiltinTypes.BASE_TYPE);
         compiledClass.staticAttributeNameToObject = Map.of("type_variable", new PythonString("type_value"));
@@ -97,7 +99,7 @@ public class PythonClassTranslatorTest {
 
             PythonCompiledClass compiledClass = new PythonCompiledClass();
             compiledClass.annotations = Collections.emptyList();
-            compiledClass.markerInterfaces = Collections.emptyList();
+            compiledClass.javaInterfaces = Collections.emptyList();
             compiledClass.className = "MyClass";
             compiledClass.superclassList = List.of(BuiltinTypes.BASE_TYPE);
             compiledClass.staticAttributeNameToObject = Map.of();
@@ -167,7 +169,7 @@ public class PythonClassTranslatorTest {
 
         PythonCompiledClass compiledClass = new PythonCompiledClass();
         compiledClass.annotations = Collections.emptyList();
-        compiledClass.markerInterfaces = Collections.emptyList();
+        compiledClass.javaInterfaces = Collections.emptyList();
         compiledClass.className = "MyClass";
         compiledClass.superclassList = List.of(BuiltinTypes.BASE_TYPE);
         compiledClass.staticAttributeNameToObject = Map.of();
@@ -212,5 +214,55 @@ public class PythonClassTranslatorTest {
                 .isEqualTo(PythonInteger.valueOf(2).hashCode());
         assertThat(object3.hashCode())
                 .isEqualTo(PythonInteger.valueOf(Long.MAX_VALUE).hashCode());
+    }
+
+    @Test
+    public void testPythonClassCustomInterface() throws ClassNotFoundException {
+        PythonCompiledFunction initFunction = PythonFunctionBuilder.newFunction("self", "value")
+                .loadParameter("value")
+                .loadParameter("self")
+                .storeAttribute("value")
+                .loadConstant(null)
+                .op(ControlOpDescriptor.RETURN_VALUE)
+                .build();
+
+        PythonCompiledFunction applyAsInt = PythonFunctionBuilder.newFunction("self", "value")
+                .loadParameter("self")
+                .getAttribute("value")
+                .loadParameter("value")
+                .op(DunderOpDescriptor.BINARY_ADD)
+                .op(ControlOpDescriptor.RETURN_VALUE)
+                .build();
+
+        PythonCompiledClass compiledClass = new PythonCompiledClass();
+        compiledClass.annotations = Collections.emptyList();
+        compiledClass.javaInterfaces = List.of(ToIntFunction.class);
+        compiledClass.className = "MyClass";
+        compiledClass.superclassList = List.of(BuiltinTypes.BASE_TYPE);
+        compiledClass.staticAttributeNameToObject = Map.of();
+        compiledClass.staticAttributeNameToClassInstance = Map.of();
+        compiledClass.typeAnnotations = Map.of("key", TypeHint.withoutAnnotations(BuiltinTypes.INT_TYPE));
+        compiledClass.instanceFunctionNameToPythonBytecode = Map.of("__init__", initFunction,
+                "applyAsInt", applyAsInt);
+        compiledClass.staticFunctionNameToPythonBytecode = Map.of();
+        compiledClass.classFunctionNameToPythonBytecode = Map.of();
+
+        PythonLikeType classType = PythonClassTranslator.translatePythonClass(compiledClass);
+        Class<?> generatedClass = BuiltinTypes.asmClassLoader.loadClass(
+                classType.getJavaTypeInternalName().replace('/', '.'));
+
+        assertThat(generatedClass).hasPublicFields(PythonClassTranslator.getJavaFieldName("value"));
+        assertThat(generatedClass).hasPublicMethods(
+                PythonClassTranslator.getJavaMethodName("__init__"),
+                "applyAsInt");
+        assertThat(generatedClass).isAssignableTo(ToIntFunction.class);
+
+        var object1 = (ToIntFunction<PythonInteger>) classType.$call(List.of(PythonInteger.valueOf(1)), Map.of(), null);
+        var object2 = (ToIntFunction<PythonInteger>) classType.$call(List.of(PythonInteger.valueOf(2)), Map.of(), null);
+        var object3 = (ToIntFunction<PythonInteger>) classType.$call(List.of(PythonInteger.valueOf(3)), Map.of(), null);
+
+        assertThat(object1.applyAsInt(PythonInteger.valueOf(1))).isEqualTo(2);
+        assertThat(object2.applyAsInt(PythonInteger.valueOf(1))).isEqualTo(3);
+        assertThat(object3.applyAsInt(PythonInteger.valueOf(1))).isEqualTo(4);
     }
 }
