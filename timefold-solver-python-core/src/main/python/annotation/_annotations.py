@@ -1,5 +1,6 @@
 import jpype
 
+from ..api import VariableListener
 from ..constraint import ConstraintFactory
 from .._timefold_java_interop import ensure_init, _generate_constraint_provider_class, register_java_class
 from jpyinterpreter import JavaAnnotation
@@ -11,8 +12,7 @@ if TYPE_CHECKING:
     from ai.timefold.solver.core.api.score.stream import Constraint as _Constraint
     from ai.timefold.solver.core.api.score import Score as _Score
     from ai.timefold.solver.core.api.score.calculator import IncrementalScoreCalculator as _IncrementalScoreCalculator
-    from ai.timefold.solver.core.api.domain.variable import PlanningVariableGraphType as _PlanningVariableGraphType, \
-        VariableListener as _VariableListener
+    from ai.timefold.solver.core.api.domain.variable import PlanningVariableGraphType as _PlanningVariableGraphType
 
 
 Solution_ = TypeVar('Solution_')
@@ -35,7 +35,7 @@ class PlanningVariable(JavaAnnotation):
     def __init__(self, *,
                  value_range_provider_refs: List[str] = None,
                  allows_unassigned: bool = False,
-                 graph_type: '_PlanningVariableGraphType' = None):
+                 graph_type=None):
         ensure_init()
         from ai.timefold.solver.core.api.domain.variable import PlanningVariable as JavaPlanningVariable
         super().__init__(JavaPlanningVariable,
@@ -75,19 +75,37 @@ class PlanningVariableReference(JavaAnnotation):
 
 class ShadowVariable(JavaAnnotation):
     def __init__(self, *,
-                 variable_listener_class: Type['_VariableListener'] = None,
+                 variable_listener_class: Type[VariableListener] = None,
                  source_variable_name: str,
                  source_entity_class: Type = None):
         ensure_init()
         from .._timefold_java_interop import get_class
+        from jpyinterpreter import get_java_type_for_python_type
         from ai.timefold.jpyinterpreter import PythonClassTranslator
         from ai.timefold.solver.core.api.domain.variable import (
-            ShadowVariable as JavaShadowVariable)
+            ShadowVariable as JavaShadowVariable, VariableListener as JavaVariableListener)
+
         super().__init__(JavaShadowVariable,
                          {
                              'variableListenerClass': get_class(variable_listener_class),
                              'sourceVariableName': PythonClassTranslator.getJavaFieldName(source_variable_name),
-                             'sourceEntityClass': source_entity_class,
+                             'sourceEntityClass': get_class(source_entity_class),
+                         })
+
+
+class PiggybackShadowVariable(JavaAnnotation):
+    def __init__(self, *,
+                 shadow_variable_name: str,
+                 shadow_entity_class: Type = None):
+        ensure_init()
+        from .._timefold_java_interop import get_class
+        from ai.timefold.jpyinterpreter import PythonClassTranslator
+        from ai.timefold.solver.core.api.domain.variable import (
+            PiggybackShadowVariable as JavaPiggybackShadowVariable)
+        super().__init__(JavaPiggybackShadowVariable,
+                         {
+                             'shadowVariableName': PythonClassTranslator.getJavaFieldName(shadow_variable_name),
+                             'shadowEntityClass': get_class(shadow_entity_class),
                          })
 
 
@@ -455,100 +473,6 @@ def incremental_score_calculator(incremental_score_calculator: Type['_Incrementa
     return register_java_class(incremental_score_calculator, java_class)
 
 
-def variable_listener(variable_listener_class: Type['_VariableListener'] = None, /, *,
-                      require_unique_entity_events: bool = False) -> Type['_VariableListener']:
-    """Changes shadow variables when a genuine planning variable changes.
-    Important: it must only change the shadow variable(s) for which it's configured!
-    It should never change a genuine variable or a problem fact.
-    It can change its shadow variable(s) on multiple entity instances
-    (for example: an arrival_time change affects all trailing entities too).
-
-    It is recommended that implementations be kept stateless.
-    If state must be implemented, implementations may need to override the default methods
-    resetWorkingSolution(score_director: ScoreDirector) and close().
-
-    The following methods must exist:
-
-    def beforeEntityAdded(score_director: ScoreDirector[Solution_], entity: Entity_);
-
-    def afterEntityAdded(score_director: ScoreDirector[Solution_], entity: Entity_);
-
-    def beforeEntityRemoved(score_director: ScoreDirector[Solution_], entity: Entity_);
-
-    def afterEntityRemoved(score_director: ScoreDirector[Solution_], entity: Entity_);
-
-    def beforeVariableChanged(score_director: ScoreDirector[Solution_], entity: Entity_);
-
-    def afterVariableChanged(score_director: ScoreDirector[Solution_], entity: Entity_);
-
-    If the implementation is stateful, then the following methods should also be defined:
-
-    def resetWorkingSolution(score_director: ScoreDirector)
-
-    def close()
-
-    :param require_unique_entity_events: Set to True to guarantee that each of the before/after methods will only be
-                                         called once per entity instance per operation type (add, change or remove).
-                                         When set to True, this has a slight performance loss.
-                                         When set to False, it's often easier to make the listener implementation
-                                         correct and fast.
-                                         Defaults to False
-
-    :type variable_listener_class: '_VariableListener'
-    :type require_unique_entity_events: bool
-    :rtype: Type
-    """
-    ensure_init()
-
-    def variable_listener_wrapper(the_variable_listener_class):
-        from jpyinterpreter import translate_python_class_to_java_class, generate_proxy_class_for_translated_class
-        from ai.timefold.solver.core.api.domain.variable import VariableListener
-        methods = ['beforeEntityAdded',
-                   'afterEntityAdded',
-                   'beforeVariableChanged',
-                   'afterVariableChanged',
-                   'beforeEntityRemoved',
-                   'afterEntityRemoved']
-
-        missing_method_list = []
-        for method in methods:
-            if not callable(getattr(the_variable_listener_class, method, None)):
-                missing_method_list.append(method)
-        if len(missing_method_list) != 0:
-            raise ValueError(f'The following required methods are missing from @variable_listener class '
-                             f'{the_variable_listener_class}: {missing_method_list}')
-
-        method_on_class = getattr(the_variable_listener_class, 'requiresUniqueEntityEvents', None)
-        if method_on_class is None:
-            def class_requires_unique_entity_events(self):
-                return require_unique_entity_events
-
-            setattr(the_variable_listener_class, 'requiresUniqueEntityEvents', class_requires_unique_entity_events)
-
-        method_on_class = getattr(the_variable_listener_class, 'close', None)
-        if method_on_class is None:
-            def close(self):
-                pass
-
-            setattr(the_variable_listener_class, 'close', close)
-
-        method_on_class = getattr(the_variable_listener_class, 'resetWorkingSolution', None)
-        if method_on_class is None:
-            def reset_working_solution(self, score_director):
-                pass
-
-            setattr(the_variable_listener_class, 'resetWorkingSolution', reset_working_solution)
-
-        translated_class = translate_python_class_to_java_class(the_variable_listener_class)
-        java_class = generate_proxy_class_for_translated_class(VariableListener, translated_class)
-        return register_java_class(the_variable_listener_class, java_class)
-
-    if variable_listener_class:  # Called as @variable_listener
-        return variable_listener_wrapper(variable_listener_class)
-    else:  # Called as @variable_listener(require_unique_entity_events=True)
-        return variable_listener_wrapper
-
-
 def problem_change(problem_change_class: Type['_ProblemChange']) -> \
         Type['_ProblemChange']:
     """A ProblemChange represents a change in 1 or more planning entities or problem facts of a PlanningSolution.
@@ -599,6 +523,7 @@ def problem_change(problem_change_class: Type['_ProblemChange']) -> \
 
 __all__ = ['PlanningId', 'PlanningScore', 'PlanningPin', 'PlanningVariable',
            'PlanningListVariable', 'PlanningVariableReference', 'ShadowVariable',
+           'PiggybackShadowVariable',
            'IndexShadowVariable', 'AnchorShadowVariable', 'InverseRelationShadowVariable',
            'ProblemFactProperty', 'ProblemFactCollectionProperty',
            'PlanningEntityProperty', 'PlanningEntityCollectionProperty',
@@ -607,4 +532,4 @@ __all__ = ['PlanningId', 'PlanningScore', 'PlanningPin', 'PlanningVariable',
            'planning_entity', 'planning_solution', 'constraint_configuration',
            'nearby_distance_meter',
            'constraint_provider', 'easy_score_calculator', 'incremental_score_calculator',
-           'variable_listener', 'problem_change']
+           'problem_change']

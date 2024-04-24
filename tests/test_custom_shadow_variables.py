@@ -9,30 +9,14 @@ from timefold.solver.score import *
 
 
 def test_custom_shadow_variable():
-    @variable_listener
-    class MyVariableListener:
-        def afterVariableChanged(self, score_director, entity):
-            score_director.beforeVariableChanged(entity, 'value_squared')
+    class MyVariableListener(VariableListener):
+        def after_variable_changed(self, score_director: ScoreDirector, entity):
+            score_director.before_variable_changed(entity, 'value_squared')
             if entity.value is None:
                 entity.value_squared = None
             else:
                 entity.value_squared = entity.value ** 2
-            score_director.afterVariableChanged(entity, 'value_squared')
-
-        def beforeVariableChanged(self, score_director, entity):
-            pass
-
-        def beforeEntityAdded(self, score_director, entity):
-            pass
-
-        def afterEntityAdded(self, score_director, entity):
-            pass
-
-        def beforeEntityRemoved(self, score_director, entity):
-            pass
-
-        def afterEntityRemoved(self, score_director, entity):
-            pass
+            score_director.after_variable_changed(entity, 'value_squared')
 
     @planning_entity
     @dataclass
@@ -79,34 +63,18 @@ def test_custom_shadow_variable():
 
 
 def test_custom_shadow_variable_with_variable_listener_ref():
-    @variable_listener
-    class MyVariableListener:
-        def afterVariableChanged(self, score_director, entity):
-            score_director.beforeVariableChanged(entity, 'twice_value')
-            score_director.beforeVariableChanged(entity, 'value_squared')
+    class MyVariableListener(VariableListener):
+        def after_variable_changed(self, score_director: ScoreDirector, entity):
+            score_director.before_variable_changed(entity, 'twice_value')
+            score_director.before_variable_changed(entity, 'value_squared')
             if entity.value is None:
                 entity.twice_value = None
                 entity.value_squared = None
             else:
                 entity.twice_value = 2 * entity.value
                 entity.value_squared = entity.value ** 2
-            score_director.afterVariableChanged(entity, 'value_squared')
-            score_director.afterVariableChanged(entity, 'twice_value')
-
-        def beforeVariableChanged(self, score_director, entity):
-            pass
-
-        def beforeEntityAdded(self, score_director, entity):
-            pass
-
-        def afterEntityAdded(self, score_director, entity):
-            pass
-
-        def beforeEntityRemoved(self, score_director, entity):
-            pass
-
-        def afterEntityRemoved(self, score_director, entity):
-            pass
+            score_director.after_variable_changed(entity, 'value_squared')
+            score_director.after_variable_changed(entity, 'twice_value')
 
     @planning_entity
     @dataclass
@@ -115,9 +83,8 @@ def test_custom_shadow_variable_with_variable_listener_ref():
             field(default=None)
         value_squared: Annotated[Optional[int], ShadowVariable(
             variable_listener_class=MyVariableListener, source_variable_name='value')] = field(default=None)
-        # TODO: Use PiggyBackShadowVariable
-        twice_value: Annotated[Optional[int], ShadowVariable(
-            variable_listener_class=MyVariableListener, source_variable_name='value')] = field(default=None)
+        twice_value: Annotated[Optional[int], PiggybackShadowVariable(shadow_variable_name='value_squared')] = (
+            field(default=None))
 
     @constraint_provider
     def my_constraints(constraint_factory: ConstraintFactory):
