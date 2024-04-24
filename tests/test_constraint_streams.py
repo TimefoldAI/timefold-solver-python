@@ -517,6 +517,48 @@ def test_custom_indictments():
     }
 
 
+def test_custom_justifications():
+    @dataclass(unsafe_hash=True)
+    class MyJustification(ConstraintJustification):
+        code: str
+        score: SimpleScore
+
+    @constraint_provider
+    def define_constraints(constraint_factory: ConstraintFactory):
+        return [
+            constraint_factory.for_each(Entity)
+            .reward(SimpleScore.ONE, lambda e: e.value.number)
+            .justify_with(lambda e, score: MyJustification(e.code, score))
+            .as_constraint('my_package', 'Maximize value')
+        ]
+
+    score_manager = create_score_manager(define_constraints)
+    entity_a: Entity = Entity('A')
+    entity_b: Entity = Entity('B')
+
+    value_1 = Value(1)
+    value_2 = Value(2)
+    value_3 = Value(3)
+
+    entity_a.value = value_1
+    entity_b.value = value_3
+
+    problem = Solution([entity_a, entity_b], [value_1, value_2, value_3])
+
+    justifications = score_manager.explain(problem).get_justification_list()
+    assert len(justifications) == 2
+    assert MyJustification('A', SimpleScore.of(1)) in justifications
+    assert MyJustification('B', SimpleScore.of(3)) in justifications
+
+    justifications = score_manager.explain(problem).get_justification_list(MyJustification)
+    assert len(justifications) == 2
+    assert MyJustification('A', SimpleScore.of(1)) in justifications
+    assert MyJustification('B', SimpleScore.of(3)) in justifications
+
+    justifications = score_manager.explain(problem).get_justification_list(DefaultConstraintJustification)
+    assert len(justifications) == 0
+
+
 ignored_python_functions = {
     '_call_comparison_java_joiner',
     '__init__',
@@ -534,23 +576,19 @@ ignored_java_functions = {
     'countLongBi',  # Python has no concept of Long (everything a BigInteger)
     'countLongQuad',
     'countLongTri',
-    '_handler',  # JPype handler field should be ignored
-    # Unimplemented penalize/reward/impact
     'impactBigDecimal',
-    'impactConfigurable',
     'impactConfigurableBigDecimal',
     'impactConfigurableLong',
     'impactLong',
     'penalizeBigDecimal',
-    'penalizeConfigurable',
     'penalizeConfigurableBigDecimal',
     'penalizeConfigurableLong',
     'penalizeLong',
     'rewardBigDecimal',
-    'rewardConfigurable',
     'rewardConfigurableBigDecimal',
     'rewardConfigurableLong',
     'rewardLong',
+    '_handler',  # JPype handler field should be ignored
     # These methods are deprecated
     'from_',
     'fromUnfiltered',

@@ -1,10 +1,10 @@
 from ._solver_factory import SolverFactory
 from ._solver_manager import SolverManager
 from .._timefold_java_interop import get_class
-from jpyinterpreter import unwrap_python_like_object
+from jpyinterpreter import unwrap_python_like_object, add_java_interface
 from dataclasses import dataclass
 
-from typing import TypeVar, Generic, Union, TYPE_CHECKING, Any, cast, Optional
+from typing import TypeVar, Generic, Union, TYPE_CHECKING, Any, cast, Optional, Type
 
 if TYPE_CHECKING:
     # These imports require a JVM to be running, so only import if type checking
@@ -24,6 +24,7 @@ if TYPE_CHECKING:
 Solution_ = TypeVar('Solution_')
 ProblemId_ = TypeVar('ProblemId_')
 Score_ = TypeVar('Score_', bound='Score')
+Justification_ = TypeVar('Justification_', bound='ConstraintJustification')
 
 
 @dataclass(frozen=True, unsafe_hash=True)
@@ -100,8 +101,13 @@ class ConstraintMatchTotal(Generic[Score_]):
         return combined_hash
 
 
+@add_java_interface('ai.timefold.solver.core.api.score.stream.ConstraintJustification')
+class ConstraintJustification:
+    pass
+
+
 @dataclass(frozen=True, eq=True)
-class DefaultConstraintJustification:
+class DefaultConstraintJustification(ConstraintJustification):
     facts: tuple[Any, ...]
     impact: Score_
 
@@ -127,7 +133,7 @@ def _map_constraint_match_set(constraint_match_set: set['_JavaConstraintMatch'])
     }
 
 
-def _unwrap_justification(justification: Any) -> Any:
+def _unwrap_justification(justification: Any) -> ConstraintJustification:
     from ai.timefold.solver.core.api.score.stream import (
         DefaultConstraintJustification as _JavaDefaultConstraintJustification)
     if isinstance(justification, _JavaDefaultConstraintJustification):
@@ -139,7 +145,7 @@ def _unwrap_justification(justification: Any) -> Any:
         return unwrap_python_like_object(justification)
 
 
-def _unwrap_justification_list(justification_list: list[Any]) -> list[Any]:
+def _unwrap_justification_list(justification_list: list[Any]) -> list[ConstraintJustification]:
     return [_unwrap_justification(justification) for justification in justification_list]
 
 
@@ -163,7 +169,7 @@ class Indictment(Generic[Score_]):
     def indicted_object(self) -> Any:
         return unwrap_python_like_object(self._delegate.getIndictedObject())
 
-    def get_justification_list(self, justification_type=None) -> list[Any]:
+    def get_justification_list(self, justification_type: Type[Justification_] = None) -> list[Justification_]:
         if justification_type is None:
             justification_list = self._delegate.getJustificationList()
         else:
@@ -250,7 +256,7 @@ class ScoreExplanation(Generic[Solution_]):
     def summary(self) -> str:
         return self._delegate.getSummary()
 
-    def get_justification_list(self, justification_type=None) -> list[Any]:
+    def get_justification_list(self, justification_type: Type[Justification_] = None) -> list[Justification_]:
         if justification_type is None:
             justification_list = self._delegate.getJustificationList()
         else:
@@ -275,7 +281,7 @@ class MatchAnalysis(Generic[Score_]):
         return self._delegate.score()
 
     @property
-    def justification(self) -> Any:
+    def justification(self) -> ConstraintJustification:
         return _unwrap_justification(self._delegate.justification())
 
 
@@ -343,5 +349,5 @@ class ScoreAnalysis:
 
 __all__ = ['SolutionManager', 'ScoreExplanation',
            'ConstraintRef', 'ConstraintMatch', 'ConstraintMatchTotal',
-           'DefaultConstraintJustification', 'Indictment',
+           'ConstraintJustification', 'DefaultConstraintJustification', 'Indictment',
            'ScoreAnalysis', 'ConstraintAnalysis', 'MatchAnalysis']

@@ -16,7 +16,8 @@ class _JavaException:
         if exception is None:
             return None
         try:
-            raise Exception(f'{exception.getClass().getSimpleName()}: {exception.getMessage()}')
+            raise Exception(f'{exception.getClass().getSimpleName()}: {exception.getMessage()}\n'
+                            f'{exception.stacktrace()}')
         except Exception as e:
             cause = _JavaException._get_exception_with_cause(exception.getCause())
             if cause is not None:

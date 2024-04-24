@@ -19,6 +19,7 @@ import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
 import ai.timefold.jpyinterpreter.dag.FlowGraph;
+import ai.timefold.jpyinterpreter.implementors.DelegatingInterfaceImplementor;
 import ai.timefold.jpyinterpreter.implementors.JavaComparableImplementor;
 import ai.timefold.jpyinterpreter.implementors.JavaEqualsImplementor;
 import ai.timefold.jpyinterpreter.implementors.JavaHashCodeImplementor;
@@ -94,6 +95,7 @@ public class PythonClassTranslator {
         var className = preparedClassInfo.className;
         var internalClassName = preparedClassInfo.classInternalName;
 
+        Map<String, InterfaceDeclaration> instanceMethodNameToMethodDescriptor = new HashMap<>();
         Set<PythonLikeType> superTypeSet;
         Set<JavaInterfaceImplementor> javaInterfaceImplementorSet = new HashSet<>();
 
@@ -116,6 +118,11 @@ public class PythonClassTranslator {
                             .add(new JavaComparableImplementor(internalClassName, instanceMethodEntry.getKey()));
                     break;
             }
+        }
+
+        for (Class<?> javaInterface : pythonCompiledClass.javaInterfaces) {
+            javaInterfaceImplementorSet.add(
+                    new DelegatingInterfaceImplementor(internalClassName, javaInterface, instanceMethodNameToMethodDescriptor));
         }
 
         if (pythonCompiledClass.superclassList.isEmpty()) {
@@ -159,7 +166,8 @@ public class PythonClassTranslator {
 
         List<JavaInterfaceImplementor> nonObjectInterfaceImplementors = javaInterfaceImplementorSet.stream()
                 .filter(implementor -> !Object.class.equals(implementor.getInterfaceClass()))
-                .collect(Collectors.toList());
+                .toList();
+
         String[] interfaces = new String[nonObjectInterfaceImplementors.size()];
         for (int i = 0; i < nonObjectInterfaceImplementors.size(); i++) {
             interfaces[i] = Type.getInternalName(nonObjectInterfaceImplementors.get(i).getInterfaceClass());
@@ -294,7 +302,7 @@ public class PythonClassTranslator {
                 .entrySet()) {
             instanceMethodEntry.getValue().methodKind = PythonMethodKind.VIRTUAL_METHOD;
             createInstanceMethod(pythonLikeType, classWriter, internalClassName, instanceMethodEntry.getKey(),
-                    instanceMethodEntry.getValue());
+                    instanceMethodEntry.getValue(), instanceMethodNameToMethodDescriptor);
         }
 
         for (Map.Entry<String, PythonCompiledFunction> staticMethodEntry : pythonCompiledClass.staticFunctionNameToPythonBytecode
@@ -854,13 +862,15 @@ public class PythonClassTranslator {
     }
 
     private static void createInstanceMethod(PythonLikeType pythonLikeType, ClassWriter classWriter, String internalClassName,
-            String methodName, PythonCompiledFunction function) {
+            String methodName, PythonCompiledFunction function,
+            Map<String, InterfaceDeclaration> instanceMethodNameToMethodDescriptor) {
         InterfaceDeclaration interfaceDeclaration = getInterfaceForInstancePythonFunction(internalClassName, function);
-        String interfaceDescriptor = 'L' + interfaceDeclaration.interfaceName + ';';
+        String interfaceDescriptor = interfaceDeclaration.descriptor();
         String javaMethodName = getJavaMethodName(methodName);
 
         classWriter.visitField(Modifier.PUBLIC | Modifier.STATIC, javaMethodName, interfaceDescriptor,
                 null, null);
+        instanceMethodNameToMethodDescriptor.put(methodName, interfaceDeclaration);
         Type returnType = getVirtualFunctionReturnType(function);
 
         List<PythonLikeType> parameterPythonTypeList = function.getParameterTypes();
@@ -1555,30 +1565,13 @@ public class PythonClassTranslator {
         }
     }
 
-    public static class InterfaceDeclaration {
-        final String interfaceName;
-        final String methodDescriptor;
-
-        public InterfaceDeclaration(String interfaceName, String methodDescriptor) {
-            this.interfaceName = interfaceName;
-            this.methodDescriptor = methodDescriptor;
+    public record InterfaceDeclaration(String interfaceName, String methodDescriptor) {
+        public String descriptor() {
+            return "L" + interfaceName + ";";
         }
 
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            InterfaceDeclaration that = (InterfaceDeclaration) o;
-            return interfaceName.equals(that.interfaceName) && methodDescriptor.equals(that.methodDescriptor);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(interfaceName, methodDescriptor);
+        public Type methodType() {
+            return Type.getMethodType(methodDescriptor);
         }
     }
 

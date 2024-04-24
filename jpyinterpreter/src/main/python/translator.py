@@ -13,6 +13,7 @@ global_dict_to_instance = dict()
 global_dict_to_key_set = dict()
 type_to_compiled_java_class = dict()
 type_to_annotations = dict()
+type_to_java_interfaces = dict()
 
 function_interface_pair_to_instance = dict()
 function_interface_pair_to_class = dict()
@@ -629,8 +630,16 @@ def translate_python_class_to_java_class(python_class):
 
     python_compiled_class = PythonCompiledClass()
     python_compiled_class.annotations = ArrayList()
+    python_compiled_class.javaInterfaces = ArrayList()
+
     for annotation in type_to_annotations.get(python_class, []):
         python_compiled_class.annotations.add(convert_java_annotation(annotation))
+
+    for java_interface in type_to_java_interfaces.get(python_class, []):
+        if isinstance(java_interface, str):
+            java_interface = JClass(java_interface)
+
+        python_compiled_class.javaInterfaces.add(java_interface)
 
     python_compiled_class.binaryType = CPythonType.getType(JProxy(OpaquePythonReference, inst=python_class,
                                                                   convert=True))
