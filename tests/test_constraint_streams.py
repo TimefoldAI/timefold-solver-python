@@ -589,6 +589,9 @@ ignored_java_functions = {
     'rewardConfigurableLong',
     'rewardLong',
     '_handler',  # JPype handler field should be ignored
+    # Unimplemented
+    'toConnectedRanges',
+    'toConnectedTemporalRanges',
     # These methods are deprecated
     'from_',
     'fromUnfiltered',

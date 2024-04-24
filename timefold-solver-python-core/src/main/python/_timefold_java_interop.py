@@ -116,6 +116,8 @@ def get_class(python_class: Union[Type, Callable]) -> JClass:
     from ai.timefold.jpyinterpreter.types.wrappers import OpaquePythonReference
     from jpyinterpreter import is_c_native, get_java_type_for_python_type
 
+    if python_class is None:
+        return cast(JClass, None)
     if isinstance(python_class, jpype.JClass):
         return cast(JClass, python_class).class_
     if isinstance(python_class, Class):
