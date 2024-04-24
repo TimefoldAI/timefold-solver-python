@@ -14,6 +14,7 @@ import ai.timefold.jpyinterpreter.types.BuiltinTypes;
 import ai.timefold.jpyinterpreter.types.PythonLikeFunction;
 import ai.timefold.jpyinterpreter.types.PythonLikeType;
 import ai.timefold.jpyinterpreter.types.PythonString;
+import ai.timefold.jpyinterpreter.types.collections.PythonLikeTuple;
 import ai.timefold.jpyinterpreter.types.numeric.PythonInteger;
 import ai.timefold.jpyinterpreter.util.PythonFunctionBuilder;
 
@@ -217,7 +218,7 @@ public class PythonClassTranslatorTest {
     }
 
     @Test
-    public void testPythonClassCustomInterface() throws ClassNotFoundException {
+    public void testPythonClassSimpleInterface() throws ClassNotFoundException {
         PythonCompiledFunction initFunction = PythonFunctionBuilder.newFunction("self", "value")
                 .loadParameter("value")
                 .loadParameter("self")
@@ -264,5 +265,64 @@ public class PythonClassTranslatorTest {
         assertThat(object1.applyAsInt(PythonInteger.valueOf(1))).isEqualTo(2);
         assertThat(object2.applyAsInt(PythonInteger.valueOf(1))).isEqualTo(3);
         assertThat(object3.applyAsInt(PythonInteger.valueOf(1))).isEqualTo(4);
+    }
+
+    public interface ComplexInterface {
+        int STATIC_FIELD = 10;
+
+        static int staticMethod() {
+            return STATIC_FIELD;
+        }
+
+        default void defaultMethod() {
+        }
+
+        int overloadedMethod();
+
+        int overloadedMethod(int value);
+    }
+
+    @Test
+    public void testPythonClassComplexInterface() throws ClassNotFoundException {
+        PythonCompiledFunction initFunction = PythonFunctionBuilder.newFunction("self")
+                .loadConstant(null)
+                .op(ControlOpDescriptor.RETURN_VALUE)
+                .build();
+
+        PythonCompiledFunction overloadedMethod = PythonFunctionBuilder.newFunction("self", "value")
+                .loadParameter("value")
+                .loadConstant(1)
+                .op(DunderOpDescriptor.BINARY_ADD)
+                .op(ControlOpDescriptor.RETURN_VALUE)
+                .build();
+
+        overloadedMethod.defaultPositionalArguments = PythonLikeTuple.fromItems(PythonInteger.ZERO);
+
+        PythonCompiledClass compiledClass = new PythonCompiledClass();
+        compiledClass.annotations = Collections.emptyList();
+        compiledClass.javaInterfaces = List.of(ComplexInterface.class);
+        compiledClass.className = "MyClass";
+        compiledClass.superclassList = List.of(BuiltinTypes.BASE_TYPE);
+        compiledClass.staticAttributeNameToObject = Map.of();
+        compiledClass.staticAttributeNameToClassInstance = Map.of();
+        compiledClass.typeAnnotations = Map.of("key", TypeHint.withoutAnnotations(BuiltinTypes.INT_TYPE));
+        compiledClass.instanceFunctionNameToPythonBytecode = Map.of("__init__", initFunction,
+                "overloadedMethod", overloadedMethod);
+        compiledClass.staticFunctionNameToPythonBytecode = Map.of();
+        compiledClass.classFunctionNameToPythonBytecode = Map.of();
+
+        PythonLikeType classType = PythonClassTranslator.translatePythonClass(compiledClass);
+        Class<?> generatedClass = BuiltinTypes.asmClassLoader.loadClass(
+                classType.getJavaTypeInternalName().replace('/', '.'));
+
+        assertThat(generatedClass).hasPublicMethods(
+                PythonClassTranslator.getJavaMethodName("__init__"),
+                "overloadedMethod");
+        assertThat(generatedClass).isAssignableTo(ComplexInterface.class);
+
+        var instance = (ComplexInterface) classType.$call(List.of(), Map.of(), null);
+
+        assertThat(instance.overloadedMethod()).isEqualTo(1);
+        assertThat(instance.overloadedMethod(1)).isEqualTo(2);
     }
 }

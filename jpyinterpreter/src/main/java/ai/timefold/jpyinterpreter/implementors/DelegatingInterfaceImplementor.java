@@ -12,6 +12,7 @@ import ai.timefold.jpyinterpreter.PythonBytecodeToJavaBytecodeTranslator;
 import ai.timefold.jpyinterpreter.PythonClassTranslator;
 import ai.timefold.jpyinterpreter.PythonCompiledClass;
 import ai.timefold.jpyinterpreter.PythonLikeObject;
+import ai.timefold.jpyinterpreter.types.errors.TypeError;
 import ai.timefold.jpyinterpreter.util.MethodVisitorAdapters;
 import ai.timefold.jpyinterpreter.util.arguments.ArgumentSpec;
 
@@ -40,13 +41,22 @@ public class DelegatingInterfaceImplementor extends JavaInterfaceImplementor {
     @Override
     public void implement(ClassWriter classWriter, PythonCompiledClass compiledClass) {
         for (Method method : interfaceClass.getMethods()) {
-            if (method.getDeclaringClass().isInterface()) {
+            if (!Modifier.isStatic(method.getModifiers()) && method.getDeclaringClass().isInterface()) {
                 implementMethod(classWriter, compiledClass, method);
             }
         }
     }
 
     private void implementMethod(ClassWriter classWriter, PythonCompiledClass compiledClass, Method interfaceMethod) {
+        if (!methodNameToFieldDescriptor.containsKey(interfaceMethod.getName())) {
+            if (interfaceMethod.isDefault()) {
+                return;
+            } else {
+                throw new TypeError("Class %s cannot implement interface %s because it does not implement method %s."
+                        .formatted(compiledClass.className, interfaceMethod.getDeclaringClass().getName(),
+                                interfaceMethod.getName()));
+            }
+        }
         var interfaceMethodDescriptor = Type.getMethodDescriptor(interfaceMethod);
 
         // Generates interfaceMethod(A a, B b, ...) { return delegate.interfaceMethod(a, b, ...); }
