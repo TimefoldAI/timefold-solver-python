@@ -1,6 +1,6 @@
 from .._timefold_java_interop import ensure_init
-from typing import TYPE_CHECKING, List
-from jpype import JImplementationFor
+from typing import TYPE_CHECKING
+from jpype import JImplementationFor, JOverride
 import jpype.imports # noqa
 
 if TYPE_CHECKING:
@@ -9,49 +9,84 @@ if TYPE_CHECKING:
     class SimpleScore(Score):
         ZERO: 'SimpleScore' = None
         ONE: 'SimpleScore' = None
+        init_score: int
+        is_feasible: bool
+        score: int
 
-        def score(self) -> int:
+        @staticmethod
+        def of(score: int, /) -> 'SimpleScore':
             ...
 
     class HardSoftScore(Score):
         ZERO: 'HardSoftScore' = None
         ONE_HARD: 'HardSoftScore' = None
         ONE_SOFT: 'HardSoftScore' = None
+        init_score: int
+        is_feasible: bool
+        hard_score: int
+        soft_score: int
 
-        def hard_score(self) -> int:
+        @staticmethod
+        def of(hard_score: int, soft_score: int, /) -> 'HardSoftScore':
             ...
 
-        def soft_score(self) -> int:
-            ...
 
     class HardMediumSoftScore(Score):
         ZERO: 'HardMediumSoftScore' = None
         ONE_HARD: 'HardMediumSoftScore' = None
         ONE_MEDIUM: 'HardMediumSoftScore' = None
         ONE_SOFT: 'HardMediumSoftScore' = None
+        init_score: int
+        is_feasible: bool
+        hard_score: int
+        medium_score: int
+        soft_score: int
 
-        def hard_score(self) -> int:
-            ...
-
-        def medium_score(self) -> int:
-            ...
-
-        def soft_score(self) -> int:
+        @staticmethod
+        def of(self, hard_score: int, medium_score: int, soft_score: int, /) -> 'HardMediumSoftScore':
             ...
 
     class BendableScore(Score):
-        def hard_scores(self) -> List[int]:
+        init_score: int
+        is_feasible: bool
+        hard_scores: list[int]
+        soft_scores: list[int]
+
+        @staticmethod
+        def of(hard_scores: list[int], soft_scores: list[int], /) -> 'BendableScore':
             ...
 
-        def soft_scores(self) -> List[int]:
-            ...
+
+@JImplementationFor('ai.timefold.solver.core.api.score.buildin.simple.SimpleScore')
+class _SimpleScoreImpl:
+    @property
+    def init_score(self) -> int:
+        return self.initScore()
+
+    @property
+    def is_feasible(self) -> bool:
+        return self.isFeasible()
+
+    @property
+    def score(self):
+        return self.toLevelNumbers()[0]  # noqa
 
 
 @JImplementationFor('ai.timefold.solver.core.api.score.buildin.hardsoft.HardSoftScore')
 class _HardSoftScoreImpl:
+    @property
+    def init_score(self) -> int:
+        return self.initScore()
+
+    @property
+    def is_feasible(self) -> bool:
+        return self.isFeasible()
+
+    @property
     def hard_score(self):
         return self.hardScore()  # noqa
 
+    @property
     def soft_score(self):
         return self.softScore()  # noqa
 
@@ -59,21 +94,42 @@ class _HardSoftScoreImpl:
 @JImplementationFor('ai.timefold.solver.core.api.score.buildin.hardmediumsoft.'
                     'HardMediumSoftScore')
 class _HardMediumSoftScoreImpl:
+    @property
+    def init_score(self) -> int:
+        return self.initScore()
+
+    @property
+    def is_feasible(self) -> bool:
+        return self.isFeasible()
+
+    @property
     def hard_score(self):
         return self.hardScore()  # noqa
 
+    @property
     def medium_score(self):
         return self.mediumScore()  # noqa
 
+    @property
     def soft_score(self):
         return self.softScore()  # noqa
 
 
 @JImplementationFor('ai.timefold.solver.core.api.score.buildin.bendable.BendableScore')
 class _BendableScoreImpl:
+    @property
+    def init_score(self) -> int:
+        return self.initScore()
+
+    @property
+    def is_feasible(self) -> bool:
+        return self.isFeasible()
+
+    @property
     def hard_scores(self):
         return self.hardScores()  # noqa
 
+    @property
     def soft_scores(self):
         return self.softScores()  # noqa
 

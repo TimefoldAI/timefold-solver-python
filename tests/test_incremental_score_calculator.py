@@ -133,7 +133,7 @@ def test_constraint_match_disabled_incremental_score_calculator():
                                  [0, 1, 2, 3])
     solver = SolverFactory.create(solver_config).build_solver()
     solution = solver.solve(problem)
-    assert solution.score.score() == 0
+    assert solution.score.score == 0
     for i in range(4):
         for j in range(i + 1, 4):
             left_queen = solution.queen_list[i]
@@ -274,7 +274,7 @@ def test_constraint_match_enabled_incremental_score_calculator():
     solver_factory = SolverFactory.create(solver_config)
     solver = solver_factory.build_solver()
     solution = solver.solve(problem)
-    assert solution.score.score() == 0
+    assert solution.score.score == 0
     for i in range(4):
         for j in range(i + 1, 4):
             left_queen = solution.queen_list[i]
@@ -289,23 +289,23 @@ def test_constraint_match_enabled_incremental_score_calculator():
     row_conflict = constraint_match_total_map.get('NQueens/Row Conflict')
     ascending_diagonal_conflict = constraint_match_total_map.get('NQueens/Ascending Diagonal Conflict')
     descending_diagonal_conflict = constraint_match_total_map.get('NQueens/Descending Diagonal Conflict')
-    assert row_conflict.score.score() == 0
-    assert ascending_diagonal_conflict.score.score() == 0
-    assert descending_diagonal_conflict.score.score() == 0
+    assert row_conflict.score.score == 0
+    assert ascending_diagonal_conflict.score.score == 0
+    assert descending_diagonal_conflict.score.score == 0
 
     bad_solution = Solution(4,
                             [Queen('A', 0, 0), Queen('B', 1, 1), Queen('C', 2, 0), Queen('D', 3, 1)],
                             [0, 1, 2, 3],
                             [0, 1, 2, 3])
     score_explanation = score_manager.explain(bad_solution)
-    assert score_explanation.score.score() == -5
+    assert score_explanation.score.score == -5
     constraint_match_total_map = score_explanation.constraint_match_total_map
     row_conflict = constraint_match_total_map.get('NQueens/Row Conflict')
     ascending_diagonal_conflict = constraint_match_total_map.get('NQueens/Ascending Diagonal Conflict')
     descending_diagonal_conflict = constraint_match_total_map.get('NQueens/Descending Diagonal Conflict')
-    assert row_conflict.score.score() == -2  # (A, C), (B, D)
-    assert ascending_diagonal_conflict.score.score() == -1  # (B, C)
-    assert descending_diagonal_conflict.score.score() == -2  # (A, B), (C, D)
+    assert row_conflict.score.score == -2  # (A, C), (B, D)
+    assert ascending_diagonal_conflict.score.score == -1  # (B, C)
+    assert descending_diagonal_conflict.score.score == -2  # (A, B), (C, D)
     indictment_map = score_explanation.indictment_map
     assert indictment_map.get(bad_solution.queen_list[0]).constraint_match_count == 2
     assert indictment_map.get(bad_solution.queen_list[1]).constraint_match_count == 3

@@ -71,7 +71,7 @@ def test_solve_partial():
     solver = SolverFactory.create(solver_config).build_solver()
     solution = solver.solve(problem)
 
-    assert solution.score.score() == 3
+    assert solution.score.score == 3
     assert solution.entities[0].value == v1
     assert solution.entities[1].value == v1
     assert solution.entities[2].value == v1
@@ -147,8 +147,10 @@ def test_solve_nullable():
     solver = SolverFactory.create(solver_config).build_solver()
     solution = solver.solve(problem)
 
-    assert solution.score.hard_score() == 1
-    assert solution.score.soft_score() == 1
+    assert solution.score.is_feasible
+    assert solution.score.init_score == 0
+    assert solution.score.hard_score == 1
+    assert solution.score.soft_score == 1
     assert solution.entities[0].value == v1 or solution.entities[0].value is None
     assert solution.entities[1].value == v1 or solution.entities[1].value is None
 
@@ -209,7 +211,7 @@ def test_solve_typed():
     solver = SolverFactory.create(solver_config).build_solver()
     solution = solver.solve(problem)
 
-    assert solution.score.score() == 2
+    assert solution.score.score == 2
     assert solution.entities[0].value == v1
     assert solution.entities[1].value == v1
 
@@ -391,7 +393,7 @@ def test_single_property():
     problem: Solution = Solution(Entity('A'), Value('1'), ['1', '2', '3'])
     solver = SolverFactory.create(solver_config).build_solver()
     solution = solver.solve(problem)
-    assert solution.score.score() == 1
+    assert solution.score.score == 1
     assert solution.entity.value == '1'
 
 
@@ -446,26 +448,26 @@ def test_constraint_stream_in_join():
     entity_4.value = value_1
     entity_5.value = value_1
 
-    assert score_manager.update(problem).score() == 4
+    assert score_manager.update(problem).score == 4
 
     entity_5.value = value_2
 
-    assert score_manager.update(problem).score() == 4
+    assert score_manager.update(problem).score == 4
 
     entity_1.value = value_2
-    assert score_manager.update(problem).score() == 5
+    assert score_manager.update(problem).score == 5
 
     entity_2.value = value_2
-    assert score_manager.update(problem).score() == 6
+    assert score_manager.update(problem).score == 6
 
     entity_3.value = value_2
-    assert score_manager.update(problem).score() == 7
+    assert score_manager.update(problem).score == 7
 
     entity_4.value = value_2
-    assert score_manager.update(problem).score() == 8
+    assert score_manager.update(problem).score == 8
 
     entity_1.value = value_3
-    assert score_manager.update(problem).score() == 9
+    assert score_manager.update(problem).score == 9
 
 
 def test_tuple_group_by_key():
@@ -526,7 +528,7 @@ def test_tuple_group_by_key():
                                  ['1', '2', '3'])
     solver = SolverFactory.create(solver_config).build_solver()
     solution = solver.solve(problem)
-    assert solution.score.score() == len(entity_list)
+    assert solution.score.score == len(entity_list)
     for entity in solution.entity_list:
         assert entity.value == '1'
 
@@ -583,7 +585,7 @@ def test_python_object():
     problem: Solution = Solution(Entity('A'), [pointer1, pointer2, pointer3])
     solver = SolverFactory.create(solver_config).build_solver()
     solution = solver.solve(problem)
-    assert solution.score.score() == 3
+    assert solution.score.score == 3
     assert solution.entity.value is pointer1
 
 
@@ -648,7 +650,7 @@ def test_custom_planning_id():
     ])
     solver = SolverFactory.create(solver_config).build_solver()
     solution = solver.solve(problem)
-    assert solution.score.score() == 0
+    assert solution.score.score == 0
 
     encountered = set()
     for entity in solution.entities:
@@ -714,7 +716,7 @@ def test_custom_comparator():
     ])
     solver = SolverFactory.create(solver_config).build_solver()
     solution = solver.solve(problem)
-    assert solution.score.score() == 0
+    assert solution.score.score == 0
 
     encountered = set()
     for entity in solution.entities:
@@ -782,7 +784,7 @@ def test_custom_equals():
     ])
     score_manager = SolutionManager.create(SolverFactory.create(solver_config))
     score = score_manager.update(problem)
-    assert score.score() == -1
+    assert score.score == -1
 
 
 def test_entity_value_range_provider():
@@ -842,7 +844,7 @@ def test_entity_value_range_provider():
     ])
     solver = SolverFactory.create(solver_config).build_solver()
     solution = solver.solve(problem)
-    assert solution.score.score() == 0
+    assert solution.score.score == 0
 
     encountered = set()
     for entity in solution.entities:
@@ -901,7 +903,7 @@ def test_int_value_range_provider():
     ])
     solver = SolverFactory.create(solver_config).build_solver()
     solution = solver.solve(problem)
-    assert solution.score.score() == 0
+    assert solution.score.score == 0
 
     encountered = set()
     for entity in solution.entities:
@@ -952,5 +954,5 @@ def test_list_variable():
     problem: Solution = Solution(Entity('A'), [1, 2, 3])
     solver = SolverFactory.create(solver_config).build_solver()
     solution = solver.solve(problem)
-    assert solution.score.score() == 0
+    assert solution.score.score == 0
     assert solution.entity.value == [1, 2, 3]

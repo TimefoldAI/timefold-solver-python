@@ -53,12 +53,12 @@ def test_solver_events():
     solver.add_event_listener(on_best_solution_changed)
     solution = solver.solve(problem)
 
-    assert solution.score.score() == 6
+    assert solution.score.score == 6
     assert solution.entities[0].value == 3
     assert solution.entities[1].value == 3
     assert len(score_list) == len(solution_list)
     assert len(solution_list) == 1
-    assert score_list[0].score() == 6
-    assert solution_list[0].score.score() == 6
+    assert score_list[0].score == 6
+    assert solution_list[0].score.score == 6
     assert solution_list[0].entities[0].value == 3
     assert solution_list[0].entities[1].value == 3

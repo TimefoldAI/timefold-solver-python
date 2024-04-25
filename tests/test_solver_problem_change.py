@@ -98,7 +98,7 @@ def test_add_entity():
 
     assert result is not None
     assert len(result.entities) == 2
-    assert result.score.score() == 6
+    assert result.score.score == 6
 
 
 def test_remove_entity():
@@ -132,4 +132,4 @@ def test_remove_entity():
 
     assert result is not None
     assert len(result.entities) == 1
-    assert result.score.score() == -1
+    assert result.score.score == -1

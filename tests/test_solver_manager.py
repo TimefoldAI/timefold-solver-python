@@ -88,7 +88,7 @@ def test_solve():
         assert solver_manager.get_solver_status(1) != SolverStatus.NOT_SOLVING
         lock.release()
         solution = solver_job.get_final_best_solution()
-        assert solution.score.score() == 6
+        assert solution.score.score == 6
         value_list = [entity.value.value for entity in solution.entity_list]
         assert 1 in value_list
         assert 2 in value_list
@@ -100,7 +100,7 @@ def test_solve():
         solver_manager.add_problem_change(1, UseOnlyEntityAndValueProblemChange(Entity('D'), Value(6)))
         lock.release()
         solution = solver_job.get_final_best_solution()
-        assert solution.score.score() == 6
+        assert solution.score.score == 6
         assert len(solution.entity_list) == 1
         assert len(solution.value_list) == 1
         assert solution.entity_list[0].code == 'D'
@@ -327,4 +327,4 @@ def test_solver_config_override():
                       .run())
 
         solution = solver_job.get_final_best_solution()
-        assert solution.score.score() == 3
+        assert solution.score.score == 3

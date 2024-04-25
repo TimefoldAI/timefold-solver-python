@@ -41,7 +41,7 @@ def test_easy_score_calculator():
     problem: Solution = Solution([Entity('A'), Entity('B'), Entity('C')], [1, 2, 3])
     solver = SolverFactory.create(solver_config).build_solver()
     solution = solver.solve(problem)
-    assert solution.score.score() == 9
+    assert solution.score.score == 9
     assert solution.entity_list[0].value == 3
     assert solution.entity_list[1].value == 3
     assert solution.entity_list[2].value == 3
