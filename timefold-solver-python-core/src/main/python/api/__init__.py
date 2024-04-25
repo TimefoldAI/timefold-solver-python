@@ -5,3 +5,4 @@ from ._solver_manager import *
 from ._solution_manager import *
 from ._score_director import *
 from ._variable_listener import *
+from ._incremental_score_calculator import *
