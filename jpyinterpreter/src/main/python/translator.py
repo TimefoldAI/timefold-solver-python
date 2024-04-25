@@ -3,6 +3,8 @@ import dis
 import inspect
 import sys
 import abc
+from typing import Protocol
+
 from jpype import JInt, JBoolean, JProxy, JClass, JArray
 
 
@@ -505,6 +507,7 @@ def force_update_type(python_type, java_type):
 
 
 def translate_python_class_to_java_class(python_class):
+    import collections.abc as collections_abc
     from .annotations import erase_generic_args, convert_java_annotation, copy_type_annotations
     from .conversions import (
         init_type_to_compiled_java_class, is_banned_module, is_c_native, convert_to_java_python_like_object
@@ -523,16 +526,21 @@ def translate_python_class_to_java_class(python_class):
     if raw_type in type_to_compiled_java_class:
         return type_to_compiled_java_class[raw_type]
 
-    if python_class == abc.ABC or inspect.isabstract(python_class):  # TODO: Implement a class for interfaces?
+    if Protocol in python_class.__bases__:
         python_class_java_type = BuiltinTypes.BASE_TYPE
         type_to_compiled_java_class[python_class] = python_class_java_type
         return python_class_java_type
 
-    if hasattr(python_class, '__module__') and python_class.__module__ is not None and \
-            is_banned_module(python_class.__module__):
-        python_class_java_type = CPythonType.getType(JProxy(OpaquePythonReference, inst=python_class, convert=True))
-        type_to_compiled_java_class[python_class] = python_class_java_type
-        return python_class_java_type
+    if hasattr(python_class, '__module__') and python_class.__module__ is not None:
+        if python_class.__module__ == collections_abc.Collection.__module__:
+            python_class_java_type = BuiltinTypes.BASE_TYPE
+            type_to_compiled_java_class[python_class] = python_class_java_type
+            return python_class_java_type
+
+        if is_banned_module(python_class.__module__):
+            python_class_java_type = CPythonType.getType(JProxy(OpaquePythonReference, inst=python_class, convert=True))
+            type_to_compiled_java_class[python_class] = python_class_java_type
+            return python_class_java_type
 
     if isinstance(python_class, JArray):
         python_class_java_type = CPythonType.getType(JProxy(OpaquePythonReference, inst=python_class, convert=True))

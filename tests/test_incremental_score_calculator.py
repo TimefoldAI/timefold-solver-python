@@ -16,19 +16,19 @@ class Queen:
     column: int
     row: Annotated[Optional[int], PlanningVariable] = field(default=None)
 
-    def getColumnIndex(self):
+    def get_column_index(self):
         return self.column
 
-    def getRowIndex(self):
+    def get_row_index(self):
         if self.row is None:
             return -1
         return self.row
 
-    def getAscendingDiagonalIndex(self):
-        return self.getColumnIndex() + self.getRowIndex()
+    def get_ascending_diagonal_index(self):
+        return self.get_column_index() + self.get_row_index()
 
-    def getDescendingDiagonalIndex(self):
-        return self.getColumnIndex() - self.getRowIndex()
+    def get_descending_diagonal_index(self):
+        return self.get_column_index() - self.get_row_index()
 
     def __eq__(self, other):
         return self.code == other.code
@@ -48,14 +48,13 @@ class Solution:
 
 
 def test_constraint_match_disabled_incremental_score_calculator():
-    @incremental_score_calculator
-    class IncrementalScoreCalculator:
+    class NQueensIncrementalScoreCalculator(IncrementalScoreCalculator):
         score: int
         row_index_map: dict
         ascending_diagonal_index_map: dict
         descending_diagonal_index_map: dict
 
-        def resetWorkingSolution(self, working_solution: Solution):
+        def reset_working_solution(self, working_solution: Solution):
             n = working_solution.n
             self.row_index_map = dict()
             self.ascending_diagonal_index_map = dict()
@@ -71,22 +70,22 @@ def test_constraint_match_disabled_incremental_score_calculator():
             for queen in working_solution.queen_list:
                 self.insert(queen)
 
-        def beforeEntityAdded(self, entity: any):
+        def before_entity_added(self, entity: any):
             pass
 
-        def afterEntityAdded(self, entity: any):
+        def after_entity_added(self, entity: any):
             self.insert(entity)
 
-        def beforeVariableChanged(self, entity: any, variableName: str):
+        def before_variable_changed(self, entity: any, variableName: str):
             self.retract(entity)
 
-        def afterVariableChanged(self, entity: any, variableName: str):
+        def after_variable_changed(self, entity: any, variableName: str):
             self.insert(entity)
 
-        def beforeEntityRemoved(self, entity: any):
+        def before_entity_removed(self, entity: any):
             self.retract(entity)
 
-        def afterEntityRemoved(self, entity: any):
+        def after_entity_removed(self, entity: any):
             pass
 
         def insert(self, queen: Queen):
@@ -95,10 +94,10 @@ def test_constraint_match_disabled_incremental_score_calculator():
                 row_index_list = self.row_index_map[row_index]
                 self.score -= len(row_index_list)
                 row_index_list.append(queen)
-                ascending_diagonal_index_list = self.ascending_diagonal_index_map[queen.getAscendingDiagonalIndex()]
+                ascending_diagonal_index_list = self.ascending_diagonal_index_map[queen.get_ascending_diagonal_index()]
                 self.score -= len(ascending_diagonal_index_list)
                 ascending_diagonal_index_list.append(queen)
-                descending_diagonal_index_list = self.descending_diagonal_index_map[queen.getDescendingDiagonalIndex()]
+                descending_diagonal_index_list = self.descending_diagonal_index_map[queen.get_descending_diagonal_index()]
                 self.score -= len(descending_diagonal_index_list)
                 descending_diagonal_index_list.append(queen)
 
@@ -108,21 +107,21 @@ def test_constraint_match_disabled_incremental_score_calculator():
                 row_index_list = self.row_index_map[row_index]
                 row_index_list.remove(queen)
                 self.score += len(row_index_list)
-                ascending_diagonal_index_list = self.ascending_diagonal_index_map[queen.getAscendingDiagonalIndex()]
+                ascending_diagonal_index_list = self.ascending_diagonal_index_map[queen.get_ascending_diagonal_index()]
                 ascending_diagonal_index_list.remove(queen)
                 self.score += len(ascending_diagonal_index_list)
-                descending_diagonal_index_list = self.descending_diagonal_index_map[queen.getDescendingDiagonalIndex()]
+                descending_diagonal_index_list = self.descending_diagonal_index_map[queen.get_descending_diagonal_index()]
                 descending_diagonal_index_list.remove(queen)
                 self.score += len(descending_diagonal_index_list)
 
-        def calculateScore(self) -> HardSoftScore:
+        def calculate_score(self) -> HardSoftScore:
             return SimpleScore.of(self.score)
 
     solver_config = SolverConfig(
         solution_class=Solution,
         entity_class_list=[Queen],
         score_director_factory_config=ScoreDirectorFactoryConfig(
-            incremental_score_calculator_class=IncrementalScoreCalculator
+            incremental_score_calculator_class=NQueensIncrementalScoreCalculator
         ),
         termination_config=TerminationConfig(
             best_score_limit='0'
@@ -141,8 +140,8 @@ def test_constraint_match_disabled_incremental_score_calculator():
             right_queen = solution.queen_list[j]
             assert left_queen.row is not None and right_queen.row is not None
             assert left_queen.row != right_queen.row
-            assert left_queen.getAscendingDiagonalIndex() != right_queen.getAscendingDiagonalIndex()
-            assert left_queen.getDescendingDiagonalIndex() != right_queen.getDescendingDiagonalIndex()
+            assert left_queen.get_ascending_diagonal_index() != right_queen.get_ascending_diagonal_index()
+            assert left_queen.get_descending_diagonal_index() != right_queen.get_descending_diagonal_index()
 
 
 @pytest.mark.skip(reason="Special case where you want to convert all items of the list before returning."
@@ -150,13 +149,13 @@ def test_constraint_match_disabled_incremental_score_calculator():
                          "This feature is not that important, so skipping for now.")
 def test_constraint_match_enabled_incremental_score_calculator():
     @incremental_score_calculator
-    class IncrementalScoreCalculator:
+    class NQueensIncrementalScoreCalculator(ConstraintMatchAwareIncrementalScoreCalculator):
         score: int
         row_index_map: dict
         ascending_diagonal_index_map: dict
         descending_diagonal_index_map: dict
 
-        def resetWorkingSolution(self, working_solution: Solution, constraint_match_enabled=False):
+        def reset_working_solution(self, working_solution: Solution, constraint_match_enabled=False):
             n = working_solution.n
             self.row_index_map = dict()
             self.ascending_diagonal_index_map = dict()
@@ -172,22 +171,22 @@ def test_constraint_match_enabled_incremental_score_calculator():
             for queen in working_solution.queen_list:
                 self.insert(queen)
 
-        def beforeEntityAdded(self, entity: any):
+        def before_entity_added(self, entity: any):
             pass
 
-        def afterEntityAdded(self, entity: any):
+        def after_entity_added(self, entity: any):
             self.insert(entity)
 
-        def beforeVariableChanged(self, entity: any, variableName: str):
+        def before_variable_changed(self, entity: any, variableName: str):
             self.retract(entity)
 
-        def afterVariableChanged(self, entity: any, variableName: str):
+        def after_variable_changed(self, entity: any, variableName: str):
             self.insert(entity)
 
-        def beforeEntityRemoved(self, entity: any):
+        def before_entity_removed(self, entity: any):
             self.retract(entity)
 
-        def afterEntityRemoved(self, entity: any):
+        def after_entity_removed(self, entity: any):
             pass
 
         def insert(self, queen: Queen):
@@ -197,10 +196,10 @@ def test_constraint_match_enabled_incremental_score_calculator():
                 row_index_list = self.row_index_map[row_index]
                 self.score -= len(row_index_list)
                 row_index_list.append(queen)
-                ascending_diagonal_index_list = self.ascending_diagonal_index_map[queen.getAscendingDiagonalIndex()]
+                ascending_diagonal_index_list = self.ascending_diagonal_index_map[queen.get_ascending_diagonal_index()]
                 self.score -= len(ascending_diagonal_index_list)
                 ascending_diagonal_index_list.append(queen)
-                descending_diagonal_index_list = self.descending_diagonal_index_map[queen.getDescendingDiagonalIndex()]
+                descending_diagonal_index_list = self.descending_diagonal_index_map[queen.get_descending_diagonal_index()]
                 self.score -= len(descending_diagonal_index_list)
                 descending_diagonal_index_list.append(queen)
 
@@ -211,17 +210,17 @@ def test_constraint_match_enabled_incremental_score_calculator():
                 row_index_list = self.row_index_map[row_index]
                 row_index_list.remove(queen)
                 self.score += len(row_index_list)
-                ascending_diagonal_index_list = self.ascending_diagonal_index_map[queen.getAscendingDiagonalIndex()]
+                ascending_diagonal_index_list = self.ascending_diagonal_index_map[queen.get_ascending_diagonal_index()]
                 ascending_diagonal_index_list.remove(queen)
                 self.score += len(ascending_diagonal_index_list)
-                descending_diagonal_index_list = self.descending_diagonal_index_map[queen.getDescendingDiagonalIndex()]
+                descending_diagonal_index_list = self.descending_diagonal_index_map[queen.get_descending_diagonal_index()]
                 descending_diagonal_index_list.remove(queen)
                 self.score += len(descending_diagonal_index_list)
 
-        def calculateScore(self) -> HardSoftScore:
+        def calculate_score(self) -> HardSoftScore:
             return SimpleScore.of(self.score)
 
-        def getConstraintMatchTotals(self):
+        def get_constraint_match_totals(self):
             row_conflict_constraint_match_total = DefaultConstraintMatchTotal(
                 'NQueens',
                 'Row Conflict',
@@ -255,14 +254,14 @@ def test_constraint_match_enabled_incremental_score_calculator():
                 descending_diagonal_constraint_match_total
             ]
 
-        def getIndictmentMap(self):
+        def get_indictment_map(self):
             return None
 
     solver_config = SolverConfig(
         solution_class=Solution,
         entity_class_list=[Queen],
         score_director_factory_config=ScoreDirectorFactoryConfig(
-            incremental_score_calculator_class=IncrementalScoreCalculator
+            incremental_score_calculator_class=NQueensIncrementalScoreCalculator
         ),
         termination_config=TerminationConfig(
             best_score_limit='0'
@@ -282,8 +281,8 @@ def test_constraint_match_enabled_incremental_score_calculator():
             right_queen = solution.queen_list[j]
             assert left_queen.row is not None and right_queen.row is not None
             assert left_queen.row != right_queen.row
-            assert left_queen.getAscendingDiagonalIndex() != right_queen.getAscendingDiagonalIndex()
-            assert left_queen.getDescendingDiagonalIndex() != right_queen.getDescendingDiagonalIndex()
+            assert left_queen.get_ascending_diagonal_index() != right_queen.get_ascending_diagonal_index()
+            assert left_queen.get_descending_diagonal_index() != right_queen.get_descending_diagonal_index()
 
     score_manager = SolutionManager.create(solver_factory)
     constraint_match_total_map = score_manager.explain(solution).constraint_match_total_map
@@ -315,21 +314,19 @@ def test_constraint_match_enabled_incremental_score_calculator():
 
 
 def test_error_message_for_missing_methods():
-    with pytest.raises(ValueError, match=(
-            f"The following required methods are missing from @incremental_score_calculator class "
-            f".*IncrementalScoreCalculatorMissingMethods.*: "
-            f"\\['resetWorkingSolution', 'beforeEntityRemoved', 'afterEntityRemoved', 'calculateScore'\\]"
-    )):
+    with pytest.raises(TypeError):  # Exact error message from ABC changes between versions
         @incremental_score_calculator
-        class IncrementalScoreCalculatorMissingMethods:
-            def beforeEntityAdded(self, entity: any):
+        class IncrementalScoreCalculatorMissingMethods(IncrementalScoreCalculator):
+            def before_entity_added(self, entity):
                 pass
 
-            def afterEntityAdded(self, entity: any):
+            def after_entity_added(self, entity):
                 pass
 
-            def beforeVariableChanged(self, entity: any, variableName: str):
+            def before_variable_changed(self, entity, variable_name: str):
                 pass
 
-            def afterVariableChanged(self, entity: any, variableName: str):
+            def after_variable_changed(self, entity, variable_name: str):
                 pass
+
+        score_calculator = IncrementalScoreCalculatorMissingMethods()
