@@ -1,6 +1,7 @@
 package ai.timefold.jpyinterpreter.opcodes.descriptor;
 
 import java.util.NavigableMap;
+import java.util.Objects;
 import java.util.TreeMap;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -28,12 +29,12 @@ public final class VersionMapping {
 
     public static VersionMapping constantMapping(Function<PythonBytecodeInstruction, Opcode> mapper) {
         return new VersionMapping()
-                .map(PythonVersion.MINIMUM_PYTHON_VERSION, mapper);
+                .map(PythonVersion.MINIMUM_PYTHON_VERSION, Objects.requireNonNull(mapper));
     }
 
     public static VersionMapping constantMapping(BiFunction<PythonBytecodeInstruction, PythonVersion, Opcode> mapper) {
         return new VersionMapping()
-                .map(PythonVersion.MINIMUM_PYTHON_VERSION, mapper);
+                .map(PythonVersion.MINIMUM_PYTHON_VERSION, Objects.requireNonNull(mapper));
     }
 
     public VersionMapping map(PythonVersion version, Function<PythonBytecodeInstruction, Opcode> mapper) {

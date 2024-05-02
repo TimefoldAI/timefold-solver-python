@@ -77,16 +77,16 @@ public class PythonDateTime extends PythonDate<PythonDateTime> implements Planni
 
     private static void registerMethods() throws NoSuchMethodException {
         // Constructor
-        DATE_TIME_TYPE.addConstructor(ArgumentSpec.forFunctionReturning("datetime", PythonDateTime.class)
-                .addArgument("year", PythonInteger.class)
-                .addArgument("month", PythonInteger.class)
-                .addArgument("day", PythonInteger.class)
-                .addArgument("hour", PythonInteger.class, PythonInteger.ZERO)
-                .addArgument("minute", PythonInteger.class, PythonInteger.ZERO)
-                .addArgument("second", PythonInteger.class, PythonInteger.ZERO)
-                .addArgument("microsecond", PythonInteger.class, PythonInteger.ZERO)
-                .addArgument("tzinfo", PythonLikeObject.class, PythonNone.INSTANCE)
-                .addKeywordOnlyArgument("fold", PythonInteger.class, PythonInteger.ZERO)
+        DATE_TIME_TYPE.addConstructor(ArgumentSpec.forFunctionReturning("datetime", PythonDateTime.class.getName())
+                .addArgument("year", PythonInteger.class.getName())
+                .addArgument("month", PythonInteger.class.getName())
+                .addArgument("day", PythonInteger.class.getName())
+                .addArgument("hour", PythonInteger.class.getName(), PythonInteger.ZERO)
+                .addArgument("minute", PythonInteger.class.getName(), PythonInteger.ZERO)
+                .addArgument("second", PythonInteger.class.getName(), PythonInteger.ZERO)
+                .addArgument("microsecond", PythonInteger.class.getName(), PythonInteger.ZERO)
+                .addArgument("tzinfo", PythonLikeObject.class.getName(), PythonNone.INSTANCE)
+                .addKeywordOnlyArgument("fold", PythonInteger.class.getName(), PythonInteger.ZERO)
                 .asPythonFunctionSignature(
                         PythonDateTime.class.getMethod("of", PythonInteger.class, PythonInteger.class, PythonInteger.class,
                                 PythonInteger.class, PythonInteger.class, PythonInteger.class, PythonInteger.class,
@@ -95,45 +95,45 @@ public class PythonDateTime extends PythonDate<PythonDateTime> implements Planni
         // Class methods
         // Date handles today,
         DATE_TIME_TYPE.addMethod("now",
-                ArgumentSpec.forFunctionReturning("now", PythonDateTime.class)
-                        .addArgument("datetime_type", PythonLikeType.class)
-                        .addArgument("tzinfo", PythonLikeObject.class, PythonNone.INSTANCE)
+                ArgumentSpec.forFunctionReturning("now", PythonDateTime.class.getName())
+                        .addArgument("datetime_type", PythonLikeType.class.getName())
+                        .addArgument("tzinfo", PythonLikeObject.class.getName(), PythonNone.INSTANCE)
                         .asClassPythonFunctionSignature(
                                 PythonDateTime.class.getMethod("now",
                                         PythonLikeType.class,
                                         PythonLikeObject.class)));
 
         DATE_TIME_TYPE.addMethod("utcnow",
-                ArgumentSpec.forFunctionReturning("now", PythonDateTime.class)
-                        .addArgument("datetime_type", PythonLikeType.class)
+                ArgumentSpec.forFunctionReturning("now", PythonDateTime.class.getName())
+                        .addArgument("datetime_type", PythonLikeType.class.getName())
                         .asClassPythonFunctionSignature(
                                 PythonDateTime.class.getMethod("utc_now",
                                         PythonLikeType.class)));
 
         DATE_TIME_TYPE.addMethod("fromtimestamp",
-                ArgumentSpec.forFunctionReturning("fromtimestamp", PythonDate.class)
-                        .addArgument("date_type", PythonLikeType.class)
-                        .addArgument("timestamp", PythonNumber.class)
-                        .addArgument("tzinfo", PythonLikeObject.class, PythonNone.INSTANCE)
+                ArgumentSpec.forFunctionReturning("fromtimestamp", PythonDate.class.getName())
+                        .addArgument("date_type", PythonLikeType.class.getName())
+                        .addArgument("timestamp", PythonNumber.class.getName())
+                        .addArgument("tzinfo", PythonLikeObject.class.getName(), PythonNone.INSTANCE)
                         .asClassPythonFunctionSignature(PythonDateTime.class.getMethod("from_timestamp",
                                 PythonLikeType.class,
                                 PythonNumber.class,
                                 PythonLikeObject.class)));
 
         DATE_TIME_TYPE.addMethod("utcfromtimestamp",
-                ArgumentSpec.forFunctionReturning("utcfromtimestamp", PythonDate.class)
-                        .addArgument("date_type", PythonLikeType.class)
-                        .addArgument("timestamp", PythonNumber.class)
+                ArgumentSpec.forFunctionReturning("utcfromtimestamp", PythonDate.class.getName())
+                        .addArgument("date_type", PythonLikeType.class.getName())
+                        .addArgument("timestamp", PythonNumber.class.getName())
                         .asClassPythonFunctionSignature(PythonDateTime.class.getMethod("utc_from_timestamp",
                                 PythonLikeType.class,
                                 PythonNumber.class)));
 
         DATE_TIME_TYPE.addMethod("combine",
-                ArgumentSpec.forFunctionReturning("combine", PythonDateTime.class)
-                        .addArgument("datetime_type", PythonLikeType.class)
-                        .addArgument("date", PythonDate.class)
-                        .addArgument("time", PythonTime.class)
-                        .addNullableArgument("tzinfo", PythonLikeObject.class)
+                ArgumentSpec.forFunctionReturning("combine", PythonDateTime.class.getName())
+                        .addArgument("datetime_type", PythonLikeType.class.getName())
+                        .addArgument("date", PythonDate.class.getName())
+                        .addArgument("time", PythonTime.class.getName())
+                        .addNullableArgument("tzinfo", PythonLikeObject.class.getName())
                         .asClassPythonFunctionSignature(
                                 PythonDateTime.class.getMethod("combine",
                                         PythonLikeType.class, PythonDate.class,
@@ -153,16 +153,16 @@ public class PythonDateTime extends PythonDate<PythonDateTime> implements Planni
 
         // Instance methods
         DATE_TIME_TYPE.addMethod("replace",
-                ArgumentSpec.forFunctionReturning("replace", PythonDate.class)
-                        .addNullableArgument("year", PythonInteger.class)
-                        .addNullableArgument("month", PythonInteger.class)
-                        .addNullableArgument("day", PythonInteger.class)
-                        .addNullableArgument("hour", PythonInteger.class)
-                        .addNullableArgument("minute", PythonInteger.class)
-                        .addNullableArgument("second", PythonInteger.class)
-                        .addNullableArgument("microsecond", PythonInteger.class)
-                        .addNullableArgument("tzinfo", PythonLikeObject.class)
-                        .addNullableKeywordOnlyArgument("fold", PythonInteger.class)
+                ArgumentSpec.forFunctionReturning("replace", PythonDate.class.getName())
+                        .addNullableArgument("year", PythonInteger.class.getName())
+                        .addNullableArgument("month", PythonInteger.class.getName())
+                        .addNullableArgument("day", PythonInteger.class.getName())
+                        .addNullableArgument("hour", PythonInteger.class.getName())
+                        .addNullableArgument("minute", PythonInteger.class.getName())
+                        .addNullableArgument("second", PythonInteger.class.getName())
+                        .addNullableArgument("microsecond", PythonInteger.class.getName())
+                        .addNullableArgument("tzinfo", PythonLikeObject.class.getName())
+                        .addNullableKeywordOnlyArgument("fold", PythonInteger.class.getName())
                         .asPythonFunctionSignature(PythonDateTime.class.getMethod("replace", PythonInteger.class,
                                 PythonInteger.class, PythonInteger.class,
                                 PythonInteger.class, PythonInteger.class, PythonInteger.class,
@@ -197,9 +197,9 @@ public class PythonDateTime extends PythonDate<PythonDateTime> implements Planni
                 PythonDateTime.class.getMethod("dst"));
 
         DATE_TIME_TYPE.addMethod("isoformat",
-                ArgumentSpec.forFunctionReturning("isoformat", PythonString.class)
-                        .addArgument("sep", PythonString.class, PythonString.valueOf("T"))
-                        .addArgument("timespec", PythonString.class, PythonString.valueOf("auto"))
+                ArgumentSpec.forFunctionReturning("isoformat", PythonString.class.getName())
+                        .addArgument("sep", PythonString.class.getName(), PythonString.valueOf("T"))
+                        .addArgument("timespec", PythonString.class.getName(), PythonString.valueOf("auto"))
                         .asPythonFunctionSignature(
                                 PythonDateTime.class.getMethod("iso_format", PythonString.class, PythonString.class)));
 

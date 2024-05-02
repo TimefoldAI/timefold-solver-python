@@ -3,7 +3,7 @@ import jpype
 import jpype.imports
 from jpype.types import *
 import importlib.resources
-from typing import cast, List, Type, TypeVar, Callable, Union, TYPE_CHECKING
+from typing import cast, List, Type, TypeVar, Callable, Union, TYPE_CHECKING, Any
 from ._jpype_type_conversions import PythonSupplier, ConstraintProviderFunction
 
 if TYPE_CHECKING:
@@ -17,6 +17,8 @@ if TYPE_CHECKING:
 Solution_ = TypeVar('Solution_')
 ProblemId_ = TypeVar('ProblemId_')
 Score_ = TypeVar('Score_')
+
+_compilation_queue: list[type] = []
 _enterprise_installed: bool = False
 
 
@@ -140,6 +142,37 @@ def get_class(python_class: Union[Type, Callable]) -> JClass:
     return cast(JClass, Object)
 
 
+def get_asm_type(python_class: Union[Type, Callable]) -> Any:
+    """Return the ASM type for the given Python Class"""
+    from java.lang import Object, Class
+    from ai.timefold.jpyinterpreter import AnnotationMetadata
+    from ai.timefold.jpyinterpreter.types.wrappers import OpaquePythonReference
+    from jpyinterpreter import is_c_native, get_java_type_for_python_type
+
+    if python_class is None:
+        return None
+    if isinstance(python_class, jpype.JClass):
+        return AnnotationMetadata.getValueAsType(python_class.class_.getName())
+    if isinstance(python_class, Class):
+        return AnnotationMetadata.getValueAsType(python_class.getName())
+    if python_class == int:
+        from java.lang import Integer
+        return AnnotationMetadata.getValueAsType(Integer.class_.getName())
+    if python_class == str:
+        from java.lang import String
+        return AnnotationMetadata.getValueAsType(String.class_.getName())
+    if python_class == bool:
+        from java.lang import Boolean
+        return AnnotationMetadata.getValueAsType(Boolean.class_.getName())
+    if hasattr(python_class, '_timefold_java_class'):
+        return AnnotationMetadata.getValueAsType(python_class._timefold_java_class.getName())
+    if isinstance(python_class, type):
+        return AnnotationMetadata.getValueAsType(get_java_type_for_python_type(python_class).getJavaTypeInternalName())
+    if is_c_native(python_class):
+        return AnnotationMetadata.getValueAsType(OpaquePythonReference.class_.getName())
+    return AnnotationMetadata.getValueAsType(Object.class_.getName())
+
+
 def register_java_class(python_object: Solution_,
                         java_class: JClass) -> Solution_:
     python_object._timefold_java_class = java_class
@@ -198,25 +231,29 @@ class OverrideClassLoader:
         current_thread.setContextClassLoader(self.thread_class_loader)
 
 
-def compile_and_get_class(python_class):
+def compile_class(python_class: type) -> None:
     from jpyinterpreter import translate_python_class_to_java_class
     ensure_init()
     class_identifier = _get_class_identifier_for_object(python_class)
     out = translate_python_class_to_java_class(python_class).getJavaClass()
     class_identifier_to_java_class_map[class_identifier] = out
-    return out
 
 
-def _generate_problem_fact_class(python_class):
-    return compile_and_get_class(python_class)
+def _add_to_compilation_queue(python_class: type | PythonSupplier) -> None:
+    global _compilation_queue
+    _compilation_queue.append(python_class)
 
 
-def _generate_planning_entity_class(python_class: Type) -> JClass:
-    return compile_and_get_class(python_class)
+def _process_compilation_queue() -> None:
+    global _compilation_queue
 
+    while len(_compilation_queue) > 0:
+        python_class = _compilation_queue.pop(0)
 
-def _generate_planning_solution_class(python_class: Type) -> JClass:
-    return compile_and_get_class(python_class)
+        if isinstance(python_class, PythonSupplier):
+            python_class = python_class.get()
+
+        compile_class(python_class)
 
 
 def _to_constraint_java_array(python_list: List['_Constraint']) -> JArray:

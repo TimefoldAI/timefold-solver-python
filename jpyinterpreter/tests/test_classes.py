@@ -964,6 +964,28 @@ def test_generic_field_type():
     assert field_type.getActualTypeArguments()[0].getName() == PythonString.class_.getName()
 
 
+def test_getter_type():
+    from typing import Optional, Union
+    from ai.timefold.jpyinterpreter.types import PythonString, PythonBytes
+    from ai.timefold.jpyinterpreter.types.numeric import PythonInteger
+    from jpyinterpreter import translate_python_class_to_java_class
+
+    class A:
+        str_field: Optional[str]
+        int_field: Union[int, None]
+        bytes_field: bytes | None
+
+    translated_class = translate_python_class_to_java_class(A).getJavaClass()
+    str_field_getter_type = translated_class.getMethod('getStr_field').getReturnType()
+    assert str_field_getter_type == PythonString.class_
+
+    int_field_getter_type = translated_class.getMethod('getInt_field').getReturnType()
+    assert int_field_getter_type == PythonInteger.class_
+
+    bytes_field_getter_type = translated_class.getMethod('getBytes_field').getReturnType()
+    assert bytes_field_getter_type == PythonBytes.class_
+
+
 def test_marker_interface():
     from ai.timefold.jpyinterpreter.types.wrappers import OpaquePythonReference
     from jpyinterpreter import translate_python_class_to_java_class, add_java_interface

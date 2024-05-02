@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test;
 public class ArgumentSpecTest {
     @Test
     public void testSpec() {
-        ArgumentSpec<?> current = ArgumentSpec.forFunctionReturning("myFunction", PythonLikeTuple.class);
+        ArgumentSpec<?> current = ArgumentSpec.forFunctionReturning("myFunction", PythonLikeTuple.class.getName());
 
         List<String> argumentNameList = new ArrayList<>();
         List<PythonInteger> argumentValueList = new ArrayList<>();
@@ -39,7 +39,7 @@ public class ArgumentSpecTest {
                 assertThat(out).containsExactlyElementsOf(argumentValueList);
             }
 
-            current = current.addArgument("arg" + i, PythonInteger.class);
+            current = current.addArgument("arg" + i, PythonInteger.class.getName());
             argumentNameList.add("arg" + i);
             argumentValueList.add(PythonInteger.valueOf(i));
         }
@@ -47,7 +47,7 @@ public class ArgumentSpecTest {
 
     @Test
     public void testSpecWithDefaults() {
-        ArgumentSpec<?> current = ArgumentSpec.forFunctionReturning("myFunction", PythonLikeTuple.class);
+        ArgumentSpec<?> current = ArgumentSpec.forFunctionReturning("myFunction", PythonLikeTuple.class.getName());
 
         List<String> argumentNameList = new ArrayList<>();
         List<PythonInteger> argumentValueList = new ArrayList<>();
@@ -73,7 +73,7 @@ public class ArgumentSpecTest {
                 }
             }
 
-            current = current.addArgument("arg" + i, PythonInteger.class, PythonInteger.valueOf(-i));
+            current = current.addArgument("arg" + i, PythonInteger.class.getName(), PythonInteger.valueOf(-i));
             argumentNameList.add("arg" + i);
             argumentValueList.add(PythonInteger.valueOf(i));
         }
@@ -81,8 +81,8 @@ public class ArgumentSpecTest {
 
     @Test
     public void testSpecMissingArgument() {
-        ArgumentSpec<?> current = ArgumentSpec.forFunctionReturning("myFunction", PythonLikeTuple.class)
-                .addArgument("_arg0", PythonInteger.class);
+        ArgumentSpec<?> current = ArgumentSpec.forFunctionReturning("myFunction", PythonLikeTuple.class.getName())
+                .addArgument("_arg0", PythonInteger.class.getName());
 
         List<String> argumentNameList = new ArrayList<>();
         List<PythonInteger> argumentValueList = new ArrayList<>();
@@ -105,7 +105,7 @@ public class ArgumentSpecTest {
                         .hasMessageContaining("myFunction() missing 1 required positional argument: '");
             }
 
-            current = current.addArgument("arg" + i, PythonInteger.class);
+            current = current.addArgument("arg" + i, PythonInteger.class.getName());
             argumentNameList.add("arg" + i);
             argumentValueList.add(PythonInteger.valueOf(i));
         }
@@ -113,7 +113,7 @@ public class ArgumentSpecTest {
 
     @Test
     public void testSpecExtraArgument() {
-        ArgumentSpec<?> current = ArgumentSpec.forFunctionReturning("myFunction", PythonLikeTuple.class);
+        ArgumentSpec<?> current = ArgumentSpec.forFunctionReturning("myFunction", PythonLikeTuple.class.getName());
 
         List<String> argumentNameList = new ArrayList<>();
         List<PythonInteger> argumentValueList = new ArrayList<>();
@@ -147,7 +147,7 @@ public class ArgumentSpecTest {
                         .containsAnyOf(possibleErrorMessages);
             }
 
-            current = current.addArgument("arg" + i, PythonInteger.class);
+            current = current.addArgument("arg" + i, PythonInteger.class.getName());
             argumentNameList.add("arg" + i);
             argumentValueList.add(PythonInteger.valueOf(i));
         }

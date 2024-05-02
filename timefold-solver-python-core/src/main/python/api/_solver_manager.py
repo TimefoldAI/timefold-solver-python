@@ -6,7 +6,7 @@ from ._future import wrap_completable_future
 from asyncio import Future
 from typing import TypeVar, Generic, Callable, TYPE_CHECKING
 from datetime import timedelta
-from enum import Enum, auto as auto_enum
+from enum import Enum
 
 if TYPE_CHECKING:
     # These imports require a JVM to be running, so only import if type checking
@@ -19,9 +19,9 @@ ProblemId_ = TypeVar('ProblemId_')
 
 
 class SolverStatus(Enum):
-    NOT_SOLVING = auto_enum()
-    SOLVING_SCHEDULED = auto_enum()
-    SOLVING_ACTIVE = auto_enum()
+    NOT_SOLVING = 'NOT_SOLVING'
+    SOLVING_SCHEDULED = 'SOLVING_SCHEDULED'
+    SOLVING_ACTIVE = 'SOLVING_ACTIVE'
 
     @staticmethod
     def _from_java_enum(enum_value):

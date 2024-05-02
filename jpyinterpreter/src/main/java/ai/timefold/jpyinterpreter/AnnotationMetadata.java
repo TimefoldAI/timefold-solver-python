@@ -1,7 +1,11 @@
 package ai.timefold.jpyinterpreter;
 
 import java.lang.annotation.Annotation;
+import java.lang.annotation.Repeatable;
 import java.lang.reflect.Array;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.objectweb.asm.AnnotationVisitor;
@@ -23,6 +27,30 @@ public record AnnotationMetadata(Class<? extends Annotation> annotationType, Map
         visitAnnotation(methodVisitor.visitAnnotation(Type.getDescriptor(annotationType), true));
     }
 
+    public static List<AnnotationMetadata> getAnnotationListWithoutRepeatable(List<AnnotationMetadata> metadata) {
+        List<AnnotationMetadata> out = new ArrayList<>();
+        Map<Class<? extends Annotation>, List<AnnotationMetadata>> repeatableAnnotationMap = new LinkedHashMap<>();
+        for (AnnotationMetadata annotation : metadata) {
+            Repeatable repeatable = annotation.annotationType().getAnnotation(Repeatable.class);
+            if (repeatable == null) {
+                out.add(annotation);
+                continue;
+            }
+            var annotationContainer = repeatable.value();
+            repeatableAnnotationMap.computeIfAbsent(annotationContainer,
+                    ignored -> new ArrayList<>()).add(annotation);
+        }
+        for (var entry : repeatableAnnotationMap.entrySet()) {
+            out.add(new AnnotationMetadata(entry.getKey(),
+                    Map.of("value", entry.getValue().toArray(AnnotationMetadata[]::new))));
+        }
+        return out;
+    }
+
+    public static Type getValueAsType(String className) {
+        return Type.getType("L" + className.replace('.', '/') + ";");
+    }
+
     private void visitAnnotation(AnnotationVisitor annotationVisitor) {
         for (var entry : annotationValueMap.entrySet()) {
             var annotationAttributeName = entry.getKey();
@@ -42,8 +70,8 @@ public record AnnotationMetadata(Class<? extends Annotation> annotationType, Map
             return;
         }
 
-        if (attributeValue instanceof Class<?> clazz) {
-            annotationVisitor.visit(attributeName, Type.getType(clazz));
+        if (attributeValue instanceof Type type) {
+            annotationVisitor.visit(attributeName, type);
             return;
         }
 

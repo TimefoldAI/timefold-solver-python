@@ -3,7 +3,7 @@ from .._timefold_java_interop import is_enterprise_installed
 
 from typing import Any, Optional, List, Type, Callable, TypeVar, Generic, TYPE_CHECKING
 from dataclasses import dataclass, field
-from enum import Enum, auto
+from enum import Enum
 from pathlib import Path
 from jpype import JClass
 
@@ -65,28 +65,28 @@ class Duration:
 
 
 class EnvironmentMode(Enum):
-    NON_REPRODUCIBLE = auto()
-    REPRODUCIBLE = auto()
-    FAST_ASSERT = auto()
-    NON_INTRUSIVE_FULL_ASSERT = auto()
-    FULL_ASSERT = auto()
-    TRACKED_FULL_ASSERT = auto()
+    NON_REPRODUCIBLE = 'NON_REPRODUCIBLE'
+    REPRODUCIBLE = 'REPRODUCIBLE'
+    FAST_ASSERT = 'FAST_ASSERT'
+    NON_INTRUSIVE_FULL_ASSERT = 'NON_INTRUSIVE_FULL_ASSERT'
+    FULL_ASSERT = 'FULL_ASSERT'
+    TRACKED_FULL_ASSERT = 'TRACKED_FULL_ASSERT'
 
     def _get_java_enum(self):
         return _lookup_on_java_class(_java_environment_mode, self.name)
 
 
 class TerminationCompositionStyle(Enum):
-    OR = auto()
-    AND = auto()
+    OR = 'OR'
+    AND = 'AND'
 
     def _get_java_enum(self):
         return _lookup_on_java_class(_java_termination_composition_style, self.name)
 
 
 class MoveThreadCount(Enum):
-    AUTO = auto()
-    NONE = auto()
+    AUTO = 'AUTO'
+    NONE = 'NONE'
 
 
 class RequiresEnterpriseError(EnvironmentError):
@@ -122,11 +122,14 @@ class SolverConfig(Generic[Solution_]):
         return SolverConfig(xml_source_text=xml_text)
 
     def _to_java_solver_config(self) -> '_JavaSolverConfig':
-        from .._timefold_java_interop import OverrideClassLoader, get_class
+        from .._timefold_java_interop import OverrideClassLoader, get_class, _process_compilation_queue
         from ai.timefold.solver.core.config.solver import SolverConfig as JavaSolverConfig
         from java.io import File, ByteArrayInputStream  # noqa
         from java.lang import IllegalArgumentException
         from java.util import ArrayList
+
+        _process_compilation_queue()
+
         out = JavaSolverConfig()
         with OverrideClassLoader() as class_loader:
             out.setClassLoader(class_loader)

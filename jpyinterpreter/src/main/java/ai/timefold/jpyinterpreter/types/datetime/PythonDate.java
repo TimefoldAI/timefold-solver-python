@@ -62,10 +62,10 @@ public class PythonDate<T extends PythonDate<?>> extends AbstractPythonLikeObjec
 
     private static void registerMethods() throws NoSuchMethodException {
         // Constructor
-        DATE_TYPE.addConstructor(ArgumentSpec.forFunctionReturning("date", PythonDate.class)
-                .addArgument("year", PythonInteger.class)
-                .addArgument("month", PythonInteger.class)
-                .addArgument("day", PythonInteger.class)
+        DATE_TYPE.addConstructor(ArgumentSpec.forFunctionReturning("date", PythonDate.class.getName())
+                .addArgument("year", PythonInteger.class.getName())
+                .addArgument("month", PythonInteger.class.getName())
+                .addArgument("day", PythonInteger.class.getName())
                 .asStaticPythonFunctionSignature(PythonDate.class.getMethod("of", PythonInteger.class,
                         PythonInteger.class, PythonInteger.class)));
         // Unary Operators
@@ -82,10 +82,10 @@ public class PythonDate<T extends PythonDate<?>> extends AbstractPythonLikeObjec
 
         // Methods
         DATE_TYPE.addMethod("replace",
-                ArgumentSpec.forFunctionReturning("replace", PythonDate.class)
-                        .addNullableArgument("year", PythonInteger.class)
-                        .addNullableArgument("month", PythonInteger.class)
-                        .addNullableArgument("day", PythonInteger.class)
+                ArgumentSpec.forFunctionReturning("replace", PythonDate.class.getName())
+                        .addNullableArgument("year", PythonInteger.class.getName())
+                        .addNullableArgument("month", PythonInteger.class.getName())
+                        .addNullableArgument("day", PythonInteger.class.getName())
                         .asPythonFunctionSignature(PythonDate.class.getMethod("replace", PythonInteger.class,
                                 PythonInteger.class, PythonInteger.class)));
         DATE_TYPE.addMethod("timetuple",
@@ -113,39 +113,39 @@ public class PythonDate<T extends PythonDate<?>> extends AbstractPythonLikeObjec
 
         // Class methods
         DATE_TYPE.addMethod("today",
-                ArgumentSpec.forFunctionReturning("today", PythonDate.class)
-                        .addArgument("date_type", PythonLikeType.class)
+                ArgumentSpec.forFunctionReturning("today", PythonDate.class.getName())
+                        .addArgument("date_type", PythonLikeType.class.getName())
                         .asClassPythonFunctionSignature(PythonDate.class.getMethod("today",
                                 PythonLikeType.class)));
 
         DATE_TYPE.addMethod("fromtimestamp",
-                ArgumentSpec.forFunctionReturning("fromtimestamp", PythonDate.class)
-                        .addArgument("date_type", PythonLikeType.class)
-                        .addArgument("timestamp", PythonNumber.class)
+                ArgumentSpec.forFunctionReturning("fromtimestamp", PythonDate.class.getName())
+                        .addArgument("date_type", PythonLikeType.class.getName())
+                        .addArgument("timestamp", PythonNumber.class.getName())
                         .asClassPythonFunctionSignature(PythonDate.class.getMethod("from_timestamp",
                                 PythonLikeType.class,
                                 PythonNumber.class)));
 
         DATE_TYPE.addMethod("fromordinal",
-                ArgumentSpec.forFunctionReturning("fromordinal", PythonDate.class)
-                        .addArgument("date_type", PythonLikeType.class)
-                        .addArgument("ordinal", PythonInteger.class)
+                ArgumentSpec.forFunctionReturning("fromordinal", PythonDate.class.getName())
+                        .addArgument("date_type", PythonLikeType.class.getName())
+                        .addArgument("ordinal", PythonInteger.class.getName())
                         .asClassPythonFunctionSignature(PythonDate.class.getMethod("from_ordinal",
                                 PythonLikeType.class, PythonInteger.class)));
 
         DATE_TYPE.addMethod("fromisoformat",
-                ArgumentSpec.forFunctionReturning("fromisoformat", PythonDate.class)
-                        .addArgument("date_type", PythonLikeType.class)
-                        .addArgument("date_string", PythonString.class)
+                ArgumentSpec.forFunctionReturning("fromisoformat", PythonDate.class.getName())
+                        .addArgument("date_type", PythonLikeType.class.getName())
+                        .addArgument("date_string", PythonString.class.getName())
                         .asClassPythonFunctionSignature(PythonDate.class.getMethod("from_iso_format",
                                 PythonLikeType.class, PythonString.class)));
 
         DATE_TYPE.addMethod("fromisocalendar",
-                ArgumentSpec.forFunctionReturning("fromisocalendar", PythonDate.class)
-                        .addArgument("date_type", PythonLikeType.class)
-                        .addArgument("year", PythonInteger.class)
-                        .addArgument("month", PythonInteger.class)
-                        .addArgument("day", PythonInteger.class)
+                ArgumentSpec.forFunctionReturning("fromisocalendar", PythonDate.class.getName())
+                        .addArgument("date_type", PythonLikeType.class.getName())
+                        .addArgument("year", PythonInteger.class.getName())
+                        .addArgument("month", PythonInteger.class.getName())
+                        .addArgument("day", PythonInteger.class.getName())
                         .asClassPythonFunctionSignature(PythonDate.class.getMethod("from_iso_calendar", PythonLikeType.class,
                                 PythonInteger.class, PythonInteger.class, PythonInteger.class)));
     }

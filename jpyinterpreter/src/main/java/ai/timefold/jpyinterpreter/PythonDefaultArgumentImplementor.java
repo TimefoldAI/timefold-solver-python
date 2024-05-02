@@ -47,7 +47,7 @@ public class PythonDefaultArgumentImplementor {
         return CONSTANT_PREFIX + defaultIndex;
     }
 
-    public static Class<?> createDefaultArgumentFor(MethodDescriptor methodDescriptor,
+    public static String createDefaultArgumentFor(MethodDescriptor methodDescriptor,
             List<PythonLikeObject> defaultArgumentList,
             Map<String, Integer> argumentNameToIndexMap, Optional<Integer> extraPositionalArgumentsVariableIndex,
             Optional<Integer> extraKeywordArgumentsVariableIndex,
@@ -169,26 +169,40 @@ public class PythonDefaultArgumentImplementor {
         createAddArgumentMethod(classWriter, internalClassName, methodDescriptor, argumentNameToIndexMap,
                 extraPositionalArgumentsVariableIndex, extraKeywordArgumentsVariableIndex, argumentSpec);
 
+        // clinit to set ArgumentSpec, as class cannot be loaded if it contains
+        // yet to be compiled forward references
+        methodVisitor = classWriter.visitMethod(Modifier.PUBLIC | Modifier.STATIC, "<clinit>",
+                Type.getMethodDescriptor(Type.VOID_TYPE), null, null);
+        methodVisitor.visitCode();
+
+        argumentSpec.loadArgumentSpec(methodVisitor);
+        methodVisitor.visitInsn(Opcodes.DUP);
+        methodVisitor.visitFieldInsn(Opcodes.PUTSTATIC, internalClassName,
+                ARGUMENT_SPEC_STATIC_FIELD_NAME, Type.getDescriptor(ArgumentSpec.class));
+
+        for (int i = 0; i < defaultArgumentList.size(); i++) {
+            methodVisitor.visitInsn(Opcodes.DUP);
+            methodVisitor.visitLdcInsn(defaultStart + i);
+            methodVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL, Type.getInternalName(ArgumentSpec.class),
+                    "getDefaultValue", Type.getMethodDescriptor(Type.getType(Object.class), Type.INT_TYPE),
+                    false);
+            methodVisitor.visitTypeInsn(Opcodes.CHECKCAST,
+                    methodDescriptor.getParameterTypes()[defaultStart + i].getInternalName());
+            String fieldName = getConstantName(i);
+            methodVisitor.visitFieldInsn(Opcodes.PUTSTATIC, internalClassName,
+                    fieldName, methodDescriptor.getParameterTypes()[defaultStart + i].getDescriptor());
+        }
+
+        methodVisitor.visitInsn(Opcodes.RETURN);
+
+        methodVisitor.visitMaxs(-1, -1);
+        methodVisitor.visitEnd();
+
         classWriter.visitEnd();
         PythonBytecodeToJavaBytecodeTranslator.writeClassOutput(BuiltinTypes.classNameToBytecode, className,
                 classWriter.toByteArray());
 
-        try {
-            Class<?> compiledClass = BuiltinTypes.asmClassLoader.loadClass(className);
-            compiledClass.getField(ARGUMENT_SPEC_STATIC_FIELD_NAME).set(null, argumentSpec);
-            for (int i = 0; i < defaultArgumentList.size(); i++) {
-                PythonLikeObject value = defaultArgumentList.get(i);
-                String fieldName = getConstantName(i);
-                compiledClass.getField(fieldName).set(null, value);
-            }
-            return compiledClass;
-        } catch (ClassNotFoundException e) {
-            throw new IllegalStateException("Impossible State: Unable to load generated class (" +
-                    className + ") despite it being just generated.", e);
-        } catch (NoSuchFieldException | IllegalAccessException e) {
-            throw new IllegalStateException("Impossible State: Unable to set field in generated class (" +
-                    className + ").", e);
-        }
+        return internalClassName;
     }
 
     /**

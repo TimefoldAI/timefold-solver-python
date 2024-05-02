@@ -135,7 +135,7 @@ public class PythonString extends AbstractPythonLikeObject implements PythonLike
         BuiltinTypes.STRING_TYPE.addMethod("find", PythonString.class.getMethod("findSubstringIndex", PythonString.class,
                 PythonInteger.class, PythonInteger.class));
 
-        BuiltinTypes.STRING_TYPE.addMethod("format", ArgumentSpec.forFunctionReturning("format", PythonString.class)
+        BuiltinTypes.STRING_TYPE.addMethod("format", ArgumentSpec.forFunctionReturning("format", PythonString.class.getName())
                 .addExtraPositionalVarArgument("vargs")
                 .addExtraKeywordVarArgument("kwargs")
                 .asPythonFunctionSignature(PythonString.class.getMethod("format", List.class, Map.class)));
