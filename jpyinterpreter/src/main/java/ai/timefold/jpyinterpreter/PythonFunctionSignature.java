@@ -30,7 +30,7 @@ public class PythonFunctionSignature {
     private final Optional<Integer> extraPositionalArgumentsVariableIndex;
     private final Optional<Integer> extraKeywordArgumentsVariableIndex;
 
-    private final Class<?> defaultArgumentHolderClass;
+    private final String defaultArgumentHolderClassInternalName;
     private final ArgumentSpec<?> argumentSpec;
     private final boolean isFromArgumentSpec;
 
@@ -78,7 +78,7 @@ public class PythonFunctionSignature {
         this.extraKeywordArgumentsVariableIndex = Optional.empty();
         isFromArgumentSpec = false;
         argumentSpec = computeArgumentSpec();
-        defaultArgumentHolderClass = PythonDefaultArgumentImplementor.createDefaultArgumentFor(methodDescriptor,
+        defaultArgumentHolderClassInternalName = PythonDefaultArgumentImplementor.createDefaultArgumentFor(methodDescriptor,
                 defaultArgumentList, keywordToArgumentIndexMap, getExtraPositionalArgumentsVariableIndex(),
                 getExtraKeywordArgumentsVariableIndex(), getArgumentSpec());
 
@@ -97,7 +97,7 @@ public class PythonFunctionSignature {
         this.extraKeywordArgumentsVariableIndex = Optional.empty();
         isFromArgumentSpec = false;
         argumentSpec = computeArgumentSpec();
-        defaultArgumentHolderClass = PythonDefaultArgumentImplementor.createDefaultArgumentFor(methodDescriptor,
+        defaultArgumentHolderClassInternalName = PythonDefaultArgumentImplementor.createDefaultArgumentFor(methodDescriptor,
                 defaultArgumentList, keywordToArgumentIndexMap, getExtraPositionalArgumentsVariableIndex(),
                 getExtraKeywordArgumentsVariableIndex(), getArgumentSpec());
     }
@@ -117,7 +117,7 @@ public class PythonFunctionSignature {
         this.extraKeywordArgumentsVariableIndex = extraKeywordArgumentsVariableIndex;
         isFromArgumentSpec = false;
         argumentSpec = computeArgumentSpec();
-        defaultArgumentHolderClass = PythonDefaultArgumentImplementor.createDefaultArgumentFor(methodDescriptor,
+        defaultArgumentHolderClassInternalName = PythonDefaultArgumentImplementor.createDefaultArgumentFor(methodDescriptor,
                 defaultArgumentList, keywordToArgumentIndexMap, extraPositionalArgumentsVariableIndex,
                 extraKeywordArgumentsVariableIndex, getArgumentSpec());
     }
@@ -138,81 +138,77 @@ public class PythonFunctionSignature {
         this.extraKeywordArgumentsVariableIndex = extraKeywordArgumentsVariableIndex;
         this.argumentSpec = argumentSpec;
         isFromArgumentSpec = true;
-        defaultArgumentHolderClass = PythonDefaultArgumentImplementor.createDefaultArgumentFor(methodDescriptor,
+        defaultArgumentHolderClassInternalName = PythonDefaultArgumentImplementor.createDefaultArgumentFor(methodDescriptor,
                 defaultArgumentList, keywordToArgumentIndexMap, extraPositionalArgumentsVariableIndex,
                 extraKeywordArgumentsVariableIndex, argumentSpec);
     }
 
     private ArgumentSpec<?> computeArgumentSpec() {
-        try {
-            ArgumentSpec<?> argumentSpec = ArgumentSpec.forFunctionReturning(getMethodDescriptor().getMethodName(),
-                    (Class<? extends PythonLikeObject>) getReturnType().getJavaClass());
-            for (int i = 0; i < getParameterTypes().length - getDefaultArgumentList().size(); i++) {
-                if (getExtraPositionalArgumentsVariableIndex().isPresent()
-                        && getExtraPositionalArgumentsVariableIndex().get() == i) {
-                    continue;
-                }
-
-                if (getExtraKeywordArgumentsVariableIndex().isPresent() && getExtraKeywordArgumentsVariableIndex().get() == i) {
-                    continue;
-                }
-
-                final int argIndex = i;
-                Optional<String> argumentName = getKeywordToArgumentIndexMap().entrySet()
-                        .stream().filter(e -> e.getValue().equals(argIndex))
-                        .map(Map.Entry::getKey)
-                        .findAny();
-
-                if (argumentName.isEmpty()) {
-                    argumentSpec = argumentSpec.addArgument("$arg" + i,
-                            (Class<? extends PythonLikeObject>) getParameterTypes()[i].getJavaClass());
-                } else {
-                    argumentSpec = argumentSpec.addArgument(argumentName.get(),
-                            (Class<? extends PythonLikeObject>) getParameterTypes()[i].getJavaClass());
-                }
+        ArgumentSpec<?> argumentSpec = ArgumentSpec.forFunctionReturning(getMethodDescriptor().getMethodName(),
+                getReturnType().getJavaTypeInternalName());
+        for (int i = 0; i < getParameterTypes().length - getDefaultArgumentList().size(); i++) {
+            if (getExtraPositionalArgumentsVariableIndex().isPresent()
+                    && getExtraPositionalArgumentsVariableIndex().get() == i) {
+                continue;
             }
 
-            for (int i = getParameterTypes().length - getDefaultArgumentList().size(); i < getParameterTypes().length; i++) {
-                if (getExtraPositionalArgumentsVariableIndex().isPresent()
-                        && getExtraPositionalArgumentsVariableIndex().get() == i) {
-                    continue;
-                }
-
-                if (getExtraKeywordArgumentsVariableIndex().isPresent() && getExtraKeywordArgumentsVariableIndex().get() == i) {
-                    continue;
-                }
-
-                PythonLikeObject defaultValue =
-                        getDefaultArgumentList().get(getDefaultArgumentList().size() - (getParameterTypes().length - i));
-
-                final int argIndex = i;
-                Optional<String> argumentName = getKeywordToArgumentIndexMap().entrySet()
-                        .stream().filter(e -> e.getValue().equals(argIndex))
-                        .map(Map.Entry::getKey)
-                        .findAny();
-
-                if (argumentName.isEmpty()) {
-                    argumentSpec = argumentSpec.addArgument("$arg" + i,
-                            (Class<PythonLikeObject>) getParameterTypes()[i].getJavaClass(),
-                            defaultValue);
-                } else {
-                    argumentSpec = argumentSpec.addArgument(argumentName.get(),
-                            (Class<PythonLikeObject>) getParameterTypes()[i].getJavaClass(),
-                            defaultValue);
-                }
+            if (getExtraKeywordArgumentsVariableIndex().isPresent() && getExtraKeywordArgumentsVariableIndex().get() == i) {
+                continue;
             }
 
-            if (getExtraPositionalArgumentsVariableIndex().isPresent()) {
-                argumentSpec = argumentSpec.addExtraPositionalVarArgument("*vargs");
-            }
+            final int argIndex = i;
+            Optional<String> argumentName = getKeywordToArgumentIndexMap().entrySet()
+                    .stream().filter(e -> e.getValue().equals(argIndex))
+                    .map(Map.Entry::getKey)
+                    .findAny();
 
-            if (getExtraKeywordArgumentsVariableIndex().isPresent()) {
-                argumentSpec = argumentSpec.addExtraKeywordVarArgument("**kwargs");
+            if (argumentName.isEmpty()) {
+                argumentSpec = argumentSpec.addArgument("$arg" + i,
+                        getParameterTypes()[i].getJavaTypeInternalName());
+            } else {
+                argumentSpec = argumentSpec.addArgument(argumentName.get(),
+                        getParameterTypes()[i].getJavaTypeInternalName());
             }
-            return argumentSpec;
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
         }
+
+        for (int i = getParameterTypes().length - getDefaultArgumentList().size(); i < getParameterTypes().length; i++) {
+            if (getExtraPositionalArgumentsVariableIndex().isPresent()
+                    && getExtraPositionalArgumentsVariableIndex().get() == i) {
+                continue;
+            }
+
+            if (getExtraKeywordArgumentsVariableIndex().isPresent() && getExtraKeywordArgumentsVariableIndex().get() == i) {
+                continue;
+            }
+
+            PythonLikeObject defaultValue =
+                    getDefaultArgumentList().get(getDefaultArgumentList().size() - (getParameterTypes().length - i));
+
+            final int argIndex = i;
+            Optional<String> argumentName = getKeywordToArgumentIndexMap().entrySet()
+                    .stream().filter(e -> e.getValue().equals(argIndex))
+                    .map(Map.Entry::getKey)
+                    .findAny();
+
+            if (argumentName.isEmpty()) {
+                argumentSpec = argumentSpec.addArgument("$arg" + i,
+                        getParameterTypes()[i].getJavaTypeInternalName(),
+                        defaultValue);
+            } else {
+                argumentSpec = argumentSpec.addArgument(argumentName.get(),
+                        getParameterTypes()[i].getJavaTypeInternalName(),
+                        defaultValue);
+            }
+        }
+
+        if (getExtraPositionalArgumentsVariableIndex().isPresent()) {
+            argumentSpec = argumentSpec.addExtraPositionalVarArgument("*vargs");
+        }
+
+        if (getExtraKeywordArgumentsVariableIndex().isPresent()) {
+            argumentSpec = argumentSpec.addExtraKeywordVarArgument("**kwargs");
+        }
+        return argumentSpec;
     }
 
     public ArgumentSpec<?> getArgumentSpec() {
@@ -251,8 +247,8 @@ public class PythonFunctionSignature {
         return extraKeywordArgumentsVariableIndex;
     }
 
-    public Class<?> getDefaultArgumentHolderClass() {
-        return defaultArgumentHolderClass;
+    public String getDefaultArgumentHolderClassInternalName() {
+        return defaultArgumentHolderClassInternalName;
     }
 
     public boolean isVirtualMethod() {

@@ -55,39 +55,39 @@ public class PythonTime extends AbstractPythonLikeObject implements PlanningImmu
     }
 
     private static void registerMethods() throws NoSuchMethodException {
-        TIME_TYPE.addConstructor(ArgumentSpec.forFunctionReturning("datetime.time", PythonTime.class)
-                .addArgument("hour", PythonInteger.class, PythonInteger.ZERO)
-                .addArgument("minute", PythonInteger.class, PythonInteger.ZERO)
-                .addArgument("second", PythonInteger.class, PythonInteger.ZERO)
-                .addArgument("microsecond", PythonInteger.class, PythonInteger.ZERO)
-                .addArgument("tzinfo", PythonLikeObject.class, PythonNone.INSTANCE)
-                .addKeywordOnlyArgument("fold", PythonInteger.class, PythonInteger.ZERO)
+        TIME_TYPE.addConstructor(ArgumentSpec.forFunctionReturning("datetime.time", PythonTime.class.getName())
+                .addArgument("hour", PythonInteger.class.getName(), PythonInteger.ZERO)
+                .addArgument("minute", PythonInteger.class.getName(), PythonInteger.ZERO)
+                .addArgument("second", PythonInteger.class.getName(), PythonInteger.ZERO)
+                .addArgument("microsecond", PythonInteger.class.getName(), PythonInteger.ZERO)
+                .addArgument("tzinfo", PythonLikeObject.class.getName(), PythonNone.INSTANCE)
+                .addKeywordOnlyArgument("fold", PythonInteger.class.getName(), PythonInteger.ZERO)
                 .asPythonFunctionSignature(
                         PythonTime.class.getMethod("of", PythonInteger.class, PythonInteger.class,
                                 PythonInteger.class, PythonInteger.class, PythonLikeObject.class,
                                 PythonInteger.class)));
 
         TIME_TYPE.addMethod("fromisoformat",
-                ArgumentSpec.forFunctionReturning("fromisoformat", PythonTime.class)
-                        .addArgument("time_string", PythonString.class)
+                ArgumentSpec.forFunctionReturning("fromisoformat", PythonTime.class.getName())
+                        .addArgument("time_string", PythonString.class.getName())
                         .asStaticPythonFunctionSignature(PythonTime.class.getMethod("from_iso_format", PythonString.class)));
 
         TIME_TYPE.addMethod("replace",
-                ArgumentSpec.forFunctionReturning("replace", PythonTime.class)
-                        .addNullableArgument("hour", PythonInteger.class)
-                        .addNullableArgument("minute", PythonInteger.class)
-                        .addNullableArgument("second", PythonInteger.class)
-                        .addNullableArgument("microsecond", PythonInteger.class)
-                        .addNullableArgument("tzinfo", PythonLikeObject.class)
-                        .addNullableKeywordOnlyArgument("fold", PythonInteger.class)
+                ArgumentSpec.forFunctionReturning("replace", PythonTime.class.getName())
+                        .addNullableArgument("hour", PythonInteger.class.getName())
+                        .addNullableArgument("minute", PythonInteger.class.getName())
+                        .addNullableArgument("second", PythonInteger.class.getName())
+                        .addNullableArgument("microsecond", PythonInteger.class.getName())
+                        .addNullableArgument("tzinfo", PythonLikeObject.class.getName())
+                        .addNullableKeywordOnlyArgument("fold", PythonInteger.class.getName())
                         .asPythonFunctionSignature(PythonTime.class.getMethod("replace", PythonInteger.class,
                                 PythonInteger.class, PythonInteger.class,
                                 PythonInteger.class, PythonLikeObject.class,
                                 PythonInteger.class)));
 
         TIME_TYPE.addMethod("isoformat",
-                ArgumentSpec.forFunctionReturning("isoformat", PythonString.class)
-                        .addArgument("timespec", PythonString.class, PythonString.valueOf("auto"))
+                ArgumentSpec.forFunctionReturning("isoformat", PythonString.class.getName())
+                        .addArgument("timespec", PythonString.class.getName(), PythonString.valueOf("auto"))
                         .asPythonFunctionSignature(PythonTime.class.getMethod("isoformat", PythonString.class)));
 
         TIME_TYPE.addMethod("tzname",

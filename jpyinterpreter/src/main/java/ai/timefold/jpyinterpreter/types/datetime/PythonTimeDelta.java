@@ -53,14 +53,14 @@ public class PythonTimeDelta extends AbstractPythonLikeObject implements PythonL
 
     private static void registerMethods() throws NoSuchMethodException {
         // Constructor
-        TIME_DELTA_TYPE.addConstructor(ArgumentSpec.forFunctionReturning("timedelta", PythonTimeDelta.class)
-                .addArgument("days", PythonNumber.class, PythonInteger.ZERO)
-                .addArgument("seconds", PythonNumber.class, PythonInteger.ZERO)
-                .addArgument("microseconds", PythonNumber.class, PythonInteger.ZERO)
-                .addArgument("milliseconds", PythonNumber.class, PythonInteger.ZERO)
-                .addArgument("minutes", PythonNumber.class, PythonInteger.ZERO)
-                .addArgument("hours", PythonNumber.class, PythonInteger.ZERO)
-                .addArgument("weeks", PythonNumber.class, PythonInteger.ZERO)
+        TIME_DELTA_TYPE.addConstructor(ArgumentSpec.forFunctionReturning("timedelta", PythonTimeDelta.class.getName())
+                .addArgument("days", PythonNumber.class.getName(), PythonInteger.ZERO)
+                .addArgument("seconds", PythonNumber.class.getName(), PythonInteger.ZERO)
+                .addArgument("microseconds", PythonNumber.class.getName(), PythonInteger.ZERO)
+                .addArgument("milliseconds", PythonNumber.class.getName(), PythonInteger.ZERO)
+                .addArgument("minutes", PythonNumber.class.getName(), PythonInteger.ZERO)
+                .addArgument("hours", PythonNumber.class.getName(), PythonInteger.ZERO)
+                .addArgument("weeks", PythonNumber.class.getName(), PythonInteger.ZERO)
                 .asPythonFunctionSignature(PythonTimeDelta.class.getMethod("of", PythonNumber.class, PythonNumber.class,
                         PythonNumber.class, PythonNumber.class, PythonNumber.class, PythonNumber.class, PythonNumber.class)));
 

@@ -208,12 +208,16 @@ public class PythonCompiledFunction {
         return (Class) parameterTypeList.get(variableIndex).getJavaClassOrDefault(PythonLikeObject.class);
     }
 
+    private static String getParameterJavaClassName(List<PythonLikeType> parameterTypeList, int variableIndex) {
+        return parameterTypeList.get(variableIndex).getJavaTypeInternalName();
+    }
+
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public BiFunction<PythonLikeTuple, PythonLikeDict, ArgumentSpec<PythonLikeObject>> getArgumentSpecMapper() {
         return (defaultPositionalArguments, defaultKeywordArguments) -> {
             ArgumentSpec<PythonLikeObject> out = ArgumentSpec.forFunctionReturning(qualifiedName, getReturnType()
-                    .map(type -> (Class) type.getJavaClassOrDefault(PythonLikeObject.class))
-                    .orElse(PythonLikeObject.class));
+                    .map(PythonLikeType::getJavaTypeInternalName)
+                    .orElse(PythonLikeObject.class.getName()));
 
             int variableIndex = 0;
             int defaultPositionalStartIndex = co_argcount - defaultPositionalArguments.size();
@@ -226,23 +230,23 @@ public class PythonCompiledFunction {
             for (; variableIndex < co_posonlyargcount; variableIndex++) {
                 if (variableIndex >= defaultPositionalStartIndex) {
                     out = out.addPositionalOnlyArgument(co_varnames.get(variableIndex),
-                            getParameterJavaClass(parameterTypeList, variableIndex),
+                            getParameterJavaClassName(parameterTypeList, variableIndex),
                             defaultPositionalArguments.get(
                                     variableIndex - defaultPositionalStartIndex));
                 } else {
                     out = out.addPositionalOnlyArgument(co_varnames.get(variableIndex),
-                            getParameterJavaClass(parameterTypeList, variableIndex));
+                            getParameterJavaClassName(parameterTypeList, variableIndex));
                 }
             }
 
             for (; variableIndex < co_argcount; variableIndex++) {
                 if (variableIndex >= defaultPositionalStartIndex) {
                     out = out.addArgument(co_varnames.get(variableIndex),
-                            getParameterJavaClass(parameterTypeList, variableIndex),
+                            getParameterJavaClassName(parameterTypeList, variableIndex),
                             defaultPositionalArguments.get(variableIndex - defaultPositionalStartIndex));
                 } else {
                     out = out.addArgument(co_varnames.get(variableIndex),
-                            getParameterJavaClass(parameterTypeList, variableIndex));
+                            getParameterJavaClassName(parameterTypeList, variableIndex));
                 }
             }
 
@@ -251,11 +255,11 @@ public class PythonCompiledFunction {
                         defaultKeywordArguments.get(PythonString.valueOf(co_varnames.get(variableIndex)));
                 if (maybeDefault != null) {
                     out = out.addKeywordOnlyArgument(co_varnames.get(variableIndex),
-                            getParameterJavaClass(parameterTypeList, variableIndex),
+                            getParameterJavaClassName(parameterTypeList, variableIndex),
                             maybeDefault);
                 } else {
                     out = out.addKeywordOnlyArgument(co_varnames.get(variableIndex),
-                            getParameterJavaClass(parameterTypeList, variableIndex));
+                            getParameterJavaClassName(parameterTypeList, variableIndex));
                 }
                 variableIndex++;
             }

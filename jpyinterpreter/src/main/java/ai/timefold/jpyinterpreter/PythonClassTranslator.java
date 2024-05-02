@@ -46,6 +46,7 @@ import ai.timefold.jpyinterpreter.types.collections.PythonLikeDict;
 import ai.timefold.jpyinterpreter.types.collections.PythonLikeTuple;
 import ai.timefold.jpyinterpreter.types.wrappers.JavaObjectWrapper;
 import ai.timefold.jpyinterpreter.types.wrappers.OpaquePythonReference;
+import ai.timefold.jpyinterpreter.util.JavaPythonClassWriter;
 import ai.timefold.jpyinterpreter.util.arguments.ArgumentSpec;
 
 import org.objectweb.asm.ClassWriter;
@@ -122,7 +123,8 @@ public class PythonClassTranslator {
 
         for (Class<?> javaInterface : pythonCompiledClass.javaInterfaces) {
             javaInterfaceImplementorSet.add(
-                    new DelegatingInterfaceImplementor(internalClassName, javaInterface, instanceMethodNameToMethodDescriptor));
+                    new DelegatingInterfaceImplementor(internalClassName, javaInterface,
+                            instanceMethodNameToMethodDescriptor));
         }
 
         if (pythonCompiledClass.superclassList.isEmpty()) {
@@ -173,14 +175,14 @@ public class PythonClassTranslator {
             interfaces[i] = Type.getInternalName(nonObjectInterfaceImplementors.get(i).getInterfaceClass());
         }
 
-        ClassWriter classWriter = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
+        ClassWriter classWriter = new JavaPythonClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
 
         classWriter.visit(Opcodes.V11, Modifier.PUBLIC, internalClassName, null,
                 superClassType.getJavaTypeInternalName(), interfaces);
 
         classWriter.visitSource(pythonCompiledClass.moduleFilePath, null);
 
-        for (var annotation : pythonCompiledClass.annotations) {
+        for (var annotation : AnnotationMetadata.getAnnotationListWithoutRepeatable(pythonCompiledClass.annotations)) {
             annotation.addAnnotationTo(classWriter);
         }
 
@@ -208,6 +210,7 @@ public class PythonClassTranslator {
             var typeHint = pythonCompiledClass.typeAnnotations.getOrDefault(attributeName,
                     TypeHint.withoutAnnotations(BuiltinTypes.BASE_TYPE));
             PythonLikeType type = typeHint.type();
+            PythonLikeType javaGetterType = typeHint.javaGetterType();
             if (type == null) { // null might be in __annotations__
                 type = BuiltinTypes.BASE_TYPE;
             }
@@ -215,12 +218,15 @@ public class PythonClassTranslator {
             attributeNameToTypeMap.put(attributeName, type);
             FieldVisitor fieldVisitor;
             String javaFieldTypeDescriptor;
+            String getterTypeDescriptor;
             String signature = null;
             boolean isJavaType;
             if (type.getJavaTypeInternalName().equals(Type.getInternalName(JavaObjectWrapper.class))) {
                 javaFieldTypeDescriptor = Type.getDescriptor(type.getJavaObjectWrapperType());
-                fieldVisitor = classWriter.visitField(Modifier.PUBLIC, getJavaFieldName(attributeName), javaFieldTypeDescriptor,
-                        null, null);
+                getterTypeDescriptor = javaFieldTypeDescriptor;
+                fieldVisitor =
+                        classWriter.visitField(Modifier.PUBLIC, getJavaFieldName(attributeName), javaFieldTypeDescriptor,
+                                null, null);
                 isJavaType = true;
             } else {
                 if (typeHint.genericArgs() != null) {
@@ -229,16 +235,21 @@ public class PythonClassTranslator {
                     signature = signatureWriter.toString();
                 }
                 javaFieldTypeDescriptor = 'L' + type.getJavaTypeInternalName() + ';';
-                fieldVisitor = classWriter.visitField(Modifier.PUBLIC, getJavaFieldName(attributeName), javaFieldTypeDescriptor,
-                        signature, null);
+                getterTypeDescriptor = javaGetterType.getJavaTypeDescriptor();
+                fieldVisitor =
+                        classWriter.visitField(Modifier.PUBLIC, getJavaFieldName(attributeName), javaFieldTypeDescriptor,
+                                signature, null);
                 isJavaType = false;
             }
             fieldVisitor.visitEnd();
+
             createJavaGetterSetter(classWriter, preparedClassInfo,
                     attributeName,
                     Type.getType(javaFieldTypeDescriptor),
+                    Type.getType(getterTypeDescriptor),
                     signature,
                     typeHint);
+
             FieldDescriptor fieldDescriptor =
                     new FieldDescriptor(attributeName, getJavaFieldName(attributeName), internalClassName,
                             javaFieldTypeDescriptor, type, true, isJavaType);
@@ -344,7 +355,8 @@ public class PythonClassTranslator {
         pythonLikeType.$setAttribute("__module__", PythonString.valueOf(pythonCompiledClass.module));
 
         PythonLikeDict annotations = new PythonLikeDict();
-        pythonCompiledClass.typeAnnotations.forEach((name, type) -> annotations.put(PythonString.valueOf(name), type.type()));
+        pythonCompiledClass.typeAnnotations
+                .forEach((name, type) -> annotations.put(PythonString.valueOf(name), type.type()));
         pythonLikeType.$setAttribute("__annotations__", annotations);
 
         PythonLikeTuple mro = new PythonLikeTuple();
@@ -552,7 +564,7 @@ public class PythonClassTranslator {
         String className = maybeClassName;
         String internalClassName = className.replace('.', '/');
 
-        ClassWriter classWriter = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
+        ClassWriter classWriter = new JavaPythonClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
 
         classWriter.visit(Opcodes.V11, Modifier.PUBLIC, internalClassName, null,
                 Type.getInternalName(Object.class), new String[] { interfaceDeclaration.interfaceName });
@@ -663,7 +675,7 @@ public class PythonClassTranslator {
         String constructorClassName = maybeClassName;
         String constructorInternalClassName = constructorClassName.replace('.', '/');
 
-        ClassWriter classWriter = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
+        ClassWriter classWriter = new JavaPythonClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
         classWriter.visit(Opcodes.V11, Modifier.PUBLIC, constructorInternalClassName, null, Type.getInternalName(Object.class),
                 new String[] {
                         Type.getInternalName(PythonLikeFunction.class)
@@ -775,24 +787,24 @@ public class PythonClassTranslator {
 
     private static void createJavaGetterSetter(ClassWriter classWriter,
             PreparedClassInfo preparedClassInfo,
-            String attributeName, Type attributeType,
+            String attributeName, Type attributeType, Type getterType,
             String signature,
             TypeHint typeHint) {
-        createJavaGetter(classWriter, preparedClassInfo, attributeName, attributeType, signature, typeHint);
-        createJavaSetter(classWriter, preparedClassInfo, attributeName, attributeType, signature, typeHint);
+        createJavaGetter(classWriter, preparedClassInfo, attributeName, attributeType, getterType, signature, typeHint);
+        createJavaSetter(classWriter, preparedClassInfo, attributeName, attributeType, getterType, signature, typeHint);
     }
 
     private static void createJavaGetter(ClassWriter classWriter, PreparedClassInfo preparedClassInfo, String attributeName,
-            Type attributeType, String signature, TypeHint typeHint) {
+            Type attributeType, Type getterType, String signature, TypeHint typeHint) {
         var getterName = "get" + attributeName.substring(0, 1).toUpperCase() + attributeName.substring(1);
-        if (signature != null) {
+        if (signature != null && Objects.equals(attributeType, getterType)) {
             signature = "()" + signature;
         }
-        var getterVisitor = classWriter.visitMethod(Modifier.PUBLIC, getterName, Type.getMethodDescriptor(attributeType),
+        var getterVisitor = classWriter.visitMethod(Modifier.PUBLIC, getterName, Type.getMethodDescriptor(getterType),
                 signature, null);
         var maxStack = 1;
 
-        for (var annotation : typeHint.annotationList()) {
+        for (var annotation : AnnotationMetadata.getAnnotationListWithoutRepeatable(typeHint.annotationList())) {
             annotation.addAnnotationTo(getterVisitor);
         }
 
@@ -813,19 +825,22 @@ public class PythonClassTranslator {
             // If branch is taken, stack is field
             // If branch is not taken, stack is null
         }
+        if (!Objects.equals(attributeType, getterType)) {
+            getterVisitor.visitTypeInsn(Opcodes.CHECKCAST, getterType.getInternalName());
+        }
         getterVisitor.visitInsn(Opcodes.ARETURN);
         getterVisitor.visitMaxs(maxStack, 0);
         getterVisitor.visitEnd();
     }
 
     private static void createJavaSetter(ClassWriter classWriter, PreparedClassInfo preparedClassInfo, String attributeName,
-            Type attributeType, String signature, TypeHint typeHint) {
+            Type attributeType, Type setterType, String signature, TypeHint typeHint) {
         var setterName = "set" + attributeName.substring(0, 1).toUpperCase() + attributeName.substring(1);
-        if (signature != null) {
+        if (signature != null && Objects.equals(attributeType, setterType)) {
             signature = "(" + signature + ")V";
         }
         var setterVisitor = classWriter.visitMethod(Modifier.PUBLIC, setterName, Type.getMethodDescriptor(Type.VOID_TYPE,
-                attributeType),
+                setterType),
                 signature, null);
         var maxStack = 2;
         setterVisitor.visitCode();
@@ -845,6 +860,9 @@ public class PythonClassTranslator {
             // If branch is taken, stack is (non-null instance)
             // If branch is not taken, stack is None
         }
+        if (!Objects.equals(attributeType, setterType)) {
+            setterVisitor.visitTypeInsn(Opcodes.CHECKCAST, attributeType.getInternalName());
+        }
         setterVisitor.visitFieldInsn(Opcodes.PUTFIELD, preparedClassInfo.classInternalName,
                 attributeName, attributeType.getDescriptor());
         setterVisitor.visitInsn(Opcodes.RETURN);
@@ -855,7 +873,7 @@ public class PythonClassTranslator {
     private static void addAnnotationsToMethod(PythonCompiledFunction function, MethodVisitor methodVisitor) {
         var returnTypeHint = function.typeAnnotations.get("return");
         if (returnTypeHint != null) {
-            for (var annotation : returnTypeHint.annotationList()) {
+            for (var annotation : AnnotationMetadata.getAnnotationListWithoutRepeatable(returnTypeHint.annotationList())) {
                 annotation.addAnnotationTo(methodVisitor);
             }
         }
@@ -1444,7 +1462,7 @@ public class PythonClassTranslator {
 
         String internalClassName = className.replace('.', '/');
 
-        ClassWriter classWriter = new ClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
+        ClassWriter classWriter = new JavaPythonClassWriter(ClassWriter.COMPUTE_MAXS | ClassWriter.COMPUTE_FRAMES);
         classWriter.visit(Opcodes.V11, Modifier.PUBLIC | Modifier.INTERFACE | Modifier.ABSTRACT, internalClassName, null,
                 Type.getInternalName(Object.class), null);
 

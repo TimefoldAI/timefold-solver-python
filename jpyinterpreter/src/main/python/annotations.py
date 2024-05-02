@@ -1,8 +1,18 @@
+from collections import defaultdict
 from dataclasses import dataclass
-from types import FunctionType
+from types import FunctionType, NoneType, UnionType
 from typing import TypeVar, Any, List, Tuple, Dict, Union, Annotated, Type, Callable, \
     get_origin, get_args, get_type_hints
 from jpype import JClass, JArray
+
+
+class AnnotationValueSupplier:
+    def __init__(self, supplier: Callable[[], Any]):
+        self.supplier = supplier
+
+    def get_value(self) -> Any:
+        return self.supplier()
+
 
 @dataclass
 class JavaAnnotation:
@@ -49,7 +59,11 @@ def copy_type_annotations(hinted_object, default_args, vargs_name, kwargs_name):
     from .translator import type_to_compiled_java_class
 
     out = HashMap()
-    type_hints = get_type_hints(hinted_object, include_extras=True)
+    try:
+        type_hints = get_type_hints(hinted_object, include_extras=True)
+    except NameError:
+        # Occurs if get_type_hints cannot resolve a forward reference
+        type_hints = hinted_object.__annotations__ if hasattr(hinted_object, '__annotations__') else {}
 
     for name, type_hint in type_hints.items():
         if not isinstance(name, str):
@@ -60,11 +74,12 @@ def copy_type_annotations(hinted_object, default_args, vargs_name, kwargs_name):
         if name == kwargs_name:
             out.put(name, TypeHint.withoutAnnotations(type_to_compiled_java_class[dict]))
             continue
+
         hint_type = type_hint
         hint_annotations = Collections.emptyList()
         if get_origin(type_hint) is Annotated:
             hint_type = get_args(type_hint)[0]
-            hint_annotations = get_java_annotations(type_hint.__metadata__)
+            hint_annotations = get_java_annotations(type_hint.__metadata__)  # noqa
 
         if name in default_args:
             hint_type = Union[hint_type, type(default_args[name])]
@@ -75,6 +90,20 @@ def copy_type_annotations(hinted_object, default_args, vargs_name, kwargs_name):
     return out
 
 
+def find_closest_common_ancestor(*cls_list: type):
+    mros = [(list(cls.__mro__) if hasattr(cls, '__mro__') else [cls]) for cls in cls_list]
+    track = defaultdict(int)
+    while mros:
+        for mro in mros:
+            cur = mro.pop(0)
+            track[cur] += 1
+            if track[cur] == len(cls_list):
+                return cur
+            if len(mro) == 0:
+                mros.remove(mro)
+    return object
+
+
 def get_java_type_hint(hint_type):
     from .translator import get_java_type_for_python_type, type_to_compiled_java_class
     from typing import get_args as get_generic_args
@@ -83,6 +112,7 @@ def get_java_type_hint(hint_type):
     from ai.timefold.jpyinterpreter import TypeHint
     from ai.timefold.jpyinterpreter.types import BuiltinTypes
     from ai.timefold.jpyinterpreter.types.wrappers import JavaObjectWrapper
+
     origin_type = get_origin(hint_type)
     if origin_type is None:
         # Happens for Callable[[parameter_types], return_type]
@@ -100,12 +130,28 @@ def get_java_type_hint(hint_type):
         else:
             return TypeHint(BuiltinTypes.BASE_TYPE, Collections.emptyList())
 
-    origin_type_hint = get_java_type_hint(origin_type)
     generic_args = get_generic_args(hint_type)
+
+    if origin_type is Union or origin_type is UnionType:
+        union_types_excluding_none = []
+        union_types_including_none = []
+        for union_type in generic_args:
+            union_types_including_none.append(union_type)
+            if union_type == NoneType:
+                continue
+            union_types_excluding_none.append(union_type)
+
+        return TypeHint(get_java_type_hint(find_closest_common_ancestor(*union_types_including_none)).type(),
+                        Collections.emptyList(),
+                        get_java_type_hint(find_closest_common_ancestor(*union_types_excluding_none)).type())
+
+    origin_type_hint = get_java_type_hint(origin_type)
     generic_arg_type_hint_array = JArray(TypeHint)(len(generic_args))
     for i in range(len(generic_args)):
         generic_arg_type_hint_array[i] = get_java_type_hint(generic_args[i])
-    return TypeHint(origin_type_hint.type(), Collections.emptyList(), generic_arg_type_hint_array)
+
+    return TypeHint(origin_type_hint.type(), Collections.emptyList(), generic_arg_type_hint_array,
+                    origin_type_hint.type())
 
 
 def get_java_annotations(annotated_metadata: List[Any]):
@@ -130,6 +176,9 @@ def convert_java_annotation(java_annotation: JavaAnnotation):
     from ai.timefold.jpyinterpreter import AnnotationMetadata
     annotation_values = HashMap()
     for attribute_name, attribute_value in java_annotation.annotation_values.items():
+        if isinstance(attribute_value, AnnotationValueSupplier):
+            attribute_value = attribute_value.get_value()
+
         annotation_method = java_annotation.annotation_type.class_.getDeclaredMethod(attribute_name)
         attribute_type = annotation_method.getReturnType()
         java_attribute_value = convert_annotation_value(java_annotation.annotation_type, attribute_type,
@@ -144,6 +193,8 @@ def convert_annotation_value(annotation_type: JClass, attribute_type: JClass, at
                              translate_python_bytecode_to_java_bytecode,
                              generate_proxy_class_for_translated_function)
     from jpype import JBoolean, JByte, JChar, JShort, JInt, JLong, JFloat, JDouble, JString, JArray
+    from ai.timefold.jpyinterpreter import AnnotationMetadata
+    from org.objectweb.asm import Type as ASMType
 
     if attribute_value is None:
         return None
@@ -167,21 +218,26 @@ def convert_annotation_value(annotation_type: JClass, attribute_type: JClass, at
     elif attribute_type == JClass('java.lang.String').class_:
         return JString(attribute_value)
     elif attribute_type == JClass('java.lang.Class').class_:
-        if isinstance(attribute_value, JClass('java.lang.Class')):
+        if isinstance(attribute_value, ASMType):
             return attribute_value
+        if isinstance(attribute_value, JClass('java.lang.Class')):
+            return AnnotationMetadata.getValueAsType(attribute_value.getName())
         elif isinstance(attribute_value, type):
-            return get_java_type_for_python_type(attribute_type)
+            out = get_java_type_for_python_type(attribute_type)
+            return AnnotationMetadata.getValueAsType(out.getJavaTypeInternalName())
         elif isinstance(attribute_value, FunctionType):
             method = annotation_type.class_.getDeclaredMethod(attribute_name)
             generic_type = method.getGenericReturnType()
             try:
                 function_type_and_generic_args = resolve_java_function_type_as_tuple(generic_type)
                 instance = translate_python_bytecode_to_java_bytecode(attribute_value, *function_type_and_generic_args)
-                return generate_proxy_class_for_translated_function(function_type_and_generic_args[0], instance)
+                return AnnotationMetadata.getValueAsType(generate_proxy_class_for_translated_function(
+                    function_type_and_generic_args[0], instance).getName())
             except ValueError:
                 raw_type = resolve_raw_type(generic_type.getActualTypeArguments()[0])
                 instance = translate_python_bytecode_to_java_bytecode(attribute_value, raw_type)
-                return generate_proxy_class_for_translated_function(raw_type, instance)
+                return AnnotationMetadata.getValueAsType(generate_proxy_class_for_translated_function(
+                    raw_type, instance).getName())
         else:
             raise ValueError(f'Illegal value for {attribute_name} in annotation {annotation_type}: {attribute_value}')
     elif attribute_type.isEnum():

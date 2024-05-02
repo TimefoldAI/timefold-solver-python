@@ -1,9 +1,10 @@
 import jpype
 
+from .._jpype_type_conversions import PythonSupplier
 from ..api import VariableListener
 from ..constraint import ConstraintFactory
-from .._timefold_java_interop import ensure_init, _generate_constraint_provider_class, register_java_class
-from jpyinterpreter import JavaAnnotation
+from .._timefold_java_interop import ensure_init, _generate_constraint_provider_class, register_java_class, get_asm_type
+from jpyinterpreter import JavaAnnotation, AnnotationValueSupplier
 from jpype import JImplements, JOverride
 from typing import Union, List, Callable, Type, TYPE_CHECKING, TypeVar
 
@@ -59,37 +60,21 @@ class PlanningListVariable(JavaAnnotation):
                          })
 
 
-class PlanningVariableReference(JavaAnnotation):
-    def __init__(self, *,
-                 entity_class: Type = None,
-                 variable_name: str):
-        ensure_init()
-        from ai.timefold.solver.core.api.domain.variable import (
-            PlanningVariableReference as JavaPlanningVariableReference)
-        super().__init__(JavaPlanningVariableReference,
-                         {
-                             'variableName': variable_name,
-                             'entityClass': entity_class,
-                         })
-
-
 class ShadowVariable(JavaAnnotation):
     def __init__(self, *,
                  variable_listener_class: Type[VariableListener] = None,
                  source_variable_name: str,
                  source_entity_class: Type = None):
         ensure_init()
-        from .._timefold_java_interop import get_class
-        from jpyinterpreter import get_java_type_for_python_type
         from ai.timefold.jpyinterpreter import PythonClassTranslator
-        from ai.timefold.solver.core.api.domain.variable import (
-            ShadowVariable as JavaShadowVariable, VariableListener as JavaVariableListener)
+        from ai.timefold.solver.core.api.domain.variable import ShadowVariable as JavaShadowVariable
 
         super().__init__(JavaShadowVariable,
                          {
-                             'variableListenerClass': get_class(variable_listener_class),
+                             'variableListenerClass': AnnotationValueSupplier(
+                                 lambda: get_asm_type(variable_listener_class)),
                              'sourceVariableName': PythonClassTranslator.getJavaFieldName(source_variable_name),
-                             'sourceEntityClass': get_class(source_entity_class),
+                             'sourceEntityClass': source_entity_class,
                          })
 
 
@@ -98,14 +83,13 @@ class PiggybackShadowVariable(JavaAnnotation):
                  shadow_variable_name: str,
                  shadow_entity_class: Type = None):
         ensure_init()
-        from .._timefold_java_interop import get_class
         from ai.timefold.jpyinterpreter import PythonClassTranslator
         from ai.timefold.solver.core.api.domain.variable import (
             PiggybackShadowVariable as JavaPiggybackShadowVariable)
         super().__init__(JavaPiggybackShadowVariable,
                          {
                              'shadowVariableName': PythonClassTranslator.getJavaFieldName(shadow_variable_name),
-                             'shadowEntityClass': get_class(shadow_entity_class),
+                             'shadowEntityClass': shadow_entity_class,
                          })
 
 
@@ -117,6 +101,32 @@ class IndexShadowVariable(JavaAnnotation):
         from ai.timefold.solver.core.api.domain.variable import (
             IndexShadowVariable as JavaIndexShadowVariable)
         super().__init__(JavaIndexShadowVariable,
+                         {
+                             'sourceVariableName': PythonClassTranslator.getJavaFieldName(source_variable_name)
+                         })
+
+
+class PreviousElementShadowVariable(JavaAnnotation):
+    def __init__(self, *,
+                 source_variable_name: str):
+        ensure_init()
+        from ai.timefold.jpyinterpreter import PythonClassTranslator
+        from ai.timefold.solver.core.api.domain.variable import (
+            PreviousElementShadowVariable as JavaPreviousElementShadowVariable)
+        super().__init__(JavaPreviousElementShadowVariable,
+                         {
+                             'sourceVariableName': PythonClassTranslator.getJavaFieldName(source_variable_name)
+                         })
+
+
+class NextElementShadowVariable(JavaAnnotation):
+    def __init__(self, *,
+                 source_variable_name: str):
+        ensure_init()
+        from ai.timefold.jpyinterpreter import PythonClassTranslator
+        from ai.timefold.solver.core.api.domain.variable import (
+            NextElementShadowVariable as JavaNextElementShadowVariable)
+        super().__init__(JavaNextElementShadowVariable,
                          {
                              'sourceVariableName': PythonClassTranslator.getJavaFieldName(source_variable_name)
                          })
@@ -265,13 +275,13 @@ def planning_entity(entity_class: Type = None, /, *, pinning_filter: Callable = 
     from ai.timefold.solver.core.api.domain.entity import PlanningEntity as JavaPlanningEntity
 
     def planning_entity_wrapper(entity_class_argument):
-        from .._timefold_java_interop import _generate_planning_entity_class
+        from .._timefold_java_interop import _add_to_compilation_queue
         from ai.timefold.solver.core.api.domain.entity import PinningFilter
         from jpyinterpreter import add_class_annotation, translate_python_bytecode_to_java_bytecode
-        from typing import get_type_hints, get_origin, Annotated
-        type_hints = get_type_hints(entity_class_argument, include_extras=True)
+        from typing import get_origin, Annotated
+
         planning_pin_field = None
-        for name, type_hint in type_hints.items():
+        for name, type_hint in entity_class_argument.__annotations__.items():
             if get_origin(type_hint) == Annotated:
                 for metadata in type_hint.__metadata__:
                     if metadata == PlanningPin or isinstance(metadata, PlanningPin):
@@ -293,7 +303,7 @@ def planning_entity(entity_class: Type = None, /, *, pinning_filter: Callable = 
 
         out = add_class_annotation(JavaPlanningEntity,
                                    pinningFilter=pinning_filter_function)(entity_class_argument)
-        _generate_planning_entity_class(out)
+        _add_to_compilation_queue(out)
         return out
 
     if entity_class:  # Called as @planning_entity
@@ -330,10 +340,10 @@ def planning_solution(planning_solution_class: Type[Solution_]) -> Type[Solution
     """
     ensure_init()
     from jpyinterpreter import add_class_annotation
-    from .._timefold_java_interop import _generate_planning_solution_class
+    from .._timefold_java_interop import _add_to_compilation_queue
     from ai.timefold.solver.core.api.domain.solution import PlanningSolution as JavaPlanningSolution
     out = add_class_annotation(JavaPlanningSolution)(planning_solution_class)
-    _generate_planning_solution_class(planning_solution_class)
+    _add_to_compilation_queue(planning_solution_class)
     return out
 
 
@@ -360,15 +370,6 @@ def nearby_distance_meter(distance_function: Callable[[Origin_, Destination_], f
 
 def constraint_provider(constraint_provider_function: Callable[[ConstraintFactory], List['_Constraint']], /) \
         -> Callable[[ConstraintFactory], List['_Constraint']]:
-    """Marks a function as a ConstraintProvider.
-
-    The function takes a single parameter, the ConstraintFactory, and
-    must return a list of Constraints.
-    To create a Constraint, start with ConstraintFactory.from(get_class(PythonClass)).
-
-    :type constraint_provider_function: Callable[[ConstraintFactory], List[Constraint]]
-    :rtype: Callable[[ConstraintFactory], List[Constraint]]
-    """
     ensure_init()
 
     def constraint_provider_wrapper(function):
@@ -522,9 +523,10 @@ def problem_change(problem_change_class: Type['_ProblemChange']) -> \
 
 
 __all__ = ['PlanningId', 'PlanningScore', 'PlanningPin', 'PlanningVariable',
-           'PlanningListVariable', 'PlanningVariableReference', 'ShadowVariable',
+           'PlanningListVariable', 'ShadowVariable',
            'PiggybackShadowVariable',
-           'IndexShadowVariable', 'AnchorShadowVariable', 'InverseRelationShadowVariable',
+           'IndexShadowVariable', 'PreviousElementShadowVariable', 'NextElementShadowVariable',
+           'AnchorShadowVariable', 'InverseRelationShadowVariable',
            'ProblemFactProperty', 'ProblemFactCollectionProperty',
            'PlanningEntityProperty', 'PlanningEntityCollectionProperty',
            'ValueRangeProvider', 'DeepPlanningClone', 'ConstraintConfigurationProvider',

@@ -29,19 +29,24 @@ public enum MetaOpDescriptor implements OpcodeDescriptor {
     CALL_INTRINSIC_1(UnaryIntrinsicFunction::lookup),
 
     // TODO
-    EXTENDED_ARG(null),
+    EXTENDED_ARG(ignored -> {
+        throw new UnsupportedOperationException("EXTENDED_ARG");
+    }),
 
     /**
      * Pushes builtins.__build_class__() onto the stack.
      * It is later called by CALL_FUNCTION to construct a class.
      */
-    LOAD_BUILD_CLASS(null),
+    LOAD_BUILD_CLASS(ignored -> {
+        throw new UnsupportedOperationException("LOAD_BUILD_CLASS");
+    }),
 
     /**
      * Checks whether __annotations__ is defined in locals(), if not it is set up to an empty dict. This opcode is only
      * emitted if a class or module body contains variable annotations statically.
+     * TODO: Properly implement this
      */
-    SETUP_ANNOTATIONS(null);
+    SETUP_ANNOTATIONS(NopOpcode::new);
 
     private final VersionMapping versionLookup;
 

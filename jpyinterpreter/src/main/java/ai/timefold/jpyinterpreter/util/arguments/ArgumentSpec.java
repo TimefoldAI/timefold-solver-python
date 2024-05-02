@@ -25,11 +25,17 @@ import ai.timefold.jpyinterpreter.types.collections.PythonLikeDict;
 import ai.timefold.jpyinterpreter.types.collections.PythonLikeTuple;
 import ai.timefold.jpyinterpreter.types.errors.TypeError;
 
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
+
 public final class ArgumentSpec<Out_> {
-    private final Class<Out_> functionReturnType;
+    private static List<ArgumentSpec<?>> ARGUMENT_SPECS = new ArrayList<>();
+
+    private final String functionReturnTypeName;
     private final String functionName;
     private final List<String> argumentNameList;
-    private final List<Class<?>> argumentTypeList;
+    private final List<String> argumentTypeNameList;
     private final List<ArgumentKind> argumentKindList;
     private final List<Object> argumentDefaultList;
     private final BitSet nullableArgumentSet;
@@ -39,13 +45,16 @@ public final class ArgumentSpec<Out_> {
     private final int numberOfPositionalArguments;
     private final int requiredPositionalArguments;
 
-    private ArgumentSpec(String functionName, Class<Out_> functionReturnType) {
-        this.functionReturnType = functionReturnType;
+    private Class<?> functionReturnType = null;
+    private List<Class> argumentTypeList = null;
+
+    private ArgumentSpec(String functionName, String functionReturnTypeName) {
+        this.functionReturnTypeName = functionReturnTypeName;
         this.functionName = functionName + "()";
         requiredPositionalArguments = 0;
         numberOfPositionalArguments = 0;
         argumentNameList = Collections.emptyList();
-        argumentTypeList = Collections.emptyList();
+        argumentTypeNameList = Collections.emptyList();
         argumentKindList = Collections.emptyList();
         argumentDefaultList = Collections.emptyList();
         extraPositionalsArgumentIndex = Optional.empty();
@@ -53,11 +62,11 @@ public final class ArgumentSpec<Out_> {
         nullableArgumentSet = new BitSet();
     }
 
-    private ArgumentSpec(String argumentName, Class<?> argumentType, ArgumentKind argumentKind, Object defaultValue,
+    private ArgumentSpec(String argumentName, String argumentTypeName, ArgumentKind argumentKind, Object defaultValue,
             Optional<Integer> extraPositionalsArgumentIndex, Optional<Integer> extraKeywordsArgumentIndex,
             boolean allowNull, ArgumentSpec<Out_> previousSpec) {
         functionName = previousSpec.functionName;
-        functionReturnType = previousSpec.functionReturnType;
+        functionReturnTypeName = previousSpec.functionReturnTypeName;
 
         if (previousSpec.numberOfPositionalArguments < previousSpec.getTotalArgumentCount()) {
             numberOfPositionalArguments = previousSpec.numberOfPositionalArguments;
@@ -80,15 +89,15 @@ public final class ArgumentSpec<Out_> {
         }
 
         argumentNameList = new ArrayList<>(previousSpec.argumentNameList.size() + 1);
-        argumentTypeList = new ArrayList<>(previousSpec.argumentTypeList.size() + 1);
+        argumentTypeNameList = new ArrayList<>(previousSpec.argumentTypeNameList.size() + 1);
         argumentKindList = new ArrayList<>(previousSpec.argumentKindList.size() + 1);
         argumentDefaultList = new ArrayList<>(previousSpec.argumentDefaultList.size() + 1);
 
         argumentNameList.addAll(previousSpec.argumentNameList);
         argumentNameList.add(argumentName);
 
-        argumentTypeList.addAll(previousSpec.argumentTypeList);
-        argumentTypeList.add(argumentType);
+        argumentTypeNameList.addAll(previousSpec.argumentTypeNameList);
+        argumentTypeNameList.add(argumentTypeName);
 
         argumentKindList.addAll(previousSpec.argumentKindList);
         argumentKindList.add(argumentKind);
@@ -119,7 +128,7 @@ public final class ArgumentSpec<Out_> {
     }
 
     public static <T extends PythonLikeObject> ArgumentSpec<T> forFunctionReturning(String functionName,
-            Class<T> outClass) {
+            String outClass) {
         return new ArgumentSpec<>(functionName, outClass);
     }
 
@@ -139,8 +148,8 @@ public final class ArgumentSpec<Out_> {
         return extraKeywordsArgumentIndex.isPresent();
     }
 
-    public Class<?> getArgumentType(int argumentIndex) {
-        return argumentTypeList.get(argumentIndex);
+    public String getArgumentTypeInternalName(int argumentIndex) {
+        return argumentTypeNameList.get(argumentIndex).replace('.', '/');
     }
 
     public ArgumentKind getArgumentKind(int argumentIndex) {
@@ -184,8 +193,43 @@ public final class ArgumentSpec<Out_> {
                 .collect(Collectors.toList());
     }
 
+    public static ArgumentSpec<?> getArgumentSpec(int argumentSpecIndex) {
+        return ARGUMENT_SPECS.get(argumentSpecIndex);
+    }
+
+    public void loadArgumentSpec(MethodVisitor methodVisitor) {
+        int index = ARGUMENT_SPECS.size();
+        ARGUMENT_SPECS.add(this);
+        methodVisitor.visitLdcInsn(index);
+        methodVisitor.visitMethodInsn(Opcodes.INVOKESTATIC, Type.getInternalName(ArgumentSpec.class),
+                "getArgumentSpec", Type.getMethodDescriptor(Type.getType(ArgumentSpec.class),
+                        Type.INT_TYPE),
+                false);
+    }
+
+    private void computeArgumentTypeList() {
+        if (argumentTypeList == null) {
+            try {
+                functionReturnType = BuiltinTypes.asmClassLoader.loadClass(functionReturnTypeName.replace('/', '.'));
+            } catch (ClassNotFoundException e) {
+                throw new RuntimeException(e);
+            }
+            argumentTypeList = argumentTypeNameList.stream()
+                    .map(className -> {
+                        try {
+                            return (Class) BuiltinTypes.asmClassLoader.loadClass(className.replace('/', '.'));
+                        } catch (ClassNotFoundException e) {
+                            throw new RuntimeException(e);
+                        }
+                    })
+                    .toList();
+        }
+    }
+
     public List<PythonLikeObject> extractArgumentList(List<PythonLikeObject> positionalArguments,
             Map<PythonString, PythonLikeObject> keywordArguments) {
+        computeArgumentTypeList();
+
         List<PythonLikeObject> out = new ArrayList<>(argumentNameList.size());
 
         if (positionalArguments.size() > numberOfPositionalArguments &&
@@ -305,6 +349,8 @@ public final class ArgumentSpec<Out_> {
 
     public boolean verifyMatchesCallSignature(int positionalArgumentCount, List<String> keywordArgumentNameList,
             List<PythonLikeType> callStackTypeList) {
+        computeArgumentTypeList();
+
         Set<Integer> missingValue = getRequiredArgumentIndexSet();
         for (int keywordIndex = 0; keywordIndex < keywordArgumentNameList.size(); keywordIndex++) {
             String keyword = keywordArgumentNameList.get(keywordIndex);
@@ -373,73 +419,73 @@ public final class ArgumentSpec<Out_> {
     }
 
     private <ArgumentType_ extends PythonLikeObject> ArgumentSpec<Out_> addArgument(String argumentName,
-            Class<ArgumentType_> argumentType, ArgumentKind argumentKind, ArgumentType_ defaultValue,
+            String argumentTypeName, ArgumentKind argumentKind, ArgumentType_ defaultValue,
             Optional<Integer> extraPositionalsArgumentIndex, Optional<Integer> extraKeywordsArgumentIndex, boolean allowNull) {
-        return new ArgumentSpec<>(argumentName, argumentType, argumentKind, defaultValue,
+        return new ArgumentSpec<>(argumentName, argumentTypeName, argumentKind, defaultValue,
                 extraPositionalsArgumentIndex, extraKeywordsArgumentIndex, allowNull, this);
     }
 
     public <ArgumentType_ extends PythonLikeObject> ArgumentSpec<Out_> addArgument(String argumentName,
-            Class<ArgumentType_> argumentType) {
-        return addArgument(argumentName, argumentType, ArgumentKind.POSITIONAL_AND_KEYWORD, null,
+            String argumentTypeName) {
+        return addArgument(argumentName, argumentTypeName, ArgumentKind.POSITIONAL_AND_KEYWORD, null,
                 Optional.empty(), Optional.empty(), false);
     }
 
     public <ArgumentType_ extends PythonLikeObject> ArgumentSpec<Out_>
-            addPositionalOnlyArgument(String argumentName, Class<ArgumentType_> argumentType) {
-        return addArgument(argumentName, argumentType, ArgumentKind.POSITIONAL_ONLY, null,
+            addPositionalOnlyArgument(String argumentName, String argumentTypeName) {
+        return addArgument(argumentName, argumentTypeName, ArgumentKind.POSITIONAL_ONLY, null,
                 Optional.empty(), Optional.empty(), false);
     }
 
     public <ArgumentType_ extends PythonLikeObject> ArgumentSpec<Out_>
-            addKeywordOnlyArgument(String argumentName, Class<ArgumentType_> argumentType) {
-        return addArgument(argumentName, argumentType, ArgumentKind.KEYWORD_ONLY, null,
+            addKeywordOnlyArgument(String argumentName, String argumentTypeName) {
+        return addArgument(argumentName, argumentTypeName, ArgumentKind.KEYWORD_ONLY, null,
                 Optional.empty(), Optional.empty(), false);
     }
 
     public <ArgumentType_ extends PythonLikeObject> ArgumentSpec<Out_> addArgument(String argumentName,
-            Class<ArgumentType_> argumentType, ArgumentType_ defaultValue) {
-        return addArgument(argumentName, argumentType, ArgumentKind.POSITIONAL_AND_KEYWORD, defaultValue,
+            String argumentTypeName, ArgumentType_ defaultValue) {
+        return addArgument(argumentName, argumentTypeName, ArgumentKind.POSITIONAL_AND_KEYWORD, defaultValue,
                 Optional.empty(), Optional.empty(), false);
     }
 
     public <ArgumentType_ extends PythonLikeObject> ArgumentSpec<Out_>
-            addPositionalOnlyArgument(String argumentName, Class<ArgumentType_> argumentType, ArgumentType_ defaultValue) {
-        return addArgument(argumentName, argumentType, ArgumentKind.POSITIONAL_ONLY, defaultValue,
+            addPositionalOnlyArgument(String argumentName, String argumentTypeName, ArgumentType_ defaultValue) {
+        return addArgument(argumentName, argumentTypeName, ArgumentKind.POSITIONAL_ONLY, defaultValue,
                 Optional.empty(), Optional.empty(), false);
     }
 
     public <ArgumentType_ extends PythonLikeObject> ArgumentSpec<Out_>
-            addKeywordOnlyArgument(String argumentName, Class<ArgumentType_> argumentType, ArgumentType_ defaultValue) {
-        return addArgument(argumentName, argumentType, ArgumentKind.KEYWORD_ONLY, defaultValue,
+            addKeywordOnlyArgument(String argumentName, String argumentTypeName, ArgumentType_ defaultValue) {
+        return addArgument(argumentName, argumentTypeName, ArgumentKind.KEYWORD_ONLY, defaultValue,
                 Optional.empty(), Optional.empty(), false);
     }
 
     public <ArgumentType_ extends PythonLikeObject> ArgumentSpec<Out_> addNullableArgument(String argumentName,
-            Class<ArgumentType_> argumentType) {
-        return addArgument(argumentName, argumentType, ArgumentKind.POSITIONAL_AND_KEYWORD, null,
+            String argumentTypeName) {
+        return addArgument(argumentName, argumentTypeName, ArgumentKind.POSITIONAL_AND_KEYWORD, null,
                 Optional.empty(), Optional.empty(), true);
     }
 
     public <ArgumentType_ extends PythonLikeObject> ArgumentSpec<Out_> addNullablePositionalOnlyArgument(String argumentName,
-            Class<ArgumentType_> argumentType) {
-        return addArgument(argumentName, argumentType, ArgumentKind.POSITIONAL_ONLY, null,
+            String argumentTypeName) {
+        return addArgument(argumentName, argumentTypeName, ArgumentKind.POSITIONAL_ONLY, null,
                 Optional.empty(), Optional.empty(), true);
     }
 
     public <ArgumentType_ extends PythonLikeObject> ArgumentSpec<Out_> addNullableKeywordOnlyArgument(String argumentName,
-            Class<ArgumentType_> argumentType) {
-        return addArgument(argumentName, argumentType, ArgumentKind.KEYWORD_ONLY, null,
+            String argumentTypeName) {
+        return addArgument(argumentName, argumentTypeName, ArgumentKind.KEYWORD_ONLY, null,
                 Optional.empty(), Optional.empty(), true);
     }
 
     public ArgumentSpec<Out_> addExtraPositionalVarArgument(String argumentName) {
-        return addArgument(argumentName, PythonLikeTuple.class, ArgumentKind.VARARGS, null,
+        return addArgument(argumentName, PythonLikeTuple.class.getName(), ArgumentKind.VARARGS, null,
                 Optional.of(getTotalArgumentCount()), Optional.empty(), false);
     }
 
     public ArgumentSpec<Out_> addExtraKeywordVarArgument(String argumentName) {
-        return addArgument(argumentName, PythonLikeDict.class, ArgumentKind.VARARGS, null,
+        return addArgument(argumentName, PythonLikeDict.class.getName(), ArgumentKind.VARARGS, null,
                 Optional.empty(), Optional.of(getTotalArgumentCount()), false);
     }
 
@@ -501,10 +547,12 @@ public final class ArgumentSpec<Out_> {
     }
 
     private void verifyMethodMatchesSpec(Method method) {
+        computeArgumentTypeList();
+
         if (!functionReturnType.isAssignableFrom(method.getReturnType())) {
             throw new IllegalArgumentException("Method (" + method + ") does not match the given spec (" + this +
                     "): its return type (" + method.getReturnType() + ") is not " +
-                    "assignable to the spec return type (" + functionReturnType + ").");
+                    "assignable to the spec return type (" + functionReturnTypeName + ").");
         }
 
         if (method.getParameterCount() != argumentNameList.size()) {
@@ -525,6 +573,8 @@ public final class ArgumentSpec<Out_> {
     @SuppressWarnings("unchecked")
     private PythonFunctionSignature getPythonFunctionSignatureForMethodDescriptor(MethodDescriptor methodDescriptor,
             Class<?> javaReturnType) {
+        computeArgumentTypeList();
+
         int firstDefault = 0;
 
         while (firstDefault < argumentDefaultList.size() && argumentDefaultList.get(firstDefault) == null &&
@@ -559,15 +609,19 @@ public final class ArgumentSpec<Out_> {
                 this);
     }
 
+    public Object getDefaultValue(int defaultIndex) {
+        return argumentDefaultList.get(defaultIndex);
+    }
+
     @Override
     public String toString() {
         StringBuilder out = new StringBuilder("ArgumentSpec(");
         out.append("name=").append(functionName)
-                .append(", returnType=").append(functionReturnType)
+                .append(", returnType=").append(functionReturnTypeName)
                 .append(", arguments=[");
 
         for (int i = 0; i < argumentNameList.size(); i++) {
-            out.append(argumentTypeList.get(i));
+            out.append(argumentTypeNameList.get(i));
             out.append(" ");
             out.append(argumentNameList.get(i));
 

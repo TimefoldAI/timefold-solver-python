@@ -113,14 +113,15 @@ public class KnownCallImplementor {
         // Now load and typecheck the local variables
         for (int i = 0; i < Math.min(specPositionalArgumentCount, argumentCount); i++) {
             localVariableHelper.readTemp(methodVisitor, Type.getType(PythonLikeObject.class), argumentLocals[i]);
-            methodVisitor.visitLdcInsn(Type.getType(pythonFunctionSignature.getArgumentSpec().getArgumentType(i)));
+            methodVisitor.visitLdcInsn(
+                    Type.getType("L" + pythonFunctionSignature.getArgumentSpec().getArgumentTypeInternalName(i) + ";"));
             methodVisitor.visitMethodInsn(Opcodes.INVOKESTATIC, Type.getInternalName(JavaPythonTypeConversionImplementor.class),
                     "coerceToType", Type.getMethodDescriptor(Type.getType(Object.class),
                             Type.getType(PythonLikeObject.class),
                             Type.getType(Class.class)),
                     false);
             methodVisitor.visitTypeInsn(Opcodes.CHECKCAST,
-                    Type.getInternalName(pythonFunctionSignature.getArgumentSpec().getArgumentType(i)));
+                    pythonFunctionSignature.getArgumentSpec().getArgumentTypeInternalName(i));
         }
 
         // Load any arguments missing values
@@ -129,9 +130,9 @@ public class KnownCallImplementor {
                 methodVisitor.visitInsn(Opcodes.ACONST_NULL);
             } else {
                 methodVisitor.visitFieldInsn(Opcodes.GETSTATIC,
-                        Type.getInternalName(pythonFunctionSignature.getDefaultArgumentHolderClass()),
+                        pythonFunctionSignature.getDefaultArgumentHolderClassInternalName(),
                         PythonDefaultArgumentImplementor.getConstantName(i),
-                        Type.getDescriptor(pythonFunctionSignature.getArgumentSpec().getArgumentType(i)));
+                        "L" + pythonFunctionSignature.getArgumentSpec().getArgumentTypeInternalName(i) + ";");
             }
         }
 
@@ -245,9 +246,9 @@ public class KnownCallImplementor {
                 methodVisitor.visitInsn(Opcodes.ACONST_NULL);
             } else {
                 methodVisitor.visitFieldInsn(Opcodes.GETSTATIC,
-                        Type.getInternalName(pythonFunctionSignature.getDefaultArgumentHolderClass()),
+                        pythonFunctionSignature.getDefaultArgumentHolderClassInternalName(),
                         PythonDefaultArgumentImplementor.getConstantName(argumentIndex - defaultOffset),
-                        Type.getDescriptor(pythonFunctionSignature.getArgumentSpec().getArgumentType(argumentIndex)));
+                        "L" + pythonFunctionSignature.getArgumentSpec().getArgumentTypeInternalName(argumentIndex) + ";");
             }
             localVariableHelper.writeTemp(methodVisitor, Type.getType(PythonLikeObject.class),
                     argumentLocals[argumentIndex]);
@@ -285,14 +286,15 @@ public class KnownCallImplementor {
         // Load arguments in proper order and typecast them
         for (int i = 0; i < specTotalArgumentCount; i++) {
             localVariableHelper.readTemp(methodVisitor, Type.getType(PythonLikeObject.class), argumentLocals[i]);
-            methodVisitor.visitLdcInsn(Type.getType(pythonFunctionSignature.getArgumentSpec().getArgumentType(i)));
+            methodVisitor.visitLdcInsn(
+                    Type.getType("L" + pythonFunctionSignature.getArgumentSpec().getArgumentTypeInternalName(i) + ";"));
             methodVisitor.visitMethodInsn(Opcodes.INVOKESTATIC, Type.getInternalName(JavaPythonTypeConversionImplementor.class),
                     "coerceToType", Type.getMethodDescriptor(Type.getType(Object.class),
                             Type.getType(PythonLikeObject.class),
                             Type.getType(Class.class)),
                     false);
             methodVisitor.visitTypeInsn(Opcodes.CHECKCAST,
-                    Type.getInternalName(pythonFunctionSignature.getArgumentSpec().getArgumentType(i)));
+                    pythonFunctionSignature.getArgumentSpec().getArgumentTypeInternalName(i));
         }
 
         pythonFunctionSignature.getMethodDescriptor().callMethod(methodVisitor);
@@ -337,7 +339,7 @@ public class KnownCallImplementor {
         Type[] descriptorParameterTypes = pythonFunctionSignature.getMethodDescriptor().getParameterTypes();
 
         if (argumentCount < descriptorParameterTypes.length
-                && pythonFunctionSignature.getDefaultArgumentHolderClass() == null) {
+                && pythonFunctionSignature.getDefaultArgumentHolderClassInternalName() == null) {
             throw new IllegalStateException(
                     "Cannot call " + pythonFunctionSignature + " because there are not enough arguments");
         }
@@ -355,7 +357,7 @@ public class KnownCallImplementor {
         }
 
         // TOS is a tuple of keys
-        methodVisitor.visitTypeInsn(Opcodes.NEW, Type.getInternalName(pythonFunctionSignature.getDefaultArgumentHolderClass()));
+        methodVisitor.visitTypeInsn(Opcodes.NEW, pythonFunctionSignature.getDefaultArgumentHolderClassInternalName());
         methodVisitor.visitInsn(Opcodes.DUP_X1);
         methodVisitor.visitInsn(Opcodes.SWAP);
 
@@ -374,7 +376,7 @@ public class KnownCallImplementor {
 
         // Stack is defaults (uninitialized), keys, positional arguments
         methodVisitor.visitMethodInsn(Opcodes.INVOKESPECIAL,
-                Type.getInternalName(pythonFunctionSignature.getDefaultArgumentHolderClass()),
+                pythonFunctionSignature.getDefaultArgumentHolderClassInternalName(),
                 "<init>", Type.getMethodDescriptor(Type.VOID_TYPE, Type.getType(PythonLikeTuple.class), Type.INT_TYPE),
                 false);
 
@@ -402,7 +404,7 @@ public class KnownCallImplementor {
                 methodVisitor.visitLabel(doneGettingType);
             }
             methodVisitor.visitMethodInsn(Opcodes.INVOKEVIRTUAL,
-                    Type.getInternalName(pythonFunctionSignature.getDefaultArgumentHolderClass()),
+                    pythonFunctionSignature.getDefaultArgumentHolderClassInternalName(),
                     "addArgument", Type.getMethodDescriptor(Type.VOID_TYPE, Type.getType(PythonLikeObject.class)),
                     false);
         }
@@ -410,7 +412,7 @@ public class KnownCallImplementor {
         for (int i = 0; i < descriptorParameterTypes.length; i++) {
             methodVisitor.visitInsn(Opcodes.DUP);
             methodVisitor.visitFieldInsn(Opcodes.GETFIELD,
-                    Type.getInternalName(pythonFunctionSignature.getDefaultArgumentHolderClass()),
+                    pythonFunctionSignature.getDefaultArgumentHolderClassInternalName(),
                     PythonDefaultArgumentImplementor.getArgumentName(i),
                     descriptorParameterTypes[i].getDescriptor());
             methodVisitor.visitInsn(Opcodes.SWAP);
@@ -420,7 +422,7 @@ public class KnownCallImplementor {
         pythonFunctionSignature.getMethodDescriptor().callMethod(methodVisitor);
     }
 
-    public static void callUnpackListAndMap(Class<?> defaultArgumentHolderClass, MethodDescriptor methodDescriptor,
+    public static void callUnpackListAndMap(String defaultArgumentHolderClassInternalName, MethodDescriptor methodDescriptor,
             MethodVisitor methodVisitor) {
         Type[] descriptorParameterTypes = methodDescriptor.getParameterTypes();
 
@@ -457,7 +459,7 @@ public class KnownCallImplementor {
             // stack is bound-method, pos, keywords
         }
 
-        methodVisitor.visitFieldInsn(Opcodes.GETSTATIC, Type.getInternalName(defaultArgumentHolderClass),
+        methodVisitor.visitFieldInsn(Opcodes.GETSTATIC, defaultArgumentHolderClassInternalName,
                 PythonDefaultArgumentImplementor.ARGUMENT_SPEC_STATIC_FIELD_NAME,
                 Type.getDescriptor(ArgumentSpec.class));
 

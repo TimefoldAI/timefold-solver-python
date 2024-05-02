@@ -475,7 +475,7 @@ public class PythonOverloadImplementor {
                 methodVisitor.visitVarInsn(Opcodes.ALOAD, 1);
             }
             methodVisitor.visitVarInsn(Opcodes.ALOAD, 2);
-            KnownCallImplementor.callUnpackListAndMap(functionSignature.getDefaultArgumentHolderClass(),
+            KnownCallImplementor.callUnpackListAndMap(functionSignature.getDefaultArgumentHolderClassInternalName(),
                     functionSignature.getMethodDescriptor(), methodVisitor);
             methodVisitor.visitInsn(Opcodes.ARETURN);
         }
