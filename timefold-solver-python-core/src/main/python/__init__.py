@@ -13,8 +13,9 @@ from ._solver import *
 from ._solver_factory import *
 from ._solver_manager import *
 
-import timefold.solver.domain as domain
 import timefold.solver.config as config
+import timefold.solver.domain as domain
+import timefold.solver.heuristic as heuristic
 import timefold.solver.score as score
 import timefold.solver.test as test
 

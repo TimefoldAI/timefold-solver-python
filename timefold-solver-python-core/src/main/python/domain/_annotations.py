@@ -1,7 +1,7 @@
 import jpype
 
 from ._variable_listener import VariableListener
-from .._timefold_java_interop import ensure_init, register_java_class, get_asm_type
+from .._timefold_java_interop import ensure_init, get_asm_type
 from jpyinterpreter import JavaAnnotation, AnnotationValueSupplier
 from jpype import JImplements, JOverride
 from typing import Union, List, Callable, Type, TYPE_CHECKING, TypeVar
@@ -11,8 +11,6 @@ if TYPE_CHECKING:
 
 
 Solution_ = TypeVar('Solution_')
-Origin_ = TypeVar('Origin_')
-Destination_ = TypeVar('Destination_')
 
 
 class PlanningId(JavaAnnotation):
@@ -350,18 +348,6 @@ def constraint_configuration(constraint_configuration_class: Type[Solution_]) ->
     return out
 
 
-def nearby_distance_meter(distance_function: Callable[[Origin_, Destination_], float], /) \
-        -> Callable[[Origin_, Destination_], float]:
-    ensure_init()
-    from jpyinterpreter import translate_python_bytecode_to_java_bytecode, generate_proxy_class_for_translated_function
-    from ai.timefold.solver.core.impl.heuristic.selector.common.nearby import NearbyDistanceMeter  # noqa
-    java_class = generate_proxy_class_for_translated_function(NearbyDistanceMeter,
-                                                              translate_python_bytecode_to_java_bytecode(
-                                                                  distance_function,
-                                                                  NearbyDistanceMeter))
-    return register_java_class(distance_function, java_class)
-
-
 def problem_change(problem_change_class: Type['_ProblemChange']) -> \
         Type['_ProblemChange']:
     """A ProblemChange represents a change in 1 or more planning entities or problem facts of a PlanningSolution.
@@ -420,5 +406,4 @@ __all__ = ['PlanningId', 'PlanningScore', 'PlanningPin', 'PlanningVariable',
            'ValueRangeProvider', 'DeepPlanningClone', 'ConstraintConfigurationProvider',
            'ConstraintWeight',
            'planning_entity', 'planning_solution', 'constraint_configuration',
-           'nearby_distance_meter',
            'problem_change']

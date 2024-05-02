@@ -1,6 +1,7 @@
 from timefold.solver import *
-from timefold.solver.domain import *
 from timefold.solver.config import *
+from timefold.solver.domain import *
+from timefold.solver.heuristic import *
 from timefold.solver.score import *
 
 import pytest
