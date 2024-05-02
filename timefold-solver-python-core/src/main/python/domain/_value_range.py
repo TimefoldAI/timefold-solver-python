@@ -40,7 +40,7 @@ class ValueRangeFactory:
         return PythonValueRangeFactory.createBooleanValueRange()
 
 
-def __getattr__(name: str):
+def lookup_value_range_class(name: str):
     ensure_init()
     import jpype.imports
     from ai.timefold.solver.core.api.domain.valuerange import CountableValueRange
@@ -52,4 +52,4 @@ def __getattr__(name: str):
             raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
 
 
-__all__ = ['CountableValueRange', 'ValueRangeFactory']
+__all__ = ['ValueRangeFactory']

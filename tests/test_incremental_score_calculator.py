@@ -1,8 +1,7 @@
-from timefold.solver.api import *
-from timefold.solver.annotation import *
+from timefold.solver import *
+from timefold.solver.domain import *
 from timefold.solver.config import *
 from timefold.solver.score import *
-from timefold.solver.constraint import *
 
 import pytest
 from dataclasses import dataclass, field
@@ -315,7 +314,6 @@ def test_constraint_match_enabled_incremental_score_calculator():
 
 def test_error_message_for_missing_methods():
     with pytest.raises(TypeError):  # Exact error message from ABC changes between versions
-        @incremental_score_calculator
         class IncrementalScoreCalculatorMissingMethods(IncrementalScoreCalculator):
             def before_entity_added(self, entity):
                 pass

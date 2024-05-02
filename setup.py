@@ -98,9 +98,9 @@ setup(
         'License :: OSI Approved :: Apache Software License',
         'Operating System :: OS Independent'
     ],
-    packages=['timefold.solver', 'timefold.solver.api', 'timefold.solver.annotation',
-              'timefold.solver.config', 'timefold.solver.constraint', 'timefold.solver.score',
-              'timefold.solver.test', 'timefold.solver.valuerange',
+    packages=['timefold.solver', 'timefold.solver.domain',
+              'timefold.solver.config', 'timefold.solver.score',
+              'timefold.solver.test',
               'jpyinterpreter',
               'java-stubs', 'jpype-stubs', 'ai-stubs'],
     package_dir={

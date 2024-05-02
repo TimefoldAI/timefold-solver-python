@@ -1,5 +1,5 @@
 from ._problem_change import ProblemChange, ProblemChangeWrapper
-from ..config import SolverConfigOverride
+from .config import SolverConfigOverride
 from ._solver_factory import SolverFactory
 from ._future import wrap_completable_future
 

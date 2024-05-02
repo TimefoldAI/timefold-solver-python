@@ -1,7 +1,6 @@
-from timefold.solver.api import *
-from timefold.solver.annotation import *
+from timefold.solver import *
+from timefold.solver.domain import *
 from timefold.solver.config import *
-from timefold.solver.constraint import *
 from timefold.solver.score import *
 
 from dataclasses import dataclass, field

@@ -1,4 +1,4 @@
-from .._jpype_type_conversions import PythonBiFunction
+from ._jpype_type_conversions import PythonBiFunction
 from typing import Awaitable, TypeVar, TYPE_CHECKING
 from asyncio import Future, get_event_loop, CancelledError
 

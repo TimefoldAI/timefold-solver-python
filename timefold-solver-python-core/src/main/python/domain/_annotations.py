@@ -1,19 +1,13 @@
 import jpype
 
-from .._jpype_type_conversions import PythonSupplier
-from ..api import VariableListener
-from ..constraint import ConstraintFactory
-from .._timefold_java_interop import ensure_init, _generate_constraint_provider_class, register_java_class, get_asm_type
+from ._variable_listener import VariableListener
+from .._timefold_java_interop import ensure_init, register_java_class, get_asm_type
 from jpyinterpreter import JavaAnnotation, AnnotationValueSupplier
 from jpype import JImplements, JOverride
 from typing import Union, List, Callable, Type, TYPE_CHECKING, TypeVar
 
 if TYPE_CHECKING:
     from ai.timefold.solver.core.api.solver.change import ProblemChange as _ProblemChange
-    from ai.timefold.solver.core.api.score.stream import Constraint as _Constraint
-    from ai.timefold.solver.core.api.score import Score as _Score
-    from ai.timefold.solver.core.api.score.calculator import IncrementalScoreCalculator as _IncrementalScoreCalculator
-    from ai.timefold.solver.core.api.domain.variable import PlanningVariableGraphType as _PlanningVariableGraphType
 
 
 Solution_ = TypeVar('Solution_')
@@ -368,112 +362,6 @@ def nearby_distance_meter(distance_function: Callable[[Origin_, Destination_], f
     return register_java_class(distance_function, java_class)
 
 
-def constraint_provider(constraint_provider_function: Callable[[ConstraintFactory], List['_Constraint']], /) \
-        -> Callable[[ConstraintFactory], List['_Constraint']]:
-    ensure_init()
-
-    def constraint_provider_wrapper(function):
-        def wrapped_constraint_provider(constraint_factory):
-            from ..constraint import ConstraintFactory
-            out = function(ConstraintFactory(constraint_factory))
-            return out
-        java_class = _generate_constraint_provider_class(function, wrapped_constraint_provider)
-        return register_java_class(wrapped_constraint_provider, java_class)
-
-    return constraint_provider_wrapper(constraint_provider_function)
-
-
-def easy_score_calculator(easy_score_calculator_function: Callable[[Solution_], '_Score']) -> \
-        Callable[[Solution_], '_Score']:
-    """Used for easy python Score calculation. This is non-incremental calculation, which is slow.
-
-    The function takes a single parameter, the Solution, and
-    must return a Score compatible with the Solution Score Type.
-    An implementation must be stateless.
-
-    :type easy_score_calculator_function: Callable[[Solution_], '_Score']
-    :rtype: Callable[[Solution_], '_Score']
-    """
-    ensure_init()
-    from jpyinterpreter import translate_python_bytecode_to_java_bytecode, generate_proxy_class_for_translated_function
-    from ai.timefold.solver.core.api.score.calculator import EasyScoreCalculator
-    java_class = generate_proxy_class_for_translated_function(EasyScoreCalculator,
-                                                              translate_python_bytecode_to_java_bytecode(
-                                                                  easy_score_calculator_function, EasyScoreCalculator))
-    return register_java_class(easy_score_calculator_function, java_class)
-
-
-def incremental_score_calculator(incremental_score_calculator: Type['_IncrementalScoreCalculator']) -> \
-        Type['_IncrementalScoreCalculator']:
-    """Used for incremental python Score calculation. This is much faster than EasyScoreCalculator
-    but requires much more code to implement too.
-
-    Any implementation is naturally stateful.
-
-    The following methods must exist:
-
-    def resetWorkingSolution(self, workingSolution: Solution_);
-
-    def beforeEntityAdded(self, entity: any);
-
-    def afterEntityAdded(self, entity: any);
-
-    def beforeVariableChanged(self, entity: any, variableName: str);
-
-    def afterVariableChanged(self, entity: any, variableName: str);
-
-    def beforeEntityRemoved(self, entity: any);
-
-    def afterEntityRemoved(self, entity: any);
-
-    def calculateScore(self) -> Score;
-
-    If you also want to support Constraint Matches, the following methods need to be added:
-
-    def getConstraintMatchTotals(self)
-
-    def getIndictmentMap(self)
-
-    def resetWorkingSolution(self, workingSolution: Solution_, constraintMatchEnabled=False);
-    (A default value must be specified in resetWorkingSolution for constraintMatchEnabled)
-
-    :type incremental_score_calculator: '_IncrementalScoreCalculator'
-    :rtype: Type
-    """
-    ensure_init()
-    from jpyinterpreter import translate_python_class_to_java_class, generate_proxy_class_for_translated_class
-    from ai.timefold.solver.core.api.score.calculator import IncrementalScoreCalculator, \
-        ConstraintMatchAwareIncrementalScoreCalculator
-    constraint_match_aware = callable(getattr(incremental_score_calculator, 'getConstraintMatchTotals', None)) and \
-        callable(getattr(incremental_score_calculator, 'getIndictmentMap', None))
-    methods = ['resetWorkingSolution',
-               'beforeEntityAdded',
-               'afterEntityAdded',
-               'beforeVariableChanged',
-               'afterVariableChanged',
-               'beforeEntityRemoved',
-               'afterEntityRemoved',
-               'calculateScore']
-    base_interface = IncrementalScoreCalculator
-    if constraint_match_aware:
-        methods.extend(['getIndictmentMap', 'getConstraintMatchTotals'])
-        base_interface = ConstraintMatchAwareIncrementalScoreCalculator
-
-    missing_method_list = []
-    for method in methods:
-        if not callable(getattr(incremental_score_calculator, method, None)):
-            missing_method_list.append(method)
-    if len(missing_method_list) != 0:
-        raise ValueError(f'The following required methods are missing from @incremental_score_calculator class '
-                         f'{incremental_score_calculator}: {missing_method_list}')
-    # for method in methods:
-    #     method_on_class = getattr(incremental_score_calculator, method, None
-
-    translated_class = translate_python_class_to_java_class(incremental_score_calculator)
-    java_class = generate_proxy_class_for_translated_class(base_interface, translated_class)
-    return register_java_class(incremental_score_calculator, java_class)
-
-
 def problem_change(problem_change_class: Type['_ProblemChange']) -> \
         Type['_ProblemChange']:
     """A ProblemChange represents a change in 1 or more planning entities or problem facts of a PlanningSolution.
@@ -533,5 +421,4 @@ __all__ = ['PlanningId', 'PlanningScore', 'PlanningPin', 'PlanningVariable',
            'ConstraintWeight',
            'planning_entity', 'planning_solution', 'constraint_configuration',
            'nearby_distance_meter',
-           'constraint_provider', 'easy_score_calculator', 'incremental_score_calculator',
            'problem_change']

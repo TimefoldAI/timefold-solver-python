@@ -1,5 +1,3 @@
-from .._timefold_java_interop import get_class
-
 from abc import ABC, abstractmethod
 from typing import TypeVar, Optional, Callable, TYPE_CHECKING, Generic
 from types import FunctionType
@@ -8,12 +6,12 @@ from jpyinterpreter import (convert_to_java_python_like_object,
                             update_python_object_from_java,
                             translate_python_bytecode_to_java_bytecode)
 from jpype import JOverride, JImplements
-from traceback import print_exc
 
 if TYPE_CHECKING:
     from ai.timefold.solver.core.api.solver.change import (ProblemChangeDirector as _ProblemChangeDirector)
 
 Solution_ = TypeVar('Solution_')
+
 
 class ProblemChangeDirector:
     _delegate: '_ProblemChangeDirector'

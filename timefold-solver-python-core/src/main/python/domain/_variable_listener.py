@@ -1,4 +1,4 @@
-from ._score_director import ScoreDirector
+from ..score import ScoreDirector
 from jpyinterpreter import add_java_interface
 from typing import TYPE_CHECKING, TypeVar
 
