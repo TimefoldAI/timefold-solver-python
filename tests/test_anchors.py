@@ -99,7 +99,7 @@
 #             ChainedEntity('3'),
 #         ]
 #     ))
-#     assert solution.score.score() == 9
+#     assert solution.score.score == 9
 #     anchor = solution.entities[0].anchor
 #     assert anchor is not None
 #     anchor_value_count = 0

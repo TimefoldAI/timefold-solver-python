@@ -271,7 +271,7 @@ def test_to_consecutive_sequences():
     entity_d.value = value_7
     entity_e.value = value_9
 
-    assert score_manager.explain(problem).score.score() == 5
+    assert score_manager.explain(problem).score.score == 5
 
     entity_a.value = value_1
     entity_b.value = value_2
@@ -279,7 +279,7 @@ def test_to_consecutive_sequences():
     entity_d.value = value_4
     entity_e.value = value_5
 
-    assert score_manager.explain(problem).score.score() == 25
+    assert score_manager.explain(problem).score.score == 25
 
     entity_a.value = value_1
     entity_b.value = value_2
@@ -287,7 +287,7 @@ def test_to_consecutive_sequences():
     entity_d.value = value_5
     entity_e.value = value_6
 
-    assert score_manager.explain(problem).score.score() == 13
+    assert score_manager.explain(problem).score.score == 13
 
 
 def test_to_list():

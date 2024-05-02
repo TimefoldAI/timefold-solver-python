@@ -57,7 +57,7 @@ def test_custom_shadow_variable():
     solver = solver_factory.build_solver()
     problem = MySolution([MyPlanningEntity()], [1, 2, 3])
     solution: MySolution = solver.solve(problem)
-    assert solution.score.score() == 1
+    assert solution.score.score == 1
     assert solution.entity_list[0].value == 2
     assert solution.entity_list[0].value_squared == 4
 
@@ -117,6 +117,6 @@ def test_custom_shadow_variable_with_variable_listener_ref():
     solver = solver_factory.build_solver()
     problem = MySolution([MyPlanningEntity()], [1, 2, 3])
     solution: MySolution = solver.solve(problem)
-    assert solution.score.score() == 1
+    assert solution.score.score == 1
     assert solution.entity_list[0].value == 2
     assert solution.entity_list[0].value_squared == 4

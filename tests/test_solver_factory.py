@@ -54,4 +54,4 @@ def test_solver_config_override():
     ))
     problem = Solution([Entity('A')], [1, 2, 3])
     solution = solver.solve(problem)
-    assert solution.score.score() == 3
+    assert solution.score.score == 3

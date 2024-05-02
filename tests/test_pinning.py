@@ -51,7 +51,7 @@ def test_pinning_filter():
                                  ])
     solver = SolverFactory.create(solver_config).build_solver()
     solution = solver.solve(problem)
-    assert solution.score.score() == -2
+    assert solution.score.score == -2
 
 
 def test_planning_pin():
@@ -94,4 +94,4 @@ def test_planning_pin():
                                  ])
     solver = SolverFactory.create(solver_config).build_solver()
     solution = solver.solve(problem)
-    assert solution.score.score() == -2
+    assert solution.score.score == -2

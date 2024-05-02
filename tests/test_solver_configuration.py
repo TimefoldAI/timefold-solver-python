@@ -54,5 +54,5 @@ def test_solver_configuration():
     solver = SolverFactory.create(solver_config).build_solver()
     solution = solver.solve(problem)
 
-    assert solution.score.score() == 6
+    assert solution.score.score == 6
     assert solution.entities[0].value == 3

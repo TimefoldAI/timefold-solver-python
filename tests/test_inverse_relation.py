@@ -77,7 +77,7 @@ def test_inverse_relation():
             InverseRelationEntity('3'),
         ]
     ))
-    assert solution.score.score() == 0
+    assert solution.score.score == 0
     visited_set = set()
     for value in solution.values:
         assert len(value.entities) == 1

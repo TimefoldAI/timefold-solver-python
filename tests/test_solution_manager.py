@@ -44,7 +44,7 @@ solver_config = SolverConfig(
 def assert_score_explanation(problem: Solution,
                              score_explanation: ScoreExplanation[Solution]):
     assert score_explanation.solution is problem
-    assert score_explanation.score.score() == 3
+    assert score_explanation.score.score == 3
 
     constraint_ref = ConstraintRef(package_name='package', constraint_name='Maximize Value')
     constraint_match_total_map = score_explanation.constraint_match_total_map
@@ -92,8 +92,8 @@ def assert_score_explanation(problem: Solution,
 
 def assert_constraint_analysis(problem: Solution, constraint_analysis: ConstraintAnalysis):
     constraint_ref = ConstraintRef(package_name='package', constraint_name='Maximize Value')
-    assert constraint_analysis.score.score() == 3
-    assert constraint_analysis.weight.score() == 1
+    assert constraint_analysis.score.score == 3
+    assert constraint_analysis.weight.score == 1
     assert constraint_analysis.constraint_name == constraint_ref.constraint_name
     assert constraint_analysis.constraint_package == constraint_ref.package_name
     assert constraint_analysis.constraint_ref == constraint_ref
@@ -114,7 +114,7 @@ def assert_constraint_analysis(problem: Solution, constraint_analysis: Constrain
 
 def assert_score_analysis(problem: Solution, score_analysis: ScoreAnalysis):
     constraint_ref = ConstraintRef(package_name='package', constraint_name='Maximize Value')
-    assert score_analysis.score.score() == 3
+    assert score_analysis.score.score == 3
 
     constraint_map = score_analysis.constraint_map
     assert len(constraint_map) == 1
@@ -132,8 +132,8 @@ def assert_solution_manager(solution_manager: SolutionManager[Solution]):
     problem: Solution = Solution([Entity('A', 1), Entity('B', 1), Entity('C', 1)], [1, 2, 3])
     assert problem.score is None
     score = solution_manager.update(problem)
-    assert score.score() == 3
-    assert problem.score.score() == 3
+    assert score.score == 3
+    assert problem.score.score == 3
 
     score_explanation = solution_manager.explain(problem)
     assert_score_explanation(problem, score_explanation)
