@@ -2,7 +2,7 @@ from typing import Callable, Generic, List, Type, TypeVar, TYPE_CHECKING, overlo
 
 from .._jpype_type_conversions import PythonBiFunction
 from .._timefold_java_interop import get_class
-from ..constraint import ConstraintFactory
+from ..score import ConstraintFactory
 from ..config import SolverConfig
 
 if TYPE_CHECKING:

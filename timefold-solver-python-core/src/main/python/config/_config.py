@@ -1,7 +1,7 @@
-from ..constraint import ConstraintFactory
+from ..score import ConstraintFactory, Constraint, IncrementalScoreCalculator
 from .._timefold_java_interop import is_enterprise_installed
 
-from typing import Any, Optional, List, Type, Callable, TypeVar, Generic, TYPE_CHECKING
+from typing import Any, Optional, Callable, TypeVar, Generic, TYPE_CHECKING
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
@@ -9,7 +9,6 @@ from jpype import JClass
 
 if TYPE_CHECKING:
     from java.time import Duration as _JavaDuration
-    from ai.timefold.solver.core.api.score.stream import Constraint as _JavaConstraint
     from ai.timefold.solver.core.config.solver import SolverConfig as _JavaSolverConfig
     from ai.timefold.solver.core.config.solver.termination import TerminationConfig as _JavaTerminationConfig
     from ai.timefold.solver.core.config.score.director import (
@@ -102,8 +101,8 @@ Solution_ = TypeVar('Solution_')
 
 @dataclass(kw_only=True)
 class SolverConfig(Generic[Solution_]):
-    solution_class: Optional[Type[Solution_]] = field(default=None)
-    entity_class_list: Optional[List[Type]] = field(default=None)
+    solution_class: Optional[type[Solution_]] = field(default=None)
+    entity_class_list: Optional[list[type]] = field(default=None)
     environment_mode: Optional[EnvironmentMode] = field(default=EnvironmentMode.REPRODUCIBLE)
     random_seed: Optional[int] = field(default=None)
     move_thread_count: int | MoveThreadCount = field(default=MoveThreadCount.NONE)
@@ -205,10 +204,10 @@ class SolverConfig(Generic[Solution_]):
 
 @dataclass(kw_only=True)
 class ScoreDirectorFactoryConfig:
-    constraint_provider_function: Optional[Callable[[ConstraintFactory], List['_JavaConstraint']]] =\
+    constraint_provider_function: Optional[Callable[[ConstraintFactory], list[Constraint]]] =\
         field(default=None)
     easy_score_calculator_function: Optional[Callable] = field(default=None)
-    incremental_score_calculator_class: Optional[Type] = field(default=None)
+    incremental_score_calculator_class: Optional[type[IncrementalScoreCalculator]] = field(default=None)
 
     def _to_java_score_director_factory_config(self, inherited_config: '_JavaScoreDirectorFactoryConfig' = None):
         from ai.timefold.solver.core.config.score.director import (
@@ -241,7 +240,7 @@ class TerminationConfig:
     unimproved_spent_limit: Optional[Duration] = field(default=None)
     unimproved_score_difference_threshold: Optional[str] = field(default=None)
     unimproved_step_count_limit: Optional[int] = field(default=None)
-    termination_config_list: Optional[List['TerminationConfig']] = field(default=None)
+    termination_config_list: Optional[list['TerminationConfig']] = field(default=None)
     termination_composition_style: Optional[TerminationCompositionStyle] = field(default=None)
 
     def _to_java_termination_config(self, inherited_config: '_JavaTerminationConfig' = None) -> \

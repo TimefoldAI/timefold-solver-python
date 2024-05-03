@@ -13,7 +13,6 @@ if TYPE_CHECKING:
     from ai.timefold.solver.core.api.score.stream.quad import (QuadJoiner, QuadConstraintCollector,
                                                                QuadConstraintStream as _JavaQuadConstraintStream)
     from ai.timefold.solver.core.api.score.stream.penta import PentaJoiner
-    from ai.timefold.solver.core.api.score import Score
 
 #  Class type variables
 A = TypeVar('A')

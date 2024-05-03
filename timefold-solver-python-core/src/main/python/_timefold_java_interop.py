@@ -11,8 +11,6 @@ if TYPE_CHECKING:
     from java.lang import ClassLoader
     from ai.timefold.solver.core.api.score.stream import (Constraint as _Constraint,
                                                           ConstraintFactory as _ConstraintFactory)
-    from ai.timefold.solver.core.api.score.calculator import IncrementalScoreCalculator as _IncrementalScoreCalculator
-    from ai.timefold.solver.core.api.domain.variable import VariableListener as _VariableListener
 
 Solution_ = TypeVar('Solution_')
 ProblemId_ = TypeVar('ProblemId_')

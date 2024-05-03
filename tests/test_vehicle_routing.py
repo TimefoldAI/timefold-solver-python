@@ -1,9 +1,8 @@
 from datetime import datetime, timedelta
 
-from timefold.solver.api import *
-from timefold.solver.annotation import *
+from timefold.solver import *
+from timefold.solver.domain import *
 from timefold.solver.config import *
-from timefold.solver.constraint import ConstraintFactory
 from timefold.solver.score import *
 
 from typing import Annotated, List, Optional

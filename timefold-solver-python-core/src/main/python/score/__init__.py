@@ -1,10 +1,20 @@
-from .._timefold_java_interop import ensure_init
-from typing import TYPE_CHECKING
-from jpype import JImplementationFor, JOverride
-import jpype.imports # noqa
+from ._annotations import *
+from ._constraint_builder import *
+from ._constraint_factory import *
+from ._constraint_match_total import *
+from ._constraint_stream import *
+from ._function_translator import *
+from ._group_by import *
+from ._incremental_score_calculator import *
+from ._joiners import *
+from ._score_analysis import *
+from ._score_director import *
 
-if TYPE_CHECKING:
-    from ai.timefold.solver.core.api.score import Score
+from typing import TYPE_CHECKING as _TYPE_CHECKING
+
+if _TYPE_CHECKING:
+    class Score:
+        ...
 
     class SimpleScore(Score):
         ZERO: 'SimpleScore' = None
@@ -57,104 +67,12 @@ if TYPE_CHECKING:
             ...
 
 
-@JImplementationFor('ai.timefold.solver.core.api.score.buildin.simple.SimpleScore')
-class _SimpleScoreImpl:
-    @property
-    def init_score(self) -> int:
-        return self.initScore()
-
-    @property
-    def is_feasible(self) -> bool:
-        return self.isFeasible()
-
-    @property
-    def score(self):
-        return self.toLevelNumbers()[0]  # noqa
+def __getattr__(name):
+    from ._score import lookup_score_class
+    return lookup_score_class(name)
 
 
-@JImplementationFor('ai.timefold.solver.core.api.score.buildin.hardsoft.HardSoftScore')
-class _HardSoftScoreImpl:
-    @property
-    def init_score(self) -> int:
-        return self.initScore()
-
-    @property
-    def is_feasible(self) -> bool:
-        return self.isFeasible()
-
-    @property
-    def hard_score(self):
-        return self.hardScore()  # noqa
-
-    @property
-    def soft_score(self):
-        return self.softScore()  # noqa
-
-
-@JImplementationFor('ai.timefold.solver.core.api.score.buildin.hardmediumsoft.'
-                    'HardMediumSoftScore')
-class _HardMediumSoftScoreImpl:
-    @property
-    def init_score(self) -> int:
-        return self.initScore()
-
-    @property
-    def is_feasible(self) -> bool:
-        return self.isFeasible()
-
-    @property
-    def hard_score(self):
-        return self.hardScore()  # noqa
-
-    @property
-    def medium_score(self):
-        return self.mediumScore()  # noqa
-
-    @property
-    def soft_score(self):
-        return self.softScore()  # noqa
-
-
-@JImplementationFor('ai.timefold.solver.core.api.score.buildin.bendable.BendableScore')
-class _BendableScoreImpl:
-    @property
-    def init_score(self) -> int:
-        return self.initScore()
-
-    @property
-    def is_feasible(self) -> bool:
-        return self.isFeasible()
-
-    @property
-    def hard_scores(self):
-        return self.hardScores()  # noqa
-
-    @property
-    def soft_scores(self):
-        return self.softScores()  # noqa
-
-
-def __getattr__(name: str):
-    ensure_init()
-    import jpype.imports
-    from ai.timefold.solver.core.api.score import Score
-    from ai.timefold.solver.core.api.score.buildin.simple import SimpleScore
-    from ai.timefold.solver.core.api.score.buildin.hardsoft import HardSoftScore
-    from ai.timefold.solver.core.api.score.buildin.hardmediumsoft import HardMediumSoftScore
-    from ai.timefold.solver.core.api.score.buildin.bendable import BendableScore
-    match name:
-        case 'Score':
-            return Score
-        case 'SimpleScore':
-            return SimpleScore
-        case 'HardSoftScore':
-            return HardSoftScore
-        case 'HardMediumSoftScore':
-            return HardMediumSoftScore
-        case 'BendableScore':
-            return BendableScore
-        case _:
-            raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
-
-
-__all__ = ['Score', 'SimpleScore', 'HardSoftScore', 'HardMediumSoftScore', 'BendableScore']
+if not _TYPE_CHECKING:
+    exported = [name for name in globals().keys() if not name.startswith('_')]
+    exported += ['Score', 'SimpleScore', 'HardSoftScore', 'HardMediumSoftScore', 'BendableScore']
+    __all__ = exported

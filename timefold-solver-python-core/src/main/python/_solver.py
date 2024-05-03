@@ -6,7 +6,7 @@ from dataclasses import dataclass
 
 if TYPE_CHECKING:
     # These imports require a JVM to be running, so only import if type checking
-    from ..score import Score
+    from .score import Score
     from ai.timefold.solver.core.api.solver import Solver as _JavaSolver
 
 Solution_ = TypeVar('Solution_')

@@ -1,5 +1,5 @@
 from ._solver import Solver
-from ..config import SolverConfig, SolverConfigOverride
+from .config import SolverConfig, SolverConfigOverride
 
 from typing import TypeVar, Generic, TYPE_CHECKING
 from jpype import JClass
