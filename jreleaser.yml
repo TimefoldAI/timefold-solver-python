@@ -1,0 +1,37 @@
+project:
+  name: timefold-solver-python
+
+signing:
+  active: ALWAYS
+  armored: true
+
+release:
+  github:
+    commitAuthor:
+      name: "Timefold Release Bot"
+      email: "release@timefold.ai"
+    releaseName: "Timefold Solver Community Edition for Python {{projectVersion}}"
+    draft: true
+    overwrite: false
+    sign: true
+    milestone:
+      close: true
+      name: "v{{projectVersion}}"
+    changelog:
+      formatted: ALWAYS
+      preset: "conventional-commits"
+      contentTemplate: ".github/workflows/release-changelog-template.md"
+      contributors:
+        format: "- {{contributorName}}{{#contributorUsernameAsLink}} ({{.}}){{/contributorUsernameAsLink}}"
+      hide:
+        uncategorized: true
+        categories:
+          - build
+          - ci
+        contributors:
+          - "Timefold Release Bot"
+
+files:
+  globs:
+    - pattern: "dist/**/*.whl"
+    - pattern: "dist/**/*.tar.gz"

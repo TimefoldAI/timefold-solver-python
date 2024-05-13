@@ -44,10 +44,10 @@ class FetchDependencies(build_py):
             command = 'mvnw'
             if platform.system() == 'Windows':
                 command = 'mvnw.cmd'
-            self.create_stubs(project_root, command)
-            subprocess.run([str((project_root / command).absolute()), 'clean', 'install', '-Dasciidoctor.skip',
-                            '-Dassembly.skipAssembly'],
+
+            subprocess.run([str((project_root / command).absolute()), 'clean', 'install'],
                            cwd=project_root, check=True)
+            self.create_stubs(project_root, command)
             classpath_jars = []
             # Add the main artifact
             classpath_jars.extend(glob.glob(os.path.join(project_root, 'timefold-solver-python-core', 'target', '*.jar')))
@@ -75,11 +75,11 @@ def find_stub_files(stub_root: str):
 
 this_directory = Path(__file__).parent
 long_description = (this_directory / "README.md").read_text()
-version = '999-dev0'
+timefold_solver_python_version = '999-dev0'
 
 setup(
     name='timefold-solver',
-    version=version,
+    version=timefold_solver_python_version,
     license='Apache License Version 2.0',
     license_file='LICENSE',
     description='An AI constraint solver that optimizes planning and scheduling problems',
