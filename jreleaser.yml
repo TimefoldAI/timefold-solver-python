@@ -10,7 +10,7 @@ release:
     commitAuthor:
       name: "Timefold Release Bot"
       email: "release@timefold.ai"
-    releaseName: "Timefold Solver Python Community Edition {{projectVersion}}"
+    releaseName: "Timefold Solver Community Edition for Python {{projectVersion}}"
     draft: true
     overwrite: false
     sign: true

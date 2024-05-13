@@ -58,17 +58,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install build
 
-      # No need to wait for the upstream release to show up in Maven Central.
-      # Building both release version and snapshot version to make sure mvn versions:set work for enterprise repo.
-      - name: Build the upstream release tag
-        working-directory: "./timefold-solver"
-        run: |
-          mvn -Dquickly install
-          mvn versions:set -DnewVersion=999-SNAPSHOT
-          mvn -Dquickly install
-          cd ..
-          rm -rf timefold-solver
-
       - name: Checkout timefold-solver-python
         uses: actions/checkout@v4
         with:
