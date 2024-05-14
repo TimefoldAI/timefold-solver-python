@@ -58,6 +58,16 @@ jobs:
           python -m pip install --upgrade pip
           pip install build
 
+      # Needed so mvn versions:set in the Python repo can update
+      # the version in its pom.xml
+      - name: Build the upstream release tag as 999-SNAPSHOT
+        working-directory: "./timefold-solver"
+        run: |
+          mvn versions:set -DnewVersion=999-SNAPSHOT
+          mvn -Dquickly install
+          cd ..
+          rm -rf timefold-solver
+
       - name: Checkout timefold-solver-python
         uses: actions/checkout@v4
         with:
