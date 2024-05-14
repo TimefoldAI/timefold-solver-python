@@ -16,7 +16,7 @@ mvn versions:update-parent "-DparentVersion=[$NEW_VERSION,$NEW_VERSION]" -Dallow
   mvn versions:update-parent "-DparentVersion=[$NEW_VERSION,$NEW_VERSION]" -DallowSnapshots=true -DgenerateBackupPoms=false
 )
 (
-  cd timefold-solver-python-code ||
+  cd timefold-solver-python-core ||
   mvn versions:update-parent "-DparentVersion=[$NEW_VERSION,$NEW_VERSION]" -DallowSnapshots=true -DgenerateBackupPoms=false
 )
 sed -i "s/^timefold_solver_python_version.*=.*/timefold_solver_python_version = '$NEW_VERSION_PYTHON'/" setup.py
