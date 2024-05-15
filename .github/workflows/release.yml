@@ -26,6 +26,11 @@ jobs:
     env:
       MAVEN_ARGS: "--no-transfer-progress --batch-mode"
     runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/timefold-solver
+    permissions:
+      id-token: write  # IMPORTANT: mandatory for trusted publishing
     steps:
       - name: Print inputs to the release workflow
         run: echo "${{ toJSON(github.event.inputs) }}"
@@ -119,7 +124,9 @@ jobs:
             out/jreleaser/trace.log
             out/jreleaser/output.properties
 
-      # TODO: Use https://github.com/marketplace/actions/pypi-publish to publish to PyPI here
+      - name: Publish distribution to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        if: ${{ github.event.inputs.dryRun == 'false' }}
 
       # Pull Request will be created with the changes and a summary of next steps.
       - name: Put back the 999-SNAPSHOT version on the release branch
