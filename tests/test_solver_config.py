@@ -47,7 +47,7 @@ def get_java_solver_config(path: pathlib.Path):
 
 
 def test_load_from_solver_config_file():
-    from jpyinterpreter import get_java_type_for_python_type
+    from _jpyinterpreter import get_java_type_for_python_type
     solver_config = get_java_solver_config(pathlib.Path('tests', 'solverConfig-simple.xml'))
     assert solver_config.getSolutionClass() == get_java_type_for_python_type(Solution).getJavaClass()
     entity_class_list = solver_config.getEntityClassList()
@@ -59,7 +59,7 @@ def test_load_from_solver_config_file():
 
 
 def test_reload_from_solver_config_file():
-    from jpyinterpreter import get_java_type_for_python_type
+    from _jpyinterpreter import get_java_type_for_python_type
 
     @planning_solution
     class RedefinedSolution:

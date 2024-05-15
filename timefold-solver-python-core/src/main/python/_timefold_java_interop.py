@@ -69,7 +69,7 @@ def init(*args, path: list[str] = None, include_timefold_jars: bool = True, log_
     log_level : str
         The logging level to use.
     """
-    from jpyinterpreter import init
+    from _jpyinterpreter import init
     if jpype.isJVMStarted():  # noqa
         raise RuntimeError('JVM already started. Maybe call init before timefold.solver.types imports?')
     if path is None:
@@ -115,7 +115,7 @@ def get_class(python_class: Union[type, Callable]) -> JClass:
     """Return the Java Class for the given Python Class"""
     from java.lang import Object, Class
     from ai.timefold.jpyinterpreter.types.wrappers import OpaquePythonReference
-    from jpyinterpreter import is_c_native, get_java_type_for_python_type
+    from _jpyinterpreter import is_c_native, get_java_type_for_python_type
 
     if python_class is None:
         return cast(JClass, None)
@@ -146,7 +146,7 @@ def get_asm_type(python_class: Union[type, Callable]) -> Any:
     from java.lang import Object, Class
     from ai.timefold.jpyinterpreter import AnnotationMetadata
     from ai.timefold.jpyinterpreter.types.wrappers import OpaquePythonReference
-    from jpyinterpreter import is_c_native, get_java_type_for_python_type
+    from _jpyinterpreter import is_c_native, get_java_type_for_python_type
 
     if python_class is None:
         return None
@@ -227,7 +227,7 @@ class OverrideClassLoader:
 
 
 def compile_class(python_class: type) -> None:
-    from jpyinterpreter import translate_python_class_to_java_class
+    from _jpyinterpreter import translate_python_class_to_java_class
     ensure_init()
     class_identifier = _get_class_identifier_for_object(python_class)
     out = translate_python_class_to_java_class(python_class).getJavaClass()

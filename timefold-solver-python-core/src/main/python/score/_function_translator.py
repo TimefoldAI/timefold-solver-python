@@ -3,7 +3,7 @@ from .._jpype_type_conversions import (_convert_to_java_compatible_object, Pytho
                                        PythonToIntBiFunction, PythonToIntTriFunction, PythonToIntQuadFunction,
                                        PythonPredicate, PythonBiPredicate, PythonTriPredicate, PythonQuadPredicate,
                                        PythonPentaPredicate)
-from jpyinterpreter import translate_python_bytecode_to_java_bytecode, check_current_python_version_supported
+from _jpyinterpreter import translate_python_bytecode_to_java_bytecode, check_current_python_version_supported
 import jpype.imports  # noqa
 from jpype import JImplements, JOverride
 import inspect

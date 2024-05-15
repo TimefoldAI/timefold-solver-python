@@ -24,7 +24,7 @@ def nearby_distance_meter(distance_function: Callable[[Origin_, Destination_], f
 
     """
     ensure_init()
-    from jpyinterpreter import translate_python_bytecode_to_java_bytecode, generate_proxy_class_for_translated_function
+    from _jpyinterpreter import translate_python_bytecode_to_java_bytecode, generate_proxy_class_for_translated_function
     from ai.timefold.solver.core.impl.heuristic.selector.common.nearby import NearbyDistanceMeter  # noqa
     java_class = generate_proxy_class_for_translated_function(NearbyDistanceMeter,
                                                               translate_python_bytecode_to_java_bytecode(

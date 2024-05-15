@@ -71,7 +71,7 @@ class SolverJob(Generic[Solution_, ProblemId_]):
         ProblemId_
             The problem id corresponding to this `SolverJob`.
         """
-        from jpyinterpreter import unwrap_python_like_object
+        from _jpyinterpreter import unwrap_python_like_object
         return unwrap_python_like_object(self._delegate.getProblemId())
 
     def get_solver_status(self) -> SolverStatus:
@@ -109,7 +109,7 @@ class SolverJob(Generic[Solution_, ProblemId_]):
         Solution_
             Never ``None``, but it could be the original uninitialized problem.
         """
-        from jpyinterpreter import unwrap_python_like_object
+        from _jpyinterpreter import unwrap_python_like_object
         return unwrap_python_like_object(self._delegate.getFinalBestSolution())
 
     def terminate_early(self) -> None:
@@ -186,7 +186,7 @@ class SolverJobBuilder(Generic[Solution_, ProblemId_]):
         SolverJobBuilder
             This `SolverJobBuilder`.
         """
-        from jpyinterpreter import convert_to_java_python_like_object
+        from _jpyinterpreter import convert_to_java_python_like_object
         return SolverJobBuilder(self._delegate.withProblemId(convert_to_java_python_like_object(problem_id)))
 
     def with_problem(self, problem: Solution_) -> 'SolverJobBuilder':
@@ -203,7 +203,7 @@ class SolverJobBuilder(Generic[Solution_, ProblemId_]):
         SolverJobBuilder
             This `SolverJobBuilder`.
         """
-        from jpyinterpreter import convert_to_java_python_like_object
+        from _jpyinterpreter import convert_to_java_python_like_object
         return SolverJobBuilder(self._delegate.withProblem(convert_to_java_python_like_object(problem)))
 
     def with_config_override(self, config_override: SolverConfigOverride) -> 'SolverJobBuilder':
@@ -237,7 +237,7 @@ class SolverJobBuilder(Generic[Solution_, ProblemId_]):
             This `SolverJobBuilder`.
         """
         from java.util.function import Function
-        from jpyinterpreter import convert_to_java_python_like_object, unwrap_python_like_object
+        from _jpyinterpreter import convert_to_java_python_like_object, unwrap_python_like_object
         java_finder = Function @ (lambda problem_id: convert_to_java_python_like_object(
             problem_finder(unwrap_python_like_object(problem_id))))
         return SolverJobBuilder(self._delegate.withProblemFinder(java_finder))
@@ -257,7 +257,7 @@ class SolverJobBuilder(Generic[Solution_, ProblemId_]):
             This `SolverJobBuilder`.
         """
         from java.util.function import Consumer
-        from jpyinterpreter import unwrap_python_like_object
+        from _jpyinterpreter import unwrap_python_like_object
 
         java_consumer = Consumer @ (lambda solution: best_solution_consumer(unwrap_python_like_object(solution)))
         return SolverJobBuilder(self._delegate.withBestSolutionConsumer(java_consumer))
@@ -278,7 +278,7 @@ class SolverJobBuilder(Generic[Solution_, ProblemId_]):
             This `SolverJobBuilder`.
         """
         from java.util.function import Consumer
-        from jpyinterpreter import unwrap_python_like_object
+        from _jpyinterpreter import unwrap_python_like_object
 
         java_consumer = Consumer @ (lambda solution: final_best_solution_consumer(unwrap_python_like_object(solution)))
         return SolverJobBuilder(
@@ -300,7 +300,7 @@ class SolverJobBuilder(Generic[Solution_, ProblemId_]):
             This `SolverJobBuilder`.
         """
         from java.util.function import BiConsumer
-        from jpyinterpreter import unwrap_python_like_object
+        from _jpyinterpreter import unwrap_python_like_object
 
         java_consumer = BiConsumer @ (lambda problem_id, error: exception_handler(unwrap_python_like_object(problem_id),
                                                                                   error))
@@ -466,7 +466,7 @@ class SolverManager(Generic[Solution_, ProblemId_]):
         SolverStatus
             The `SolverStatus` corresponding to `problem_id`.
         """
-        from jpyinterpreter import convert_to_java_python_like_object
+        from _jpyinterpreter import convert_to_java_python_like_object
         return SolverStatus._from_java_enum(self._delegate.getSolverStatus(
             convert_to_java_python_like_object(problem_id)))
 
@@ -489,7 +489,7 @@ class SolverManager(Generic[Solution_, ProblemId_]):
             A value given to `SolverManager.solve`, `SolverManager.solve_and_listen` or
             `SolverJobBuilder.with_problem_id`.
         """
-        from jpyinterpreter import convert_to_java_python_like_object
+        from _jpyinterpreter import convert_to_java_python_like_object
         self._delegate.terminateEarly(convert_to_java_python_like_object(problem_id))
 
     def add_problem_change(self, problem_id: ProblemId_, problem_change: ProblemChange[Solution_]) -> Awaitable[None]:
@@ -511,7 +511,7 @@ class SolverManager(Generic[Solution_, ProblemId_]):
         Awaitable
             An awaitable that completes after the best solution containing this change has been consumed.
         """
-        from jpyinterpreter import convert_to_java_python_like_object
+        from _jpyinterpreter import convert_to_java_python_like_object
         return wrap_future(self._delegate.addProblemChange(convert_to_java_python_like_object(problem_id),
                                                                        ProblemChangeWrapper(problem_change)))
 

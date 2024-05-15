@@ -2,7 +2,7 @@ import jpype
 
 from ._variable_listener import VariableListener
 from .._timefold_java_interop import ensure_init, get_asm_type
-from jpyinterpreter import JavaAnnotation, AnnotationValueSupplier
+from _jpyinterpreter import JavaAnnotation, AnnotationValueSupplier
 from jpype import JImplements, JOverride
 from typing import Union, List, Callable, Type, TYPE_CHECKING, TypeVar
 
@@ -663,7 +663,7 @@ def planning_entity(entity_class: Type = None, /, *, pinning_filter: Callable = 
     def planning_entity_wrapper(entity_class_argument):
         from .._timefold_java_interop import _add_to_compilation_queue
         from ai.timefold.solver.core.api.domain.entity import PinningFilter
-        from jpyinterpreter import add_class_annotation, translate_python_bytecode_to_java_bytecode
+        from _jpyinterpreter import add_class_annotation, translate_python_bytecode_to_java_bytecode
         from typing import get_origin, Annotated
 
         planning_pin_field = None
@@ -736,7 +736,7 @@ def planning_solution(planning_solution_class: Type[Solution_]) -> Type[Solution
     ...     score: Annotated[HardSoftScore, PlanningScore]
     """
     ensure_init()
-    from jpyinterpreter import add_class_annotation
+    from _jpyinterpreter import add_class_annotation
     from .._timefold_java_interop import _add_to_compilation_queue
     from ai.timefold.solver.core.api.domain.solution import PlanningSolution as JavaPlanningSolution
     out = add_class_annotation(JavaPlanningSolution)(planning_solution_class)
@@ -764,7 +764,7 @@ def constraint_configuration(constraint_configuration_class: Type[Solution_]) ->
     ...     maximize_value: Annotated[HardSoftScore, ConstraintWeight('Maximize value')]
     """
     ensure_init()
-    from jpyinterpreter import add_class_annotation
+    from _jpyinterpreter import add_class_annotation
     from ai.timefold.solver.core.api.domain.constraintweight import (
         ConstraintConfiguration as JavaConstraintConfiguration)
     out = add_class_annotation(JavaConstraintConfiguration)(constraint_configuration_class)

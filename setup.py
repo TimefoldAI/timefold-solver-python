@@ -8,6 +8,18 @@ from pathlib import Path
 from shutil import copyfile
 import sys
 
+include_java_stubs = os.environ.get('INCLUDE_JAVA_STUBS', 'false').lower() == 'true'
+"""
+If Java type stubs should be generated.
+These are for our own type checker; users should never need
+to use them (since they should be using the Python classes).
+
+Not included in the default build since IDE's will see multiple
+packages that define a class (the one from `ai.timefold...`
+and the one from `timefold.solver...`), which can lead to the
+wrong one being imported.
+"""
+
 
 class FetchDependencies(build_py):
     """
@@ -47,7 +59,10 @@ class FetchDependencies(build_py):
 
             subprocess.run([str((project_root / command).absolute()), 'clean', 'install'],
                            cwd=project_root, check=True)
-            self.create_stubs(project_root, command)
+
+            if include_java_stubs:
+                self.create_stubs(project_root, command)
+
             classpath_jars = []
             # Add the main artifact
             classpath_jars.extend(glob.glob(os.path.join(project_root, 'timefold-solver-python-core', 'target', '*.jar')))
@@ -72,6 +87,33 @@ def find_stub_files(stub_root: str):
             if file.endswith(".pyi"):
                 yield os.path.join(root, file)
 
+
+packages = [
+            'timefold.solver',
+            'timefold.solver.config',
+            'timefold.solver.domain',
+            'timefold.solver.heuristic',
+            'timefold.solver.score',
+            'timefold.solver.test',
+            '_jpyinterpreter',
+            ]
+
+package_dir = {
+    'timefold.solver': 'timefold-solver-python-core/src/main/python',
+    '_jpyinterpreter': 'jpyinterpreter/src/main/python',
+}
+
+if include_java_stubs:
+    packages += [
+                 'java-stubs',
+                 'jpype-stubs',
+                 'ai-stubs',
+                ]
+    package_dir.update({
+        'java-stubs': 'timefold-solver-python-core/src/main/resources',
+        'jpype-stubs': 'timefold-solver-python-core/src/main/resources',
+        'ai-stubs': 'timefold-solver-python-core/src/main/resources',
+    })
 
 this_directory = Path(__file__).parent
 long_description = (this_directory / "README.md").read_text()
@@ -98,28 +140,8 @@ setup(
         'License :: OSI Approved :: Apache Software License',
         'Operating System :: OS Independent'
     ],
-    packages=['timefold.solver',
-              'timefold.solver.config',
-              'timefold.solver.domain',
-              'timefold.solver.heuristic',
-              'timefold.solver.score',
-              'timefold.solver.test',
-              'jpyinterpreter',
-              'java-stubs',
-              'jpype-stubs',
-              'ai-stubs'],
-    package_dir={
-        'timefold.solver': 'timefold-solver-python-core/src/main/python',
-        'jpyinterpreter': 'jpyinterpreter/src/main/python',
-        # Setup tools need a non-empty directory to use as base
-        # Since these packages are generated during the build,
-        # we use the src/main/resources package, which does
-        # not contain any python files and is already included
-        # in the build
-        'java-stubs': 'timefold-solver-python-core/src/main/resources',
-        'jpype-stubs': 'timefold-solver-python-core/src/main/resources',
-        'ai-stubs': 'timefold-solver-python-core/src/main/resources',
-    },
+    packages=packages,
+    package_dir=package_dir,
     test_suite='tests',
     python_requires='>=3.10',
     install_requires=[

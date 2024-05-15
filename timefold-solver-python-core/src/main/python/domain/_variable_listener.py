@@ -1,5 +1,5 @@
 from ..score import ScoreDirector
-from jpyinterpreter import add_java_interface
+from _jpyinterpreter import add_java_interface
 from typing import TYPE_CHECKING, TypeVar
 
 if TYPE_CHECKING:

@@ -104,7 +104,7 @@ class SingleConstraintVerification(Generic[Solution_]):
         from ai.timefold.jpyinterpreter.types import CPythonBackedPythonLikeObject  # noqa
         from ai.timefold.jpyinterpreter.types.wrappers import OpaquePythonReference  # noqa
         from java.util import HashMap
-        from jpyinterpreter import convert_to_java_python_like_object
+        from _jpyinterpreter import convert_to_java_python_like_object
         reference_map = HashMap()
         wrapped_facts = []
 
@@ -123,7 +123,7 @@ class SingleConstraintVerification(Generic[Solution_]):
         solution
             never ``None``
         """
-        from jpyinterpreter import convert_to_java_python_like_object
+        from _jpyinterpreter import convert_to_java_python_like_object
         wrapped_solution = convert_to_java_python_like_object(solution)
         return SingleConstraintAssertion(self.delegate.givenSolution(wrapped_solution))
 
@@ -144,7 +144,7 @@ class MultiConstraintVerification(Generic[Solution_]):
         from ai.timefold.jpyinterpreter import CPythonBackedPythonInterpreter  # noqa
         from ai.timefold.jpyinterpreter.types import CPythonBackedPythonLikeObject  # noqa
         from ai.timefold.jpyinterpreter.types.wrappers import OpaquePythonReference  # noqa
-        from jpyinterpreter import convert_to_java_python_like_object
+        from _jpyinterpreter import convert_to_java_python_like_object
         from java.util import HashMap
         reference_map = HashMap()
         wrapped_facts = []
@@ -164,7 +164,7 @@ class MultiConstraintVerification(Generic[Solution_]):
         solution
             never ``None``
         """
-        from jpyinterpreter import convert_to_java_python_like_object
+        from _jpyinterpreter import convert_to_java_python_like_object
         wrapped_solution = convert_to_java_python_like_object(solution)
         return MultiConstraintAssertion(self.delegate.givenSolution(wrapped_solution))
 

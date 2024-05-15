@@ -81,7 +81,7 @@ def easy_score_calculator(easy_score_calculator_function: Callable[[Solution_], 
 
     """
     ensure_init()
-    from jpyinterpreter import translate_python_bytecode_to_java_bytecode, generate_proxy_class_for_translated_function
+    from _jpyinterpreter import translate_python_bytecode_to_java_bytecode, generate_proxy_class_for_translated_function
     from ai.timefold.solver.core.api.score.calculator import EasyScoreCalculator
     java_class = generate_proxy_class_for_translated_function(EasyScoreCalculator,
                                                               translate_python_bytecode_to_java_bytecode(

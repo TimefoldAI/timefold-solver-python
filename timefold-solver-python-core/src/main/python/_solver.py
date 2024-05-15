@@ -96,7 +96,7 @@ class Solver(Generic[Solution_]):
         """
         from java.lang import Exception as JavaException
         from ai.timefold.jpyinterpreter.types.errors import PythonBaseException
-        from jpyinterpreter import convert_to_java_python_like_object, unwrap_python_like_object
+        from _jpyinterpreter import convert_to_java_python_like_object, unwrap_python_like_object
         java_problem = convert_to_java_python_like_object(problem)
         if not self._solution_class.isInstance(java_problem):
             raise ValueError(
@@ -229,7 +229,7 @@ class Solver(Generic[Solution_]):
             class EventListener:
                 @JOverride
                 def bestSolutionChanged(self, event):
-                    from jpyinterpreter import unwrap_python_like_object
+                    from _jpyinterpreter import unwrap_python_like_object
                     nonlocal event_listener_list
                     event = BestSolutionChangedEvent(
                         new_best_score=event.getNewBestScore(),
