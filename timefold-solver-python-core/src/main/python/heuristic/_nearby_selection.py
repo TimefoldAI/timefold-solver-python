@@ -10,9 +10,9 @@ def nearby_distance_meter(distance_function: Callable[[Origin_, Destination_], f
     """
     Decorate a function so it can act as a distance meter for nearby selection.
 
-    The function must has the signature ``(Origin_, Destination_) -> float``.
+    The function must have the signature ``(Origin_, Destination_) -> float``.
 
-    The function should measures the distance from the origin to the destination.
+    The function should measure the distance from the origin to the destination.
     The distance can be in any unit, such a meters, foot, seconds or milliseconds.
     For example, vehicle routing often uses driving time in seconds.
 

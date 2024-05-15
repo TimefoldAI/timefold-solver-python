@@ -152,10 +152,10 @@ class ProblemChangeDirector:
 
     def lookup_working_object_or_fail(self, external_object: EntityOrProblemFact) -> EntityOrProblemFact:
         """
-        Translate an entity or fact instance (often from another Thread )
+        Translate an entity or fact instance (often from another Thread)
         to this `ProblemChangeDirector`'s internal working instance.
 
-        Matches entities by ``PlanningId`` by default.
+        Matches entities by ``PlanningId``.
 
         Parameters
         ----------
