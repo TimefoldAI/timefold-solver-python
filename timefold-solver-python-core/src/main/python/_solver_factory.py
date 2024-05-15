@@ -13,6 +13,14 @@ Solution_ = TypeVar('Solution_')
 
 
 class SolverFactory(Generic[Solution_]):
+    """
+    Creates `Solver` instances.
+    Most applications only need one `SolverFactory`.
+    To create a `SolverFactory`, create a `SolverConfig` first and then use
+    `create`.
+
+    These methods are thread-safe unless explicitly stated otherwise.
+    """
     _delegate: '_JavaSolverFactory'
     _solution_class: JClass
 
@@ -22,12 +30,42 @@ class SolverFactory(Generic[Solution_]):
 
     @staticmethod
     def create(solver_config: SolverConfig[Solution_]) -> 'SolverFactory[Solution_]':
+        """
+        Uses a `SolverConfig` to build a `SolverFactory`.
+
+        Parameters
+        ----------
+        solver_config : SolverConfig
+            The `SolverConfig` to build the `SolverFactory` from.
+
+        Returns
+        -------
+        SolverFactory
+            A `SolverFactory` instance.
+
+        Notes
+        -----
+        Subsequent changes to the config have no effect on the returned instance.
+        """
         from ai.timefold.solver.core.api.solver import SolverFactory as JavaSolverFactory
         solver_config = solver_config._to_java_solver_config()
         delegate = JavaSolverFactory.create(solver_config)  # noqa
         return SolverFactory(delegate, solver_config.getSolutionClass())  # noqa
 
     def build_solver(self, solver_config_override: SolverConfigOverride = None) -> Solver[Solution_]:
+        """
+        Creates a new Solver instance.
+
+        Parameters
+        ----------
+        solver_config_override : SolverConfigOverride, optional
+            If present, overrides to apply to the configured `SolverConfig` on the created `Solver`.
+
+        Returns
+        -------
+        Solver
+            A `Solver` instance.
+        """
         if solver_config_override is None:
             return Solver(self._delegate.buildSolver(), self._solution_class)
         else:

@@ -1,3 +1,21 @@
+"""
+Classes used to test constraints.
+See `testing a constraint stream
+<https://docs.timefold.ai/timefold-solver/latest/constraints-and-score/score-calculation#constraintStreamsTesting>`_.
+
+Examples
+--------
+>>> from timefold.solver.test import ConstraintVerifier
+>>> from domain import Lesson, Room, Timeslot, generate_solver_config
+>>> from constraint import overlapping_timeslots
+>>>
+>>> verifier = ConstraintVerifier.create(generate_solver_config())
+>>> timeslot = Timeslot(...)
+>>> (verifier.verify_that(overlapping_timeslots)
+...          .given(Lesson('Amy', Room('A'), timeslot),
+...                 Lesson('Amy', Room('B'), timeslot))
+...          .penalizes_by(1))
+"""
 from typing import Callable, Generic, List, Type, TypeVar, TYPE_CHECKING, overload, Union
 
 from .._jpype_type_conversions import PythonBiFunction
@@ -49,17 +67,17 @@ class ConstraintVerifier(Generic[Solution_]):
     @overload
     def verify_that(self, constraint_function: Callable[['ConstraintFactory'], 'Constraint']) -> \
             'SingleConstraintVerification[Solution_]':
-        """
-        Creates a constraint verifier for a given Constraint of the ConstraintProvider.
-        :param constraint_function: The constraint to verify
-        """
         ...
 
     def verify_that(self, constraint_function: Callable[['ConstraintFactory'], 'Constraint'] = None):
         """
         Creates a constraint verifier for a given Constraint of the ConstraintProvider.
-        :param constraint_function: Sometimes None, the constraint to verify. If not provided, all
-                                    constraints will be tested
+
+        Parameters
+        ----------
+        constraint_function : Callable[['ConstraintFactory'], 'Constraint'], optional
+            the constraint to verify.
+            If not provided, all constraints will be tested
         """
         if constraint_function is None:
             return MultiConstraintVerification(self.delegate.verifyThat())
@@ -76,7 +94,11 @@ class SingleConstraintVerification(Generic[Solution_]):
     def given(self, *facts) -> 'SingleConstraintAssertion':
         """
         Set the facts for this assertion
-        :param facts: Never None, at least one
+
+        Parameters
+        ----------
+        facts
+            never ``None``, at least one
         """
         from ai.timefold.jpyinterpreter import CPythonBackedPythonInterpreter  # noqa
         from ai.timefold.jpyinterpreter.types import CPythonBackedPythonLikeObject  # noqa
@@ -95,7 +117,11 @@ class SingleConstraintVerification(Generic[Solution_]):
     def given_solution(self, solution: 'Solution_') -> 'SingleConstraintAssertion':
         """
         Set the solution to be used for this assertion
-        :param solution: Never None
+
+        Parameters
+        ----------
+        solution
+            never ``None``
         """
         from jpyinterpreter import convert_to_java_python_like_object
         wrapped_solution = convert_to_java_python_like_object(solution)
@@ -109,7 +135,11 @@ class MultiConstraintVerification(Generic[Solution_]):
     def given(self, *facts) -> 'MultiConstraintAssertion':
         """
         Set the facts for this assertion
-        :param facts: Never None, at least one
+
+        Parameters
+        ----------
+        facts
+            never ``None``, at least one
         """
         from ai.timefold.jpyinterpreter import CPythonBackedPythonInterpreter  # noqa
         from ai.timefold.jpyinterpreter.types import CPythonBackedPythonLikeObject  # noqa
@@ -127,8 +157,12 @@ class MultiConstraintVerification(Generic[Solution_]):
 
     def given_solution(self, solution: 'Solution_') -> 'MultiConstraintAssertion':
         """
-        Set the solution to be used for this assertion
-        :param solution: Never None
+        Set the solution to be used for this assertion.
+
+        Parameters
+        ----------
+        solution
+            never ``None``
         """
         from jpyinterpreter import convert_to_java_python_like_object
         wrapped_solution = convert_to_java_python_like_object(solution)
@@ -139,76 +173,27 @@ class SingleConstraintAssertion:
     def __init__(self, delegate):
         self.delegate = delegate
 
-    @overload
-    def penalizes(self) -> None:
-        """
-        Asserts that the Constraint being tested, given a set of facts, results in any number of penalties.
-
-        Ignores the constraint and match weights: it only asserts the number of matches
-        For example: if there are two matches with weight of 10 each, this assertion will succeed.
-        If there are no matches, it will fail.
-
-        :raises AssertionError: when there are no penalties
-        """
-        ...
-
-    @overload
-    def penalizes(self, times: int) -> None:
+    def penalizes(self, times: int = None, message: str = None) -> None:
         """
         Asserts that the Constraint being tested, given a set of facts, results in a given number of penalties.
 
         Ignores the constraint and match weights: it only asserts the number of matches
         For example: if there are two matches with weight of 10 each, this assertion will check for 2 matches.
 
-        :param times: the expected number of penalties
-        :raises AssertionError: when the expected penalty is not observed
-        """
-        ...
+        Parameters
+        ----------
+        times : int, optional
+            the expected number of penalties.
+            If not provided, it raises an AssertionError when there are no penalties
 
-    @overload
-    def penalizes(self, message: str) -> None:
-        """
-        Asserts that the Constraint being tested, given a set of facts, results in any number of penalties.
+        message : str, optional
+            description of the scenario being asserted
 
-        Ignores the constraint and match weights: it only asserts the number of matches
-        For example: if there are two matches with weight of 10 each, this assertion will succeed.
-        If there are no matches, it will fail.
-
-        :param message: sometimes None, description of the scenario being asserted
-
-        :raises AssertionError: when there are no penalties
-        """
-        ...
-
-    @overload
-    def penalizes(self, times: int, message: str) -> None:
-        """
-        Asserts that the Constraint being tested, given a set of facts, results in a given number of penalties.
-
-        Ignores the constraint and match weights: it only asserts the number of matches
-        For example: if there are two matches with weight of 10 each, this assertion will check for 2 matches.
-
-        :param times: the expected number of penalties
-        :param message: sometimes None, description of the scenario being asserted
-
-        :raises AssertionError: when the expected penalty is not observed
-        """
-        ...
-
-    def penalizes(self, times: Union[int, str] = None, message: str = None) -> None:
-        """
-        Asserts that the Constraint being tested, given a set of facts, results in a given number of penalties.
-
-        Ignores the constraint and match weights: it only asserts the number of matches
-        For example: if there are two matches with weight of 10 each, this assertion will check for 2 matches.
-
-        :param times: sometimes None, the expected number of penalties. If not provided, it raises an AssertionError
-                      when there are no penalties
-        :param message: sometimes None, description of the scenario being asserted
-
-        :raises AssertionError: when the expected penalty is not observed if times is provided, or
-                                when there are no penalties if times is not provided
-
+        Raises
+        ------
+        AssertionError
+            when the expected penalty is not observed if `times` is provided, or
+            when there are no penalties if `times` is not provided
         """
         from java.lang import AssertionError as JavaAssertionError  # noqa
         try:
@@ -223,46 +208,26 @@ class SingleConstraintAssertion:
         except JavaAssertionError as e:
             raise AssertionError(e.getMessage())
 
-    @overload
-    def penalizes_by(self, match_weight_total: int) -> None:
-        """
-        Asserts that the Constraint being tested, given a set of facts, results in a specific penalty.
-
-        Ignores the constraint weight: it only asserts the match weights.
-        For example: a match with a match weight of 10 on a constraint with a constraint weight of -2hard reduces the
-        score by -20hard. In that case, this assertion checks for 10.
-
-        :param match_weight_total: the expected penalty
-        :raises AssertionError: when the expected penalty is not observed
-        """
-        ...
-
-    @overload
-    def penalizes_by(self, match_weight_total: int, message: str) -> None:
-        """
-        Asserts that the Constraint being tested, given a set of facts, results in a specific penalty.
-
-        Ignores the constraint weight: it only asserts the match weights.
-        For example: a match with a match weight of 10 on a constraint with a constraint weight of -2hard reduces the
-        score by -20hard. In that case, this assertion checks for 10.
-
-        :param match_weight_total: the expected penalty
-        :param message: sometimes None, description of the scenario being asserted
-        :raises AssertionError: when the expected penalty is not observed
-        """
-        ...
-
     def penalizes_by(self, match_weight_total: int, message: str = None):
         """
-        Asserts that the Constraint being tested, given a set of facts, results in a specific penalty.
+        Asserts that the `Constraint` being tested, given a set of facts, results in a specific penalty.
 
         Ignores the constraint weight: it only asserts the match weights.
         For example: a match with a match weight of 10 on a constraint with a constraint weight of -2hard reduces the
         score by -20hard. In that case, this assertion checks for 10.
 
-        :param match_weight_total: the expected penalty
-        :param message: sometimes None, description of the scenario being asserted
-        :raises AssertionError: when the expected penalty is not observed
+        Parameters
+        ----------
+        match_weight_total : int
+            the expected penalty
+
+        message : str, optional
+            description of the scenario being asserted
+
+        Raises
+        ------
+        AssertionError
+            when the expected penalty is not observed
         """
         from java.lang import AssertionError as JavaAssertionError  # noqa
         try:
@@ -273,60 +238,6 @@ class SingleConstraintAssertion:
         except JavaAssertionError as e:
             raise AssertionError(e.getMessage())
 
-    @overload
-    def rewards(self) -> None:
-        """
-        Asserts that the Constraint being tested, given a set of facts, results in any number of rewards.
-
-        Ignores the constraint and match weights: it only asserts the number of matches
-        For example: if there are two matches with weight of 10 each, this assertion will succeed.
-        If there are no matches, it will fail.
-
-        :raises AssertionError: when there are no rewards
-        """
-        ...
-
-    @overload
-    def rewards(self, times: int) -> None:
-        """
-        Asserts that the Constraint being tested, given a set of facts, results in a given number of rewards.
-
-        Ignores the constraint and match weights: it only asserts the number of matches
-        For example: if there are two matches with weight of 10 each, this assertion will check for 2 matches.
-
-        :param times: the expected number of rewards
-        :raises AssertionError: when the expected reward is not observed
-        """
-        ...
-
-    @overload
-    def rewards(self, message: str) -> None:
-        """
-        Asserts that the Constraint being tested, given a set of facts, results in any number of rewards.
-
-        Ignores the constraint and match weights: it only asserts the number of matches
-        For example: if there are two matches with weight of 10 each, this assertion will succeed.
-        If there are no matches, it will fail.
-
-        :param message: sometimes None, description of the scenario being asserted
-        :raises AssertionError: when there are no rewards
-        """
-        ...
-
-    @overload
-    def rewards(self, times: int, message: str) -> None:
-        """
-        Asserts that the Constraint being tested, given a set of facts, results in a given number of rewards.
-
-        Ignores the constraint and match weights: it only asserts the number of matches
-        For example: if there are two matches with weight of 10 each, this assertion will check for 2 matches.
-
-        :param times: the expected number of rewards
-        :param message: sometimes None, description of the scenario being asserted
-        :raises AssertionError: when the expected reward is not observed
-        """
-        ...
-
     def rewards(self, times: int = None, message: str = None):
         """
         Asserts that the Constraint being tested, given a set of facts, results in a given number of rewards.
@@ -334,13 +245,20 @@ class SingleConstraintAssertion:
         Ignores the constraint and match weights: it only asserts the number of matches
         For example: if there are two matches with weight of 10 each, this assertion will check for 2 matches.
 
-        :param times: sometimes None, the expected number of rewards. If not provided, it raises an AssertionError
-                      when there are no rewards
-        :param message: sometimes None, description of the scenario being asserted
+        Parameters
+        ----------
+        times : int, optional
+            the expected number of rewards.
+            If not provided, it raises an AssertionError when there are no rewards
 
-        :raises AssertionError: when the expected reward is not observed if times is provided, or
-                                when there are no rewards if times is not provided
+        message : str, optional
+            description of the scenario being asserted
 
+        Raises
+        ------
+        AssertionError
+            when the expected reward is not observed if times is provided, or
+            when there are no rewards if times is not provided
         """
         from java.lang import AssertionError as JavaAssertionError  # noqa
         try:
@@ -355,36 +273,27 @@ class SingleConstraintAssertion:
         except JavaAssertionError as e:
             raise AssertionError(e.getMessage())
 
-    @overload
-    def rewards_with(self, match_weight_total: int) -> None:
-        """
-        Asserts that the Constraint being tested, given a set of facts, results in a specific reward.
-
-        Ignores the constraint weight: it only asserts the match weights.
-        For example: a match with a match weight of 10 on a constraint with a constraint weight of -2hard reduces the
-        score by -20hard. In that case, this assertion checks for 10.
-
-        :param match_weight_total: the expected reward
-        :raises AssertionError: when the expected reward is not observed
-        """
-        ...
-
-    @overload
-    def rewards_with(self, match_weight_total: int, message: str) -> None:
-        """
-        Asserts that the Constraint being tested, given a set of facts, results in a specific reward.
-
-        Ignores the constraint weight: it only asserts the match weights.
-        For example: a match with a match weight of 10 on a constraint with a constraint weight of -2hard reduces the
-        score by -20hard. In that case, this assertion checks for 10.
-
-        :param match_weight_total: the expected reward
-        :param message: sometimes None, description of the scenario being asserted
-        :raises AssertionError: when the expected reward is not observed
-        """
-        ...
-
     def rewards_with(self, match_weight_total: int, message: str = None):
+        """
+        Asserts that the Constraint being tested, given a set of facts, results in a specific reward.
+        Ignores the constraint weight: it only asserts the match weights.
+        For example: a match with a match weight of 10 on a constraint with a constraint weight of
+        -2hard reduces the score by -20hard.
+        In that case, this assertion checks for 10.
+
+        Parameters
+        ----------
+        match_weight_total : int
+            at least 0, expected sum of match weights of matches of the constraint.
+
+        message : str, optional
+            description of the scenario being asserted
+
+        Raises
+        ------
+        AssertionError
+            when the expected reward is not observed
+        """
         from java.lang import AssertionError as JavaAssertionError  # noqa
         try:
             if message is None:
@@ -399,31 +308,22 @@ class MultiConstraintAssertion:
     def __init__(self, delegate):
         self.delegate = delegate
 
-    @overload
-    def scores(self, score: 'Score') -> None:
-        """
-        Asserts that the ConstraintProvider under test, given a set of facts, results in a specific Score.
-        :param score: total score calculated for the given set of facts
-        :raises AssertionError: when the expected score does not match the calculated score
-        """
-        ...
-
-    @overload
-    def scores(self, score: 'Score', message: str) -> None:
-        """
-        Asserts that the ConstraintProvider under test, given a set of facts, results in a specific Score.
-        :param score: total score calculated for the given set of facts
-        :param message: sometimes None, description of the scenario being asserted
-        :raises AssertionError: when the expected score does not match the calculated score
-        """
-        ...
-
     def scores(self, score: 'Score', message: str = None):
         """
-        Asserts that the ConstraintProvider under test, given a set of facts, results in a specific Score.
-        :param score: total score calculated for the given set of facts
-        :param message: sometimes None, description of the scenario being asserted
-        :raises AssertionError: when the expected score does not match the calculated score
+        Asserts that the `constraint_provider` under test, given a set of facts, results in a specific `Score`.
+
+        Parameters
+        ----------
+        score : Score
+            total score calculated for the given set of facts
+
+        message: str, optional
+            description of the scenario being asserted
+
+        Raises
+        ------
+        AssertionError
+            when the expected score does not match the calculated score
         """
         from java.lang import AssertionError as JavaAssertionError  # noqa
         try:

@@ -10,6 +10,10 @@ class _SimpleScoreImpl:
         return self.initScore()
 
     @property
+    def is_solution_initialized(self) -> bool:
+        return self.isSolutionInitialized()
+
+    @property
     def is_feasible(self) -> bool:
         return self.isFeasible()
 
@@ -23,6 +27,10 @@ class _HardSoftScoreImpl:
     @property
     def init_score(self) -> int:
         return self.initScore()
+
+    @property
+    def is_solution_initialized(self) -> bool:
+        return self.isSolutionInitialized()
 
     @property
     def is_feasible(self) -> bool:
@@ -43,6 +51,10 @@ class _HardMediumSoftScoreImpl:
     @property
     def init_score(self) -> int:
         return self.initScore()
+
+    @property
+    def is_solution_initialized(self) -> bool:
+        return self.isSolutionInitialized()
 
     @property
     def is_feasible(self) -> bool:
@@ -66,6 +78,10 @@ class _BendableScoreImpl:
     @property
     def init_score(self) -> int:
         return self.initScore()
+
+    @property
+    def is_solution_initialized(self) -> bool:
+        return self.isSolutionInitialized()
 
     @property
     def is_feasible(self) -> bool:

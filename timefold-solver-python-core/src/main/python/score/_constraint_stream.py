@@ -23,6 +23,9 @@ ScoreType = TypeVar('ScoreType', bound='Score')
 
 
 class UniConstraintStream(Generic[A]):
+    """
+    A ConstraintStream that matches one fact.
+    """
     delegate: '_JavaUniConstraintStream[A]'
     package: str
     a_type: Type[A]
@@ -39,14 +42,14 @@ class UniConstraintStream(Generic[A]):
         self.a_type = a_type
 
     def get_constraint_factory(self):
+        """
+        The ConstraintFactory that build this.
+        """
         return ConstraintFactory(self.delegate.getConstraintFactory())
 
     def filter(self, predicate: Callable[[A], bool]) -> 'UniConstraintStream[A]':
-        """Exhaustively test each fact against the predicate and match if the predicate returns True.
-
-        :param predicate:
-
-        :return:
+        """
+        Exhaustively test each fact against the predicate and match if the predicate returns ``True``.
         """
         translated_predicate = predicate_cast(predicate, self.a_type)
         return UniConstraintStream(self.delegate.filter(translated_predicate), self.package,
@@ -54,13 +57,8 @@ class UniConstraintStream(Generic[A]):
 
     def join(self, unistream_or_type: Union['UniConstraintStream[B_]', Type[B_]], *joiners: 'BiJoiner[A, B_]') -> \
             'BiConstraintStream[A,B_]':
-        """Create a new BiConstraintStream for every combination of A and B that satisfy all specified joiners.
-
-        :param unistream_or_type:
-
-        :param joiners:
-
-        :return:
+        """
+        Create a new `BiConstraintStream` for every combination of A and B that satisfy all specified joiners.
         """
         b_type = None
         if isinstance(unistream_or_type, UniConstraintStream):
@@ -75,13 +73,8 @@ class UniConstraintStream(Generic[A]):
                                   self.a_type, b_type)
 
     def if_exists(self, item_type: Type[B_], *joiners: 'BiJoiner[A, B_]') -> 'UniConstraintStream[A]':
-        """Create a new UniConstraintStream for every A where B exists that satisfy all specified joiners.
-
-        :param item_type:
-
-        :param joiners:
-
-        :return:
+        """
+        Create a new UniConstraintStream for every A where B exists that satisfy all specified joiners.
         """
         item_type = get_class(item_type)
         return UniConstraintStream(self.delegate.ifExists(item_type,
@@ -90,13 +83,8 @@ class UniConstraintStream(Generic[A]):
 
     def if_exists_including_unassigned(self, item_type: Type[B_], *joiners: 'BiJoiner[A, B_]') -> \
             'UniConstraintStream[A]':
-        """Create a new UniConstraintStream for every A where B exists that satisfy all specified joiners.
-
-        :param item_type:
-
-        :param joiners:
-
-        :return:
+        """
+        Create a new `UniConstraintStream` for every A where B exists that satisfy all specified joiners.
         """
         item_type = get_class(item_type)
         return UniConstraintStream(self.delegate.ifExistsIncludingUnassigned(item_type,
@@ -106,14 +94,9 @@ class UniConstraintStream(Generic[A]):
                                    self.a_type)
 
     def if_exists_other(self, item_type: Type[B_], *joiners: 'BiJoiner[A, B_]') -> 'UniConstraintStream[A]':
-        """Create a new UniConstraintStream for every A, if another A exists that does not equal the first,
+        """
+        Create a new `UniConstraintStream` for every A, if another A exists that does not equal the first,
         and for which all specified joiners are satisfied.
-
-        :param item_type:
-
-        :param joiners:
-
-        :return:
         """
         item_type = get_class(item_type)
         return UniConstraintStream(self.delegate.ifExistsOther(cast(Type['A_'], item_type),
@@ -124,6 +107,11 @@ class UniConstraintStream(Generic[A]):
 
     def if_exists_other_including_unassigned(self, item_type: Type, *joiners: 'BiJoiner') -> \
             'UniConstraintStream':
+        """
+        Create a new UniConstraintStream for every A, if another A exists that does not equal the first.
+        For classes decorated with `planning_entity`, this method also includes entities with ``None`` variables,
+        or entities that are not assigned to any list variable.
+        """
         item_type = get_class(item_type)
         return UniConstraintStream(self.delegate.ifExistsOtherIncludingUnassigned(cast(Type['A_'], item_type),
                                                                                   extract_joiners(joiners,
@@ -134,14 +122,9 @@ class UniConstraintStream(Generic[A]):
                                    self.a_type)
 
     def if_not_exists(self, item_type: Type[B_], *joiners: 'BiJoiner[A, B_]') -> 'UniConstraintStream[A]':
-        """Create a new UniConstraintStream for every A where there does not exist a B where all specified joiners
+        """
+        Create a new `UniConstraintStream` for every A where there does not exist a B where all specified joiners
         are satisfied.
-
-        :param item_type:
-
-        :param joiners:
-
-        :return:
         """
         item_type = get_class(item_type)
         return UniConstraintStream(self.delegate.ifNotExists(item_type, extract_joiners(joiners, self.a_type,
@@ -150,14 +133,9 @@ class UniConstraintStream(Generic[A]):
 
     def if_not_exists_including_unassigned(self, item_type: Type[B_], *joiners: 'BiJoiner[A, B_]') -> \
             'UniConstraintStream[A]':
-        """Create a new UniConstraintStream for every A where there does not exist a B where all specified joiners are
+        """
+        Create a new `UniConstraintStream` for every A where there does not exist a B where all specified joiners are
         satisfied.
-
-       :param item_type:
-
-       :param joiners:
-
-       :return:
        """
         item_type = get_class(item_type)
         return UniConstraintStream(self.delegate.ifNotExistsIncludingUnassigned(item_type,
@@ -170,14 +148,9 @@ class UniConstraintStream(Generic[A]):
 
     def if_not_exists_other(self, item_type: Type[B_], *joiners: 'BiJoiner[A, B_]') -> \
             'UniConstraintStream[A]':
-        """Create a new UniConstraintStream for every A where there does not exist a different A where all specified
+        """
+        Create a new `UniConstraintStream` for every A where there does not exist a different A where all specified
         joiners are satisfied.
-
-        :param item_type:
-
-        :param joiners:
-
-        :return:
         """
         item_type = get_class(item_type)
         return UniConstraintStream(self.delegate.ifNotExistsOther(cast(Type['A_'], item_type),
@@ -190,14 +163,9 @@ class UniConstraintStream(Generic[A]):
 
     def if_not_exists_other_including_unassigned(self, item_type: Type[B_], *joiners: 'BiJoiner[A, B_]') -> \
             'UniConstraintStream[A]':
-        """Create a new UniConstraintStream for every A where there does not exist a different A where all specified
+        """
+        Create a new `UniConstraintStream` for every A where there does not exist a different A where all specified
         joiners are satisfied.
-
-        :param item_type:
-
-        :param joiners:
-
-        :return:
         """
         item_type = get_class(item_type)
         return UniConstraintStream(self.delegate.ifNotExistsOtherIncludingUnassigned(cast(Type['A_'], item_type),
@@ -283,7 +251,8 @@ class UniConstraintStream(Generic[A]):
         ...
 
     def group_by(self, *args):
-        """Collect items into groups using the group_key_function(s) and optionally aggregate the group's items into a
+        """
+        Collect items into groups using the group_key_function(s) and optionally aggregate the group's items into a
         result.
 
         The syntax of group_by is zero to four group_key functions, followed by zero to four collectors. At most
@@ -292,44 +261,43 @@ class UniConstraintStream(Generic[A]):
         If no group_key function is passed to group_by, all items in the stream are aggregated into a single result
         by the passed constraint collectors.
 
-        Examples:
+        Returns
+        -------
+        UniConstraintStream | BiConstraintStream | TriConstraintStream | QuadConstraintStream
+            The type of stream returned depends on the number of arguments passed:
 
-            - # count the items in this stream; returns Uni[int]
+            - 1 -> UniConstraintStream
 
-              group_by(ConstraintCollectors.count())
+            - 2 -> BiConstraintStream
 
-            - # count the number of shifts each employee has; returns Bi[Employee]
+            - 3 -> TriConstraintStream
 
-              group_by(lambda shift: shift.employee, ConstraintCollectors.count())
+            - 4 -> QuadConstraintStream
 
-            - # count the number of shifts each employee has on a date; returns Tri[Employee, datetime.date, int]
+        Examples
+        --------
 
-              group_by(lambda shift: shift.employee, lambda shift: shift.date, ConstraintCollectors.count())
+        Count the items in this stream; returns Uni[int]
 
-            - # count the number of shifts each employee has on a date; returns Tri[Employee, datetime.date, int]
+        >>> group_by(ConstraintCollectors.count())
 
-              group_by(lambda shift: shift.employee, lambda shift: shift.date, ConstraintCollectors.count())
+        Count the number of shifts each employee has; returns Bi[Employee]
 
-            - # get the dates of the first and last shift of each employee; returns Tri[Employee, datetime.date,
-              datetime.date]
+        >>> group_by(lambda shift: shift.employee, ConstraintCollectors.count())
 
-              group_by(lambda shift: shift.employee,
-              ConstraintCollectors.min(lambda shift: shift.date)
-              ConstraintCollectors.max(lambda shift: shift.date))
+        Count the number of shifts each employee has on a date; returns Tri[Employee, datetime.date, int]
 
-        The type of stream returned depends on the number of arguments passed:
+        >>> group_by(lambda shift: shift.employee, lambda shift: shift.date, ConstraintCollectors.count())
 
-        - 1 -> UniConstraintStream
+        Count the number of shifts each employee has on a date; returns Tri[Employee, datetime.date, int]
 
-        - 2 -> BiConstraintStream
+        >>> group_by(lambda shift: shift.employee, lambda shift: shift.date, ConstraintCollectors.count())
 
-        - 3 -> TriConstraintStream
+        Get the dates of the first and last shift of each employee; returns Tri[Employee, datetime.date, datetime.date]
 
-        - 4 -> QuadConstraintStream
-
-        :param args:
-
-        :return:
+        >>> group_by(lambda shift: shift.employee,
+        ...          ConstraintCollectors.min(lambda shift: shift.date)
+        ...          ConstraintCollectors.max(lambda shift: shift.date))
         """
         return perform_group_by(self.delegate, self.package, args, self.a_type)
 
@@ -354,11 +322,8 @@ class UniConstraintStream(Generic[A]):
         ...
 
     def map(self, *mapping_functions):
-        """Transforms the stream in such a way that tuples are remapped using the given function.
-
-        :param mapping_functions:
-
-        :return:
+        """
+        Transforms the stream in such a way that tuples are remapped using the given function.
         """
         if len(mapping_functions) == 0:
             raise ValueError(f'At least one mapping function is required for map.')
@@ -406,8 +371,6 @@ class UniConstraintStream(Generic[A]):
         which only increases stream cardinality and can not introduce duplicate tuples.
         It enables you to add extra facts to each tuple in a constraint stream by applying a mapping function to it.
         This is useful in situations where an expensive computations needs to be cached for use later in the stream.
-        :param mapping_functions:
-        :return:
         """
         if len(mapping_functions) == 0:
             raise ValueError(f'At least one mapping function is required for expand.')
@@ -433,11 +396,8 @@ class UniConstraintStream(Generic[A]):
         raise RuntimeError(f'Impossible state: missing case for {len(mapping_functions)}.')
 
     def flatten_last(self, flattening_function: Callable[[A], A_]) -> 'UniConstraintStream[A_]':
-        """Takes each tuple and applies a mapping on it, which turns the tuple into an Iterable.
-
-        :param flattening_function:
-
-        :return:
+        """
+        Takes each tuple and applies a mapping on it, which turns the tuple into an Iterable.
         """
         translated_function = function_cast(flattening_function, self.a_type)
         return UniConstraintStream(self.delegate.flattenLast(translated_function), self.package,
@@ -445,9 +405,8 @@ class UniConstraintStream(Generic[A]):
                                    JClass('java.lang.Object'))
 
     def distinct(self) -> 'UniConstraintStream[A]':
-        """Transforms the stream in such a way that all the tuples going through it are distinct.
-
-        :return:
+        """
+        Transforms the stream in such a way that all the tuples going through it are distinct.
         """
         return UniConstraintStream(self.delegate.distinct(), self.package, self.a_type)
 
@@ -476,8 +435,6 @@ class UniConstraintStream(Generic[A]):
         If the two constraint concatenating streams share tuples, which happens e.g.
         when they come from the same source of data, the tuples will be repeated downstream.
         If this is undesired, use the distinct building block.
-        :param other:
-        :return:
         """
         if isinstance(other, UniConstraintStream):
             return UniConstraintStream(self.delegate.concat(other.delegate), self.package,
@@ -499,6 +456,24 @@ class UniConstraintStream(Generic[A]):
 
     def penalize(self, constraint_weight: ScoreType, match_weigher: Callable[[A], int] = None) -> \
             'UniConstraintBuilder[A, ScoreType]':
+        """
+        Applies a negative Score impact, subtracting the constraint_weight multiplied by the match weight,
+        and returns a builder to apply optional constraint properties.
+
+        Parameters
+        ----------
+        constraint_weight : Score
+            the weight of the constraint.
+
+        match_weigher : Callable[[A], int]
+            a function that computes the weight of a match.
+            If absent, each match has weight ``1``.
+
+        Returns
+        -------
+        UniConstraintBuilder
+            a `UniConstraintBuilder`
+        """
         if match_weigher is None:
             return UniConstraintBuilder(self.delegate.penalize(constraint_weight), self.a_type)
         else:
@@ -508,6 +483,24 @@ class UniConstraintStream(Generic[A]):
 
     def reward(self, constraint_weight: ScoreType, match_weigher: Callable[[A], int] = None) -> \
             'UniConstraintBuilder[A, ScoreType]':
+        """
+        Applies a positive Score impact, adding the constraint_weight multiplied by the match weight,
+        and returns a builder to apply optional constraint properties.
+
+        Parameters
+        ----------
+        constraint_weight : Score
+            the weight of the constraint.
+
+        match_weigher : Callable[[A], int]
+            a function that computes the weight of a match.
+            If absent, each match has weight ``1``.
+
+        Returns
+        -------
+        UniConstraintBuilder
+            a `UniConstraintBuilder`
+        """
         if match_weigher is None:
             return UniConstraintBuilder(self.delegate.reward(constraint_weight), self.a_type)
         else:
@@ -517,6 +510,25 @@ class UniConstraintStream(Generic[A]):
 
     def impact(self, constraint_weight: ScoreType, match_weigher: Callable[[A], int] = None) -> \
             'UniConstraintBuilder[A, ScoreType]':
+        """
+        Positively or negatively impacts the `Score` by `constraint_weight` multiplied by match weight for each match
+        and returns a builder to apply optional constraint properties.
+        Use `penalize` or `reward` instead, unless this constraint can both have positive and negative weights.
+
+        Parameters
+        ----------
+        constraint_weight : Score
+            the weight of the constraint.
+
+        match_weigher : Callable[[A], int]
+            a function that computes the weight of a match.
+            If absent, each match has weight ``1``.
+
+        Returns
+        -------
+        UniConstraintBuilder
+            a `UniConstraintBuilder`
+        """
         if match_weigher is None:
             return UniConstraintBuilder(self.delegate.impact(constraint_weight), self.a_type)
         else:
@@ -526,6 +538,25 @@ class UniConstraintStream(Generic[A]):
 
     def penalize_configurable(self, match_weigher: Callable[[A], int] = None) -> \
             'UniConstraintBuilder[A, ScoreType]':
+        """
+        Negatively impacts the Score, subtracting the ConstraintWeight for each match,
+        and returns a builder to apply optional constraint properties.
+        The constraint weight comes from a `ConstraintWeight` annotated member on the `constraint_configuration`,
+        so end users can change the constraint weights dynamically.
+        This constraint may be deactivated if the `ConstraintWeight` is zero.
+        If there is no `constraint_configuration`, use `penalize` instead.
+
+        Parameters
+        ----------
+        match_weigher : Callable[[A], int]
+            a function that computes the weight of a match.
+            If absent, each match has weight ``1``.
+
+        Returns
+        -------
+        UniConstraintBuilder
+            a `UniConstraintBuilder`
+        """
         if match_weigher is None:
             return UniConstraintBuilder(self.delegate.penalizeConfigurable(), self.a_type)
         else:
@@ -535,6 +566,25 @@ class UniConstraintStream(Generic[A]):
 
     def reward_configurable(self, match_weigher: Callable[[A], int] = None) -> \
             'UniConstraintBuilder[A, ScoreType]':
+        """
+        Positively impacts the Score, adding the ConstraintWeight for each match,
+        and returns a builder to apply optional constraint properties.
+        The constraint weight comes from a `ConstraintWeight` annotated member on the `constraint_configuration`,
+        so end users can change the constraint weights dynamically.
+        This constraint may be deactivated if the `ConstraintWeight` is zero.
+        If there is no `constraint_configuration`, use `penalize` instead.
+
+        Parameters
+        ----------
+        match_weigher : Callable[[A], int]
+            a function that computes the weight of a match.
+            If absent, each match has weight ``1``.
+
+        Returns
+        -------
+        UniConstraintBuilder
+            a `UniConstraintBuilder`
+        """
         if match_weigher is None:
             return UniConstraintBuilder(self.delegate.rewardConfigurable(), self.a_type)
         else:
@@ -544,6 +594,25 @@ class UniConstraintStream(Generic[A]):
 
     def impact_configurable(self, match_weigher: Callable[[A], int] = None) -> \
             'UniConstraintBuilder[A, ScoreType]':
+        """
+        Positively or negatively impacts the Score, adding the ConstraintWeight for each match,
+        and returns a builder to apply optional constraint properties.
+        The constraint weight comes from a `ConstraintWeight` annotated member on the `constraint_configuration`,
+        so end users can change the constraint weights dynamically.
+        This constraint may be deactivated if the `ConstraintWeight` is zero.
+        If there is no `constraint_configuration`, use `penalize` instead.
+
+        Parameters
+        ----------
+        match_weigher : Callable[[A], int]
+            a function that computes the weight of a match.
+            If absent, each match has weight ``1``.
+
+        Returns
+        -------
+        UniConstraintBuilder
+            a `UniConstraintBuilder`
+        """
         if match_weigher is None:
             return UniConstraintBuilder(self.delegate.impactConfigurable(), self.a_type)
         else:
@@ -553,6 +622,9 @@ class UniConstraintStream(Generic[A]):
 
 
 class BiConstraintStream(Generic[A, B]):
+    """
+    A ConstraintStream that matches two facts.
+    """
     delegate: '_JavaBiConstraintStream[A,B]'
     package: str
     a_type: Type[A]
@@ -571,14 +643,14 @@ class BiConstraintStream(Generic[A, B]):
         self.b_type = b_type
 
     def get_constraint_factory(self):
+        """
+        The ConstraintFactory that build this.
+        """
         return ConstraintFactory(self.delegate.getConstraintFactory())
 
     def filter(self, predicate: Callable[[A, B], bool]) -> 'BiConstraintStream[A,B]':
-        """Exhaustively test each fact against the predicate and match if the predicate returns True.
-
-        :param predicate:
-
-        :return:
+        """
+        Exhaustively test each fact against the predicate and match if the predicate returns ``True``.
         """
         translated_predicate = predicate_cast(predicate, self.a_type, self.b_type)
         return BiConstraintStream(self.delegate.filter(translated_predicate), self.package,
@@ -588,13 +660,8 @@ class BiConstraintStream(Generic[A, B]):
 
     def join(self, unistream_or_type: Union[UniConstraintStream[C_], Type[C_]],
              *joiners: 'TriJoiner[A,B,C_]') -> 'TriConstraintStream[A,B,C_]':
-        """Create a new TriConstraintStream for every combination of A, B and C that satisfy all specified joiners.
-
-        :param unistream_or_type:
-
-        :param joiners:
-
-        :return:
+        """
+        Create a new `TriConstraintStream` for every combination of A, B and C that satisfy all specified joiners.
         """
         c_type = None
         if isinstance(unistream_or_type, UniConstraintStream):
@@ -610,13 +677,8 @@ class BiConstraintStream(Generic[A, B]):
                                    self.a_type, self.b_type, c_type)
 
     def if_exists(self, item_type: Type[C_], *joiners: 'TriJoiner[A, B, C_]') -> 'BiConstraintStream[A,B]':
-        """Create a new BiConstraintStream for every A, B where C exists that satisfy all specified joiners.
-
-        :param item_type:
-
-        :param joiners:
-
-        :return:
+        """
+        Create a new `BiConstraintStream` for every A, B where C exists that satisfy all specified joiners.
         """
         item_type = get_class(item_type)
         return BiConstraintStream(self.delegate.ifExists(item_type,
@@ -627,13 +689,8 @@ class BiConstraintStream(Generic[A, B]):
 
     def if_exists_including_unassigned(self, item_type: Type[C_], *joiners: 'TriJoiner[A, B, C_]') -> \
             'BiConstraintStream[A,B]':
-        """Create a new BiConstraintStream for every A, B where C exists that satisfy all specified joiners.
-
-        :param item_type:
-
-        :param joiners:
-
-        :return:
+        """
+        Create a new `BiConstraintStream` for every A, B where C exists that satisfy all specified joiners.
         """
         item_type = get_class(item_type)
         return BiConstraintStream(self.delegate.ifExistsIncludingUnassigned(item_type, extract_joiners(joiners,
@@ -646,14 +703,9 @@ class BiConstraintStream(Generic[A, B]):
 
     def if_not_exists(self, item_type: Type[C_], *joiners: 'TriJoiner[A, B, C_]') -> \
             'BiConstraintStream[A,B]':
-        """Create a new BiConstraintStream for every A, B, where there does not exist a C where all specified joiners
+        """
+        Create a new `BiConstraintStream` for every A, B, where there does not exist a C where all specified joiners
         are satisfied.
-
-       :param item_type:
-
-       :param joiners:
-
-       :return:
        """
         item_type = get_class(item_type)
         return BiConstraintStream(self.delegate.ifNotExists(item_type, extract_joiners(joiners, self.a_type,
@@ -663,14 +715,9 @@ class BiConstraintStream(Generic[A, B]):
 
     def if_not_exists_including_unassigned(self, item_type: Type[C_], *joiners: 'TriJoiner[A, B, C_]') -> \
             'BiConstraintStream[A,B]':
-        """Create a new BiConstraintStream for every A, B, where there does not exist a C where all specified joiners
+        """
+        Create a new `BiConstraintStream` for every A, B, where there does not exist a C where all specified joiners
         are satisfied.
-
-        :param item_type:
-
-        :param joiners:
-
-        :return:
         """
         item_type = get_class(item_type)
         return BiConstraintStream(self.delegate.ifNotExistsIncludingUnassigned(item_type,
@@ -757,7 +804,8 @@ class BiConstraintStream(Generic[A, B]):
         ...
 
     def group_by(self, *args):
-        """Collect items into groups using the group_key_function(s) and optionally aggregate the group's items into a
+        """
+        Collect items into groups using the group_key_function(s) and optionally aggregate the group's items into a
         result.
 
         The syntax of group_by is zero to four group_key functions, followed by zero to four collectors. At most
@@ -766,44 +814,43 @@ class BiConstraintStream(Generic[A, B]):
         If no group_key function is passed to group_by, all items in the stream are aggregated into a single result
         by the passed constraint collectors.
 
-        Examples:
+        Returns
+        -------
+        UniConstraintStream | BiConstraintStream | TriConstraintStream | QuadConstraintStream
+            The type of stream returned depends on the number of arguments passed:
 
-            - # count the items in this stream; returns Uni[int]
+            - 1 -> UniConstraintStream
 
-              group_by(ConstraintCollectors.count_bi())
+            - 2 -> BiConstraintStream
 
-            - # count the number of shifts each employee has; returns Bi[Employee]
+            - 3 -> TriConstraintStream
 
-              group_by(lambda shift, _: shift.employee, ConstraintCollectors.count_bi())
+            - 4 -> QuadConstraintStream
 
-            - # count the number of shifts each employee has on a date; returns Tri[Employee, datetime.date, int]
+        Examples
+        --------
 
-              group_by(lambda shift, _: shift.employee, lambda shift, _: shift.date, ConstraintCollectors.count_bi())
+        Count the items in this stream; returns Uni[int]
 
-            - # count the number of shifts each employee has on a date; returns Tri[Employee, datetime.date, int]
+        >>> group_by(ConstraintCollectors.count())
 
-              group_by(lambda shift, _: shift.employee, lambda shift, _: shift.date, ConstraintCollectors.count_bi())
+        Count the number of shifts each employee has; returns Bi[Employee]
 
-            - # get the dates of the first and last shift of each employee; returns Tri[Employee, datetime.date,
-              datetime.date]
+        >>> group_by(lambda shift: shift.employee, ConstraintCollectors.count())
 
-              group_by(lambda shift, _: shift.employee,
-              ConstraintCollectors.min(lambda shift, _: shift.date)
-              ConstraintCollectors.max(lambda shift, _: shift.date))
+        Count the number of shifts each employee has on a date; returns Tri[Employee, datetime.date, int]
 
-        The type of stream returned depends on the number of arguments passed:
+        >>> group_by(lambda shift: shift.employee, lambda shift: shift.date, ConstraintCollectors.count())
 
-        - 1 -> UniConstraintStream
+        Count the number of shifts each employee has on a date; returns Tri[Employee, datetime.date, int]
 
-        - 2 -> BiConstraintStream
+        >>> group_by(lambda shift: shift.employee, lambda shift: shift.date, ConstraintCollectors.count())
 
-        - 3 -> TriConstraintStream
+        Get the dates of the first and last shift of each employee; returns Tri[Employee, datetime.date, datetime.date]
 
-        - 4 -> QuadConstraintStream
-
-        :param args:
-
-        :return:
+        >>> group_by(lambda shift: shift.employee,
+        ...          ConstraintCollectors.min(lambda shift: shift.date)
+        ...          ConstraintCollectors.max(lambda shift: shift.date))
         """
         return perform_group_by(self.delegate, self.package, args, self.a_type, self.b_type)
 
@@ -828,11 +875,8 @@ class BiConstraintStream(Generic[A, B]):
         ...
 
     def map(self, *mapping_functions):
-        """Transforms the stream in such a way that tuples are remapped using the given function.
-
-        :param mapping_functions:
-
-        :return:
+        """
+        Transforms the stream in such a way that tuples are remapped using the given function.
         """
         if len(mapping_functions) == 0:
             raise ValueError(f'At least one mapping function is required for map.')
@@ -876,8 +920,6 @@ class BiConstraintStream(Generic[A, B]):
         which only increases stream cardinality and can not introduce duplicate tuples.
         It enables you to add extra facts to each tuple in a constraint stream by applying a mapping function to it.
         This is useful in situations where an expensive computations needs to be cached for use later in the stream.
-        :param mapping_functions:
-        :return:
         """
         if len(mapping_functions) == 0:
             raise ValueError(f'At least one mapping function is required for expand.')
@@ -899,11 +941,8 @@ class BiConstraintStream(Generic[A, B]):
         raise RuntimeError(f'Impossible state: missing case for {len(mapping_functions)}.')
 
     def flatten_last(self, flattening_function: Callable[[B], B_]) -> 'BiConstraintStream[A,B_]':
-        """Takes each tuple and applies a mapping on it, which turns the tuple into an Iterable.
-
-        :param flattening_function:
-
-        :return:
+        """
+        Takes each tuple and applies a mapping on it, which turns the tuple into an Iterable.
         """
         translated_function = function_cast(flattening_function, self.b_type)
         return BiConstraintStream(self.delegate.flattenLast(translated_function), self.package,
@@ -911,9 +950,8 @@ class BiConstraintStream(Generic[A, B]):
                                   self.a_type, JClass('java.lang.Object'))
 
     def distinct(self) -> 'BiConstraintStream[A,B]':
-        """Transforms the stream in such a way that all the tuples going through it are distinct.
-
-        :return:
+        """
+        Transforms the stream in such a way that all the tuples going through it are distinct.
         """
         return BiConstraintStream(self.delegate.distinct(), self.package,
                                   self.a_type, self.b_type)
@@ -943,8 +981,6 @@ class BiConstraintStream(Generic[A, B]):
         If the two constraint concatenating streams share tuples, which happens e.g.
         when they come from the same source of data, the tuples will be repeated downstream.
         If this is undesired, use the distinct building block.
-        :param other:
-        :return:
         """
         if isinstance(other, UniConstraintStream):
             return BiConstraintStream(self.delegate.concat(other.delegate), self.package,
@@ -966,6 +1002,24 @@ class BiConstraintStream(Generic[A, B]):
 
     def penalize(self, constraint_weight: ScoreType, match_weigher: Callable[[A, B], int] = None) -> \
             'BiConstraintBuilder[A, B, ScoreType]':
+        """
+        Applies a negative Score impact, subtracting the constraint_weight multiplied by the match weight,
+        and returns a builder to apply optional constraint properties.
+
+        Parameters
+        ----------
+        constraint_weight : Score
+            the weight of the constraint.
+
+        match_weigher : Callable[[A, B], int]
+            a function that computes the weight of a match.
+            If absent, each match has weight ``1``.
+
+        Returns
+        -------
+        BiConstraintBuilder
+            a `BiConstraintBuilder`
+        """
         if match_weigher is None:
             return BiConstraintBuilder(self.delegate.penalize(constraint_weight), self.a_type, self.b_type)
         else:
@@ -977,6 +1031,24 @@ class BiConstraintStream(Generic[A, B]):
 
     def reward(self, constraint_weight: ScoreType, match_weigher: Callable[[A, B], int] = None) -> \
             'BiConstraintBuilder[A, B, ScoreType]':
+        """
+        Applies a positive Score impact, adding the constraint_weight multiplied by the match weight,
+        and returns a builder to apply optional constraint properties.
+
+        Parameters
+        ----------
+        constraint_weight : Score
+            the weight of the constraint.
+
+        match_weigher : Callable[[A, B], int]
+            a function that computes the weight of a match.
+            If absent, each match has weight ``1``.
+
+        Returns
+        -------
+        BiConstraintBuilder
+            a `BiConstraintBuilder`
+        """
         if match_weigher is None:
             return BiConstraintBuilder(self.delegate.reward(constraint_weight), self.a_type, self.b_type)
         else:
@@ -988,6 +1060,25 @@ class BiConstraintStream(Generic[A, B]):
 
     def impact(self, constraint_weight: ScoreType, match_weigher: Callable[[A, B], int] = None) -> \
             'BiConstraintBuilder[A, B, ScoreType]':
+        """
+        Positively or negatively impacts the `Score` by `constraint_weight` multiplied by match weight for each match
+        and returns a builder to apply optional constraint properties.
+        Use `penalize` or `reward` instead, unless this constraint can both have positive and negative weights.
+
+        Parameters
+        ----------
+        constraint_weight : Score
+            the weight of the constraint.
+
+        match_weigher : Callable[[A, B], int]
+            a function that computes the weight of a match.
+            If absent, each match has weight ``1``.
+
+        Returns
+        -------
+        BiConstraintBuilder
+            a `BiConstraintBuilder`
+        """
         if match_weigher is None:
             return BiConstraintBuilder(self.delegate.impact(constraint_weight), self.a_type, self.b_type)
         else:
@@ -999,6 +1090,25 @@ class BiConstraintStream(Generic[A, B]):
 
     def penalize_configurable(self, match_weigher: Callable[[A, B], int] = None) -> \
             'BiConstraintBuilder[A, B, ScoreType]':
+        """
+        Negatively impacts the Score, subtracting the ConstraintWeight for each match,
+        and returns a builder to apply optional constraint properties.
+        The constraint weight comes from a `ConstraintWeight` annotated member on the `constraint_configuration`,
+        so end users can change the constraint weights dynamically.
+        This constraint may be deactivated if the `ConstraintWeight` is zero.
+        If there is no `constraint_configuration`, use `penalize` instead.
+
+        Parameters
+        ----------
+        match_weigher : Callable[[A, B], int]
+            a function that computes the weight of a match.
+            If absent, each match has weight ``1``.
+
+        Returns
+        -------
+        BiConstraintBuilder
+            a `BiConstraintBuilder`
+        """
         if match_weigher is None:
             return BiConstraintBuilder(self.delegate.penalizeConfigurable(), self.a_type, self.b_type)
         else:
@@ -1010,6 +1120,25 @@ class BiConstraintStream(Generic[A, B]):
 
     def reward_configurable(self, match_weigher: Callable[[A, B], int] = None) -> \
             'BiConstraintBuilder[A, B, ScoreType]':
+        """
+        Positively impacts the Score, adding the ConstraintWeight for each match,
+        and returns a builder to apply optional constraint properties.
+        The constraint weight comes from a `ConstraintWeight` annotated member on the `constraint_configuration`,
+        so end users can change the constraint weights dynamically.
+        This constraint may be deactivated if the `ConstraintWeight` is zero.
+        If there is no `constraint_configuration`, use `penalize` instead.
+
+        Parameters
+        ----------
+        match_weigher : Callable[[A, B], int]
+            a function that computes the weight of a match.
+            If absent, each match has weight ``1``.
+
+        Returns
+        -------
+        BiConstraintBuilder
+            a `BiConstraintBuilder`
+        """
         if match_weigher is None:
             return BiConstraintBuilder(self.delegate.rewardConfigurable(), self.a_type, self.b_type)
         else:
@@ -1021,6 +1150,25 @@ class BiConstraintStream(Generic[A, B]):
 
     def impact_configurable(self, match_weigher: Callable[[A, B], int] = None) -> \
             'BiConstraintBuilder[A, B, ScoreType]':
+        """
+        Positively or negatively impacts the Score, adding the ConstraintWeight for each match,
+        and returns a builder to apply optional constraint properties.
+        The constraint weight comes from a `ConstraintWeight` annotated member on the `constraint_configuration`,
+        so end users can change the constraint weights dynamically.
+        This constraint may be deactivated if the `ConstraintWeight` is zero.
+        If there is no `constraint_configuration`, use `penalize` instead.
+
+        Parameters
+        ----------
+        match_weigher : Callable[[A, B], int]
+            a function that computes the weight of a match.
+            If absent, each match has weight ``1``.
+
+        Returns
+        -------
+        BiConstraintBuilder
+            a `BiConstraintBuilder`
+        """
         if match_weigher is None:
             return BiConstraintBuilder(self.delegate.impactConfigurable(), self.a_type, self.b_type)
         else:
@@ -1032,6 +1180,9 @@ class BiConstraintStream(Generic[A, B]):
 
 
 class TriConstraintStream(Generic[A, B, C]):
+    """
+    A ConstraintStream that matches three facts.
+    """
     delegate: '_JavaTriConstraintStream[A,B,C]'
     package: str
     a_type: Type[A]
@@ -1053,14 +1204,14 @@ class TriConstraintStream(Generic[A, B, C]):
         self.c_type = c_type
 
     def get_constraint_factory(self):
+        """
+        The ConstraintFactory that build this.
+        """
         return ConstraintFactory(self.delegate.getConstraintFactory())
 
     def filter(self, predicate: Callable[[A, B, C], bool]) -> 'TriConstraintStream[A,B,C]':
-        """Exhaustively test each fact against the predicate and match if the predicate returns True.
-
-        :param predicate:
-
-        :return:
+        """
+        Exhaustively test each fact against the predicate and match if the predicate returns ``True``.
         """
         translated_predicate = predicate_cast(predicate, self.a_type, self.b_type, self.c_type)
         return TriConstraintStream(self.delegate.filter(translated_predicate), self.package,
@@ -1069,13 +1220,8 @@ class TriConstraintStream(Generic[A, B, C]):
 
     def join(self, unistream_or_type: Union[UniConstraintStream[D_], Type[D_]],
              *joiners: 'QuadJoiner[A, B, C, D_]') -> 'QuadConstraintStream[A,B,C,D_]':
-        """Create a new QuadConstraintStream for every combination of A, B and C that satisfy all specified joiners.
-
-        :param unistream_or_type:
-
-        :param joiners:
-
-        :return:
+        """
+        Create a new `QuadConstraintStream` for every combination of A, B and C that satisfy all specified joiners.
         """
         d_type = None
         if isinstance(unistream_or_type, UniConstraintStream):
@@ -1092,13 +1238,8 @@ class TriConstraintStream(Generic[A, B, C]):
 
     def if_exists(self, item_type: Type[D_], *joiners: 'QuadJoiner[A, B, C, D_]') -> \
             'TriConstraintStream[A,B,C]':
-        """Create a new TriConstraintStream for every A, B, C where D exists that satisfy all specified joiners.
-
-        :param item_type:
-
-        :param joiners:
-
-        :return:
+        """
+        Create a new `TriConstraintStream` for every A, B, C where D exists that satisfy all specified joiners.
         """
         item_type = get_class(item_type)
         return TriConstraintStream(self.delegate.ifExists(item_type, extract_joiners(joiners, self.a_type,
@@ -1108,13 +1249,8 @@ class TriConstraintStream(Generic[A, B, C]):
 
     def if_exists_including_unassigned(self, item_type: Type[D_], *joiners: 'QuadJoiner[A, B, C, D_]') -> \
             'TriConstraintStream[A,B,C]':
-        """Create a new TriConstraintStream for every A, B where D exists that satisfy all specified joiners.
-
-        :param item_type:
-
-        :param joiners:
-
-        :return:
+        """
+        Create a new `TriConstraintStream` for every A, B where D exists that satisfy all specified joiners.
         """
         item_type = get_class(item_type)
         return TriConstraintStream(self.delegate.ifExistsIncludingUnassigned(item_type, extract_joiners(joiners,
@@ -1126,14 +1262,9 @@ class TriConstraintStream(Generic[A, B, C]):
 
     def if_not_exists(self, item_type: Type[D_], *joiners: 'QuadJoiner[A, B, C, D_]') -> \
             'TriConstraintStream[A,B,C]':
-        """Create a new TriConstraintStream for every A, B, C where there does not exist a D where all specified joiners
+        """
+        Create a new `TriConstraintStream` for every A, B, C where there does not exist a D where all specified joiners
         are satisfied.
-
-        :param item_type:
-
-        :param joiners:
-
-        :return:
         """
         item_type = get_class(item_type)
         return TriConstraintStream(self.delegate.ifNotExists(item_type, extract_joiners(joiners,
@@ -1145,14 +1276,9 @@ class TriConstraintStream(Generic[A, B, C]):
 
     def if_not_exists_including_unassigned(self, item_type: Type[D_], *joiners: 'QuadJoiner[A, B, C, D_]') -> \
             'TriConstraintStream[A,B,C]':
-        """Create a new TriConstraintStream for every A, B, C where there does not exist a D where all specified joiners
+        """
+        Create a new `TriConstraintStream` for every A, B, C where there does not exist a D where all specified joiners
         are satisfied.
-
-        :param item_type:
-
-        :param joiners:
-
-        :return:
         """
         item_type = get_class(item_type)
         return TriConstraintStream(self.delegate.ifNotExistsIncludingUnassigned(item_type,
@@ -1243,7 +1369,8 @@ class TriConstraintStream(Generic[A, B, C]):
         ...
 
     def group_by(self, *args):
-        """Collect items into groups using the group_key_function(s) and optionally aggregate the group's items into a
+        """
+        Collect items into groups using the group_key_function(s) and optionally aggregate the group's items into a
         result.
 
         The syntax of group_by is zero to four group_key functions, followed by zero to four collectors. At most
@@ -1252,46 +1379,43 @@ class TriConstraintStream(Generic[A, B, C]):
         If no group_key function is passed to group_by, all items in the stream are aggregated into a single result
         by the passed constraint collectors.
 
-        Examples:
+        Returns
+        -------
+        UniConstraintStream | BiConstraintStream | TriConstraintStream | QuadConstraintStream
+            The type of stream returned depends on the number of arguments passed:
 
-            - # count the items in this stream; returns Uni[int]
+            - 1 -> UniConstraintStream
 
-              group_by(ConstraintCollectors.count_tri())
+            - 2 -> BiConstraintStream
 
-            - # count the number of shifts each employee has; returns Bi[Employee]
+            - 3 -> TriConstraintStream
 
-              group_by(lambda shift, _, _: shift.employee, ConstraintCollectors.count_tri())
+            - 4 -> QuadConstraintStream
 
-            - # count the number of shifts each employee has on a date; returns Tri[Employee, datetime.date, int]
+        Examples
+        --------
 
-              group_by(lambda shift, _, _: shift.employee, lambda shift, _, _: shift.date,
-              ConstraintCollectors.count_tri())
+        Count the items in this stream; returns Uni[int]
 
-            - # count the number of shifts each employee has on a date; returns Tri[Employee, datetime.date, int]
+        >>> group_by(ConstraintCollectors.count())
 
-              group_by(lambda shift, _, _: shift.employee, lambda shift, _, _: shift.date,
-              ConstraintCollectors.count_tri())
+        Count the number of shifts each employee has; returns Bi[Employee]
 
-            - # get the dates of the first and last shift of each employee; returns Tri[Employee, datetime.date,
-              datetime.date]
+        >>> group_by(lambda shift: shift.employee, ConstraintCollectors.count())
 
-              group_by(lambda shift, _, _: shift.employee,
-              ConstraintCollectors.min(lambda shift, _, _: shift.date)
-              ConstraintCollectors.max(lambda shift, _, _: shift.date))
+        Count the number of shifts each employee has on a date; returns Tri[Employee, datetime.date, int]
 
-        The type of stream returned depends on the number of arguments passed:
+        >>> group_by(lambda shift: shift.employee, lambda shift: shift.date, ConstraintCollectors.count())
 
-        - 1 -> UniConstraintStream
+        Count the number of shifts each employee has on a date; returns Tri[Employee, datetime.date, int]
 
-        - 2 -> BiConstraintStream
+        >>> group_by(lambda shift: shift.employee, lambda shift: shift.date, ConstraintCollectors.count())
 
-        - 3 -> TriConstraintStream
+        Get the dates of the first and last shift of each employee; returns Tri[Employee, datetime.date, datetime.date]
 
-        - 4 -> QuadConstraintStream
-
-        :param args:
-
-        :return:
+        >>> group_by(lambda shift: shift.employee,
+        ...          ConstraintCollectors.min(lambda shift: shift.date)
+        ...          ConstraintCollectors.max(lambda shift: shift.date))
         """
         return perform_group_by(self.delegate, self.package, args, self.a_type, self.b_type, self.c_type)
 
@@ -1316,11 +1440,8 @@ class TriConstraintStream(Generic[A, B, C]):
         ...
 
     def map(self, *mapping_functions):
-        """Transforms the stream in such a way that tuples are remapped using the given function.
-
-        :param mapping_functions:
-
-        :return:
+        """
+        Transforms the stream in such a way that tuples are remapped using the given function.
         """
         if len(mapping_functions) == 0:
             raise ValueError(f'At least one mapping function is required for map.')
@@ -1355,8 +1476,6 @@ class TriConstraintStream(Generic[A, B, C]):
         which only increases stream cardinality and can not introduce duplicate tuples.
         It enables you to add extra facts to each tuple in a constraint stream by applying a mapping function to it.
         This is useful in situations where an expensive computations needs to be cached for use later in the stream.
-        :param mapping_function:
-        :return:
         """
         translated_function = function_cast(mapping_function, self.a_type, self.b_type, self.c_type)
         return QuadConstraintStream(self.delegate.expand(translated_function), self.package,
@@ -1364,11 +1483,8 @@ class TriConstraintStream(Generic[A, B, C]):
                                     self.a_type, self.b_type, self.c_type, JClass('java.lang.Object'))
 
     def flatten_last(self, flattening_function: Callable[[C], C_]) -> 'TriConstraintStream[A,B,C_]':
-        """Takes each tuple and applies a mapping on it, which turns the tuple into an Iterable.
-
-        :param flattening_function:
-
-        :return:
+        """
+        Takes each tuple and applies a mapping on it, which turns the tuple into an Iterable.
         """
         translated_function = function_cast(flattening_function, self.c_type)
         return TriConstraintStream(self.delegate.flattenLast(translated_function), self.package,
@@ -1376,9 +1492,8 @@ class TriConstraintStream(Generic[A, B, C]):
                                    self.a_type, self.b_type, JClass('java.lang.Object'))
 
     def distinct(self) -> 'TriConstraintStream[A, B, C]':
-        """Transforms the stream in such a way that all the tuples going through it are distinct.
-
-        :return:
+        """
+        Transforms the stream in such a way that all the tuples going through it are distinct.
         """
         return TriConstraintStream(self.delegate.distinct(), self.package,
                                    self.a_type,
@@ -1409,8 +1524,6 @@ class TriConstraintStream(Generic[A, B, C]):
         If the two constraint concatenating streams share tuples, which happens e.g.
         when they come from the same source of data, the tuples will be repeated downstream.
         If this is undesired, use the distinct building block.
-        :param other:
-        :return:
         """
         if isinstance(other, UniConstraintStream):
             return TriConstraintStream(self.delegate.concat(other.delegate), self.package,
@@ -1433,6 +1546,24 @@ class TriConstraintStream(Generic[A, B, C]):
 
     def penalize(self, constraint_weight: ScoreType,
                  match_weigher: Callable[[A, B, C], int] = None) -> 'TriConstraintBuilder[A, B, C, ScoreType]':
+        """
+        Applies a negative Score impact, subtracting the constraint_weight multiplied by the match weight,
+        and returns a builder to apply optional constraint properties.
+
+        Parameters
+        ----------
+        constraint_weight : Score
+            the weight of the constraint.
+
+        match_weigher : Callable[[A, B, C], int]
+            a function that computes the weight of a match.
+            If absent, each match has weight ``1``.
+
+        Returns
+        -------
+        TriConstraintBuilder
+            a `TriConstraintBuilder`
+        """
         if match_weigher is None:
             return TriConstraintBuilder(self.delegate.penalize(constraint_weight),
                                         self.a_type, self.b_type, self.c_type)
@@ -1446,6 +1577,24 @@ class TriConstraintStream(Generic[A, B, C]):
 
     def reward(self, constraint_weight: ScoreType, match_weigher: Callable[[A, B, C], int] = None) -> \
             'TriConstraintBuilder[A, B, C, ScoreType]':
+        """
+        Applies a positive Score impact, adding the constraint_weight multiplied by the match weight,
+        and returns a builder to apply optional constraint properties.
+
+        Parameters
+        ----------
+        constraint_weight : Score
+            the weight of the constraint.
+
+        match_weigher : Callable[[A, B, C], int]
+            a function that computes the weight of a match.
+            If absent, each match has weight ``1``.
+
+        Returns
+        -------
+        TriConstraintBuilder
+            a `TriConstraintBuilder`
+        """
         if match_weigher is None:
             return TriConstraintBuilder(self.delegate.reward(constraint_weight), self.a_type, self.b_type, self.c_type)
         else:
@@ -1458,6 +1607,25 @@ class TriConstraintStream(Generic[A, B, C]):
 
     def impact(self, constraint_weight: ScoreType,
                match_weigher: Callable[[A, B, C], int] = None) -> 'TriConstraintBuilder[A, B, C, ScoreType]':
+        """
+        Positively or negatively impacts the `Score` by `constraint_weight` multiplied by match weight for each match
+        and returns a builder to apply optional constraint properties.
+        Use `penalize` or `reward` instead, unless this constraint can both have positive and negative weights.
+
+        Parameters
+        ----------
+        constraint_weight : Score
+            the weight of the constraint.
+
+        match_weigher : Callable[[A, B, C], int]
+            a function that computes the weight of a match.
+            If absent, each match has weight ``1``.
+
+        Returns
+        -------
+        TriConstraintBuilder
+            a `TriConstraintBuilder`
+        """
         if match_weigher is None:
             return TriConstraintBuilder(self.delegate.impact(constraint_weight),
                                         self.a_type, self.b_type, self.c_type)
@@ -1471,6 +1639,25 @@ class TriConstraintStream(Generic[A, B, C]):
 
     def penalize_configurable(self, match_weigher: Callable[[A, B, C], int] = None) \
             -> 'TriConstraintBuilder[A, B, C, ScoreType]':
+        """
+        Negatively impacts the Score, subtracting the ConstraintWeight for each match,
+        and returns a builder to apply optional constraint properties.
+        The constraint weight comes from a `ConstraintWeight` annotated member on the `constraint_configuration`,
+        so end users can change the constraint weights dynamically.
+        This constraint may be deactivated if the `ConstraintWeight` is zero.
+        If there is no `constraint_configuration`, use `penalize` instead.
+
+        Parameters
+        ----------
+        match_weigher : Callable[[A, B, C], int]
+            a function that computes the weight of a match.
+            If absent, each match has weight ``1``.
+
+        Returns
+        -------
+        TriConstraintBuilder
+            a `TriConstraintBuilder`
+        """
         if match_weigher is None:
             return TriConstraintBuilder(self.delegate.penalizeConfigurable(),
                                         self.a_type, self.b_type, self.c_type)
@@ -1484,6 +1671,25 @@ class TriConstraintStream(Generic[A, B, C]):
 
     def reward_configurable(self, match_weigher: Callable[[A, B, C], int] = None) -> \
             'TriConstraintBuilder[A, B, C, ScoreType]':
+        """
+        Positively impacts the Score, adding the ConstraintWeight for each match,
+        and returns a builder to apply optional constraint properties.
+        The constraint weight comes from a `ConstraintWeight` annotated member on the `constraint_configuration`,
+        so end users can change the constraint weights dynamically.
+        This constraint may be deactivated if the `ConstraintWeight` is zero.
+        If there is no `constraint_configuration`, use `penalize` instead.
+
+        Parameters
+        ----------
+        match_weigher : Callable[[A, B, C], int]
+            a function that computes the weight of a match.
+            If absent, each match has weight ``1``.
+
+        Returns
+        -------
+        TriConstraintBuilder
+            a `TriConstraintBuilder`
+        """
         if match_weigher is None:
             return TriConstraintBuilder(self.delegate.rewardConfigurable(),
                                         self.a_type, self.b_type, self.c_type)
@@ -1497,6 +1703,25 @@ class TriConstraintStream(Generic[A, B, C]):
 
     def impact_configurable(self, match_weigher: Callable[[A, B, C], int] = None) \
             -> 'TriConstraintBuilder[A, B, C, ScoreType]':
+        """
+        Positively or negatively impacts the Score, adding the ConstraintWeight for each match,
+        and returns a builder to apply optional constraint properties.
+        The constraint weight comes from a `ConstraintWeight` annotated member on the `constraint_configuration`,
+        so end users can change the constraint weights dynamically.
+        This constraint may be deactivated if the `ConstraintWeight` is zero.
+        If there is no `constraint_configuration`, use `penalize` instead.
+
+        Parameters
+        ----------
+        match_weigher : Callable[[A, B, C], int]
+            a function that computes the weight of a match.
+            If absent, each match has weight ``1``.
+
+        Returns
+        -------
+        TriConstraintBuilder
+            a `TriConstraintBuilder`
+        """
         if match_weigher is None:
             return TriConstraintBuilder(self.delegate.impactConfigurable(),
                                         self.a_type, self.b_type, self.c_type)
@@ -1510,6 +1735,9 @@ class TriConstraintStream(Generic[A, B, C]):
 
 
 class QuadConstraintStream(Generic[A, B, C, D]):
+    """
+    A ConstraintStream that matches four facts.
+    """
     delegate: '_JavaQuadConstraintStream[A,B,C,D]'
     package: str
     a_type: Type[A]
@@ -1533,14 +1761,14 @@ class QuadConstraintStream(Generic[A, B, C, D]):
         self.d_type = d_type
 
     def get_constraint_factory(self):
+        """
+        The ConstraintFactory that build this.
+        """
         return ConstraintFactory(self.delegate.getConstraintFactory())
 
     def filter(self, predicate: Callable[[A, B, C, D], bool]) -> 'QuadConstraintStream[A,B,C,D]':
-        """Exhaustively test each fact against the predicate and match if the predicate returns True.
-
-        :param predicate:
-
-        :return:
+        """
+        Exhaustively test each fact against the predicate and match if the predicate returns ``True``.
         """
         translated_predicate = predicate_cast(predicate, self.a_type, self.b_type, self.c_type, self.d_type)
         return QuadConstraintStream(self.delegate.filter(translated_predicate), self.package,
@@ -1549,13 +1777,8 @@ class QuadConstraintStream(Generic[A, B, C, D]):
 
     def if_exists(self, item_type: Type[E_], *joiners: 'PentaJoiner[A, B, C, D, E_]') -> \
             'QuadConstraintStream[A,B,C,D]':
-        """Create a new QuadConstraintStream for every A, B, C, D where E exists that satisfy all specified joiners.
-
-        :param item_type:
-
-        :param joiners:
-
-        :return:
+        """
+        Create a new `QuadConstraintStream` for every A, B, C, D where E exists that satisfy all specified joiners.
         """
         item_type = get_class(item_type)
         return QuadConstraintStream(self.delegate.ifExists(item_type, extract_joiners(joiners,
@@ -1569,13 +1792,8 @@ class QuadConstraintStream(Generic[A, B, C, D]):
 
     def if_exists_including_unassigned(self, item_type: Type[E_], *joiners: 'PentaJoiner[A, B, C, D, E_]') -> \
             'QuadConstraintStream[A,B,C,D]':
-        """Create a new QuadConstraintStream for every A, B, C, D where E exists that satisfy all specified joiners.
-
-        :param item_type:
-
-        :param joiners:
-
-        :return:
+        """
+        Create a new `QuadConstraintStream` for every A, B, C, D where E exists that satisfy all specified joiners.
         """
         item_type = get_class(item_type)
         return QuadConstraintStream(self.delegate.ifExistsIncludingUnassigned(item_type,
@@ -1590,14 +1808,9 @@ class QuadConstraintStream(Generic[A, B, C, D]):
 
     def if_not_exists(self, item_type: Type[E_], *joiners: 'PentaJoiner[A, B, C, D, E_]') -> \
             'QuadConstraintStream[A,B,C,D]':
-        """Create a new QuadConstraintStream for every A, B, C, D where there does not exist an E where all specified
+        """
+        Create a new `QuadConstraintStream` for every A, B, C, D where there does not exist an E where all specified
         joiners are satisfied.
-
-        :param item_type:
-
-        :param joiners:
-
-        :return:
         """
         item_type = get_class(item_type)
         return QuadConstraintStream(self.delegate.ifNotExists(item_type, extract_joiners(joiners,
@@ -1611,14 +1824,9 @@ class QuadConstraintStream(Generic[A, B, C, D]):
 
     def if_not_exists_including_unassigned(self, item_type: Type[E_], *joiners: 'PentaJoiner[A, B, C, D, E_]') -> \
             'QuadConstraintStream[A,B,C,D]':
-        """Create a new QuadConstraintStream for every A, B, C, D where there does not exist an E where all specified
+        """
+        Create a new `QuadConstraintStream` for every A, B, C, D where there does not exist an E where all specified
         joiners are satisfied.
-
-        :param item_type:
-
-        :param joiners:
-
-        :return:
         """
         item_type = get_class(item_type)
         return QuadConstraintStream(self.delegate.ifNotExistsIncludingUnassigned(item_type,
@@ -1712,7 +1920,8 @@ class QuadConstraintStream(Generic[A, B, C, D]):
         ...
 
     def group_by(self, *args):
-        """Collect items into groups using the group_key_function(s) and optionally aggregate the group's items into a
+        """
+        Collect items into groups using the group_key_function(s) and optionally aggregate the group's items into a
         result.
 
         The syntax of group_by is zero to four group_key functions, followed by zero to four collectors. At most
@@ -1721,46 +1930,43 @@ class QuadConstraintStream(Generic[A, B, C, D]):
         If no group_key function is passed to group_by, all items in the stream are aggregated into a single result
         by the passed constraint collectors.
 
-        Examples:
+        Returns
+        -------
+        UniConstraintStream | BiConstraintStream | TriConstraintStream | QuadConstraintStream
+            The type of stream returned depends on the number of arguments passed:
 
-            - # count the items in this stream; returns Uni[int]
+            - 1 -> UniConstraintStream
 
-              group_by(ConstraintCollectors.count_quad())
+            - 2 -> BiConstraintStream
 
-            - # count the number of shifts each employee has; returns Bi[Employee]
+            - 3 -> TriConstraintStream
 
-              group_by(lambda shift, _, _, _: shift.employee, ConstraintCollectors.count_quad())
+            - 4 -> QuadConstraintStream
 
-            - # count the number of shifts each employee has on a date; returns Tri[Employee, datetime.date, int]
+        Examples
+        --------
 
-              group_by(lambda shift, _, _, _: shift.employee, lambda shift, _, _, _: shift.date,
-              ConstraintCollectors.count_quad())
+        Count the items in this stream; returns Uni[int]
 
-            - # count the number of shifts each employee has on a date; returns Tri[Employee, datetime.date, int]
+        >>> group_by(ConstraintCollectors.count())
 
-              group_by(lambda shift, _, _, _: shift.employee, lambda shift, _, _, _: shift.date,
-              ConstraintCollectors.count_quad())
+        Count the number of shifts each employee has; returns Bi[Employee]
 
-            - # get the dates of the first and last shift of each employee; returns Tri[Employee, datetime.date,
-              datetime.date]
+        >>> group_by(lambda shift: shift.employee, ConstraintCollectors.count())
 
-              group_by(lambda shift, _, _, _: shift.employee,
-              ConstraintCollectors.min(lambda shift, _, _, _: shift.date)
-              ConstraintCollectors.max(lambda shift, _, _, _: shift.date))
+        Count the number of shifts each employee has on a date; returns Tri[Employee, datetime.date, int]
 
-        The type of stream returned depends on the number of arguments passed:
+        >>> group_by(lambda shift: shift.employee, lambda shift: shift.date, ConstraintCollectors.count())
 
-        - 1 -> UniConstraintStream
+        Count the number of shifts each employee has on a date; returns Tri[Employee, datetime.date, int]
 
-        - 2 -> BiConstraintStream
+        >>> group_by(lambda shift: shift.employee, lambda shift: shift.date, ConstraintCollectors.count())
 
-        - 3 -> TriConstraintStream
+        Get the dates of the first and last shift of each employee; returns Tri[Employee, datetime.date, datetime.date]
 
-        - 4 -> QuadConstraintStream
-
-        :param args:
-
-        :return:
+        >>> group_by(lambda shift: shift.employee,
+        ...          ConstraintCollectors.min(lambda shift: shift.date)
+        ...          ConstraintCollectors.max(lambda shift: shift.date))
         """
         return perform_group_by(self.delegate, self.package, args, self.a_type, self.b_type, self.c_type, self.d_type)
 
@@ -1785,11 +1991,8 @@ class QuadConstraintStream(Generic[A, B, C, D]):
         ...
 
     def map(self, *mapping_functions):
-        """Transforms the stream in such a way that tuples are remapped using the given function.
-
-        :param mapping_functions:
-
-        :return:
+        """
+        Transforms the stream in such a way that tuples are remapped using the given function.
         """
         if len(mapping_functions) == 0:
             raise ValueError(f'At least one mapping function is required for map.')
@@ -1819,11 +2022,8 @@ class QuadConstraintStream(Generic[A, B, C, D]):
         raise RuntimeError(f'Impossible state: missing case for {len(mapping_functions)}.')
 
     def flatten_last(self, flattening_function) -> 'QuadConstraintStream[A,B,C,D]':
-        """Takes each tuple and applies a mapping on it, which turns the tuple into an Iterable.
-
-        :param flattening_function:
-
-        :return:
+        """
+        Takes each tuple and applies a mapping on it, which turns the tuple into an Iterable.
         """
         translated_function = function_cast(flattening_function, self.d_type)
         return QuadConstraintStream(self.delegate.flattenLast(translated_function), self.package,
@@ -1831,9 +2031,8 @@ class QuadConstraintStream(Generic[A, B, C, D]):
                                     self.a_type, self.b_type, self.c_type, JClass('java.lang.Object'))
 
     def distinct(self) -> 'QuadConstraintStream[A,B,C,D]':
-        """Transforms the stream in such a way that all the tuples going through it are distinct.
-
-        :return:
+        """
+        Transforms the stream in such a way that all the tuples going through it are distinct.
         """
         return QuadConstraintStream(self.delegate.distinct(), self.package,
                                     self.a_type,
@@ -1864,8 +2063,6 @@ class QuadConstraintStream(Generic[A, B, C, D]):
         If the two constraint concatenating streams share tuples, which happens e.g.
         when they come from the same source of data, the tuples will be repeated downstream.
         If this is undesired, use the distinct building block.
-        :param other:
-        :return:
         """
         if isinstance(other, UniConstraintStream):
             return QuadConstraintStream(self.delegate.concat(other.delegate), self.package,
@@ -1888,6 +2085,24 @@ class QuadConstraintStream(Generic[A, B, C, D]):
 
     def penalize(self, constraint_weight: ScoreType,
                  match_weigher: Callable[[A, B, C, D], int] = None) -> 'QuadConstraintBuilder[A, B, C, D, ScoreType]':
+        """
+        Applies a negative Score impact, subtracting the constraint_weight multiplied by the match weight,
+        and returns a builder to apply optional constraint properties.
+
+        Parameters
+        ----------
+        constraint_weight : Score
+            the weight of the constraint.
+
+        match_weigher : Callable[[A, B, C, D], int]
+            a function that computes the weight of a match.
+            If absent, each match has weight ``1``.
+
+        Returns
+        -------
+        QuadConstraintBuilder
+            a `QuadConstraintBuilder`
+        """
         if match_weigher is None:
             return QuadConstraintBuilder(self.delegate.penalize(constraint_weight),
                                          self.a_type, self.b_type, self.c_type, self.d_type)
@@ -1902,6 +2117,24 @@ class QuadConstraintStream(Generic[A, B, C, D]):
 
     def reward(self, constraint_weight: ScoreType,
                match_weigher: Callable[[A, B, C, D], int] = None) -> 'QuadConstraintBuilder[A, B, C, D, ScoreType]':
+        """
+        Applies a positive Score impact, adding the constraint_weight multiplied by the match weight,
+        and returns a builder to apply optional constraint properties.
+
+        Parameters
+        ----------
+        constraint_weight : Score
+            the weight of the constraint.
+
+        match_weigher : Callable[[A, B, C, D], int]
+            a function that computes the weight of a match.
+            If absent, each match has weight ``1``.
+
+        Returns
+        -------
+        QuadConstraintBuilder
+            a `QuadConstraintBuilder`
+        """
         if match_weigher is None:
             return QuadConstraintBuilder(self.delegate.reward(constraint_weight),
                                          self.a_type, self.b_type, self.c_type, self.d_type)
@@ -1916,6 +2149,25 @@ class QuadConstraintStream(Generic[A, B, C, D]):
 
     def impact(self, constraint_weight: ScoreType,
                match_weigher: Callable[[A, B, C, D], int] = None) -> 'QuadConstraintBuilder[A, B, C, D, ScoreType]':
+        """
+        Positively or negatively impacts the `Score` by `constraint_weight` multiplied by match weight for each match
+        and returns a builder to apply optional constraint properties.
+        Use `penalize` or `reward` instead, unless this constraint can both have positive and negative weights.
+
+        Parameters
+        ----------
+        constraint_weight : Score
+            the weight of the constraint.
+
+        match_weigher : Callable[[A, B, C, D], int]
+            a function that computes the weight of a match.
+            If absent, each match has weight ``1``.
+
+        Returns
+        -------
+        QuadConstraintBuilder
+            a `QuadConstraintBuilder`
+        """
         if match_weigher is None:
             return QuadConstraintBuilder(self.delegate.impact(constraint_weight),
                                          self.a_type, self.b_type, self.c_type, self.d_type)
@@ -1930,6 +2182,25 @@ class QuadConstraintStream(Generic[A, B, C, D]):
 
     def penalize_configurable(self, match_weigher: Callable[[A, B, C, D], int] = None) \
             -> 'QuadConstraintBuilder[A, B, C, D, ScoreType]':
+        """
+        Negatively impacts the Score, subtracting the ConstraintWeight for each match,
+        and returns a builder to apply optional constraint properties.
+        The constraint weight comes from a `ConstraintWeight` annotated member on the `constraint_configuration`,
+        so end users can change the constraint weights dynamically.
+        This constraint may be deactivated if the `ConstraintWeight` is zero.
+        If there is no `constraint_configuration`, use `penalize` instead.
+
+        Parameters
+        ----------
+        match_weigher : Callable[[A, B, C, D], int]
+            a function that computes the weight of a match.
+            If absent, each match has weight ``1``.
+
+        Returns
+        -------
+        QuadConstraintBuilder
+            a `QuadConstraintBuilder`
+        """
         if match_weigher is None:
             return QuadConstraintBuilder(self.delegate.penalizeConfigurable(),
                                          self.a_type, self.b_type, self.c_type, self.d_type)
@@ -1944,6 +2215,24 @@ class QuadConstraintStream(Generic[A, B, C, D]):
 
     def reward_configurable(self, match_weigher: Callable[[A, B, C, D], int] = None) \
             -> 'QuadConstraintBuilder[A, B, C, D, ScoreType]':
+        """
+        Positively impacts the Score, adding the ConstraintWeight for each match,
+        and returns a builder to apply optional constraint properties.
+        The constraint weight comes from a `ConstraintWeight` annotated member on the `constraint_configuration`,
+        so end users can change the constraint weights dynamically.
+        This constraint may be deactivated if the `ConstraintWeight` is zero.
+        If there is no `constraint_configuration`, use `penalize` instead.
+        Parameters
+        ----------
+        match_weigher : Callable[[A, B, C, D], int]
+            a function that computes the weight of a match.
+            If absent, each match has weight ``1``.
+
+        Returns
+        -------
+        QuadConstraintBuilder
+            a `QuadConstraintBuilder`
+        """
         if match_weigher is None:
             return QuadConstraintBuilder(self.delegate.rewardConfigurable(),
                                          self.a_type, self.b_type, self.c_type, self.d_type)
@@ -1958,6 +2247,25 @@ class QuadConstraintStream(Generic[A, B, C, D]):
 
     def impact_configurable(self, match_weigher: Callable[[A, B, C, D], int] = None) \
             -> 'QuadConstraintBuilder[A, B, C, D, ScoreType]':
+        """
+        Positively or negatively impacts the Score, adding the ConstraintWeight for each match,
+        and returns a builder to apply optional constraint properties.
+        The constraint weight comes from a `ConstraintWeight` annotated member on the `constraint_configuration`,
+        so end users can change the constraint weights dynamically.
+        This constraint may be deactivated if the `ConstraintWeight` is zero.
+        If there is no `constraint_configuration`, use `penalize` instead.
+
+        Parameters
+        ----------
+        match_weigher : Callable[[A, B, C, D], int]
+            a function that computes the weight of a match.
+            If absent, each match has weight ``1``.
+
+        Returns
+        -------
+        QuadConstraintBuilder
+            a `QuadConstraintBuilder`
+        """
         if match_weigher is None:
             return QuadConstraintBuilder(self.delegate.impactConfigurable(),
                                          self.a_type, self.b_type, self.c_type, self.d_type)

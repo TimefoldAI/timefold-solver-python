@@ -125,6 +125,10 @@ def perform_group_by(constraint_stream, package, group_by_args, *type_arguments)
 
 
 class ConstraintCollectors:
+    """
+    Creates an UniConstraintCollector, BiConstraintCollector, ...
+    instances for use in `UniConstraintStream.group_by`, ...
+    """
     #  Method parameter type variables
     A = TypeVar('A')
     B = TypeVar('B')
@@ -168,11 +172,8 @@ class ConstraintCollectors:
 
     @staticmethod
     def average(group_value_mapping):
-        """Returns a collector that calculates an average of an int property of the elements that are being grouped.
-
-        :param group_value_mapping:
-
-        :return:
+        """
+        Returns a collector that calculates an average of an int property of the elements that are being grouped.
         """
         return GroupIntMappingSingleArgConstraintCollector(ConstraintCollectors._delegate().average,
                                                            group_value_mapping)
@@ -275,9 +276,8 @@ class ConstraintCollectors:
 
     @staticmethod
     def compose(*args):
-        """Returns a constraint collector the result of which is a composition of other constraint collectors.
-
-        :return:
+        """
+        Returns a constraint collector the result of which is a composition of other constraint collectors.
         """
         if len(args) < 3:  # Need at least two collectors + 1 compose function
             raise ValueError
@@ -313,14 +313,9 @@ class ConstraintCollectors:
 
     @staticmethod
     def conditionally(predicate, delegate):
-        """Returns a collector that delegates to the underlying collector if and only if the input tuple meets the given
+        """
+        Returns a collector that delegates to the underlying collector if and only if the input tuple meets the given
         condition.
-
-        :param predicate:
-
-        :param delegate:
-
-        :return:
         """
         return ConditionalConstraintCollector(ConstraintCollectors._delegate().conditionally,
                                               predicate,
@@ -355,12 +350,8 @@ class ConstraintCollectors:
 
     @staticmethod
     def collect_and_then(delegate, mapping_function):
-        """Returns a collector that delegates to the underlying collector and maps its result to another value.
-
-        :param delegate:
-        :param mapping_function:
-
-        :return:
+        """
+        Returns a collector that delegates to the underlying collector and maps its result to another value.
         """
         return CollectAndThenCollector(ConstraintCollectors._delegate().collectAndThen,
                                        delegate,
@@ -368,33 +359,29 @@ class ConstraintCollectors:
 
     @staticmethod
     def count() -> 'UniConstraintCollector[A, Any, int]':
-        """Returns a collector that counts the number of elements that are being grouped.
-
-        :return:
+        """
+        Returns a collector that counts the number of elements that are being grouped.
         """
         return NoArgsConstraintCollector(ConstraintCollectors._delegate().count)  # noqa
 
     @staticmethod
     def count_bi() -> 'BiConstraintCollector[A, B, Any, int]':
-        """Returns a collector that counts the number of elements that are being grouped.
-
-        :return:
+        """
+        Returns a collector that counts the number of elements that are being grouped.
         """
         return NoArgsConstraintCollector(ConstraintCollectors._delegate().countBi)  # noqa
 
     @staticmethod
     def count_tri() -> 'TriConstraintCollector[A, B, C, Any, int]':
-        """Returns a collector that counts the number of elements that are being grouped.
-
-        :return:
+        """
+        Returns a collector that counts the number of elements that are being grouped.
         """
         return NoArgsConstraintCollector(ConstraintCollectors._delegate().countTri)  # noqa
 
     @staticmethod
     def count_quad() -> 'QuadConstraintCollector[A, B, C, D, Any, int]':
-        """Returns a collector that counts the number of elements that are being grouped.
-
-        :return:
+        """
+        Returns a collector that counts the number of elements that are being grouped.
         """
         return NoArgsConstraintCollector(ConstraintCollectors._delegate().countQuad)  # noqa
 
@@ -426,9 +413,8 @@ class ConstraintCollectors:
 
     @staticmethod
     def count_distinct(function=None):
-        """Returns a collector that counts the number of unique elements that are being grouped.
-
-        :return:
+        """
+        Returns a collector that counts the number of unique elements that are being grouped.
         """
         if function is None:
             return NoArgsConstraintCollector(ConstraintCollectors._delegate().countDistinct)
@@ -491,9 +477,8 @@ class ConstraintCollectors:
 
     @staticmethod
     def max(function=None, comparator=None):
-        """Returns a collector that finds a maximum value in a group of Comparable elements.
-
-        :return:
+        """
+        Returns a collector that finds a maximum value in a group of comparable elements.
         """
         if function is None and comparator is None:
             return NoArgsConstraintCollector(ConstraintCollectors._delegate().max)
@@ -560,9 +545,8 @@ class ConstraintCollectors:
 
     @staticmethod
     def min(function=None, comparator=None):
-        """Returns a collector that finds a minimum value in a group of Comparable elements.
-
-        :return:
+        """
+        Returns a collector that finds a minimum value in a group of comparable elements.
         """
         if function is None and comparator is None:
             return NoArgsConstraintCollector(ConstraintCollectors._delegate().min)
@@ -622,14 +606,8 @@ class ConstraintCollectors:
 
     @staticmethod
     def sum(function, zero=None, adder=None, subtractor=None):
-        """Returns a collector that sums an int property of the elements that are being grouped.
-
-        :param function:
-        :param zero:
-        :param adder:
-        :param subtractor:
-
-        :return:
+        """
+        Returns a collector that sums an int property of the elements that are being grouped.
         """
         if zero is None and adder is None and subtractor is None:
             return GroupIntMappingSingleArgConstraintCollector(ConstraintCollectors._delegate().sum, function)
@@ -664,6 +642,15 @@ class ConstraintCollectors:
 
     @staticmethod
     def to_consecutive_sequences(result_or_index_map, index_map=None):
+        """
+        Creates a constraint collector that returns SequenceChain about the first fact.
+
+        For instance, [Shift slot=1] [Shift slot=2] [Shift slot=4] [Shift slot=6] returns the following information:
+
+        - Consecutive Lengths: 2, 1, 1
+        - Break Lengths: 1, 2
+        - Consecutive Items: [[Shift slot=1] [Shift slot=2]], [[Shift slot=4]], [[Shift slot=6]]
+        """
         if index_map is None:
             return GroupIntMappingSingleArgConstraintCollector(ConstraintCollectors._delegate().toConsecutiveSequences,
                                                                result_or_index_map)
@@ -671,48 +658,6 @@ class ConstraintCollectors:
             return GroupMappingIntMappingTwoArgConstraintCollector(
                 ConstraintCollectors._delegate().toConsecutiveSequences,
                 result_or_index_map, index_map)
-
-    toConsecutiveSequences = to_consecutive_sequences
-
-    @overload  # noqa
-    @staticmethod
-    def to_collection(collection_creator: Callable[[int], B_]) -> 'UniConstraintCollector[A, Any, B_]':
-        ...
-
-    @overload  # noqa
-    @staticmethod
-    def to_collection(group_value_mapping: Callable[[A], A_], collection_creator: Callable[[int], B_]) -> \
-            'UniConstraintCollector[A, Any, B_]':
-        ...
-
-    @overload  # noqa
-    @staticmethod
-    def to_collection(group_value_mapping: Callable[[A, B], A_], collection_creator: Callable[[int], B_]) -> \
-            'BiConstraintCollector[A, B, Any, B_]':
-        ...
-
-    @overload  # noqa
-    @staticmethod
-    def to_collection(group_value_mapping: Callable[[A, B, C], A_], collection_creator: Callable[[int], B_]) -> \
-            'TriConstraintCollector[A, B, C, Any, B_]':
-        ...
-
-    @overload  # noqa
-    @staticmethod
-    def to_collection(group_value_mapping: Callable[[A, B, C, D], A_], collection_creator: Callable[[int], B_]) -> \
-            'QuadConstraintCollector[A, B, C, D, Any, B_]':
-        ...
-
-    @staticmethod
-    def to_collection(group_value_mapping_or_collection_creator, collection_creator=None):
-        """Deprecated; use to_list, to_set or to_sorted_set instead
-
-        :return:
-        """
-        if collection_creator is None:
-            raise NotImplementedError  # TODO
-        else:
-            raise NotImplementedError  # TODO
 
     @overload  # noqa
     @staticmethod
@@ -742,9 +687,8 @@ class ConstraintCollectors:
 
     @staticmethod
     def to_list(group_value_mapping=None):
-        """Creates constraint collector that returns List of the given element type.
-
-        :return:
+        """
+        Creates constraint collector that returns List of the given element type.
         """
         if group_value_mapping is None:
             return NoArgsConstraintCollector(ConstraintCollectors._delegate().toList)
@@ -779,9 +723,8 @@ class ConstraintCollectors:
 
     @staticmethod
     def to_set(group_value_mapping=None):
-        """Creates constraint collector that returns Set of the same element type as the ConstraintStream.
-
-        :return:
+        """
+        Creates constraint collector that returns Set of the same element type as the ConstraintStream.
         """
         if group_value_mapping is None:
             return NoArgsConstraintCollector(ConstraintCollectors._delegate().toSet)
@@ -845,9 +788,8 @@ class ConstraintCollectors:
 
     @staticmethod
     def to_sorted_set(group_value_mapping=None, comparator=None):
-        """Creates constraint collector that returns SortedSet of the same element type as the ConstraintStream.
-
-        :return:
+        """
+        Creates constraint collector that returns SortedSet of the same element type as the ConstraintStream.
         """
         if group_value_mapping is None and comparator is None:
             return NoArgsConstraintCollector(ConstraintCollectors._delegate().toSortedSet)
@@ -937,9 +879,8 @@ class ConstraintCollectors:
 
     @staticmethod
     def to_map(key_mapper, value_mapper, merge_function_or_set_creator=None):
-        """Creates a constraint collector that returns a Map with given keys and values consisting of a Set of mappings.
-
-        :return:
+        """
+        Creates a constraint collector that returns a Map with given keys and values consisting of a Set of mappings.
         """
         import inspect
         if merge_function_or_set_creator is None:
@@ -1035,10 +976,9 @@ class ConstraintCollectors:
 
     @staticmethod
     def to_sorted_map(key_mapper, value_mapper, merge_function_or_set_creator=None):
-        """Creates a constraint collector that returns a SortedMap with given keys and values consisting of a Set of
+        """
+        Creates a constraint collector that returns a SortedMap with given keys and values consisting of a Set of
         mappings.
-
-        :return:
         """
         import inspect
         if merge_function_or_set_creator is None:

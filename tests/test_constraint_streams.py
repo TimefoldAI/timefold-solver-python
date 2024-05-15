@@ -600,6 +600,7 @@ ignored_java_functions = {
     'ifNotExistsIncludingNullVars',
     'ifExistsOtherIncludingNullVars',
     'ifNotExistsOtherIncludingNullVars',
+    'toCollection',
 }
 
 

@@ -11,6 +11,21 @@ Entity_ = TypeVar('Entity_')
 
 @add_java_interface('ai.timefold.solver.core.api.domain.variable.VariableListener')
 class VariableListener:
+    """
+    A listener sourced on a basic PlanningVariable.
+
+    Changes shadow variables when a source basic planning variable changes.
+    The source variable can be either a genuine or a shadow variable.
+
+    Important: it must only change the shadow variable(s) for which it's configured!
+    It should never change a genuine variable or a problem fact.
+    It can change its shadow variable(s) on multiple entity instances
+    (for example: an arrival_time change affects all trailing entities too).
+
+    It is recommended to keep implementations stateless.
+    If state must be implemented,
+    implementations may need to override the methods `reset_working_solution`, and `close`.
+    """
     def after_entity_added(self, score_director: ScoreDirector, entity) -> None:
         pass
 
