@@ -1,4 +1,4 @@
-# Timefold Solver
+# Timefold Solver for Python
 
 [![PyPI](https://img.shields.io/pypi/v/timefold-solver "PyPI")](https://pypi.org/project/timefold-solver/)
 
