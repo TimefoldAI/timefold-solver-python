@@ -25,22 +25,50 @@ Justification_ = TypeVar('Justification_', bound='ConstraintJustification')
 
 @dataclass(frozen=True, unsafe_hash=True)
 class ConstraintRef:
+    """
+    Represents a unique identifier of a constraint.
+    Users should have no need to create instances of this record.
+
+    Attributes
+    ----------
+    package_name : str
+        The constraint package is the namespace of the constraint.
+        When using a `constraint_configuration`, it is equal to the
+        `ConstraintWeight.constraint_package`.
+
+    constraint_name : str
+        The constraint name.
+        It might not be unique, but `constraint_id` is unique.
+        When using a `constraint_configuration`, it is equal to the `ConstraintWeight.constraint_name`.
+    """
     package_name: str
     constraint_name: str
 
     @property
     def constraint_id(self) -> str:
+        """
+        Always derived from packageName and constraintName.
+        """
         return f'{self.package_name}/{self.constraint_name}'
 
     @staticmethod
     def compose_constraint_id(solution_type_or_package: Union[type, str], constraint_name: str) -> str:
-        """Returns the constraint id with the given constraint package and the given name
+        """
+        Returns the constraint id with the given constraint package and the given name
 
-        :param solution_type_or_package: The constraint package, or a class decorated with @planning_solution
+        Parameters
+        ----------
+        solution_type_or_package : type | str
+            the constraint package, or a class decorated with @planning_solution
             (for when the constraint is in the default package)
-        :param constraint_name: The name of the constraint
-        :return: The constraint id with the given name in the default package.
-        :rtype: str
+
+        constraint_name : str
+            the name of the constraint
+
+        Returns
+        -------
+        str
+            the constraint id with the given name in the default package
         """
         package = solution_type_or_package
         if not isinstance(solution_type_or_package, str):
@@ -58,6 +86,13 @@ def _safe_hash(obj: Any) -> int:
 
 @dataclass(frozen=True, eq=True)
 class ConstraintMatch(Generic[Score_]):
+    """
+    Retrievable from `ConstraintMatchTotal.constraint_match_set` and
+    `Indictment.constraint_match_set`.
+    This class is comparable for consistent ordering of constraint matches in visualizations.
+    The details of this ordering are unspecified and are subject to change.
+    If possible, prefer using `SolutionManager.analyze` instead.
+    """
     constraint_ref: ConstraintRef
     justification: Any
     indicted_objects: tuple[Any, ...]
@@ -78,6 +113,12 @@ class ConstraintMatch(Generic[Score_]):
 
 @dataclass(eq=True)
 class ConstraintMatchTotal(Generic[Score_]):
+    """
+    Explains the Score of a `planning_solution`,
+    from the opposite side than `Indictment`.
+    Retrievable from `ScoreExplanation.constraint_match_total_map`.
+    If possible, prefer using `SolutionManager.analyze` instead.
+    """
     constraint_ref: ConstraintRef
     constraint_match_count: int
     constraint_match_set: set[ConstraintMatch]
@@ -99,11 +140,47 @@ class ConstraintMatchTotal(Generic[Score_]):
 
 @add_java_interface('ai.timefold.solver.core.api.score.stream.ConstraintJustification')
 class ConstraintJustification:
+    """
+    Marker interface for constraint justifications.
+    All classes used as constraint justifications must implement this interface.
+    Implementing classes ("implementations")
+    may decide to implement Comparable to preserve order of instances when displayed in user interfaces,
+    logs etc. This is entirely optional.
+
+    If two instances of this class are equal, they are considered to be the same justification.
+    This matters in case of `SolutionManager.analyze` score analysis where such justifications are grouped together.
+    This situation is likely to occur in case a ConstraintStream produces duplicate tuples,
+    which can be avoided by using `UniConstraintStream.distinct()` or its bi, tri and quad counterparts.
+    Alternatively, some unique ID (such as `uuid.uuid4()`) can be used to distinguish between instances.
+    Score analysis does not diff contents of the implementations;
+    instead it uses equality of the implementations (as defined above) to tell them apart from the outside.
+    For this reason, it is recommended that:
+
+    - The implementations must not use Score for equal and hash codes,
+      as that would prevent diffing from working entirely.
+
+    - The implementations should not store any Score instances,
+      as they would not be diffed, leading to confusion with `MatchAnalysis.score`, which does get diffed.
+
+    If the user wishes to use score analysis,
+    they are required to ensure that the class(es)
+    implementing this interface can be serialized into any format
+    which is supported by the SolutionManager implementation,
+    typically JSON.
+
+    See Also
+    --------
+    ConstraintMatch.justification
+    """
     pass
 
 
 @dataclass(frozen=True, eq=True)
 class DefaultConstraintJustification(ConstraintJustification):
+    """
+    Default implementation of `ConstraintJustification`, returned by
+    `ConstraintMatch.justification` unless the user defined a custom justification mapping.
+    """
     facts: tuple[Any, ...]
     impact: Score_
 
@@ -146,6 +223,25 @@ def _unwrap_justification_list(justification_list: list[Any]) -> list[Constraint
 
 
 class Indictment(Generic[Score_]):
+    """
+    Explains the `Score` of a `planning_solution`,
+    from the opposite side than `ConstraintMatchTotal`.
+    Retrievable from `ScoreExplanation.indictment_map`.
+
+    Attributes
+    ----------
+    constraint_match_set: set[ConstraintMatch]
+
+    score: Score_
+        Sum of the constraint_match_set's `ConstraintMatch.score`.
+
+    constraint_match_count: int
+
+    indicted_object : Any
+        The object that was involved in causing the constraints to match.
+        It is part of `ConstraintMatch.indicted_objects` of every `ConstraintMatch`
+        in `constraint_match_set`.
+    """
     def __init__(self, delegate: '_JavaIndictment[Score_]'):
         self._delegate = delegate
 
@@ -166,6 +262,22 @@ class Indictment(Generic[Score_]):
         return unwrap_python_like_object(self._delegate.getIndictedObject())
 
     def get_justification_list(self, justification_type: Type[Justification_] = None) -> list[Justification_]:
+        """
+        Retrieve ConstraintJustification instances associated with ConstraintMatches in `constraint_match_set`.
+        This is equivalent to retrieving `constraint_match_set` and collecting all `ConstraintMatch.justification`
+        objects into a list.
+
+        Parameters
+        ----------
+        justification_type : Type[Justification_], optional
+            If present, only include justifications of the given type in the returned list.
+
+        Returns
+        -------
+        list[Justification_]
+            guaranteed to contain unique instances
+
+        """
         if justification_type is None:
             justification_list = self._delegate.getJustificationList()
         else:
@@ -175,6 +287,45 @@ class Indictment(Generic[Score_]):
 
 
 class ScoreExplanation(Generic[Solution_]):
+    """
+    Build by `SolutionManager.explain`
+    to hold `ConstraintMatchTotal`s and `Indictment`s
+    necessary to explain the quality of a particular `Score`.
+
+    For a simplified, faster and JSON-friendly alternative, see `ScoreAnalysis`.
+
+    Attributes
+    ----------
+    solution : Solution_
+        Retrieve the `planning_solution` that the score being explained comes from.
+
+    score : Score
+        Return the `Score` being explained.
+        If the specific Score type used by the `planning_solution`
+        is required, retrieve it from the `solution` attribute.
+
+    summary : str
+        Returns a diagnostic text
+        that explains the solution through the `ConstraintMatch` API
+        to identify which constraints or planning entities cause that score quality.
+
+        In case of an infeasible solution, this can help diagnose the cause of that.
+        Do not parse the return value, its format may change without warning.
+        Instead, to provide this information in a UI or a service,
+        use `constraint_match_total_map` and `indictment_map` and convert those into a domain-specific API.
+
+    constraint_match_total_map : dict[str, ConstraintMatchTotal]
+        Explains the `Score` of the `score` attribute by splitting it up per `Constraint`.
+        The sum of `ConstraintMatchTotal.score` equals the `score` attribute.
+
+    indictment_map: dict[Any, Indictment]
+        Explains the impact of each planning entity or problem fact on the `Score`.
+        An `Indictment` is basically the inverse of a `ConstraintMatchTotal`:
+        it is a Score total for any of the indicted objects.
+
+        The sum of `ConstraintMatchTotal.score` accessible from this `dict`
+        differs from `score` because each `ConstraintMatch.score` is counted for each of the indicted objects.
+    """
     _delegate: '_JavaScoreExplanation'
 
     def __init__(self, delegate: '_JavaScoreExplanation'):
@@ -216,6 +367,29 @@ class ScoreExplanation(Generic[Solution_]):
         return self._delegate.getSummary()
 
     def get_justification_list(self, justification_type: Type[Justification_] = None) -> list[Justification_]:
+        """
+        Explains the `Score` of the `score` attribute for all constraints.
+        The return value of this method is determined by several factors:
+
+        - With Constraint Streams,
+          the user has an option to provide a custom justification mapping, implementing `ConstraintJustification`.
+          If provided, every ConstraintMatch of such constraint will be associated with this custom justification class.
+          Every constraint
+          not associated with a custom justification class will be associated with `DefaultConstraintJustification`.
+
+        - With ConstraintMatchAwareIncrementalScoreCalculator, every `ConstraintMatch`
+          will be associated with the justification class that the user created it with.
+
+        Parameters
+        ----------
+        justification_type : Type[Justification_], optional
+            If present, only include justifications of the given type in the returned list.
+
+        Returns
+        -------
+        list[Justification_]
+             all constraint matches, optionally only those of a given class.
+        """
         if justification_type is None:
             justification_list = self._delegate.getJustificationList()
         else:
@@ -225,6 +399,16 @@ class ScoreExplanation(Generic[Solution_]):
 
 
 class MatchAnalysis(Generic[Score_]):
+    """
+    Users should never create instances of this type directly.
+    It is available transitively via `SolutionManager.analyze`.
+
+    Attributes
+    ----------
+    constraint_ref : ConstraintRef
+    score : Score_
+    justification : ConstraintJustification
+    """
     _delegate: '_JavaMatchAnalysis'
 
     def __init__(self, delegate: '_JavaMatchAnalysis'):
@@ -245,6 +429,23 @@ class MatchAnalysis(Generic[Score_]):
 
 
 class ConstraintAnalysis(Generic[Score_]):
+    """
+    Users should never create instances of this type directly.
+    It is available transitively via `SolutionManager.analyze`.
+
+    Attributes
+    ----------
+    constraint_ref : ConstraintRef
+    weight : Score_
+    score : Score_
+    matches : list[MatchAnalysis]
+         None if analysis not available;
+         empty if constraint has no matches,
+         but still non-zero constraint weight; non-empty if constraint has matches.
+         This is a list to simplify access to individual elements,
+         but it contains no duplicates just like `set` wouldn't.
+
+    """
     _delegate: '_JavaConstraintAnalysis[Score_]'
 
     def __init__(self, delegate: '_JavaConstraintAnalysis[Score_]'):
@@ -279,6 +480,40 @@ class ConstraintAnalysis(Generic[Score_]):
 
 
 class ScoreAnalysis:
+    """
+    Represents the breakdown of a `Score` into individual `ConstraintAnalysis` instances,
+    one for each constraint.
+    Compared to `ScoreExplanation`, this is JSON-friendly and faster to generate.
+
+    In order to be fully serializable to JSON,
+    MatchAnalysis instances must be serializable to JSON
+    and that requires any implementations of `ConstraintJustification` to be serializable to JSON.
+    This is the responsibility of the user.
+
+    For deserialization from JSON, the user needs to provide the deserializer themselves.
+    This is due to the fact that, once the `ScoreAnalysis` is received over the wire,
+    we no longer know which Score type or `ConstraintJustification` type was used.
+    The user has all of that information in their domain model,
+    and so they are the correct party to provide the deserializer.
+
+    Attributes
+    ----------
+    constraint_map : dict[ConstraintRef, ConstraintAnalysis]
+        for each constraint identified by its `constraint_ref`,
+        the `ConstraintAnalysis` that describes the impact of that constraint on the overall score.
+        Constraints are present even if they have no matches,
+        unless their weight is zero; zero-weight constraints are not present.
+        Entries in the map have a stable iteration order; items are ordered first by `ConstraintAnalysis.weight,
+        then by `ConstraintAnalysis.constraint_ref`.
+
+    constraint_analyses : list[ConstraintAnalysis]
+        Individual ConstraintAnalysis instances that make up this ScoreAnalysis.
+
+    Notes
+    -----
+    the constructors of this record are off-limits.
+    We ask users to use exclusively `SolutionManager.analyze` to obtain instances of this record.
+    """
     _delegate: '_JavaScoreAnalysis'
 
     def __init__(self, delegate: '_JavaScoreAnalysis'):

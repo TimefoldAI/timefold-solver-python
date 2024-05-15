@@ -1,4 +1,7 @@
 class ScoreDirector:
+    """
+    The `ScoreDirector` holds the working solution and calculates the `Score` for it.
+    """
     def __init__(self, delegate):
         self._delegate = delegate
 
@@ -57,12 +60,28 @@ class ScoreDirector:
         self._delegate.beforeVariableChanged(entity, variable_name)
     
     def get_working_solution(self):
+        """
+        The `planning_solution` that is used to calculate the `Score`.
+        Because a `Score` is best calculated incrementally (by deltas),
+        the ScoreDirector needs to be notified when its working solution changes.
+        """
         return self._delegate.getWorkingSolution()
     
     def look_up_working_object(self, working_object):
+        """
+        Translates an entity or fact instance (often from another Thread)
+        to this `ScoreDirector`'s internal working instance.
+        Useful for move rebasing and in a `ProblemChange`.
+        Matching uses a `PlanningId` by default.
+        """
         return self._delegate.lookUpWorkingObject(working_object)
     
     def look_up_working_object_or_return_none(self, working_object):
+        """
+        As defined by `look_up_working_object`,
+        but doesn't fail fast if no `working_object` was ever added for the `external_object`.
+        It's recommended to use `look_up_working_object` instead, especially in move rebasing code.
+        """
         return self._delegate.lookUpWorkingObject(working_object)
     
     def trigger_variable_listeners(self) -> None:

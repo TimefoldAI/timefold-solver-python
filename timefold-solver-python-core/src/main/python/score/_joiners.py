@@ -168,9 +168,8 @@ class Joiners:
 
     @staticmethod
     def equal(mapping_or_left_mapping=None, right_mapping=None):
-        """Joins every A and B that share a property.
-
-        :return:
+        """
+        Joins every A and B that share a property.
         """
         if mapping_or_left_mapping is None and right_mapping is None:
             return SamePropertyUniJoiner(Joiners._delegate().equal, lambda a: a)
@@ -198,11 +197,8 @@ class Joiners:
 
     @staticmethod
     def filtering(predicate):
-        """Applies a filter to the joined tuple
-
-        :param predicate: the filter to apply
-
-        :return:
+        """
+        Applies a filter to the joined tuple.
         """
         return FilteringJoiner(Joiners._delegate().filtering, predicate)
 
@@ -234,9 +230,8 @@ class Joiners:
 
     @staticmethod
     def greater_than(mapping_or_left_mapping, right_mapping=None):
-        """Joins every A and B where a value of property on A is greater than the value of a property on B.
-
-        :return:
+        """
+        Joins every A and B where a value of property on A is greater than the value of a property on B.
         """
         return Joiners._call_comparison_java_joiner(Joiners._delegate().greaterThan, mapping_or_left_mapping,
                                                     right_mapping)
@@ -271,9 +266,8 @@ class Joiners:
 
     @staticmethod
     def greater_than_or_equal(mapping_or_left_mapping, right_mapping=None):
-        """Joins every A and B where a value of property on A is greater than or equal to the value of a property on B.
-
-        :return:
+        """
+        Joins every A and B where a value of property on A is greater than or equal to the value of a property on B.
         """
         return Joiners._call_comparison_java_joiner(Joiners._delegate().greaterThanOrEqual, mapping_or_left_mapping,
                                                     right_mapping)
@@ -306,9 +300,8 @@ class Joiners:
 
     @staticmethod
     def less_than(mapping_or_left_mapping, right_mapping=None):
-        """Joins every A and B where a value of property on A is less than the value of a property on B.
-
-        :return:
+        """
+        Joins every A and B where a value of property on A is less than the value of a property on B.
         """
         return Joiners._call_comparison_java_joiner(Joiners._delegate().lessThan, mapping_or_left_mapping,
                                                     right_mapping)
@@ -342,9 +335,8 @@ class Joiners:
 
     @staticmethod
     def less_than_or_equal(mapping_or_left_mapping, right_mapping=None):
-        """Joins every A and B where a value of property on A is less than or equal to the value of a property on B.
-
-        :return:
+        """
+        Joins every A and B where a value of property on A is less than or equal to the value of a property on B.
         """
         return Joiners._call_comparison_java_joiner(Joiners._delegate().lessThanOrEqual, mapping_or_left_mapping,
                                                     right_mapping)
@@ -383,10 +375,9 @@ class Joiners:
     @staticmethod
     def overlapping(start_mapping_or_left_start_mapping, end_mapping_or_left_end_mapping,
                     right_start_mapping=None, right_end_mapping=None):
-        """Joins every A and B that overlap for an interval which is specified by a start and end property on both A and
+        """
+        Joins every A and B that overlap for an interval which is specified by a start and end property on both A and
         B.
-
-        :return:
         """
         if start_mapping_or_left_start_mapping is None or end_mapping_or_left_end_mapping is None:
             raise ValueError

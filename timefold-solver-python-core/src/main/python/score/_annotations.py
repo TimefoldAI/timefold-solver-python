@@ -11,6 +11,36 @@ Solution_ = TypeVar('Solution_')
 
 def constraint_provider(constraint_provider_function: Callable[[ConstraintFactory], list[Constraint]], /) \
         -> Callable[[ConstraintFactory], list[Constraint]]:
+    """
+    A decorator used to convert a function into a constraint provider.
+    Used by Constraint Streams' Score calculation.
+    An implementation must be stateless in order to facilitate
+    building a single set of constraints independent of potentially changing constraint weights.
+
+    The function must have the signature ``ConstraintFactory -> list[Constraint]``.
+
+    Examples
+    --------
+    >>> from timefold.solver.score import ConstraintFactory, Constraint, Joiners, HardSoftScore, constraint_provider
+    >>> from domain import Lesson
+    >>>
+    >>> @constraint_provider
+    ... def timetabling_constraints(cf: ConstraintFactory) -> list[Constraint]:
+    ...     return [
+    ...         cf.for_each_unique_pair(Lesson,
+    ...                                 Joiners.equal(lambda lesson: lesson.teacher),
+    ...                                 Joiners.equal(lambda lesson: lesson.timeslot))
+    ...           .penalize(HardSoftScore.ONE_HARD)
+    ...           .as_constraint('Overlapping Timeslots')
+    ...     ]
+
+    See Also
+    --------
+    Joiners
+    ConstraintCollectors
+    ConstraintFactory
+    UniConstraintStream
+    """
     ensure_init()
 
     def constraint_provider_wrapper(function):
@@ -26,14 +56,29 @@ def constraint_provider(constraint_provider_function: Callable[[ConstraintFactor
 
 def easy_score_calculator(easy_score_calculator_function: Callable[[Solution_], 'Score']) -> \
         Callable[[Solution_], 'Score']:
-    """Used for easy python Score calculation. This is non-incremental calculation, which is slow.
-
-    The function takes a single parameter, the Solution, and
-    must return a Score compatible with the Solution Score Type.
+    """
+    Used for easy Python `Score` calculation.
+    This is non-incremental calculation, which is slow.
     An implementation must be stateless.
 
-    :type easy_score_calculator_function: Callable[[Solution_], '_Score']
-    :rtype: Callable[[Solution_], '_Score']
+    The function must have the signature ``Solution_ -> Score``.
+
+    Examples
+    --------
+    >>> from timefold.solver.score import SimpleScore, easy_score_calculator
+    >>> from domain import Timetable
+    >>>
+    >>> @easy_score_calculator
+    ... def timetabling_constraints(timetable: Timetable) -> SimpleScore:
+    ...     total_score = 0
+    ...
+    ...     for lesson_1 in timetable.lessons:
+    ...         for lesson_2 in timetable.lessons:
+    ...             if lesson_1.teacher == lesson_2.teacher and lesson_1.timeslot == lesson_2.timeslot:
+    ...                 total_score -= 1
+    ...
+    ...     return SimpleScore.of(total_score)
+
     """
     ensure_init()
     from jpyinterpreter import translate_python_bytecode_to_java_bytecode, generate_proxy_class_for_translated_function

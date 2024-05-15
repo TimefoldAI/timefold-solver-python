@@ -25,6 +25,9 @@ def _lookup_on_java_class(java_class: str, attribute: str) -> Any:
 
 @dataclass(kw_only=True)
 class Duration:
+    """
+    Represents a duration of time.
+    """
     milliseconds: int = field(default=0)
     seconds: int = field(default=0)
     minutes: int = field(default=0)
@@ -64,12 +67,78 @@ class Duration:
 
 
 class EnvironmentMode(Enum):
+    """
+    The environment mode also allows you to detect common bugs in your implementation.
+    Also, a `Solver` has a single Random instance.
+    Some optimization algorithms use the Random instance a lot more than others.
+    For example simulated annealing depends highly on random numbers,
+    while tabu search only depends on it to deal with score ties.
+    This environment mode influences the seed of that Random instance.
+    """
+
     NON_REPRODUCIBLE = 'NON_REPRODUCIBLE'
+    """
+    The non reproducible mode is equally fast or slightly faster than REPRODUCIBLE.
+    The random seed is different on every run,
+    which makes it more robust against an unlucky random seed.
+    An unlucky random seed gives a bad result on a certain data set with a certain solver configuration.
+    Note that in most use cases the impact of the random seed is relatively low on the result.
+    An occasional bad result is far more likely to be caused by another issue (such as a score trap).
+    In multithreaded scenarios, this mode allows the use of work stealing and other non deterministic speed tricks.
+    """
+
     REPRODUCIBLE = 'REPRODUCIBLE'
+    """
+    The reproducible mode is the default mode because it is recommended during development.
+    In this mode, 2 runs on the same computer will execute the same code in the same order.
+    They will also yield the same result,
+    except if they use a time based termination and they have a sufficiently large difference in allocated CPU time.
+    This allows you to benchmark new optimizations (such as a new Move implementation)
+    fairly and reproduce bugs in your code reliably.
+    
+    Warning: some code can disrupt reproducibility regardless of this mode.
+    See the reference manual for more info.
+    In practice, this mode uses the default random seed,
+    and it also disables certain concurrency optimizations (such as work stealing).
+    """
+
     FAST_ASSERT = 'FAST_ASSERT'
+    """
+    This mode turns on several assertions (but not all of them) to fail-fast on a bug in a Move implementation,
+    a constraint rule, the engine itself or something else at a reasonable performance cost (in development at least).
+    This mode is reproducible (see REPRODUCIBLE mode).
+    This mode is intrusive because it calls calculate_score more frequently than a non assert mode.
+    This mode is slow.
+    """
+
     NON_INTRUSIVE_FULL_ASSERT = 'NON_INTRUSIVE_FULL_ASSERT'
+    """
+    This mode turns on several assertions (but not all of them) to fail-fast on a bug in a Move implementation,
+    a constraint, the engine itself or something else at an overwhelming performance cost.
+    This mode is reproducible (see REPRODUCIBLE mode).
+    This mode is non-intrusive, unlike FULL_ASSERT and FAST_ASSERT.
+    This mode is horribly slow.
+    """
+
     FULL_ASSERT = 'FULL_ASSERT'
+    """
+    This mode turns on all assertions to fail-fast on a bug in a Move implementation,
+    a constraint, the engine itself or something else at a horrible performance cost.
+    This mode is reproducible (see REPRODUCIBLE mode).
+    This mode is intrusive because it calls calculate_score more frequently than a non assert mode.
+    This mode is horribly slow.
+    """
+
     TRACKED_FULL_ASSERT = 'TRACKED_FULL_ASSERT'
+    """
+    This mode turns on FULL_ASSERT and enables variable tracking to fail-fast on a bug in a Move implementation,
+    a constraint, the engine itself or something else at the highest performance cost.
+    Because it tracks genuine and shadow variables,
+    it is able to report precisely what variables caused the corruption and report any missed VariableListener events.
+    This mode is reproducible (see REPRODUCIBLE mode).
+    This mode is intrusive because it calls calculate_score more frequently than a non assert mode.
+    This mode is by far the slowest of all the modes.
+    """
 
     def _get_java_enum(self):
         return _lookup_on_java_class(_java_environment_mode, self.name)
@@ -85,7 +154,15 @@ class TerminationCompositionStyle(Enum):
 
 class MoveThreadCount(Enum):
     AUTO = 'AUTO'
+    """
+    Configure the number of move threads dynamically based on the
+    computer's core count.
+    """
+
     NONE = 'NONE'
+    """
+    Disables multithreaded solving.
+    """
 
 
 class RequiresEnterpriseError(EnvironmentError):
@@ -101,6 +178,10 @@ Solution_ = TypeVar('Solution_')
 
 @dataclass(kw_only=True)
 class SolverConfig(Generic[Solution_]):
+    """
+    To read it from XML, use `create_from_xml_resource`.
+    To build a `SolverFactory` with it, use `SolverFactory.create`.
+    """
     solution_class: Optional[type[Solution_]] = field(default=None)
     entity_class_list: Optional[list[type]] = field(default=None)
     environment_mode: Optional[EnvironmentMode] = field(default=EnvironmentMode.REPRODUCIBLE)
@@ -279,6 +360,14 @@ class TerminationConfig:
 
 @dataclass(kw_only=True)
 class SolverConfigOverride:
+    """
+    Includes settings to override default Solver configuration.
+
+    Attributes
+    ----------
+    termination_config: TerminationConfig, optional
+        sets the solver TerminationConfig.
+    """
     termination_config: Optional[TerminationConfig] = field(default=None)
 
     def _to_java_solver_config_override(self):

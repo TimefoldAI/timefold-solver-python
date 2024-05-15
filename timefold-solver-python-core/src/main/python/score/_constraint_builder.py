@@ -18,10 +18,24 @@ ScoreType = TypeVar('ScoreType', bound='_JavaScore')
 
 
 class Constraint:
+    """
+    This represents a single constraint in the ConstraintStream API that impacts the Score.
+    It is defined in a function decorated by `constraint_provider` by calling `ConstraintFactory.for_each`.
+    """
     ...
 
 
 class UniConstraintBuilder(Generic[A, ScoreType]):
+    """
+    Used to build a `Constraint` out of a `UniConstraintStream`, applying optional configuration.
+    To build the constraint, use one of the terminal operations, such as `as_constraint`.
+
+    Unless `justify_with` is called, the default justification mapping will be used.
+    The function takes the input arguments and score and converts them to a `DefaultConstraintJustification`.
+
+    Unless `indict_with` is called, the default indicted objects' mapping will be used.
+    The function takes the input arguments and converts them into a `list`.
+    """
     delegate: '_JavaUniConstraintBuilder[A, ScoreType]'
     a_type: Type[A]
 
@@ -31,16 +45,66 @@ class UniConstraintBuilder(Generic[A, ScoreType]):
         self.a_type = a_type
 
     def indict_with(self, indictment_function: Callable[[A], Collection]) -> 'UniConstraintBuilder[A, ScoreType]':
+        """
+        Sets a custom function to mark any object returned by it as responsible for causing the constraint to match.
+        Each object in the collection
+        returned by this function will become an `Indictment` and be available as a key in
+        `ScoreExplanation.indictment_map`.
+
+        Parameters
+        ----------
+        indictment_function : Callable[[A], Collection]
+            the function that returns the indicted objects.
+
+        Returns
+        -------
+        UniConstraintBuilder
+            this `UniConstraintBuilder`.
+        """
         return UniConstraintBuilder(self.delegate.indictWith(
             function_cast(indictment_function, self.a_type)), self.a_type)
 
     def justify_with(self, justification_function: Callable[[A, ScoreType], 'score_api.ConstraintJustification']) -> \
             'UniConstraintBuilder[A, ScoreType]':
+        """
+        Sets a custom function to apply on a constraint match to justify it.
+        That function must not return a `Collection`,
+        else a RuntimeError will be raised during score calculation.
+
+        Parameters
+        ----------
+        justification_function : Callable[[A, ScoreType], ConstraintJustification]
+            the function that returns the justification.
+
+        Returns
+        -------
+        UniConstraintBuilder
+            this `UniConstraintBuilder`.
+        """
         from ai.timefold.solver.core.api.score import Score
         return UniConstraintBuilder(self.delegate.justifyWith(
             function_cast(justification_function, self.a_type, Score)), self.a_type)
 
     def as_constraint(self, constraint_package_or_name: str, constraint_name: str = None) -> Constraint:
+        """
+        Builds a Constraint from the constraint stream.
+
+        Parameters
+        ----------
+        constraint_package_or_name : str
+            If `constraint_name` is also provided, this is the constraint package name.
+            Otherwise, this is the constraint name.
+            The constraint package defaults to the module of the `planning_solution` class.
+
+        constraint_name : str, optional
+            The constraint name.
+            If present, `constraint_package_or_name` is treated as the constraint package name.
+
+        Returns
+        -------
+        Constraint
+            A `Constraint`.
+        """
         if constraint_name is None:
             return self.delegate.asConstraint(constraint_package_or_name)
         else:
@@ -48,6 +112,16 @@ class UniConstraintBuilder(Generic[A, ScoreType]):
 
 
 class BiConstraintBuilder(Generic[A, B, ScoreType]):
+    """
+    Used to build a `Constraint` out of a `UniConstraintStream`, applying optional configuration.
+    To build the constraint, use one of the terminal operations, such as `as_constraint`.
+
+    Unless `justify_with` is called, the default justification mapping will be used.
+    The function takes the input arguments and score and converts them to a `DefaultConstraintJustification`.
+
+    Unless `indict_with` is called, the default indicted objects' mapping will be used.
+    The function takes the input arguments and converts them into a `list`.
+    """
     delegate: '_JavaBiConstraintBuilder[A, B, ScoreType]'
     a_type: Type[A]
     b_type: Type[B]
@@ -59,17 +133,67 @@ class BiConstraintBuilder(Generic[A, B, ScoreType]):
         self.b_type = b_type
 
     def indict_with(self, indictment_function: Callable[[A, B], Collection]) -> 'BiConstraintBuilder[A, B, ScoreType]':
+        """
+        Sets a custom function to mark any object returned by it as responsible for causing the constraint to match.
+        Each object in the collection
+        returned by this function will become an `Indictment` and be available as a key in
+        `ScoreExplanation.indictment_map`.
+
+        Parameters
+        ----------
+        indictment_function : Callable[[A, B], Collection]
+            the function that returns the indicted objects.
+
+        Returns
+        -------
+        BiConstraintBuilder
+            this `BiConstraintBuilder`.
+        """
         return BiConstraintBuilder(self.delegate.indictWith(
             function_cast(indictment_function, self.a_type, self.b_type)), self.a_type, self.b_type)
 
     def justify_with(self, justification_function: Callable[[A, B, ScoreType],
                                                             'score_api.ConstraintJustification']) -> \
             'BiConstraintBuilder[A, B, ScoreType]':
+        """
+        Sets a custom function to apply on a constraint match to justify it.
+        That function must not return a `Collection`,
+        else a RuntimeError will be raised during score calculation.
+
+        Parameters
+        ----------
+        justification_function : Callable[[A, B, ScoreType], ConstraintJustification]
+            the function that returns the justification.
+
+        Returns
+        -------
+        BiConstraintBuilder
+            this `BiConstraintBuilder`.
+        """
         from ai.timefold.solver.core.api.score import Score
         return BiConstraintBuilder(self.delegate.justifyWith(
             function_cast(justification_function, self.a_type, self.b_type, Score)), self.a_type, self.b_type)
 
     def as_constraint(self, constraint_package_or_name: str, constraint_name: str = None) -> Constraint:
+        """
+        Builds a Constraint from the constraint stream.
+
+        Parameters
+        ----------
+        constraint_package_or_name : str
+            If `constraint_name` is also provided, this is the constraint package name.
+            Otherwise, this is the constraint name.
+            The constraint package defaults to the module of the `planning_solution` class.
+
+        constraint_name : str, optional
+            The constraint name.
+            If present, `constraint_package_or_name` is treated as the constraint package name.
+
+        Returns
+        -------
+        Constraint
+            A `Constraint`.
+        """
         if constraint_name is None:
             return self.delegate.asConstraint(constraint_package_or_name)
         else:
@@ -77,6 +201,16 @@ class BiConstraintBuilder(Generic[A, B, ScoreType]):
 
 
 class TriConstraintBuilder(Generic[A, B, C, ScoreType]):
+    """
+    Used to build a `Constraint` out of a `UniConstraintStream`, applying optional configuration.
+    To build the constraint, use one of the terminal operations, such as `as_constraint`.
+
+    Unless `justify_with` is called, the default justification mapping will be used.
+    The function takes the input arguments and score and converts them to a `DefaultConstraintJustification`.
+
+    Unless `indict_with` is called, the default indicted objects' mapping will be used.
+    The function takes the input arguments and converts them into a `list`.
+    """
     delegate: '_JavaTriConstraintBuilder[A, B, C, ScoreType]'
     a_type: Type[A]
     b_type: Type[B]
@@ -91,6 +225,22 @@ class TriConstraintBuilder(Generic[A, B, C, ScoreType]):
 
     def indict_with(self, indictment_function: Callable[[A, B, C], Collection]) -> \
             'TriConstraintBuilder[A, B, C, ScoreType]':
+        """
+        Sets a custom function to mark any object returned by it as responsible for causing the constraint to match.
+        Each object in the collection
+        returned by this function will become an `Indictment` and be available as a key in
+        `ScoreExplanation.indictment_map`.
+
+        Parameters
+        ----------
+        indictment_function : Callable[[A, B, C], Collection]
+            the function that returns the indicted objects.
+
+        Returns
+        -------
+        TriConstraintBuilder
+            this `TriConstraintBuilder`.
+        """
         return TriConstraintBuilder(self.delegate.indictWith(
             function_cast(indictment_function, self.a_type, self.b_type, self.c_type)), self.a_type, self.b_type,
                                     self.c_type)
@@ -98,12 +248,46 @@ class TriConstraintBuilder(Generic[A, B, C, ScoreType]):
     def justify_with(self, justification_function: Callable[[A, B, C, ScoreType],
                                                             'score_api.ConstraintJustification']) -> \
             'TriConstraintBuilder[A, B, C, ScoreType]':
+        """
+        Sets a custom function to apply on a constraint match to justify it.
+        That function must not return a `Collection`,
+        else a RuntimeError will be raised during score calculation.
+
+        Parameters
+        ----------
+        justification_function : Callable[[A, B, C, ScoreType], ConstraintJustification]
+            the function that returns the justification.
+
+        Returns
+        -------
+        TriConstraintBuilder
+            this `TriConstraintBuilder`.
+        """
         from ai.timefold.solver.core.api.score import Score
         return TriConstraintBuilder(self.delegate.justifyWith(
             function_cast(justification_function, self.a_type, self.b_type, self.c_type, Score)),
             self.a_type, self.b_type, self.c_type)
 
     def as_constraint(self, constraint_package_or_name: str, constraint_name: str = None) -> Constraint:
+        """
+        Builds a Constraint from the constraint stream.
+
+        Parameters
+        ----------
+        constraint_package_or_name : str
+            If `constraint_name` is also provided, this is the constraint package name.
+            Otherwise, this is the constraint name.
+            The constraint package defaults to the module of the `planning_solution` class.
+
+        constraint_name : str, optional
+            The constraint name.
+            If present, `constraint_package_or_name` is treated as the constraint package name.
+
+        Returns
+        -------
+        Constraint
+            A `Constraint`.
+        """
         if constraint_name is None:
             return self.delegate.asConstraint(constraint_package_or_name)
         else:
@@ -111,6 +295,16 @@ class TriConstraintBuilder(Generic[A, B, C, ScoreType]):
 
 
 class QuadConstraintBuilder(Generic[A, B, C, D, ScoreType]):
+    """
+    Used to build a `Constraint` out of a `UniConstraintStream`, applying optional configuration.
+    To build the constraint, use one of the terminal operations, such as `as_constraint`.
+
+    Unless `justify_with` is called, the default justification mapping will be used.
+    The function takes the input arguments and score and converts them to a `DefaultConstraintJustification`.
+
+    Unless `indict_with` is called, the default indicted objects' mapping will be used.
+    The function takes the input arguments and converts them into a `list`.
+    """
     delegate: '_JavaQuadConstraintBuilder[A, B, C, D, ScoreType]'
     a_type: Type[A]
     b_type: Type[B]
@@ -127,6 +321,22 @@ class QuadConstraintBuilder(Generic[A, B, C, D, ScoreType]):
 
     def indict_with(self, indictment_function: Callable[[A, B, C, D], Collection]) -> \
             'QuadConstraintBuilder[A, B, C, D, ScoreType]':
+        """
+        Sets a custom function to mark any object returned by it as responsible for causing the constraint to match.
+        Each object in the collection
+        returned by this function will become an `Indictment` and be available as a key in
+        `ScoreExplanation.indictment_map`.
+
+        Parameters
+        ----------
+        indictment_function : Callable[[A, B, C, D], Collection]
+            the function that returns the indicted objects.
+
+        Returns
+        -------
+        QuadConstraintBuilder
+            this `QuadConstraintBuilder`.
+        """
         return QuadConstraintBuilder(self.delegate.indictWith(
             function_cast(indictment_function, self.a_type, self.b_type, self.c_type, self.d_type)),
             self.a_type, self.b_type, self.c_type, self.d_type)
@@ -134,12 +344,46 @@ class QuadConstraintBuilder(Generic[A, B, C, D, ScoreType]):
     def justify_with(self, justification_function: Callable[[A, B, C, D, ScoreType],
                                                             'score_api.ConstraintJustification']) \
             -> 'QuadConstraintBuilder[A, B, C, D, ScoreType]':
+        """
+        Sets a custom function to apply on a constraint match to justify it.
+        That function must not return a `Collection`,
+        else a RuntimeError will be raised during score calculation.
+
+        Parameters
+        ----------
+        justification_function : Callable[[A, B, C, D, ScoreType], ConstraintJustification]
+            the function that returns the justification.
+
+        Returns
+        -------
+        QuadConstraintBuilder
+            this `QuadConstraintBuilder`.
+        """
         from ai.timefold.solver.core.api.score import Score
         return QuadConstraintBuilder(self.delegate.justifyWith(
             function_cast(justification_function, self.a_type, self.b_type, self.c_type, self.d_type, Score)),
             self.a_type, self.b_type, self.c_type, self.d_type)
 
     def as_constraint(self, constraint_package_or_name: str, constraint_name: str = None) -> Constraint:
+        """
+        Builds a Constraint from the constraint stream.
+
+        Parameters
+        ----------
+        constraint_package_or_name : str
+            If `constraint_name` is also provided, this is the constraint package name.
+            Otherwise, this is the constraint name.
+            The constraint package defaults to the module of the `planning_solution` class.
+
+        constraint_name : str, optional
+            The constraint name.
+            If present, `constraint_package_or_name` is treated as the constraint package name.
+
+        Returns
+        -------
+        Constraint
+            A `Constraint`.
+        """
         if constraint_name is None:
             return self.delegate.asConstraint(constraint_package_or_name)
         else:

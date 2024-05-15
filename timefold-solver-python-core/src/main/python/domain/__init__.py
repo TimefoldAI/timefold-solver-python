@@ -1,3 +1,30 @@
+"""
+Annotations, classes and decorators used to
+define the domain of a planning problem.
+See `the modeling planning problems section in Timefold Solver documentation
+<https://docs.timefold.ai/timefold-solver/latest/using-timefold-solver/modeling-planning-problems>`_.
+
+Examples
+--------
+>>> from timefold.domain import PlanningVariable, PlanningId, planning_entity
+>>> from typing import Annotated
+>>> from datetime import datetime
+>>>
+>>> class Room:
+...     id: Annotated[str, PlanningId]
+...
+>>> class Timeslot:
+...     id: Annotated[str, PlanningId]
+...     start: datetime
+...     end: datetime
+...
+>>> @planning_entity
+>>> class Lesson:
+...     id: Annotated[str, PlanningId]
+...     teacher: str
+...     room: Annotated[Room, PlanningVariable]
+...     timeslot: Annotated[Timeslot, PlanningVariable]
+"""
 from ._annotations import *
 from ._value_range import *
 from ._variable_listener import *

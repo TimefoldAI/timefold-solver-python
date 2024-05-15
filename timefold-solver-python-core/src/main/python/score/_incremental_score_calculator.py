@@ -5,6 +5,12 @@ from abc import ABC, abstractmethod
 
 @add_java_interface('ai.timefold.solver.core.api.score.calculator.IncrementalScoreCalculator')
 class IncrementalScoreCalculator(ABC):
+    """
+    Used for incremental Python `Score` calculation.
+    This is much faster than `easy_score_calculator` but requires much more code to implement too.
+
+    Any implementation is naturally stateful.
+    """
     @abstractmethod
     def after_entity_added(self, entity) -> None:
         ...
@@ -49,25 +55,54 @@ class IncrementalScoreCalculator(ABC):
 
     @abstractmethod
     def calculate_score(self):
+        """
+        Notes
+        -----
+        This method is only called if the `Score` cannot be predicted.
+        The `Score` can be predicted for example after an undo move.
+        """
         ...
 
     @abstractmethod
     def reset_working_solution(self, solution) -> None:
+        """
+        Notes
+        -----
+        There are no `before_entity_added` and `after_entity_added`
+        calls for entities that are already present in the working solution.
+        """
         ...
 
 
 @add_java_interface('ai.timefold.solver.core.api.score.calculator.ConstraintMatchAwareIncrementalScoreCalculator')
 class ConstraintMatchAwareIncrementalScoreCalculator(IncrementalScoreCalculator):
+    """
+    Allows an `IncrementalScoreCalculator`
+    to report `ConstraintMatchTotal` for explaining a score (= which score constraints match for how much)
+    and also for score corruption analysis.
+    """
     @abstractmethod
     def get_constraint_match_totals(self) -> list:
+        """
+        Notes
+        -----
+        If a constraint is present in the problem but resulted in no matches,
+        it should still be present with a `ConstraintMatchTotal.constraint_match_set` size of 0.
+        """
         ...
 
     @abstractmethod
-    def get_indictment_map(self) -> dict:
+    def get_indictment_map(self) -> dict | None:
+        """
+        Returns ``None`` if it should to be calculated non-incrementally from `get_constraint_match_totals`.
+        """
         ...
 
     @abstractmethod
     def reset_working_solution(self, solution, constraint_match_enabled=False) -> None:
+        """
+        Allows for increased performance because it only tracks if `constraint_match_enabled` is true.
+        """
         ...
 
 
