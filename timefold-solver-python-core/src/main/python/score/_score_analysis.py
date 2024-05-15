@@ -1,5 +1,5 @@
 from .._timefold_java_interop import get_class
-from jpyinterpreter import unwrap_python_like_object, add_java_interface
+from _jpyinterpreter import unwrap_python_like_object, add_java_interface
 from dataclasses import dataclass
 
 from typing import TypeVar, Generic, Union, TYPE_CHECKING, Any, cast, Optional, Type
@@ -359,7 +359,7 @@ class ScoreExplanation(Generic[Solution_]):
 
     @property
     def solution(self) -> Solution_:
-        from jpyinterpreter import unwrap_python_like_object
+        from _jpyinterpreter import unwrap_python_like_object
         return unwrap_python_like_object(self._delegate.getSolution())
 
     @property

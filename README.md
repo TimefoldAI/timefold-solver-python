@@ -1,6 +1,8 @@
-# Timefold Solver
+![Timefold Logo](https://raw.githubusercontent.com/TimefoldAI/timefold-solver/main/docs/src/modules/ROOT/images/shared/timefold-logo.png)
 
-[![PyPI](https://img.shields.io/pypi/v/timefold "PyPI")](https://pypi.org/project/timefold-solver/)
+# Timefold Solver for Python
+
+[![PyPI](https://img.shields.io/pypi/v/timefold-solver "PyPI")](https://pypi.org/project/timefold-solver/)
 
 [![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=timefold_solver_python&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=timefold_solver_python)
 [![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=timefold_solver_python&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=timefold_solver_python)
@@ -51,7 +53,7 @@ To declare Planning Entities, use the `@planning_entity` decorator along with an
 ```python
 from dataclasses import dataclass, field
 from typing import Annotated
-from timefold.solver import planning_entity, PlanningId, PlanningVariable
+from timefold.solver.domain import planning_entity, PlanningId, PlanningVariable
 
 @planning_entity
 @dataclass
@@ -75,7 +77,8 @@ To declare the Planning Solution, use the `@planning_solution` decorator:
 ```python
 from dataclasses import dataclass, field
 from typing import Annotated
-from timefold.solver import planning_solution, ProblemFactCollectionProperty, ValueRangeProvider, PlanningEntityCollectionProperty, PlanningScore
+from timefold.solver.domain import (planning_solution, ProblemFactCollectionProperty, ValueRangeProvider,
+                                    PlanningEntityCollectionProperty, PlanningScore)
 from timefold.solver.score import HardSoftScore
 
 @planning_solution
@@ -101,9 +104,7 @@ You define your constraints by using the ConstraintFactory:
 
 ```python
 from domain import Lesson
-from timefold.solver import constraint_provider
-from timefold.solver.types import Joiners, HardSoftScore
-
+from timefold.solver.score import Joiners, HardSoftScore, constraint_provider
 
 @constraint_provider
 def define_constraints(constraint_factory):

@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import TypeVar, Optional, Callable, TYPE_CHECKING, Generic
 from types import FunctionType
-from jpyinterpreter import (convert_to_java_python_like_object,
+from _jpyinterpreter import (convert_to_java_python_like_object,
                             unwrap_python_like_object,
                             update_python_object_from_java,
                             translate_python_bytecode_to_java_bytecode)

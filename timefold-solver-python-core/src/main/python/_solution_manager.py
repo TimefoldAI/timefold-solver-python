@@ -59,7 +59,7 @@ class SolutionManager(Generic[Solution_]):
             The score of the updated solution.
         """
         #  TODO handle solution_update_policy
-        from jpyinterpreter import convert_to_java_python_like_object, update_python_object_from_java
+        from _jpyinterpreter import convert_to_java_python_like_object, update_python_object_from_java
         java_solution = convert_to_java_python_like_object(solution)
         out = self._delegate.update(java_solution)
         update_python_object_from_java(java_solution)
@@ -84,7 +84,7 @@ class SolutionManager(Generic[Solution_]):
             The `ScoreAnalysis` corresponding to the given solution.
         """
         #  TODO handle policies
-        from jpyinterpreter import convert_to_java_python_like_object
+        from _jpyinterpreter import convert_to_java_python_like_object
         return ScoreAnalysis(self._delegate.analyze(convert_to_java_python_like_object(solution)))
 
     def explain(self, solution: Solution_, solution_update_policy=None) -> 'ScoreExplanation':
@@ -104,7 +104,7 @@ class SolutionManager(Generic[Solution_]):
             The `ScoreExplanation` corresponding to the given solution.
         """
         #  TODO handle policies
-        from jpyinterpreter import convert_to_java_python_like_object
+        from _jpyinterpreter import convert_to_java_python_like_object
         return ScoreExplanation(self._delegate.explain(convert_to_java_python_like_object(solution)))
 
     def recommend_fit(self, solution: Solution_, entity_or_element, proposition_function,
