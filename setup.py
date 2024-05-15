@@ -123,7 +123,7 @@ setup(
     name='timefold-solver',
     version=timefold_solver_python_version,
     license='Apache License Version 2.0',
-    license_file='LICENSE',
+    license_file='LICENSE.txt',
     description='An AI constraint solver that optimizes planning and scheduling problems',
     long_description=long_description,
     long_description_content_type='text/markdown',
