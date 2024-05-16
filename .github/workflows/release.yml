@@ -109,7 +109,7 @@ jobs:
         uses: jreleaser/release-action@v2
         env:
           JRELEASER_DRY_RUN: ${{ github.event.inputs.dryRun }}
-          JRELEASER_PROJECT_VERSION: ${{ github.event.inputs.version }}${{ github.event.inputs.pythonVersionSuffix }}
+          JRELEASER_PROJECT_VERSION: ${{ github.event.inputs.version }}-alpha
           JRELEASER_GITHUB_TOKEN: ${{ secrets.JRELEASER_GITHUB_TOKEN }}
           JRELEASER_GPG_PASSPHRASE: ${{ secrets.JRELEASER_GPG_PASSPHRASE }}
           JRELEASER_GPG_PUBLIC_KEY: ${{ secrets.JRELEASER_GPG_PUBLIC_KEY }}
