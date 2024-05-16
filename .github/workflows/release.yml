@@ -31,6 +31,7 @@ jobs:
       url: https://pypi.org/p/timefold-solver
     permissions:
       contents: write  # IMPORTANT: required for action to create release branch
+      pull-requests: write # IMPORTANT: so release PR can be created
       id-token: write  # IMPORTANT: mandatory for trusted publishing
     steps:
       - name: Print inputs to the release workflow
