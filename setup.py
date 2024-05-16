@@ -117,7 +117,7 @@ if include_java_stubs:
 
 this_directory = Path(__file__).parent
 long_description = (this_directory / "README.md").read_text()
-timefold_solver_python_version = '1.10.0a0'
+timefold_solver_python_version = '999-dev0'
 
 setup(
     name='timefold-solver',
