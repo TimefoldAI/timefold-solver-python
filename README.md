@@ -104,24 +104,28 @@ You define your constraints by using the ConstraintFactory:
 
 ```python
 from domain import Lesson
-from timefold.solver.score import Joiners, HardSoftScore, constraint_provider
+from timefold.solver.score import (Joiners, HardSoftScore, ConstraintFactory,
+                                   Constraint, constraint_provider)
 
 @constraint_provider
-def define_constraints(constraint_factory):
+def define_constraints(constraint_factory: ConstraintFactory) -> list[Constraint]:
     return [
         # Hard constraints
         room_conflict(constraint_factory),
         # Other constraints here...
     ]
 
-def room_conflict(constraint_factory):
+def room_conflict(constraint_factory: ConstraintFactory) -> Constraint:
     # A room can accommodate at most one lesson at the same time.
-    return constraint_factory.for_each_unique_pair(Lesson,
+    return (
+        constraint_factory.for_each_unique_pair(Lesson,
                 # ... in the same timeslot ...
                 Joiners.equal(lambda lesson: lesson.timeslot),
                 # ... in the same room ...
-                Joiners.equal(lambda lesson: lesson.room)) \
-        .penalize("Room conflict", HardSoftScore.ONE_HARD)
+                Joiners.equal(lambda lesson: lesson.room))
+            .penalize(HardSoftScore.ONE_HARD)
+            .as_constraint("Room conflict")
+    )
 ```
 for more details on Constraint Streams,
 see https://timefold.ai/docs/timefold-solver/latest/constraints-and-score/score-calculation.
