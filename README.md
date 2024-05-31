@@ -4,10 +4,10 @@
 
 [![PyPI](https://img.shields.io/pypi/v/timefold-solver "PyPI")](https://pypi.org/project/timefold-solver/)
 
-[![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=timefold_solver_python&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=timefold_solver_python)
-[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=timefold_solver_python&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=timefold_solver_python)
-[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=timefold_solver_python&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=timefold_solver_python)
-[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=timefold_solver_python&metric=coverage)](https://sonarcloud.io/summary/new_code?id=timefold_solver_python)
+[![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=TimefoldAI_timefold-solver-python&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=TimefoldAI_timefold-solver-python)
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=TimefoldAI_timefold-solver-python&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=TimefoldAI_timefold-solver-python)
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=TimefoldAI_timefold-solver-python&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=TimefoldAI_timefold-solver-python)
+[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=TimefoldAI_timefold-solver-python&metric=coverage)](https://sonarcloud.io/summary/new_code?id=TimefoldAI_timefold-solver-python)
 
 Timefold Solver is *an AI constraint solver for Python* to optimize
 the Vehicle Routing Problem, Employee Rostering, Maintenance Scheduling, Task Assignment, School Timetabling,
