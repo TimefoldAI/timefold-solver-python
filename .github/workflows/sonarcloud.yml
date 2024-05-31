@@ -122,4 +122,4 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONARCLOUD_TOKEN: ${{ secrets.SONARCLOUD_TOKEN }}
-        run: mvn -B --fail-at-end validate -Psonarcloud-analysis -Dsonar.projectKey=timefold_solver_python -Dsonar.login=${{ env.SONARCLOUD_TOKEN }}
+        run: mvn -B --fail-at-end validate -Psonarcloud-analysis -Dsonar.projectKey=TimefoldAI_timefold-solver-python -Dsonar.login=${{ env.SONARCLOUD_TOKEN }}
