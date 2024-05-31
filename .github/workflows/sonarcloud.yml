@@ -12,6 +12,11 @@ on:
       - '**.adoc'
       - '*.txt'
       - '.ci/**'
+  pull_request_target: # This workflow will be triggered by the opening, reopening, or updating of a PR, and the first run will not require approval.
+    types:
+      - opened
+      - reopened
+      - synchronize
 
 defaults:
   run:
@@ -106,4 +111,4 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONARCLOUD_TOKEN: ${{ secrets.SONARCLOUD_TOKEN }}
-        run: mvn -B --fail-at-end validate -Psonarcloud-analysis -Dsonar.projectKey=TimefoldAI_timefold-solver-python -Dsonar.login=${{ env.SONARCLOUD_TOKEN }}
+        run: mvn -B -Psonarcloud-analysis validate org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.organization=timefold -Dsonar.projectKey=TimefoldAI_timefold-solver-python -Dsonar.host.url=https://sonarcloud.io -Dsonar.pullrequest.key=${{ github.event.pull_request.number }} -Dsonar.pullrequest.branch=${{ github.event.pull_request.head.ref }} -Dsonar.scm.revision=${{ github.event.pull_request.head.sha }}
