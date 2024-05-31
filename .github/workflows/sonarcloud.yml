@@ -96,27 +96,11 @@ jobs:
         working-directory: ./timefold-solver-python
         run: mvn org.apache.maven.plugins:maven-dependency-plugin:2.8:get -Dartifact=org.jacoco:org.jacoco.agent:0.8.11:jar:runtime -Ddest=target/jacocoagent.jar
       - name: Run tox to measure timefold solver python code coverage from Python tests
-        continue-on-error: true # Sometimes the JVM segfaults on SUCCESSFUL tests with Java 17 (and always with Java 11)
         working-directory: ./timefold-solver-python
         run: python -m tox -- --cov=timefold --cov-report=xml:target/coverage.xml --cov-config=tox.ini --cov-branch --cov-append --jacoco-agent=./target/jacocoagent.jar
       - name: Run tox to measure jpyinterpreter code coverage from Python tests
-        continue-on-error: true # Sometimes the JVM segfaults on SUCCESSFUL tests with Java 17 (and always with Java 11)
         working-directory: ./timefold-solver-python/jpyinterpreter
         run: python -m tox -- --cov=jpyinterpreter --cov-report=xml:target/coverage.xml --cov-config=tox.ini --cov-branch --cov-append --jacoco-agent=../target/jacocoagent.jar --jacoco-output=../target/jacoco.exec
-      # Because we are using JPype, and JPype add it own import hook, we need to use --import-mode=importlib in pytest
-      # This seems to create an issue in test coverage, where it reports coverage inside the tox virtual environment,
-      # instead of coverage inside sources. For instance, for a package, it will report:
-      # package name=".tox.py39.lib.python3.9.site-packages.jpyinterpreter"
-      # and for a file it will report:
-      # class name="jvm_setup.py" filename=".tox/py39/lib/python3.9/site-packages/jpyinterpreter/jvm_setup.py"
-      # We need to convert the package and file names into their true names; i.e. for the example above:
-      # package name="jpyinterpreter"
-      # class name="jvm_setup.py" filename="jpyinterpreter/src/main/python/jvm_setup.py"
-      # fix-coverage-paths.py is a Python script that does the above transformation for us and merge the two
-      # separate coverage files into one.
-      - name: Fix Python test coverage paths
-        working-directory: ./timefold-solver-python
-        run: python fix-coverage-paths.py
       - name: Run SonarCloud analysis
         working-directory: ./timefold-solver-python
         env:
