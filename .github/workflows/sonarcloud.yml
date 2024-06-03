@@ -110,5 +110,5 @@ jobs:
         working-directory: ./timefold-solver-python
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONARCLOUD_TOKEN: ${{ secrets.SONARCLOUD_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         run: mvn -B -Psonarcloud-analysis validate org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.organization=timefold -Dsonar.projectKey=TimefoldAI_timefold-solver-python -Dsonar.host.url=https://sonarcloud.io -Dsonar.pullrequest.key=${{ github.event.pull_request.number }} -Dsonar.pullrequest.branch=${{ github.event.pull_request.head.ref }} -Dsonar.scm.revision=${{ github.event.pull_request.head.sha }}
