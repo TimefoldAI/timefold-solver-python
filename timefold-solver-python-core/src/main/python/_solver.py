@@ -1,4 +1,5 @@
 from ._problem_change import ProblemChange, ProblemChangeWrapper
+from ._timefold_java_interop import update_log_level
 from typing import TypeVar, TYPE_CHECKING, Generic, Callable
 from datetime import timedelta
 from jpype import JClass, JImplements, JOverride
@@ -102,6 +103,7 @@ class Solver(Generic[Solution_]):
             raise ValueError(
                 f'The problem ({problem}) is not an instance of the @planning_solution class ({self._solution_class})'
             )
+        update_log_level()
         try:
             java_solution = self._delegate.solve(java_problem)
         except PythonBaseException as e:

@@ -22,7 +22,6 @@ Score_ = TypeVar('Score_')
 
 _compilation_queue: list[type] = []
 _enterprise_installed: bool = False
-_need_to_check_logger_level = False
 
 
 def is_enterprise_installed() -> bool:
@@ -74,8 +73,6 @@ def init(*args, path: list[str] = None, include_timefold_jars: bool = True) -> N
     """
     from _jpyinterpreter import init
 
-    global _need_to_check_logger_level
-
     if jpype.isJVMStarted():  # noqa
         raise RuntimeError('JVM already started. Maybe call init before timefold.solver.types imports?')
     if path is None:
@@ -89,24 +86,15 @@ def init(*args, path: list[str] = None, include_timefold_jars: bool = True) -> N
 
     from ai.timefold.solver.python.logging import PythonLoggingToLogbackAdapter, PythonDelegateAppender
     PythonDelegateAppender.setLogEventConsumer(PythonConsumer(forward_logging_events))
+    update_log_level()
+
+
+def update_log_level() -> None:
+    from ai.timefold.solver.python.logging import PythonLoggingToLogbackAdapter
     PythonLoggingToLogbackAdapter.setLevel(logger.getEffectiveLevel())
-    try:
-        old_set_level = logger.setLevel
-        def setLevel(level: int):
-            old_set_level(level)
-            PythonLoggingToLogbackAdapter.setLevel(level)
-        logger.setLevel = setLevel
-    except AttributeError:
-        logger.warning(f'Unable to override Logger.setLevel on {logger}; effects of changing log level may be delayed')
-        _need_to_check_logger_level = True
 
 
-def forward_logging_events(event: 'PythonLoggingEvent'):
-    global _need_to_check_logger_level
-    if _need_to_check_logger_level:
-        # Was unable to override setLevel, so we update the log level whenever
-        # a logging event happens
-        PythonLoggingToLogbackAdapter.setLevel(logger.getEffectiveLevel())
+def forward_logging_events(event: 'PythonLoggingEvent') -> None:
     logger.log(event.level().getPythonLevelNumber(),
                event.message())
 
