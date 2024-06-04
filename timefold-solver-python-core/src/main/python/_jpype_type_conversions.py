@@ -13,6 +13,16 @@ class ConstraintProviderFunction:
         return self.delegate(constraint_factory)
 
 
+@JImplements('java.util.function.Consumer', deferred=True)
+class PythonConsumer:
+    def __init__(self, delegate):
+        self.delegate = delegate
+
+    @JOverride
+    def accept(self, item):
+        return self.delegate(item)
+
+
 @JImplements('java.util.function.Supplier', deferred=True)
 class PythonSupplier:
     def __init__(self, delegate):

@@ -2,6 +2,7 @@ from ._problem_change import ProblemChange, ProblemChangeWrapper
 from .config import SolverConfigOverride
 from ._solver_factory import SolverFactory
 from ._future import wrap_future
+from ._timefold_java_interop import update_log_level
 
 from typing import Awaitable, TypeVar, Generic, Callable, TYPE_CHECKING
 from datetime import timedelta
@@ -317,6 +318,7 @@ class SolverJobBuilder(Generic[Solution_, ProblemId_]):
         SolverJob
             The `SolverJob` built from this `SolverJobBuilder`.
         """
+        update_log_level()
         return SolverJob(self._delegate.run())
 
 

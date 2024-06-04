@@ -1,16 +1,20 @@
+import logging
 import pathlib
 import jpype
 import jpype.imports
 from jpype.types import *
 import importlib.resources
 from typing import cast, TypeVar, Callable, Union, TYPE_CHECKING, Any
-from ._jpype_type_conversions import PythonSupplier, ConstraintProviderFunction
+from ._jpype_type_conversions import PythonSupplier, ConstraintProviderFunction, PythonConsumer
 
 if TYPE_CHECKING:
     # These imports require a JVM to be running, so only import if type checking
     from java.lang import ClassLoader
     from ai.timefold.solver.core.api.score.stream import (Constraint as _Constraint,
                                                           ConstraintFactory as _ConstraintFactory)
+    from ai.timefold.solver.python import PythonLoggingEvent
+
+logger = logging.getLogger('timefold.solver')
 
 Solution_ = TypeVar('Solution_')
 ProblemId_ = TypeVar('ProblemId_')
@@ -49,7 +53,7 @@ def extract_timefold_jars() -> list[str]:
             if p.name.endswith(".jar")] + enterprise_dependencies
 
 
-def init(*args, path: list[str] = None, include_timefold_jars: bool = True, log_level='INFO') -> None:
+def init(*args, path: list[str] = None, include_timefold_jars: bool = True) -> None:
     """
     Most users will never need to call this method.
     Only call this method if you are using other Java libraries.
@@ -66,10 +70,9 @@ def init(*args, path: list[str] = None, include_timefold_jars: bool = True, log_
     include_timefold_jars : bool, optional
         If the Timefold dependencies should be added to `path`.
         Defaults to True.
-    log_level : str
-        The logging level to use.
     """
     from _jpyinterpreter import init
+
     if jpype.isJVMStarted():  # noqa
         raise RuntimeError('JVM already started. Maybe call init before timefold.solver.types imports?')
     if path is None:
@@ -78,10 +81,22 @@ def init(*args, path: list[str] = None, include_timefold_jars: bool = True, log_
     if include_timefold_jars:
         path = path + extract_timefold_jars()
     if len(args) == 0:
-        args = (jpype.getDefaultJVMPath(), '-Dlogback.level.ai.timefold={}'.format(log_level))  # noqa
-    else:
-        args = args + ('-Dlogback.level.ai.timefold={}'.format(log_level),)
+        args = [jpype.getDefaultJVMPath()]
     init(*args, path=path, include_translator_jars=False)
+
+    from ai.timefold.solver.python.logging import PythonLoggingToLogbackAdapter, PythonDelegateAppender
+    PythonDelegateAppender.setLogEventConsumer(PythonConsumer(forward_logging_events))
+    update_log_level()
+
+
+def update_log_level() -> None:
+    from ai.timefold.solver.python.logging import PythonLoggingToLogbackAdapter
+    PythonLoggingToLogbackAdapter.setLevel(logger.getEffectiveLevel())
+
+
+def forward_logging_events(event: 'PythonLoggingEvent') -> None:
+    logger.log(event.level().getPythonLevelNumber(),
+               event.message())
 
 
 def ensure_init():
