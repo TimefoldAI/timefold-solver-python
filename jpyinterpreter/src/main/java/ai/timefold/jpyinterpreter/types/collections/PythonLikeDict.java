@@ -403,6 +403,11 @@ public class PythonLikeDict<K extends PythonLikeObject, V extends PythonLikeObje
     }
 
     @Override
+    public PythonString $method$__str__() {
+        return PythonString.valueOf(toString());
+    }
+
+    @Override
     public String toString() {
         return delegate.toString();
     }

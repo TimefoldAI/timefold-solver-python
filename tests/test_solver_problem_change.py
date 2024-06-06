@@ -131,4 +131,11 @@ def test_remove_entity():
 
     assert result is not None
     assert len(result.entities) == 1
+
+    from _jpyinterpreter import get_java_type_for_python_type
+
+    print(get_java_type_for_python_type(SimpleScore).getJavaClass())
+    print(type(result.score))
+    print(dir(result.score))
+    print(result.score)
     assert result.score.score == -1

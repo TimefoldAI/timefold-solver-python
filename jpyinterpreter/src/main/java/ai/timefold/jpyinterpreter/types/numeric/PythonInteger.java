@@ -238,6 +238,11 @@ public class PythonInteger extends AbstractPythonLikeObject implements PythonNum
     }
 
     @Override
+    public PythonString $method$__str__() {
+        return PythonString.valueOf(toString());
+    }
+
+    @Override
     public String toString() {
         return value.toString();
     }

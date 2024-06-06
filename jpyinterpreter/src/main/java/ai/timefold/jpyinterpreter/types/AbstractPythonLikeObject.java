@@ -49,4 +49,9 @@ public abstract class AbstractPythonLikeObject implements PythonLikeObject {
     public void setAttribute(String attributeName, PythonLikeObject value) {
         __dir__.put(attributeName, value);
     }
+
+    @Override
+    public String toString() {
+        return $method$__str__().toString();
+    }
 }

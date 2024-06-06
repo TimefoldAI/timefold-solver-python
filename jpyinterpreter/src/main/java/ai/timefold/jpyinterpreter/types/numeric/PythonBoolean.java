@@ -124,6 +124,11 @@ public class PythonBoolean extends PythonInteger {
     }
 
     @Override
+    public PythonString $method$__str__() {
+        return PythonString.valueOf(toString());
+    }
+
+    @Override
     public String toString() {
         if (this == TRUE) {
             return "True";

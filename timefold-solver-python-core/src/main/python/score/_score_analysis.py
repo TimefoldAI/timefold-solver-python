@@ -1,4 +1,5 @@
 from .._timefold_java_interop import get_class
+from .._jpype_type_conversions import to_python_score
 from _jpyinterpreter import unwrap_python_like_object, add_java_interface
 from dataclasses import dataclass
 
@@ -107,7 +108,7 @@ class ConstraintMatch(Generic[Score_]):
         combined_hash ^= _safe_hash(self.justification)
         for item in self.indicted_objects:
             combined_hash ^= _safe_hash(item)
-        combined_hash ^= self.score.hashCode()
+        combined_hash ^= self.score.__hash__()
         return combined_hash
 
 
@@ -134,7 +135,7 @@ class ConstraintMatchTotal(Generic[Score_]):
         if self.constraint_weight is not None:
             combined_hash ^= self.constraint_weight.hashCode()
 
-        combined_hash ^= self.score.hashCode()
+        combined_hash ^= self.score.__hash__()
         return combined_hash
 
 
@@ -185,7 +186,7 @@ class DefaultConstraintJustification(ConstraintJustification):
     impact: Score_
 
     def __hash__(self) -> int:
-        combined_hash = self.impact.hashCode()
+        combined_hash = self.impact.__hash__()
         for fact in self.facts:
             combined_hash ^= _safe_hash(fact)
         return combined_hash
@@ -200,7 +201,7 @@ def _map_constraint_match_set(constraint_match_set: set['_JavaConstraintMatch'])
                         justification=_unwrap_justification(constraint_match.getJustification()),
                         indicted_objects=tuple([unwrap_python_like_object(indicted)
                                                for indicted in cast(list, constraint_match.getIndictedObjectList())]),
-                        score=constraint_match.getScore()
+                        score=to_python_score(constraint_match.getScore())
                         )
         for constraint_match in constraint_match_set
     }
@@ -213,7 +214,7 @@ def _unwrap_justification(justification: Any) -> ConstraintJustification:
         fact_list = justification.getFacts()
         return DefaultConstraintJustification(facts=tuple([unwrap_python_like_object(fact)
                                                           for fact in cast(list, fact_list)]),
-                                              impact=justification.getImpact())
+                                              impact=to_python_score(justification.getImpact()))
     else:
         return unwrap_python_like_object(justification)
 
@@ -247,7 +248,7 @@ class Indictment(Generic[Score_]):
 
     @property
     def score(self) -> Score_:
-        return self._delegate.getScore()
+        return to_python_score(self._delegate.getScore())
 
     @property
     def constraint_match_count(self) -> int:
@@ -339,8 +340,8 @@ class ScoreExplanation(Generic[Solution_]):
                                              constraint_name=e.getValue().getConstraintRef().constraintName()),
                 constraint_match_count=e.getValue().getConstraintMatchCount(),
                 constraint_match_set=_map_constraint_match_set(e.getValue().getConstraintMatchSet()),
-                constraint_weight=e.getValue().getConstraintWeight(),
-                score=e.getValue().getScore()
+                constraint_weight=to_python_score(e.getValue().getConstraintWeight()),
+                score=to_python_score(e.getValue().getScore())
             )
             for e in cast(set['_JavaMap.Entry[str, _JavaConstraintMatchTotal]'],
                           self._delegate.getConstraintMatchTotalMap().entrySet())
@@ -355,7 +356,7 @@ class ScoreExplanation(Generic[Solution_]):
 
     @property
     def score(self) -> 'Score':
-        return self._delegate.getScore()
+        return to_python_score(self._delegate.getScore())
 
     @property
     def solution(self) -> Solution_:
@@ -421,7 +422,7 @@ class MatchAnalysis(Generic[Score_]):
 
     @property
     def score(self) -> Score_:
-        return self._delegate.score()
+        return to_python_score(self._delegate.score())
 
     @property
     def justification(self) -> ConstraintJustification:
@@ -467,7 +468,7 @@ class ConstraintAnalysis(Generic[Score_]):
 
     @property
     def weight(self) -> Optional[Score_]:
-        return self._delegate.weight()
+        return to_python_score(self._delegate.weight())
 
     @property
     def matches(self) -> list[MatchAnalysis[Score_]]:
@@ -476,7 +477,7 @@ class ConstraintAnalysis(Generic[Score_]):
 
     @property
     def score(self) -> Score_:
-        return self._delegate.score()
+        return to_python_score(self._delegate.score())
 
 
 class ScoreAnalysis:
@@ -521,7 +522,7 @@ class ScoreAnalysis:
 
     @property
     def score(self) -> 'Score':
-        return self._delegate.score()
+        return to_python_score(self._delegate.score())
 
     @property
     def constraint_map(self) -> dict[ConstraintRef, ConstraintAnalysis]:

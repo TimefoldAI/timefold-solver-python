@@ -1478,6 +1478,11 @@ public class PythonString extends AbstractPythonLikeObject implements PythonLike
     }
 
     @Override
+    public PythonString $method$__str__() {
+        return this;
+    }
+
+    @Override
     public String toString() {
         return value;
     }

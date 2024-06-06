@@ -559,6 +559,11 @@ public class PythonLikeList<T> extends AbstractPythonLikeObject implements List<
     }
 
     @Override
+    public PythonString $method$__str__() {
+        return PythonString.valueOf(toString());
+    }
+
+    @Override
     public String toString() {
         StringBuilder out = new StringBuilder();
         out.append('[');

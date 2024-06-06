@@ -1915,6 +1915,11 @@ public class PythonByteArray extends AbstractPythonLikeObject implements PythonB
     }
 
     @Override
+    public PythonString $method$__str__() {
+        return PythonString.valueOf(toString());
+    }
+
+    @Override
     public String toString() {
         StringBuilder out = new StringBuilder(valueBuffer.limit());
         out.append("bytearray(");

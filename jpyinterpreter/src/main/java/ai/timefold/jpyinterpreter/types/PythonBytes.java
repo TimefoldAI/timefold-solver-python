@@ -1687,6 +1687,11 @@ public class PythonBytes extends AbstractPythonLikeObject implements PythonBytes
     }
 
     @Override
+    public PythonString $method$__str__() {
+        return PythonString.valueOf(toString());
+    }
+
+    @Override
     public String toString() {
         boolean hasSingleQuotes = false;
         boolean hasDoubleQuotes = false;

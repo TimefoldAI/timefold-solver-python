@@ -207,6 +207,11 @@ public class PythonFloat extends AbstractPythonLikeObject implements PythonNumbe
     }
 
     @Override
+    public PythonString $method$__str__() {
+        return PythonString.valueOf(toString());
+    }
+
+    @Override
     public String toString() {
         return Double.toString(value);
     }

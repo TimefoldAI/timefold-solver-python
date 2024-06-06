@@ -340,6 +340,11 @@ public class PythonTimeDelta extends AbstractPythonLikeObject implements PythonL
     }
 
     @Override
+    public PythonString $method$__str__() {
+        return PythonString.valueOf(toString());
+    }
+
+    @Override
     public String toString() {
         StringBuilder out = new StringBuilder();
         long daysPart = duration.toDaysPart();

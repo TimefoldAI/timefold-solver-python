@@ -172,7 +172,7 @@ if not TYPE_CHECKING:
     IncrementalScoreCalculator.beforeVariableChanged = beforeVariableChanged
 
     def calculateScore(self):
-        return type(self).calculate_score(self)
+        return type(self).calculate_score(self)._to_java_score()
 
     IncrementalScoreCalculator.calculateScore = calculateScore
 

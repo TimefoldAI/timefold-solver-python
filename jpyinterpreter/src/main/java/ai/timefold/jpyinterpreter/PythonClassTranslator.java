@@ -2,6 +2,7 @@ package ai.timefold.jpyinterpreter;
 
 import static ai.timefold.jpyinterpreter.PythonBytecodeToJavaBytecodeTranslator.ARGUMENT_SPEC_INSTANCE_FIELD_NAME;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -38,6 +39,7 @@ import ai.timefold.jpyinterpreter.opcodes.variable.LoadFastOpcode;
 import ai.timefold.jpyinterpreter.types.BuiltinTypes;
 import ai.timefold.jpyinterpreter.types.CPythonBackedPythonLikeObject;
 import ai.timefold.jpyinterpreter.types.GeneratedFunctionMethodReference;
+import ai.timefold.jpyinterpreter.types.PythonJavaTypeMapping;
 import ai.timefold.jpyinterpreter.types.PythonLikeFunction;
 import ai.timefold.jpyinterpreter.types.PythonLikeType;
 import ai.timefold.jpyinterpreter.types.PythonNone;
@@ -65,6 +67,7 @@ public class PythonClassTranslator {
     public static final String TYPE_FIELD_NAME = "$TYPE";
     public static final String CPYTHON_TYPE_FIELD_NAME = "$CPYTHON_TYPE";
     private static final String JAVA_METHOD_PREFIX = "$method$";
+    private static final String PYTHON_JAVA_TYPE_MAPPING_PREFIX = "$pythonJavaTypeMapping";
 
     public record PreparedClassInfo(PythonLikeType type, String className, String classInternalName) {
     }
@@ -205,7 +208,25 @@ public class PythonClassTranslator {
             }
         }
 
+        for (int i = 0; i < pythonCompiledClass.pythonJavaTypeMappings.size(); i++) {
+            classWriter.visitField(Modifier.PUBLIC | Modifier.STATIC, PYTHON_JAVA_TYPE_MAPPING_PREFIX + i,
+                    Type.getDescriptor(PythonJavaTypeMapping.class), null, null);
+        }
+
         Map<String, PythonLikeType> attributeNameToTypeMap = new HashMap<>();
+        instanceAttributeSet.removeAll(pythonCompiledClass.staticAttributeDescriptorNames);
+        try {
+            var parentClass = superClassType.getJavaClass();
+            while (parentClass != Object.class) {
+                for (Field field : parentClass.getFields()) {
+                    instanceAttributeSet.remove(field.getName());
+                }
+                parentClass = parentClass.getSuperclass();
+            }
+        } catch (ClassNotFoundException e) {
+            throw new IllegalStateException(e);
+        }
+
         for (String attributeName : instanceAttributeSet) {
             var typeHint = pythonCompiledClass.typeAnnotations.getOrDefault(attributeName,
                     TypeHint.withoutAnnotations(BuiltinTypes.BASE_TYPE));
@@ -243,8 +264,8 @@ public class PythonClassTranslator {
             }
             fieldVisitor.visitEnd();
 
-            createJavaGetterSetter(classWriter, preparedClassInfo,
-                    attributeName,
+            createJavaGetterSetter(classWriter, pythonCompiledClass,
+                    preparedClassInfo, attributeName,
                     Type.getType(javaFieldTypeDescriptor),
                     Type.getType(getterTypeDescriptor),
                     signature,
@@ -368,6 +389,10 @@ public class PythonClassTranslator {
             generatedClass = (Class<? extends PythonLikeObject>) BuiltinTypes.asmClassLoader.loadClass(className);
             generatedClass.getField(TYPE_FIELD_NAME).set(null, pythonLikeType);
             generatedClass.getField(CPYTHON_TYPE_FIELD_NAME).set(null, pythonCompiledClass.binaryType);
+            for (int i = 0; i < pythonCompiledClass.pythonJavaTypeMappings.size(); i++) {
+                generatedClass.getField(PYTHON_JAVA_TYPE_MAPPING_PREFIX + i)
+                        .set(null, pythonCompiledClass.pythonJavaTypeMappings.get(i));
+            }
         } catch (ClassNotFoundException e) {
             throw new IllegalStateException("Impossible State: Unable to load generated class (" +
                     className + ") despite it being just generated.", e);
@@ -785,16 +810,31 @@ public class PythonClassTranslator {
         }
     }
 
+    private record MatchedMapping(int index, PythonJavaTypeMapping<?, ?> pythonJavaTypeMapping) {
+    }
+
     private static void createJavaGetterSetter(ClassWriter classWriter,
+            PythonCompiledClass pythonCompiledClass,
             PreparedClassInfo preparedClassInfo,
             String attributeName, Type attributeType, Type getterType,
             String signature,
             TypeHint typeHint) {
-        createJavaGetter(classWriter, preparedClassInfo, attributeName, attributeType, getterType, signature, typeHint);
-        createJavaSetter(classWriter, preparedClassInfo, attributeName, attributeType, getterType, signature, typeHint);
+        MatchedMapping matchedMapping = null;
+        for (int i = 0; i < pythonCompiledClass.pythonJavaTypeMappings.size(); i++) {
+            var mapping = pythonCompiledClass.pythonJavaTypeMappings.get(i);
+            if (mapping.getPythonType().equals(typeHint.javaGetterType())) {
+                matchedMapping = new MatchedMapping(i, mapping);
+                getterType = Type.getType(mapping.getJavaType());
+            }
+        }
+        createJavaGetter(classWriter, preparedClassInfo, matchedMapping, attributeName, attributeType, getterType, signature,
+                typeHint);
+        createJavaSetter(classWriter, preparedClassInfo, matchedMapping, attributeName, attributeType, getterType, signature,
+                typeHint);
     }
 
-    private static void createJavaGetter(ClassWriter classWriter, PreparedClassInfo preparedClassInfo, String attributeName,
+    private static void createJavaGetter(ClassWriter classWriter, PreparedClassInfo preparedClassInfo,
+            MatchedMapping matchedMapping, String attributeName,
             Type attributeType, Type getterType, String signature, TypeHint typeHint) {
         var getterName = "get" + attributeName.substring(0, 1).toUpperCase() + attributeName.substring(1);
         if (signature != null && Objects.equals(attributeType, getterType)) {
@@ -826,6 +866,21 @@ public class PythonClassTranslator {
             // If branch is not taken, stack is null
         }
         if (!Objects.equals(attributeType, getterType)) {
+            if (matchedMapping != null) {
+                getterVisitor.visitInsn(Opcodes.DUP);
+                getterVisitor.visitInsn(Opcodes.ACONST_NULL);
+                Label skipMapping = new Label();
+                getterVisitor.visitJumpInsn(Opcodes.IF_ACMPEQ, skipMapping);
+                getterVisitor.visitFieldInsn(Opcodes.GETSTATIC, preparedClassInfo.classInternalName,
+                        PYTHON_JAVA_TYPE_MAPPING_PREFIX + matchedMapping.index,
+                        Type.getDescriptor(PythonJavaTypeMapping.class));
+                getterVisitor.visitInsn(Opcodes.SWAP);
+                getterVisitor.visitMethodInsn(Opcodes.INVOKEINTERFACE,
+                        Type.getInternalName(PythonJavaTypeMapping.class), "toJavaObject",
+                        Type.getMethodDescriptor(Type.getType(Object.class), Type.getType(Object.class)),
+                        true);
+                getterVisitor.visitLabel(skipMapping);
+            }
             getterVisitor.visitTypeInsn(Opcodes.CHECKCAST, getterType.getInternalName());
         }
         getterVisitor.visitInsn(Opcodes.ARETURN);
@@ -833,7 +888,8 @@ public class PythonClassTranslator {
         getterVisitor.visitEnd();
     }
 
-    private static void createJavaSetter(ClassWriter classWriter, PreparedClassInfo preparedClassInfo, String attributeName,
+    private static void createJavaSetter(ClassWriter classWriter, PreparedClassInfo preparedClassInfo,
+            MatchedMapping matchedMapping, String attributeName,
             Type attributeType, Type setterType, String signature, TypeHint typeHint) {
         var setterName = "set" + attributeName.substring(0, 1).toUpperCase() + attributeName.substring(1);
         if (signature != null && Objects.equals(attributeType, setterType)) {
@@ -861,6 +917,21 @@ public class PythonClassTranslator {
             // If branch is not taken, stack is None
         }
         if (!Objects.equals(attributeType, setterType)) {
+            if (matchedMapping != null) {
+                setterVisitor.visitVarInsn(Opcodes.ALOAD, 1);
+                setterVisitor.visitInsn(Opcodes.ACONST_NULL);
+                Label skipMapping = new Label();
+                setterVisitor.visitJumpInsn(Opcodes.IF_ACMPEQ, skipMapping);
+                setterVisitor.visitFieldInsn(Opcodes.GETSTATIC, preparedClassInfo.classInternalName,
+                        PYTHON_JAVA_TYPE_MAPPING_PREFIX + matchedMapping.index,
+                        Type.getDescriptor(PythonJavaTypeMapping.class));
+                setterVisitor.visitInsn(Opcodes.SWAP);
+                setterVisitor.visitMethodInsn(Opcodes.INVOKEINTERFACE,
+                        Type.getInternalName(PythonJavaTypeMapping.class), "toPythonObject",
+                        Type.getMethodDescriptor(Type.getType(Object.class), Type.getType(Object.class)),
+                        true);
+                setterVisitor.visitLabel(skipMapping);
+            }
             setterVisitor.visitTypeInsn(Opcodes.CHECKCAST, attributeType.getInternalName());
         }
         setterVisitor.visitFieldInsn(Opcodes.PUTFIELD, preparedClassInfo.classInternalName,

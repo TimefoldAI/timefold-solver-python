@@ -31,6 +31,11 @@ public class PythonNone extends AbstractPythonLikeObject implements PlanningImmu
     }
 
     @Override
+    public PythonString $method$__str__() {
+        return PythonString.valueOf(toString());
+    }
+
+    @Override
     public String toString() {
         return "None";
     }
