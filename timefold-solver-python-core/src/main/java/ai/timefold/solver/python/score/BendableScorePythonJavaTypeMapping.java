@@ -39,7 +39,7 @@ public final class BendableScorePythonJavaTypeMapping implements PythonJavaTypeM
     }
 
     private static PythonLikeTuple<PythonInteger> toPythonList(int[] scores) {
-        PythonLikeTuple<PythonInteger> out = new PythonLikeTuple<>(scores.length);
+        PythonLikeTuple<PythonInteger> out = new PythonLikeTuple<>();
         for (int score : scores) {
             out.add(PythonInteger.valueOf(score));
         }
