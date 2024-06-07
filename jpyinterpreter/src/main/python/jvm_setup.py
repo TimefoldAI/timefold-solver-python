@@ -41,6 +41,7 @@ def init(*args, path: List[str] = None, include_translator_jars: bool = True,
     CPythonBackedPythonInterpreter.lookupPythonReferenceIdPythonFunction = GetPythonObjectId()
     CPythonBackedPythonInterpreter.lookupPythonReferenceTypePythonFunction = GetPythonObjectType()
     CPythonBackedPythonInterpreter.lookupAttributeOnPythonReferencePythonFunction = GetAttributeOnPythonObject()
+    CPythonBackedPythonInterpreter.loadObjectFromPythonGlobalDict = GetNameFromGlobals()
     CPythonBackedPythonInterpreter.lookupPointerForAttributeOnPythonReferencePythonFunction = \
         GetAttributePointerOnPythonObject()
     CPythonBackedPythonInterpreter.lookupPointerArrayForAttributeOnPythonReferencePythonFunction = \
@@ -53,6 +54,25 @@ def init(*args, path: List[str] = None, include_translator_jars: bool = True,
     CPythonBackedPythonInterpreter.callPythonFunction = CallPythonFunction()
     CPythonBackedPythonInterpreter.createFunctionFromCodeFunction = CreateFunctionFromCode()
     CPythonBackedPythonInterpreter.importModuleFunction = ImportModule()
+
+
+@jpype.JImplements('java.util.function.BiConsumer', deferred=True)
+class GetNameFromGlobals:
+    @jpype.JOverride()
+    def accept(self, java_globals, name):
+        from .translator import java_globals_to_python_globals
+        from .conversions import convert_to_java_python_like_object
+        from ai.timefold.jpyinterpreter.util import PythonGlobalsBackedMap
+
+        if not isinstance(java_globals, PythonGlobalsBackedMap):
+            return
+
+        python_globals = java_globals_to_python_globals[java_globals.getPythonGlobalsId()]
+        try:
+            python_object = python_globals[name]
+            java_globals.put(name, convert_to_java_python_like_object(python_object))
+        except KeyError:
+            java_globals.put(name, None)
 
 
 @jpype.JImplements('java.util.function.Function', deferred=True)

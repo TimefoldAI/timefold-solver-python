@@ -13,6 +13,8 @@ MAXIMUM_SUPPORTED_PYTHON_VERSION = (3, 12)
 
 global_dict_to_instance = dict()
 global_dict_to_key_set = dict()
+java_globals_to_python_globals = dict()
+
 type_to_compiled_java_class = dict()
 type_to_annotations = dict()
 type_to_java_interfaces = dict()
@@ -136,11 +138,11 @@ def copy_closure(closure):
         return out
 
 
-def copy_globals(globals_dict, co_names):
+def copy_globals(globals_dict, co_names, python_class):
     global global_dict_to_instance
     global global_dict_to_key_set
     from .conversions import convert_to_java_python_like_object
-    from java.util import HashMap
+    from ai.timefold.jpyinterpreter.util import PythonGlobalsBackedMap
     from ai.timefold.jpyinterpreter import CPythonBackedPythonInterpreter
 
     globals_dict_key = id(globals_dict)
@@ -148,14 +150,21 @@ def copy_globals(globals_dict, co_names):
         out = global_dict_to_instance[globals_dict_key]
         key_set = global_dict_to_key_set[globals_dict_key]
     else:
-        out = HashMap()
+        out = PythonGlobalsBackedMap(globals_dict_key)
         key_set = set()
         global_dict_to_instance[globals_dict_key] = out
         global_dict_to_key_set[globals_dict_key] = key_set
+        java_globals_to_python_globals[globals_dict_key] = globals_dict
 
     instance_map = CPythonBackedPythonInterpreter.pythonObjectIdToConvertedObjectMap
     for key, value in globals_dict.items():
         if key not in key_set and key in co_names:
+            if python_class is not None:
+                if isinstance(value, type):
+                    if issubclass(value, python_class):
+                        continue
+                elif isinstance(value, python_class):
+                    continue
             key_set.add(key)
             out.put(key, convert_to_java_python_like_object(value, instance_map))
     return out
@@ -216,7 +225,7 @@ def get_python_exception_table(python_code):
     return out
 
 
-def get_function_bytecode_object(python_function):
+def get_function_bytecode_object(python_function, python_class: type = None):
     from .annotations import copy_type_annotations
     from .conversions import copy_iterable, init_type_to_compiled_java_class, convert_to_java_python_like_object
     from java.util import ArrayList
@@ -251,7 +260,8 @@ def get_function_bytecode_object(python_function):
     python_compiled_function.co_argcount = python_function.__code__.co_argcount
     python_compiled_function.co_kwonlyargcount = python_function.__code__.co_kwonlyargcount
     python_compiled_function.closure = copy_closure(python_function.__closure__)
-    python_compiled_function.globalsMap = copy_globals(python_function.__globals__, python_function.__code__.co_names)
+    python_compiled_function.globalsMap = copy_globals(python_function.__globals__, python_function.__code__.co_names,
+                                                       python_class)
     python_compiled_function.typeAnnotations = copy_type_annotations(python_function,
                                                                      get_default_args(python_function),
                                                                      inspect.getfullargspec(python_function).varargs,
@@ -267,7 +277,7 @@ def get_function_bytecode_object(python_function):
 
 
 def get_static_function_bytecode_object(the_class, python_function):
-    return get_function_bytecode_object(python_function.__get__(the_class))
+    return get_function_bytecode_object(python_function.__get__(the_class), python_class=the_class)
 
 
 def copy_variable_names(iterable):
@@ -673,7 +683,7 @@ def translate_python_class_to_java_class(python_class):
 
     instance_method_map = HashMap()
     for method in instance_methods:
-        instance_method_map.put(method[0], get_function_bytecode_object(method[1]))
+        instance_method_map.put(method[0], get_function_bytecode_object(method[1], python_class=python_class))
 
     static_attributes_map = HashMap()
     static_attributes_to_class_instance_map = HashMap()
@@ -683,7 +693,7 @@ def translate_python_class_to_java_class(python_class):
 
     for attribute in static_attributes:
         attribute_type = type(attribute[1])
-        if attribute_type == python_class:
+        if issubclass(attribute_type, python_class):
             static_attributes_to_class_instance_map.put(attribute[0],
                                                         JProxy(OpaquePythonReference,
                                                                inst=attribute[1], convert=True))
