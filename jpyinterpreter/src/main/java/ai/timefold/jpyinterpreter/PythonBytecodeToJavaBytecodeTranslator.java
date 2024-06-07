@@ -1141,6 +1141,9 @@ public class PythonBytecodeToJavaBytecodeTranslator {
                         Label targetLabel = exceptionTableTargetLabelMap.computeIfAbsent(exceptionBlock.targetInstruction,
                                 offset -> new Label());
 
+                        if (exceptionBlock.blockStartInstructionInclusive > exceptionBlock.targetInstruction) {
+                            return;
+                        }
                         functionMetadata.methodVisitor.visitTryCatchBlock(startLabel, endLabel, targetLabel,
                                 Type.getInternalName(PythonBaseException.class));
                     });

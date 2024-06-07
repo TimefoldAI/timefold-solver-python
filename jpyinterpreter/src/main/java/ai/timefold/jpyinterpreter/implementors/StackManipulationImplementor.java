@@ -7,6 +7,7 @@ import ai.timefold.jpyinterpreter.ExceptionBlock;
 import ai.timefold.jpyinterpreter.FunctionMetadata;
 import ai.timefold.jpyinterpreter.LocalVariableHelper;
 import ai.timefold.jpyinterpreter.PythonLikeObject;
+import ai.timefold.jpyinterpreter.PythonVersion;
 import ai.timefold.jpyinterpreter.StackMetadata;
 import ai.timefold.jpyinterpreter.ValueSourceInfo;
 
@@ -296,12 +297,22 @@ public class StackManipulationImplementor {
         LocalVariableHelper localVariableHelper = stackMetadata.localVariableHelper;
 
         localVariableHelper.readExceptionTableTargetStack(methodVisitor, exceptionBlock.getTargetInstruction());
+
         for (int i = 0; i < exceptionBlock.getStackDepth(); i++) {
             methodVisitor.visitInsn(Opcodes.DUP);
             methodVisitor.visitLdcInsn(i);
             methodVisitor.visitInsn(Opcodes.AALOAD);
-            methodVisitor.visitTypeInsn(Opcodes.CHECKCAST,
-                    stackMetadata.getTypeAtStackIndex(exceptionBlock.getStackDepth() - i - 1).getJavaTypeInternalName());
+
+            if (functionMetadata.pythonCompiledFunction.pythonVersion.isBefore(PythonVersion.PYTHON_3_11) ||
+                    functionMetadata.pythonCompiledFunction.pythonVersion.isAtLeast(PythonVersion.PYTHON_3_12)) {
+                // Not a 3.11 python version
+                methodVisitor.visitTypeInsn(Opcodes.CHECKCAST,
+                        stackMetadata.getTypeAtStackIndex(exceptionBlock.getStackDepth() - i - 1).getJavaTypeInternalName());
+            } else {
+                // A 3.11 python version
+                methodVisitor.visitTypeInsn(Opcodes.CHECKCAST,
+                        Type.getInternalName(PythonLikeObject.class));
+            }
             methodVisitor.visitInsn(Opcodes.SWAP);
         }
         methodVisitor.visitInsn(Opcodes.POP);

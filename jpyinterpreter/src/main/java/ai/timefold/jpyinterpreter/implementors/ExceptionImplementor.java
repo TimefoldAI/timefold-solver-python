@@ -301,7 +301,7 @@ public class ExceptionImplementor {
         // cannot free, since try block store stack in locals => freeing enterResult messes up indexing of locals
     }
 
-    public static void startWith(FunctionMetadata functionMetadata,
+    public static void beforeWith(FunctionMetadata functionMetadata,
             StackMetadata stackMetadata) {
         MethodVisitor methodVisitor = functionMetadata.methodVisitor;
 
@@ -406,14 +406,17 @@ public class ExceptionImplementor {
         int instruction = localVariableHelper.newLocal();
         int exitFunction = localVariableHelper.newLocal();
 
-        localVariableHelper.writeTemp(methodVisitor, Type.getType(PythonLikeObject.class), exception);
-
         if (functionMetadata.pythonCompiledFunction.pythonVersion.isBefore(PythonVersion.PYTHON_3_11)) {
+            localVariableHelper.writeTemp(methodVisitor, Type.getType(PythonLikeObject.class), exception);
             localVariableHelper.writeTemp(methodVisitor, Type.getType(PythonLikeObject.class), exceptionArgs);
             localVariableHelper.writeTemp(methodVisitor, Type.getType(PythonLikeObject.class), traceback);
             localVariableHelper.writeTemp(methodVisitor, Type.getType(PythonLikeObject.class), label);
             localVariableHelper.writeTemp(methodVisitor, Type.getType(PythonLikeObject.class), stackSize);
             localVariableHelper.writeTemp(methodVisitor, Type.getType(PythonLikeObject.class), instruction);
+        } else {
+            localVariableHelper.writeTemp(methodVisitor, Type.getType(PythonLikeObject.class), exception);
+            localVariableHelper.writeTemp(methodVisitor, Type.getType(PythonLikeObject.class), exceptionArgs);
+            localVariableHelper.writeTemp(methodVisitor, Type.getType(PythonLikeObject.class), traceback);
         }
         localVariableHelper.writeTemp(methodVisitor, Type.getType(PythonLikeObject.class), exitFunction);
 
@@ -480,13 +483,13 @@ public class ExceptionImplementor {
 
             localVariableHelper.readTemp(methodVisitor, Type.getType(PythonLikeObject.class), label);
             methodVisitor.visitInsn(Opcodes.SWAP);
-
-            localVariableHelper.readTemp(methodVisitor, Type.getType(PythonLikeObject.class), traceback);
-            methodVisitor.visitInsn(Opcodes.SWAP);
-
-            localVariableHelper.readTemp(methodVisitor, Type.getType(PythonLikeObject.class), exceptionArgs);
-            methodVisitor.visitInsn(Opcodes.SWAP);
         }
+
+        localVariableHelper.readTemp(methodVisitor, Type.getType(PythonLikeObject.class), traceback);
+        methodVisitor.visitInsn(Opcodes.SWAP);
+
+        localVariableHelper.readTemp(methodVisitor, Type.getType(PythonLikeObject.class), exceptionArgs);
+        methodVisitor.visitInsn(Opcodes.SWAP);
 
         localVariableHelper.readTemp(methodVisitor, Type.getType(PythonLikeObject.class), exception);
         methodVisitor.visitInsn(Opcodes.SWAP);

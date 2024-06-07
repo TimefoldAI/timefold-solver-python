@@ -17,7 +17,6 @@ public class WithExceptStartOpcode extends AbstractOpcode {
 
     @Override
     protected StackMetadata getStackMetadataAfterInstruction(FunctionMetadata functionMetadata, StackMetadata stackMetadata) {
-        // TODO: this might need updating to handle Python 3.11
         if (functionMetadata.pythonCompiledFunction.pythonVersion.isAtLeast(PythonVersion.PYTHON_3_11)) {
             return stackMetadata
                     .push(ValueSourceInfo.of(this, BuiltinTypes.BASE_TYPE, stackMetadata.getValueSourceForStackIndex(1)));

@@ -25,6 +25,6 @@ public class BeforeWithOpcode extends AbstractOpcode {
 
     @Override
     public void implement(FunctionMetadata functionMetadata, StackMetadata stackMetadata) {
-        ExceptionImplementor.startWith(functionMetadata, stackMetadata);
+        ExceptionImplementor.beforeWith(functionMetadata, stackMetadata);
     }
 }
