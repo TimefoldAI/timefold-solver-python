@@ -7,6 +7,7 @@ import java.util.function.ToIntBiFunction;
 import ai.timefold.jpyinterpreter.PythonBytecodeInstruction;
 import ai.timefold.jpyinterpreter.PythonVersion;
 import ai.timefold.jpyinterpreter.opcodes.Opcode;
+import ai.timefold.jpyinterpreter.opcodes.exceptions.BeforeWithOpcode;
 import ai.timefold.jpyinterpreter.opcodes.exceptions.CheckExcMatchOpcode;
 import ai.timefold.jpyinterpreter.opcodes.exceptions.CleanupThrowOpcode;
 import ai.timefold.jpyinterpreter.opcodes.exceptions.LoadAssertionErrorOpcode;
@@ -64,6 +65,7 @@ public enum ExceptionOpDescriptor implements OpcodeDescriptor {
     WITH_EXCEPT_START(WithExceptStartOpcode::new),
     SETUP_FINALLY(SetupFinallyOpcode::new, JumpUtils::getRelativeTarget),
 
+    BEFORE_WITH(BeforeWithOpcode::new),
     SETUP_WITH(SetupWithOpcode::new, JumpUtils::getRelativeTarget),
     CLEANUP_THROW(CleanupThrowOpcode::new);
 

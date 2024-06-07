@@ -297,8 +297,11 @@ def convert_object_to_java_python_like_object(value, instance_map=None):
                                                                         instance_map)
 
         if isinstance(out, AbstractPythonLikeObject):
-            for (key, value) in getattr(value, '__dict__', dict()).items():
-                out.setAttribute(key, convert_to_java_python_like_object(value, instance_map))
+            try:
+                for (key, value) in object.__getattribute__(value, '__dict__').items():
+                    out.setAttribute(key, convert_to_java_python_like_object(value, instance_map))
+            except AttributeError:
+                pass
 
         return out
     elif inspect.isbuiltin(value) or is_c_native(value):
@@ -334,8 +337,11 @@ def convert_object_to_java_python_like_object(value, instance_map=None):
                                                                             instance_map)
 
             if isinstance(out, AbstractPythonLikeObject):
-                for (key, value) in getattr(value, '__dict__', dict()).items():
-                    out.setAttribute(key, convert_to_java_python_like_object(value, instance_map))
+                try:
+                    for (key, value) in object.__getattribute__(value, '__dict__').items():
+                        out.setAttribute(key, convert_to_java_python_like_object(value, instance_map))
+                except AttributeError:
+                    pass
 
             return out
         except:

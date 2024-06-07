@@ -49,6 +49,6 @@ public class SetupWithOpcode extends AbstractControlFlowOpcode {
 
     @Override
     public void implement(FunctionMetadata functionMetadata, StackMetadata stackMetadata) {
-        ExceptionImplementor.startWith(jumpTarget, functionMetadata, stackMetadata);
+        ExceptionImplementor.setupWith(jumpTarget, functionMetadata, stackMetadata);
     }
 }
