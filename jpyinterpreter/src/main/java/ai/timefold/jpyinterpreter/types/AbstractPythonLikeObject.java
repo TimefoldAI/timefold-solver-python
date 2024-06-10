@@ -50,6 +50,10 @@ public abstract class AbstractPythonLikeObject implements PythonLikeObject {
         __dir__.put(attributeName, value);
     }
 
+    public Map<String, PythonLikeObject> getExtraAttributeMap() {
+        return __dir__;
+    }
+
     @Override
     public String toString() {
         return $method$__str__().toString();

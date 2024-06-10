@@ -149,8 +149,8 @@ class SetAttributeOnPythonObject:
     @jpype.JOverride()
     def accept(self, python_object, clone_map, attribute_name, value):
         from .conversions import unwrap_python_like_object
-        setattr(python_object, attribute_name, unwrap_python_like_object(value,
-                                                                         clone_map))
+        object.__setattr__(python_object, attribute_name, unwrap_python_like_object(value,
+                                                                                    clone_map))
 
 
 @jpype.JImplements('java.util.function.BiConsumer', deferred=True)

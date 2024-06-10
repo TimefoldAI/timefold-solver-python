@@ -1,8 +1,10 @@
 import builtins
 import inspect
+import importlib
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 from traceback import TracebackException, StackSummary, FrameSummary
+from copy import copy
 
 from jpype import JLong, JDouble, JBoolean, JProxy
 
@@ -511,11 +513,11 @@ class PythonCloneMap:
 
 def unwrap_python_like_object(python_like_object, clone_map=None, default=NotImplementedError):
     from .translator import type_to_compiled_java_class
-    from ai.timefold.jpyinterpreter import PythonLikeObject
+    from ai.timefold.jpyinterpreter import PythonLikeObject, PythonBytecodeToJavaBytecodeTranslator
     from java.util import List, Map, Set, Iterator, IdentityHashMap
     from ai.timefold.jpyinterpreter.types import PythonString, PythonBytes, PythonByteArray, PythonNone, \
         PythonModule, PythonSlice, PythonRange, CPythonBackedPythonLikeObject, PythonLikeType, PythonLikeGenericType, \
-        NotImplemented as JavaNotImplemented, PythonCell
+        NotImplemented as JavaNotImplemented, PythonCell, PythonLikeFunction
     from ai.timefold.jpyinterpreter.types.collections import PythonLikeTuple, PythonLikeFrozenSet
     from ai.timefold.jpyinterpreter.types.numeric import PythonInteger, PythonFloat, PythonBoolean, PythonComplex
     from ai.timefold.jpyinterpreter.types.wrappers import JavaObjectWrapper, PythonObjectWrapper, CPythonType, \
@@ -637,16 +639,18 @@ def unwrap_python_like_object(python_like_object, clone_map=None, default=NotImp
     elif isinstance(python_like_object, PythonModule):
         return clone_map.add_clone(python_like_object, python_like_object.getPythonReference())
     elif isinstance(python_like_object, CPythonBackedPythonLikeObject):
+        existing_instance = getattr(python_like_object, '$cpythonReference')
         if getattr(python_like_object, '$shouldCreateNewInstance')():
             maybe_cpython_type = getattr(python_like_object, "$CPYTHON_TYPE")
             if isinstance(maybe_cpython_type, CPythonType):
-                out = object.__new__(maybe_cpython_type.getPythonReference())
+                out = (copy(existing_instance) if existing_instance is not None
+                       else object.__new__(maybe_cpython_type.getPythonReference()))
                 getattr(python_like_object, '$setCPythonReference')(
                     JProxy(OpaquePythonReference, inst=out, convert=True))
             else:
                 out = None
         else:
-            out = getattr(python_like_object, '$cpythonReference')
+            out = existing_instance
 
         if out is not None:
             clone_map.add_clone(python_like_object, out)
@@ -686,6 +690,12 @@ def unwrap_python_like_object(python_like_object, clone_map=None, default=NotImp
         out = unwrap_python_like_builtin_module_object(python_like_object, clone_map, default)
         if out is not None:
             return out
+
+        if isinstance(python_like_object, PythonLikeFunction):
+            qualified_name = python_like_object.getClass().getCanonicalName()[
+                             len(PythonBytecodeToJavaBytecodeTranslator.USER_PACKAGE_BASE):]
+            module_name, _, function_name = qualified_name.rpartition('.')
+            return getattr(importlib.import_module(module_name), function_name)
 
         if default == NotImplementedError:
             raise NotImplementedError(f'Unable to convert object of type {type(python_like_object)}')
