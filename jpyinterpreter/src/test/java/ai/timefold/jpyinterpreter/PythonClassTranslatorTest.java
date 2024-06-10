@@ -5,6 +5,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.ToIntFunction;
 
@@ -47,10 +48,12 @@ public class PythonClassTranslatorTest {
 
         compiledClass.annotations = Collections.emptyList();
         compiledClass.javaInterfaces = Collections.emptyList();
+        compiledClass.pythonJavaTypeMappings = List.of();
         compiledClass.className = "MyClass";
         compiledClass.superclassList = List.of(BuiltinTypes.BASE_TYPE);
         compiledClass.staticAttributeNameToObject = Map.of("type_variable", new PythonString("type_value"));
         compiledClass.staticAttributeNameToClassInstance = Map.of();
+        compiledClass.staticAttributeDescriptorNames = Set.of();
         compiledClass.typeAnnotations = Map.of("age", TypeHint.withoutAnnotations(BuiltinTypes.INT_TYPE));
         compiledClass.instanceFunctionNameToPythonBytecode = Map.of("__init__", initFunction,
                 "get_age", ageFunction);
@@ -101,10 +104,12 @@ public class PythonClassTranslatorTest {
             PythonCompiledClass compiledClass = new PythonCompiledClass();
             compiledClass.annotations = Collections.emptyList();
             compiledClass.javaInterfaces = Collections.emptyList();
+            compiledClass.pythonJavaTypeMappings = List.of();
             compiledClass.className = "MyClass";
             compiledClass.superclassList = List.of(BuiltinTypes.BASE_TYPE);
             compiledClass.staticAttributeNameToObject = Map.of();
             compiledClass.staticAttributeNameToClassInstance = Map.of();
+            compiledClass.staticAttributeDescriptorNames = Set.of();
             compiledClass.typeAnnotations = Map.of("key", TypeHint.withoutAnnotations(BuiltinTypes.INT_TYPE));
             compiledClass.instanceFunctionNameToPythonBytecode = Map.of("__init__", initFunction,
                     compareOp.dunderMethod, comparisonFunction);
@@ -171,10 +176,12 @@ public class PythonClassTranslatorTest {
         PythonCompiledClass compiledClass = new PythonCompiledClass();
         compiledClass.annotations = Collections.emptyList();
         compiledClass.javaInterfaces = Collections.emptyList();
+        compiledClass.pythonJavaTypeMappings = List.of();
         compiledClass.className = "MyClass";
         compiledClass.superclassList = List.of(BuiltinTypes.BASE_TYPE);
         compiledClass.staticAttributeNameToObject = Map.of();
         compiledClass.staticAttributeNameToClassInstance = Map.of();
+        compiledClass.staticAttributeDescriptorNames = Set.of();
         compiledClass.typeAnnotations = Map.of("key", TypeHint.withoutAnnotations(BuiltinTypes.INT_TYPE));
         compiledClass.instanceFunctionNameToPythonBytecode = Map.of("__init__", initFunction,
                 "__eq__", equalsFunction,
@@ -238,10 +245,12 @@ public class PythonClassTranslatorTest {
         PythonCompiledClass compiledClass = new PythonCompiledClass();
         compiledClass.annotations = Collections.emptyList();
         compiledClass.javaInterfaces = List.of(ToIntFunction.class);
+        compiledClass.pythonJavaTypeMappings = List.of();
         compiledClass.className = "MyClass";
         compiledClass.superclassList = List.of(BuiltinTypes.BASE_TYPE);
         compiledClass.staticAttributeNameToObject = Map.of();
         compiledClass.staticAttributeNameToClassInstance = Map.of();
+        compiledClass.staticAttributeDescriptorNames = Set.of();
         compiledClass.typeAnnotations = Map.of("key", TypeHint.withoutAnnotations(BuiltinTypes.INT_TYPE));
         compiledClass.instanceFunctionNameToPythonBytecode = Map.of("__init__", initFunction,
                 "applyAsInt", applyAsInt);
@@ -301,10 +310,12 @@ public class PythonClassTranslatorTest {
         PythonCompiledClass compiledClass = new PythonCompiledClass();
         compiledClass.annotations = Collections.emptyList();
         compiledClass.javaInterfaces = List.of(ComplexInterface.class);
+        compiledClass.pythonJavaTypeMappings = List.of();
         compiledClass.className = "MyClass";
         compiledClass.superclassList = List.of(BuiltinTypes.BASE_TYPE);
         compiledClass.staticAttributeNameToObject = Map.of();
         compiledClass.staticAttributeNameToClassInstance = Map.of();
+        compiledClass.staticAttributeDescriptorNames = Set.of();
         compiledClass.typeAnnotations = Map.of("key", TypeHint.withoutAnnotations(BuiltinTypes.INT_TYPE));
         compiledClass.instanceFunctionNameToPythonBytecode = Map.of("__init__", initFunction,
                 "overloadedMethod", overloadedMethod);

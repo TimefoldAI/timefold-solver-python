@@ -1,5 +1,6 @@
 from ._solver_factory import SolverFactory
 from ._solver_manager import SolverManager
+from ._jpype_type_conversions import to_python_score
 from .score import ScoreAnalysis, ScoreExplanation
 
 from typing import TypeVar, Generic, TYPE_CHECKING, Any
@@ -63,7 +64,7 @@ class SolutionManager(Generic[Solution_]):
         java_solution = convert_to_java_python_like_object(solution)
         out = self._delegate.update(java_solution)
         update_python_object_from_java(java_solution)
-        return out
+        return to_python_score(out)
 
     def analyze(self, solution: Solution_, score_analysis_fetch_policy=None, solution_update_policy=None) \
             -> 'ScoreAnalysis':

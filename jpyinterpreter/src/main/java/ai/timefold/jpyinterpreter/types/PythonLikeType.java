@@ -599,6 +599,11 @@ public class PythonLikeType implements PythonLikeObject,
     }
 
     @Override
+    public PythonString $method$__str__() {
+        return PythonString.valueOf(toString());
+    }
+
+    @Override
     public String toString() {
         return "<class " + TYPE_NAME + ">";
     }

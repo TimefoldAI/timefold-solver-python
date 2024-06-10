@@ -1,5 +1,7 @@
 import timefold.solver.score as score_api
+from .._jpype_type_conversions import to_python_score
 from ._function_translator import function_cast
+from ..score._score import Score
 from typing import TypeVar, Callable, Generic, Collection, TYPE_CHECKING, Type
 
 if TYPE_CHECKING:
@@ -14,7 +16,7 @@ A = TypeVar('A')
 B = TypeVar('B')
 C = TypeVar('C')
 D = TypeVar('D')
-ScoreType = TypeVar('ScoreType', bound='_JavaScore')
+ScoreType = TypeVar('ScoreType', bound=Score)
 
 
 class Constraint:
@@ -82,8 +84,12 @@ class UniConstraintBuilder(Generic[A, ScoreType]):
             this `UniConstraintBuilder`.
         """
         from ai.timefold.solver.core.api.score import Score
+
+        def wrapped(a, score):
+            return justification_function(a, to_python_score(score))
+
         return UniConstraintBuilder(self.delegate.justifyWith(
-            function_cast(justification_function, self.a_type, Score)), self.a_type)
+            function_cast(wrapped, self.a_type, Score)), self.a_type)
 
     def as_constraint(self, constraint_package_or_name: str, constraint_name: str = None) -> Constraint:
         """
@@ -171,8 +177,12 @@ class BiConstraintBuilder(Generic[A, B, ScoreType]):
             this `BiConstraintBuilder`.
         """
         from ai.timefold.solver.core.api.score import Score
+
+        def wrapped(a, b, score):
+            return justification_function(a, b, to_python_score(score))
+
         return BiConstraintBuilder(self.delegate.justifyWith(
-            function_cast(justification_function, self.a_type, self.b_type, Score)), self.a_type, self.b_type)
+            function_cast(wrapped, self.a_type, self.b_type, Score)), self.a_type, self.b_type)
 
     def as_constraint(self, constraint_package_or_name: str, constraint_name: str = None) -> Constraint:
         """
@@ -264,8 +274,12 @@ class TriConstraintBuilder(Generic[A, B, C, ScoreType]):
             this `TriConstraintBuilder`.
         """
         from ai.timefold.solver.core.api.score import Score
+
+        def wrapped(a, b, c, score):
+            return justification_function(a, b, c, to_python_score(score))
+
         return TriConstraintBuilder(self.delegate.justifyWith(
-            function_cast(justification_function, self.a_type, self.b_type, self.c_type, Score)),
+            function_cast(wrapped, self.a_type, self.b_type, self.c_type, Score)),
             self.a_type, self.b_type, self.c_type)
 
     def as_constraint(self, constraint_package_or_name: str, constraint_name: str = None) -> Constraint:
@@ -360,8 +374,12 @@ class QuadConstraintBuilder(Generic[A, B, C, D, ScoreType]):
             this `QuadConstraintBuilder`.
         """
         from ai.timefold.solver.core.api.score import Score
+
+        def wrapped(a, b, c, d, score):
+            return justification_function(a, b, c, d, to_python_score(score))
+
         return QuadConstraintBuilder(self.delegate.justifyWith(
-            function_cast(justification_function, self.a_type, self.b_type, self.c_type, self.d_type, Score)),
+            function_cast(wrapped, self.a_type, self.b_type, self.c_type, self.d_type, Score)),
             self.a_type, self.b_type, self.c_type, self.d_type)
 
     def as_constraint(self, constraint_package_or_name: str, constraint_name: str = None) -> Constraint:

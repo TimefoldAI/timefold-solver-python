@@ -73,7 +73,7 @@ public final class PythonLikeFunctionWrapper implements PythonLikeFunction {
         return wrapped.$method$__ne__(other);
     }
 
-    public PythonLikeObject $method$__str__() {
+    public PythonString $method$__str__() {
         return wrapped.$method$__str__();
     }
 

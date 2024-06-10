@@ -57,6 +57,7 @@ def copy_type_annotations(hinted_object, default_args, vargs_name, kwargs_name):
     from java.util import HashMap, Collections
     from ai.timefold.jpyinterpreter import TypeHint
     from .translator import type_to_compiled_java_class
+    from typing import ClassVar
 
     out = HashMap()
     try:
@@ -80,6 +81,11 @@ def copy_type_annotations(hinted_object, default_args, vargs_name, kwargs_name):
         if get_origin(type_hint) is Annotated:
             hint_type = get_args(type_hint)[0]
             hint_annotations = get_java_annotations(type_hint.__metadata__)  # noqa
+
+        if get_origin(type_hint) is ClassVar:
+            # Skip over class variables, since they are not
+            # instance attributes
+            continue
 
         if name in default_args:
             hint_type = Union[hint_type, type(default_args[name])]

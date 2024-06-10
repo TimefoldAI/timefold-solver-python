@@ -1,6 +1,11 @@
 from jpype import JProxy, JImplements, JOverride, JConversion
 from jpype.types import *
 from types import FunctionType
+from typing import TYPE_CHECKING
+import timefold.solver._timefold_java_interop as _timefold_java_interop
+
+if TYPE_CHECKING:
+    from .score._score import Score
 
 
 @JImplements('ai.timefold.solver.core.api.score.stream.ConstraintProvider', deferred=True)
@@ -182,6 +187,27 @@ class PythonPentaPredicate:
     @JOverride
     def test(self, argument1, argument2, argument3, argument4, argument5):
         return self.delegate(argument1, argument2, argument3, argument4, argument5)
+
+
+def to_python_score(score) -> 'Score':
+    if isinstance(score, _timefold_java_interop._java_score_mapping_dict['SimpleScore']):
+        return _timefold_java_interop._python_score_mapping_dict['SimpleScore'](score.score(),
+                                                                                init_score=score.initScore())
+    elif isinstance(score, _timefold_java_interop._java_score_mapping_dict['HardSoftScore']):
+        return _timefold_java_interop._python_score_mapping_dict['HardSoftScore'](score.hardScore(),
+                                                                                  score.softScore(),
+                                                                                  init_score=score.initScore())
+    elif isinstance(score, _timefold_java_interop._java_score_mapping_dict['HardMediumSoftScore']):
+        return _timefold_java_interop._python_score_mapping_dict['HardMediumSoftScore'](score.hardScore(),
+                                                                                        score.mediumScore(),
+                                                                                        score.softScore(),
+                                                                                        init_score=score.initScore())
+    elif isinstance(score, _timefold_java_interop._java_score_mapping_dict['BendableScore']):
+        return _timefold_java_interop._python_score_mapping_dict['BendableScore'](score.hardScores(),
+                                                                                  score.softScores(),
+                                                                                  init_score=score.initScore())
+    else:
+        raise TypeError(f'Unexpected score type: {type(score)}')
 
 
 # Function convertors

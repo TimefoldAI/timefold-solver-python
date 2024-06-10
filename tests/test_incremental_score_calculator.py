@@ -113,7 +113,7 @@ def test_constraint_match_disabled_incremental_score_calculator():
                 descending_diagonal_index_list.remove(queen)
                 self.score += len(descending_diagonal_index_list)
 
-        def calculate_score(self) -> HardSoftScore:
+        def calculate_score(self) -> SimpleScore:
             return SimpleScore.of(self.score)
 
     solver_config = SolverConfig(
@@ -216,7 +216,7 @@ def test_constraint_match_enabled_incremental_score_calculator():
                 descending_diagonal_index_list.remove(queen)
                 self.score += len(descending_diagonal_index_list)
 
-        def calculate_score(self) -> HardSoftScore:
+        def calculate_score(self) -> SimpleScore:
             return SimpleScore.of(self.score)
 
         def get_constraint_match_totals(self):

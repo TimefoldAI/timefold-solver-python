@@ -1,4 +1,7 @@
 from typing import Type
+
+import pytest
+
 from .conftest import verifier_for
 
 
@@ -1013,6 +1016,7 @@ def test_marker_interface_string():
 def test_functional_interface():
     from java.util.function import ToIntFunction
     from jpyinterpreter import translate_python_class_to_java_class, add_java_interface
+    from ai.timefold.jpyinterpreter.types import PythonNone
 
     @add_java_interface(ToIntFunction)
     class A:
@@ -1023,3 +1027,86 @@ def test_functional_interface():
     assert ToIntFunction.class_.isAssignableFrom(translated_class)
     java_object = translated_class.getConstructor().newInstance()
     assert java_object.applyAsInt(1) == 2
+
+
+def test_python_java_type_mapping():
+    from java.lang import String
+    from jpyinterpreter import (translate_python_class_to_java_class,
+                                add_python_java_type_mapping, unwrap_python_like_object)
+    from jpype import JImplements, JOverride
+    from dataclasses import dataclass
+
+    @dataclass
+    class PythonClass:
+        data: str
+
+    python_class_type = translate_python_class_to_java_class(PythonClass)
+
+    @JImplements('ai.timefold.jpyinterpreter.types.PythonJavaTypeMapping')
+    class MyMapping:
+        @JOverride
+        def getPythonType(self):
+            return python_class_type
+
+        @JOverride
+        def getJavaType(self):
+            return String.class_
+
+        @JOverride
+        def toPythonObject(self, java_object):
+            from ai.timefold.jpyinterpreter.types import PythonString
+            instance = python_class_type.getJavaClass().getConstructor().newInstance()
+            instance.data = PythonString.valueOf(java_object)
+            return instance
+
+        @JOverride
+        def toJavaObject(self, python_object):
+            return python_object.data.getValue()
+
+    add_python_java_type_mapping(MyMapping())
+
+    @dataclass
+    class A:
+        data: PythonClass | None
+
+    translated_class = translate_python_class_to_java_class(A).getJavaClass()
+    assert translated_class.getMethod('getData').getReturnType() == String.class_
+    assert translated_class.getMethod('setData', String.class_) is not None
+
+    java_object = translated_class.getConstructor().newInstance()
+    java_object.setData('test')
+    assert unwrap_python_like_object(translated_class.getField('data').get(java_object)) == PythonClass('test')
+    assert java_object.getData() == 'test'
+
+    java_object.setData(None)
+    assert unwrap_python_like_object(translated_class.getField('data').get(java_object)) is None
+    assert java_object.getData() is None
+
+
+def test_class_properties():
+    from jpyinterpreter import translate_python_class_to_java_class, unwrap_python_like_object
+    from dataclasses import dataclass
+    from java.lang import NoSuchFieldException
+    from ai.timefold.jpyinterpreter.types import PythonString
+
+    @dataclass
+    class Car:
+        name: str
+
+        @property
+        def speed(self):
+            return 100
+
+        def is_fast(self) -> bool:
+            return self.speed > 50
+
+    translated_class = translate_python_class_to_java_class(Car)
+    java_class = translated_class.getJavaClass()
+
+    with pytest.raises(NoSuchFieldException):
+        java_class.getField('speed')
+
+    instance = java_class.getConstructor().newInstance()
+    instance.name = PythonString.valueOf('Car')
+    assert java_class.getMethod('$method$is_fast').invoke(instance)
+    assert unwrap_python_like_object(instance) == Car('Car')

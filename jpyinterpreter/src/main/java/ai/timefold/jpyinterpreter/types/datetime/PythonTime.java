@@ -328,8 +328,9 @@ public class PythonTime extends AbstractPythonLikeObject implements PlanningImmu
         return PythonString.valueOf(result);
     }
 
-    public PythonString toPythonString() {
-        return new PythonString(localTime.toString());
+    @Override
+    public PythonString $method$__str__() {
+        return PythonString.valueOf(toString());
     }
 
     @Override

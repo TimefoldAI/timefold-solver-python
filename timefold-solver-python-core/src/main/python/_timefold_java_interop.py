@@ -22,6 +22,9 @@ Score_ = TypeVar('Score_')
 
 _compilation_queue: list[type] = []
 _enterprise_installed: bool = False
+_scores_registered: bool = False
+_python_score_mapping_dict: dict[str, object] = {}
+_java_score_mapping_dict: dict[str, object] = {}
 
 
 def is_enterprise_installed() -> bool:
@@ -92,6 +95,46 @@ def init(*args, path: list[str] = None, include_timefold_jars: bool = True) -> N
 def update_log_level() -> None:
     from ai.timefold.solver.python.logging import PythonLoggingToLogbackAdapter
     PythonLoggingToLogbackAdapter.setLevel(logger.getEffectiveLevel())
+
+
+def register_score_python_java_type_mappings():
+    global _scores_registered, _java_score_mapping_dict, _python_score_mapping_dict
+    if _scores_registered:
+        return
+
+    _scores_registered = True
+
+    from .score._score import SimpleScore, HardSoftScore, HardMediumSoftScore, BendableScore
+    from ai.timefold.solver.core.api.score.buildin.simple import SimpleScore as _SimpleScore
+    from ai.timefold.solver.core.api.score.buildin.hardsoft import HardSoftScore as _HardSoftScore
+    from ai.timefold.solver.core.api.score.buildin.hardmediumsoft import HardMediumSoftScore as _HardMediumSoftScore
+    from ai.timefold.solver.core.api.score.buildin.bendable import BendableScore as _BendableScore
+
+    from ai.timefold.solver.python.score import (SimpleScorePythonJavaTypeMapping,
+                                                 HardSoftScorePythonJavaTypeMapping,
+                                                 HardMediumSoftScorePythonJavaTypeMapping,
+                                                 BendableScorePythonJavaTypeMapping)
+    from _jpyinterpreter import translate_python_class_to_java_class, add_python_java_type_mapping
+
+    _python_score_mapping_dict['SimpleScore'] = SimpleScore
+    _python_score_mapping_dict['HardSoftScore'] = HardSoftScore
+    _python_score_mapping_dict['HardMediumSoftScore'] = HardMediumSoftScore
+    _python_score_mapping_dict['BendableScore'] = BendableScore
+
+    _java_score_mapping_dict['SimpleScore'] = _SimpleScore
+    _java_score_mapping_dict['HardSoftScore'] = _HardSoftScore
+    _java_score_mapping_dict['HardMediumSoftScore'] = _HardMediumSoftScore
+    _java_score_mapping_dict['BendableScore'] = _BendableScore
+
+    SimpleScoreType = translate_python_class_to_java_class(SimpleScore)
+    HardSoftScoreType = translate_python_class_to_java_class(HardSoftScore)
+    HardMediumSoftScoreType = translate_python_class_to_java_class(HardMediumSoftScore)
+    BendableScoreType = translate_python_class_to_java_class(BendableScore)
+
+    add_python_java_type_mapping(SimpleScorePythonJavaTypeMapping(SimpleScoreType))
+    add_python_java_type_mapping(HardSoftScorePythonJavaTypeMapping(HardSoftScoreType))
+    add_python_java_type_mapping(HardMediumSoftScorePythonJavaTypeMapping(HardMediumSoftScoreType))
+    add_python_java_type_mapping(BendableScorePythonJavaTypeMapping(BendableScoreType))
 
 
 def forward_logging_events(event: 'PythonLoggingEvent') -> None:
@@ -257,6 +300,7 @@ def _add_to_compilation_queue(python_class: type | PythonSupplier) -> None:
 def _process_compilation_queue() -> None:
     global _compilation_queue
 
+    register_score_python_java_type_mappings()
     while len(_compilation_queue) > 0:
         python_class = _compilation_queue.pop(0)
 
@@ -279,6 +323,7 @@ def _generate_constraint_provider_class(original_function: Callable[['_Constrain
                                         wrapped_constraint_provider: Callable[['_ConstraintFactory'],
                                                                               list['_Constraint']]) -> JClass:
     ensure_init()
+    register_score_python_java_type_mappings()
     from ai.timefold.solver.python import PythonWrapperGenerator  # noqa
     from ai.timefold.solver.core.api.score.stream import ConstraintProvider
     class_identifier = _get_class_identifier_for_object(original_function)

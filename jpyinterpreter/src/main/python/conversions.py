@@ -173,6 +173,11 @@ def init_type_to_compiled_java_class():
             pass
 
 
+def add_python_java_type_mapping(mapping):
+    from .translator import python_java_type_mappings
+    python_java_type_mappings.append(mapping)
+
+
 def copy_iterable(iterable):
     from java.util import ArrayList
     if iterable is None:

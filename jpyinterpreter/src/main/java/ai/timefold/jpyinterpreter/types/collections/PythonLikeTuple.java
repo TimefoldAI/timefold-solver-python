@@ -20,6 +20,7 @@ import ai.timefold.jpyinterpreter.types.BuiltinTypes;
 import ai.timefold.jpyinterpreter.types.PythonLikeComparable;
 import ai.timefold.jpyinterpreter.types.PythonLikeType;
 import ai.timefold.jpyinterpreter.types.PythonSlice;
+import ai.timefold.jpyinterpreter.types.PythonString;
 import ai.timefold.jpyinterpreter.types.errors.TypeError;
 import ai.timefold.jpyinterpreter.types.errors.ValueError;
 import ai.timefold.jpyinterpreter.types.errors.lookup.IndexError;
@@ -442,6 +443,11 @@ public class PythonLikeTuple<T extends PythonLikeObject> extends AbstractPythonL
     @Override
     public PythonInteger $method$__hash__() {
         return PythonInteger.valueOf(hashCode());
+    }
+
+    @Override
+    public PythonString $method$__str__() {
+        return PythonString.valueOf(toString());
     }
 
     @Override

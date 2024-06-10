@@ -341,8 +341,8 @@ def test_solve_complex_problem_facts():
     solver = SolverFactory.create(solver_config).build_solver()
     solution = solver.solve(problem)
 
-    assert solution.score.getHardScore() == 0
-    assert solution.score.getSoftScore() == 0
+    assert solution.score.hard_score == 0
+    assert solution.score.soft_score == 0
     assert solution.entity_list[0].value == v2
     assert solution.entity_list[1].value == v1
 

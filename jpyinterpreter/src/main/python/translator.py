@@ -16,6 +16,7 @@ global_dict_to_key_set = dict()
 type_to_compiled_java_class = dict()
 type_to_annotations = dict()
 type_to_java_interfaces = dict()
+python_java_type_mappings = list()
 
 function_interface_pair_to_instance = dict()
 function_interface_pair_to_class = dict()
@@ -506,6 +507,59 @@ def force_update_type(python_type, java_type):
     type_to_compiled_java_class[python_type] = java_type
 
 
+# TODO: Remove me when minimum Python version is 3.11
+def get_members_static(object, predicate):
+    try:
+        return inspect.getmembers_static(object, predicate)
+    except AttributeError:
+        return _getmembers(object, predicate, type.__getattribute__)
+
+
+# TODO: Remove me when minimum Python version is 3.11
+def _getmembers(object, predicate, getter):
+    import types
+    results = []
+    processed = set()
+    names = dir(object)
+    if inspect.isclass(object):
+        mro = (object,) + inspect.getmro(object)
+        # add any DynamicClassAttributes to the list of names if object is a class;
+        # this may result in duplicate entries if, for example, a virtual
+        # attribute with the same name as a DynamicClassAttribute exists
+        try:
+            for base in object.__bases__:
+                for k, v in base.__dict__.items():
+                    if isinstance(v, types.DynamicClassAttribute):
+                        names.append(k)
+        except AttributeError:
+            pass
+    else:
+        mro = ()
+    for key in names:
+        # First try to get the value via getattr.  Some descriptors don't
+        # like calling their __get__ (see bug #1785), so fall back to
+        # looking in the __dict__.
+        try:
+            value = getter(object, key)
+            # handle the duplicate key
+            if key in processed:
+                raise AttributeError
+        except AttributeError:
+            for base in mro:
+                if key in base.__dict__:
+                    value = base.__dict__[key]
+                    break
+            else:
+                # could be a (currently) missing slot member, or a buggy
+                # __dir__; discard and move on
+                continue
+        if not predicate or predicate(value):
+            results.append((key, value))
+        processed.add(key)
+    results.sort(key=lambda pair: pair[0])
+    return results
+
+
 def translate_python_class_to_java_class(python_class):
     import collections.abc as collections_abc
     from .annotations import erase_generic_args, convert_java_annotation, copy_type_annotations
@@ -513,7 +567,7 @@ def translate_python_class_to_java_class(python_class):
         init_type_to_compiled_java_class, is_banned_module, is_c_native, convert_to_java_python_like_object
     )
     from java.lang import Class as JavaClass
-    from java.util import ArrayList, HashMap
+    from java.util import ArrayList, HashMap, HashSet
     from ai.timefold.jpyinterpreter import AnnotationMetadata, PythonCompiledClass, PythonClassTranslator, CPythonBackedPythonInterpreter # noqa
     from ai.timefold.jpyinterpreter.types import BuiltinTypes
     from ai.timefold.jpyinterpreter.types.wrappers import JavaObjectWrapper, OpaquePythonReference, CPythonType # noqa
@@ -575,10 +629,13 @@ def translate_python_class_to_java_class(python_class):
                 isinstance(method, __CLASS_METHOD_TYPE):
             methods.append((method_name, method))
 
-    static_attributes = inspect.getmembers(python_class, predicate=lambda member: not (inspect.isfunction(member)
-                                                                                       or isinstance(member, __STATIC_METHOD_TYPE)
-                                                                                       or isinstance(member, __CLASS_METHOD_TYPE)))
-    static_attributes = [attribute for attribute in static_attributes if attribute[0] in python_class.__dict__]
+    all_static_attributes = get_members_static(python_class,
+                                               predicate=lambda member: not (inspect.isfunction(member)
+                                                                             or isinstance(member,
+                                                                                           __STATIC_METHOD_TYPE)
+                                                                             or isinstance(member, __CLASS_METHOD_TYPE)
+                                                                             ))
+    static_attributes = [attribute for attribute in all_static_attributes if attribute[0] in python_class.__dict__]
     static_methods = [method for method in methods if isinstance(method[1], __STATIC_METHOD_TYPE)]
     class_methods = [method for method in methods if isinstance(method[1], __CLASS_METHOD_TYPE)]
     instance_methods = [method for method in methods if method not in static_methods and method not in class_methods]
@@ -620,6 +677,10 @@ def translate_python_class_to_java_class(python_class):
 
     static_attributes_map = HashMap()
     static_attributes_to_class_instance_map = HashMap()
+    static_attribute_descriptor_names = HashSet()
+    static_attribute_descriptor_names.add('__class__')
+    static_attribute_descriptor_names.add('__module__')
+
     for attribute in static_attributes:
         attribute_type = type(attribute[1])
         if attribute_type == python_class:
@@ -636,9 +697,16 @@ def translate_python_class_to_java_class(python_class):
 
             static_attributes_map.put(attribute[0], convert_to_java_python_like_object(attribute[1]))
 
+    for attribute in all_static_attributes:
+        attribute_type = type(attribute[1])
+        if (hasattr(attribute_type, '__get__') or hasattr(attribute_type, '__set__') or
+                hasattr(attribute[1], '__get__') or hasattr(attribute[1], '__set__')):
+            static_attribute_descriptor_names.add(attribute[0])
+
     python_compiled_class = PythonCompiledClass()
     python_compiled_class.annotations = ArrayList()
     python_compiled_class.javaInterfaces = ArrayList()
+    python_compiled_class.pythonJavaTypeMappings = ArrayList()
 
     for annotation in type_to_annotations.get(python_class, []):
         python_compiled_class.annotations.add(convert_java_annotation(annotation))
@@ -648,6 +716,9 @@ def translate_python_class_to_java_class(python_class):
             java_interface = JClass(java_interface)
 
         python_compiled_class.javaInterfaces.add(java_interface)
+
+    for python_java_type_mapping in python_java_type_mappings:
+        python_compiled_class.pythonJavaTypeMappings.add(python_java_type_mapping)
 
     python_compiled_class.binaryType = CPythonType.getType(JProxy(OpaquePythonReference, inst=python_class,
                                                                   convert=True))
@@ -665,6 +736,7 @@ def translate_python_class_to_java_class(python_class):
     python_compiled_class.classFunctionNameToPythonBytecode = class_method_map
     python_compiled_class.staticAttributeNameToObject = static_attributes_map
     python_compiled_class.staticAttributeNameToClassInstance = static_attributes_to_class_instance_map
+    python_compiled_class.staticAttributeDescriptorNames = static_attribute_descriptor_names
 
     out = PythonClassTranslator.translatePythonClass(python_compiled_class, prepared_class_info)
     PythonClassTranslator.setSelfStaticInstances(python_compiled_class, out.getJavaClass(), out,

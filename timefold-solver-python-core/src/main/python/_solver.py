@@ -1,5 +1,6 @@
 from ._problem_change import ProblemChange, ProblemChangeWrapper
 from ._timefold_java_interop import update_log_level
+from ._jpype_type_conversions import to_python_score
 from typing import TypeVar, TYPE_CHECKING, Generic, Callable
 from datetime import timedelta
 from jpype import JClass, JImplements, JOverride
@@ -234,7 +235,7 @@ class Solver(Generic[Solution_]):
                     from _jpyinterpreter import unwrap_python_like_object
                     nonlocal event_listener_list
                     event = BestSolutionChangedEvent(
-                        new_best_score=event.getNewBestScore(),
+                        new_best_score=to_python_score(event.getNewBestScore()),
                         new_best_solution=unwrap_python_like_object(event.getNewBestSolution()),
                         is_every_problem_change_processed=event.isEveryProblemChangeProcessed(),
                         time_spent=timedelta(milliseconds=event.getTimeMillisSpent())

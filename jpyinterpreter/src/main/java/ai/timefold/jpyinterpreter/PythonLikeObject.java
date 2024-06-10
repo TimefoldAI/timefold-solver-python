@@ -125,8 +125,8 @@ public interface PythonLikeObject {
         return PythonBoolean.valueOf(!Objects.equals(this, other));
     }
 
-    default PythonLikeObject $method$__str__() {
-        return PythonString.valueOf(this.toString());
+    default PythonString $method$__str__() {
+        return PythonString.valueOf(this.getClass().getSimpleName() + "@" + System.identityHashCode(this));
     }
 
     default PythonLikeObject $method$__repr__() {

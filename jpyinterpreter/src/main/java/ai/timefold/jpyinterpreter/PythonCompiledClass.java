@@ -2,7 +2,9 @@ package ai.timefold.jpyinterpreter;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
+import ai.timefold.jpyinterpreter.types.PythonJavaTypeMapping;
 import ai.timefold.jpyinterpreter.types.PythonLikeType;
 import ai.timefold.jpyinterpreter.types.wrappers.CPythonType;
 import ai.timefold.jpyinterpreter.types.wrappers.OpaquePythonReference;
@@ -42,6 +44,11 @@ public class PythonCompiledClass {
     public List<Class<?>> javaInterfaces;
 
     /**
+     * Mapping from Python types to Java types
+     */
+    public List<PythonJavaTypeMapping<?, ?>> pythonJavaTypeMappings;
+
+    /**
      * The binary type of this PythonCompiledClass;
      * typically {@link CPythonType}. Used when methods
      * cannot be generated.
@@ -61,6 +68,11 @@ public class PythonCompiledClass {
      * Contains static attributes that are instances of this class
      */
     public Map<String, OpaquePythonReference> staticAttributeNameToClassInstance;
+
+    /**
+     * Contains static attributes that have get/set descriptors
+     */
+    public Set<String> staticAttributeDescriptorNames;
 
     public String getGeneratedClassBaseName() {
         return getGeneratedClassBaseName(module, qualifiedName);
