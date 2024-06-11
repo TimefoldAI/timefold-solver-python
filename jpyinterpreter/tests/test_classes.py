@@ -896,6 +896,20 @@ def test_class_vargs_with_manatory_args():
     verifier.verify(1, 1, 1, expected_result=13)
 
 
+def test_enum_translate_to_class():
+    from enum import Enum
+    from jpyinterpreter import translate_python_class_to_java_class
+    from ai.timefold.jpyinterpreter.types.wrappers import CPythonType
+
+    class Color(Enum):
+        RED = 'RED'
+        GREEN = 'GREEN'
+        BLUE = 'BLUE'
+
+    translated_class = translate_python_class_to_java_class(Color)
+    assert not isinstance(translated_class, CPythonType)
+
+
 def test_class_annotations():
     from typing import Annotated
     from java.lang import Deprecated

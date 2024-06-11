@@ -46,6 +46,7 @@ public class CPythonBackedPythonInterpreter implements PythonInterpreter {
     public static BiFunction<OpaquePythonReference, String, PythonLikeObject> lookupAttributeOnPythonReferencePythonFunction;
     public static BiFunction<OpaquePythonReference, String, OpaquePythonReference> lookupPointerForAttributeOnPythonReferencePythonFunction;
     public static BiFunction<OpaquePythonReference, String, OpaquePythonReference[]> lookupPointerArrayForAttributeOnPythonReferencePythonFunction;
+    public static BiConsumer<Map<String, PythonLikeObject>, String> loadObjectFromPythonGlobalDict;
 
     public static TriFunction<OpaquePythonReference, String, Map<Number, PythonLikeObject>, PythonLikeObject> lookupAttributeOnPythonReferenceWithMapPythonFunction;
     public static QuadConsumer<OpaquePythonReference, OpaquePythonReference, String, Object> setAttributeOnPythonReferencePythonFunction;
@@ -154,6 +155,11 @@ public class CPythonBackedPythonInterpreter implements PythonInterpreter {
 
     @Override
     public PythonLikeObject getGlobal(Map<String, PythonLikeObject> globalsMap, String name) {
+        if (!globalsMap.containsKey(name)) {
+            // This will put 'null' in the map if it doesn't exist, so we don't
+            // do an expensive CPython lookup everytime we are getting an attribute
+            loadObjectFromPythonGlobalDict.accept(globalsMap, name);
+        }
         PythonLikeObject out = globalsMap.get(name);
         if (out == null) {
             return GlobalBuiltins.lookupOrError(this, name);
