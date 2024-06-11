@@ -1,5 +1,5 @@
 from ._problem_change import ProblemChange, ProblemChangeWrapper
-from .config import SolverConfigOverride
+from .config import SolverConfig, SolverConfigOverride, SolverManagerConfig
 from ._solver_factory import SolverFactory
 from ._future import wrap_future
 from ._timefold_java_interop import update_log_level
@@ -342,7 +342,8 @@ class SolverManager(Generic[Solution_, ProblemId_]):
         self._delegate = delegate
 
     @staticmethod
-    def create(solver_factory: 'SolverFactory[Solution_]') -> 'SolverManager[Solution_, ProblemId_]':
+    def create(solver_factory_or_config: 'SolverConfig | SolverFactory[Solution_]',
+               solver_manager_config: 'SolverManagerConfig'=None) -> 'SolverManager[Solution_, ProblemId_]':
         """
         Use a `SolverFactory` to build a `SolverManager`.
 
@@ -357,7 +358,19 @@ class SolverManager(Generic[Solution_, ProblemId_]):
             A new `SolverManager` instance.
         """
         from ai.timefold.solver.core.api.solver import SolverManager as JavaSolverManager
-        return SolverManager(JavaSolverManager.create(solver_factory._delegate))  # noqa
+        from ai.timefold.solver.python import DaemonThreadFactory
+
+        if solver_manager_config is None:
+            solver_manager_config = SolverManagerConfig()
+
+        java_solver_manager_config = solver_manager_config._to_java_solver_manager_config()  # noqa
+        java_solver_manager_config.setThreadFactoryClass(DaemonThreadFactory.class_)
+
+        if isinstance(solver_factory_or_config, SolverConfig):
+            solver_factory_or_config = SolverFactory.create(solver_factory_or_config)
+
+        return SolverManager(JavaSolverManager.create(solver_factory_or_config._delegate,  # noqa
+                                                      java_solver_manager_config))
 
     def solve(self, problem_id: ProblemId_, problem: Solution_,
               final_best_solution_listener: Callable[[Solution_], None] = None) -> SolverJob[Solution_, ProblemId_]:

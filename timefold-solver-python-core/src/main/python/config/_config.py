@@ -378,6 +378,26 @@ class SolverConfigOverride:
         return out
 
 
+@dataclass(kw_only=True)
+class SolverManagerConfig:
+    """
+    Includes settings to override default Solver configuration.
+
+    Attributes
+    ----------
+    termination_config: TerminationConfig, optional
+        sets the solver TerminationConfig.
+    """
+    parallel_solver_count: Optional[str] = field(default=None)
+
+    def _to_java_solver_manager_config(self):
+        from ai.timefold.solver.core.config.solver import SolverManagerConfig as JavaSolverManagerConfig
+        out = JavaSolverManagerConfig()
+        if self.parallel_solver_count is not None:
+            out = out.withParallelSolverCount(self.parallel_solver_count)
+        return out
+
+
 __all__ = ['Duration', 'EnvironmentMode', 'TerminationCompositionStyle',
-           'RequiresEnterpriseError', 'MoveThreadCount',
+           'RequiresEnterpriseError', 'MoveThreadCount', 'SolverManagerConfig',
            'SolverConfig', 'SolverConfigOverride', 'ScoreDirectorFactoryConfig', 'TerminationConfig']
