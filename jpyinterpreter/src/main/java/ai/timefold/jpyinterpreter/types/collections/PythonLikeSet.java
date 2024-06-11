@@ -409,8 +409,8 @@ public class PythonLikeSet<T extends PythonLikeObject> extends AbstractPythonLik
         return delegate.iterator();
     }
 
-    public PythonIterator getIterator() {
-        return new PythonIterator(delegate.iterator());
+    public DelegatePythonIterator getIterator() {
+        return new DelegatePythonIterator(delegate.iterator());
     }
 
     @Override

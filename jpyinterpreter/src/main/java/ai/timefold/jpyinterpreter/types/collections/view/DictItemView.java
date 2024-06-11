@@ -17,7 +17,7 @@ import ai.timefold.jpyinterpreter.types.AbstractPythonLikeObject;
 import ai.timefold.jpyinterpreter.types.BuiltinTypes;
 import ai.timefold.jpyinterpreter.types.PythonLikeType;
 import ai.timefold.jpyinterpreter.types.PythonString;
-import ai.timefold.jpyinterpreter.types.collections.PythonIterator;
+import ai.timefold.jpyinterpreter.types.collections.DelegatePythonIterator;
 import ai.timefold.jpyinterpreter.types.collections.PythonLikeDict;
 import ai.timefold.jpyinterpreter.types.collections.PythonLikeSet;
 import ai.timefold.jpyinterpreter.types.collections.PythonLikeTuple;
@@ -94,8 +94,8 @@ public class DictItemView extends AbstractPythonLikeObject {
         return PythonInteger.valueOf(entrySet.size());
     }
 
-    public PythonIterator<PythonLikeObject> getItemsIterator() {
-        return new PythonIterator<>(
+    public DelegatePythonIterator<PythonLikeObject> getItemsIterator() {
+        return new DelegatePythonIterator<>(
                 IteratorUtils.iteratorMap(entrySet.iterator(),
                         entry -> PythonLikeTuple.fromItems(entry.getKey(), entry.getValue())));
     }
@@ -113,8 +113,8 @@ public class DictItemView extends AbstractPythonLikeObject {
         }
     }
 
-    public PythonIterator<PythonLikeObject> getReversedItemIterator() {
-        return new PythonIterator<>(IteratorUtils.iteratorMap(mapping.reversed(),
+    public DelegatePythonIterator<PythonLikeObject> getReversedItemIterator() {
+        return new DelegatePythonIterator<>(IteratorUtils.iteratorMap(mapping.reversed(),
                 key -> PythonLikeTuple.fromItems(key, (PythonLikeObject) mapping.delegate.get(key))));
     }
 

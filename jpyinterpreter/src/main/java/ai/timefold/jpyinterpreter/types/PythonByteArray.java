@@ -18,6 +18,7 @@ import ai.timefold.jpyinterpreter.PythonOverloadImplementor;
 import ai.timefold.jpyinterpreter.PythonTernaryOperator;
 import ai.timefold.jpyinterpreter.PythonUnaryOperator;
 import ai.timefold.jpyinterpreter.builtins.UnaryDunderBuiltin;
+import ai.timefold.jpyinterpreter.types.collections.DelegatePythonIterator;
 import ai.timefold.jpyinterpreter.types.collections.PythonIterator;
 import ai.timefold.jpyinterpreter.types.collections.PythonLikeDict;
 import ai.timefold.jpyinterpreter.types.collections.PythonLikeList;
@@ -432,8 +433,8 @@ public class PythonByteArray extends AbstractPythonLikeObject implements PythonB
         return new PythonByteArray(out);
     }
 
-    public PythonIterator<PythonInteger> getIterator() {
-        return new PythonIterator<>(IntStream.range(0, valueBuffer.limit())
+    public DelegatePythonIterator<PythonInteger> getIterator() {
+        return new DelegatePythonIterator<>(IntStream.range(0, valueBuffer.limit())
                 .mapToObj(index -> PythonBytes.BYTE_TO_INT[valueBuffer.get(index)])
                 .iterator());
     }

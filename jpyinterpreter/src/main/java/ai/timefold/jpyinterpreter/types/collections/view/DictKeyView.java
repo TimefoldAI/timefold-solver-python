@@ -13,7 +13,7 @@ import ai.timefold.jpyinterpreter.types.AbstractPythonLikeObject;
 import ai.timefold.jpyinterpreter.types.BuiltinTypes;
 import ai.timefold.jpyinterpreter.types.PythonLikeType;
 import ai.timefold.jpyinterpreter.types.PythonString;
-import ai.timefold.jpyinterpreter.types.collections.PythonIterator;
+import ai.timefold.jpyinterpreter.types.collections.DelegatePythonIterator;
 import ai.timefold.jpyinterpreter.types.collections.PythonLikeDict;
 import ai.timefold.jpyinterpreter.types.collections.PythonLikeSet;
 import ai.timefold.jpyinterpreter.types.numeric.PythonBoolean;
@@ -78,15 +78,15 @@ public class DictKeyView extends AbstractPythonLikeObject {
         return PythonInteger.valueOf(keySet.size());
     }
 
-    public PythonIterator<PythonLikeObject> getKeysIterator() {
-        return new PythonIterator<>(keySet.iterator());
+    public DelegatePythonIterator<PythonLikeObject> getKeysIterator() {
+        return new DelegatePythonIterator<>(keySet.iterator());
     }
 
     public PythonBoolean containsKey(PythonLikeObject key) {
         return PythonBoolean.valueOf(keySet.contains(key));
     }
 
-    public PythonIterator<PythonLikeObject> getReversedKeyIterator() {
+    public DelegatePythonIterator<PythonLikeObject> getReversedKeyIterator() {
         return mapping.reversed();
     }
 

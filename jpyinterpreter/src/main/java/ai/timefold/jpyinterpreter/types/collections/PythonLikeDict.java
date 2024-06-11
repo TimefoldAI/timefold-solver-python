@@ -164,8 +164,8 @@ public class PythonLikeDict<K extends PythonLikeObject, V extends PythonLikeObje
         return PythonInteger.valueOf(delegate.size());
     }
 
-    public PythonIterator<PythonLikeObject> getKeyIterator() {
-        return new PythonIterator<>(delegate.keySet().iterator());
+    public DelegatePythonIterator<PythonLikeObject> getKeyIterator() {
+        return new DelegatePythonIterator<>(delegate.keySet().iterator());
     }
 
     public PythonLikeObject getItemOrError(PythonLikeObject key) {
@@ -246,13 +246,13 @@ public class PythonLikeDict<K extends PythonLikeObject, V extends PythonLikeObje
         return PythonLikeTuple.fromItems(lastKey, (V) delegate.remove(lastKey));
     }
 
-    public PythonIterator<PythonLikeObject> reversed() {
+    public DelegatePythonIterator<PythonLikeObject> reversed() {
         if (delegate.isEmpty()) {
-            return new PythonIterator<>(Collections.emptyIterator());
+            return new DelegatePythonIterator<>(Collections.emptyIterator());
         }
 
         final var lastKey = (PythonLikeObject) delegate.lastKey();
-        return new PythonIterator<>(new Iterator<>() {
+        return new DelegatePythonIterator<>(new Iterator<>() {
             PythonLikeObject current = lastKey;
 
             @Override

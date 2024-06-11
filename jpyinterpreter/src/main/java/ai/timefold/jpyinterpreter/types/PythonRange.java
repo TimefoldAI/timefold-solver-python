@@ -13,7 +13,7 @@ import ai.timefold.jpyinterpreter.PythonLikeObject;
 import ai.timefold.jpyinterpreter.PythonOverloadImplementor;
 import ai.timefold.jpyinterpreter.PythonUnaryOperator;
 import ai.timefold.jpyinterpreter.builtins.UnaryDunderBuiltin;
-import ai.timefold.jpyinterpreter.types.collections.PythonIterator;
+import ai.timefold.jpyinterpreter.types.collections.DelegatePythonIterator;
 import ai.timefold.jpyinterpreter.types.errors.ValueError;
 import ai.timefold.jpyinterpreter.types.numeric.PythonBoolean;
 import ai.timefold.jpyinterpreter.types.numeric.PythonInteger;
@@ -164,8 +164,8 @@ public class PythonRange extends AbstractPythonLikeObject implements List<Python
         return new RangeIterator(start, stop, step, start, 0);
     }
 
-    public PythonIterator getPythonIterator() {
-        return new PythonIterator(iterator());
+    public DelegatePythonIterator getPythonIterator() {
+        return new DelegatePythonIterator(iterator());
     }
 
     @Override
