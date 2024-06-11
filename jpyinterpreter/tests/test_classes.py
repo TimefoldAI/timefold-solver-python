@@ -956,6 +956,50 @@ def test_class_annotations():
     assert annotations[0].since() == '2.0.0'
 
 
+def test_extra_attributes():
+    from jpyinterpreter import convert_to_java_python_like_object, unwrap_python_like_object
+
+    class A:
+        pass
+
+    a = A()
+    a.name = 'Name'
+
+    converted_a = convert_to_java_python_like_object(a)
+
+    assert getattr(converted_a, '$getAttributeOrNull')('name').value == 'Name'
+
+    unwrapped_a = unwrap_python_like_object(converted_a)
+
+    assert unwrapped_a.name == 'Name'
+
+
+def function_attribute_function():
+    return 10
+
+
+def test_function_attributes():
+    from jpyinterpreter import convert_to_java_python_like_object, unwrap_python_like_object
+
+    class A:
+        dispatch = {
+            'my_function': function_attribute_function,
+        }
+
+    def run():
+        return A.dispatch['my_function']()
+
+    a = A()
+
+    converted_a = convert_to_java_python_like_object(a)
+    unwrapped_a = unwrap_python_like_object(converted_a)
+
+    assert unwrapped_a.dispatch['my_function'] is function_attribute_function
+
+    verifier = verifier_for(run)
+    verifier.verify(expected_result=10)
+
+
 def test_java_class_as_field_type():
     from ai.timefold.jpyinterpreter import TypeHint
     from jpyinterpreter import translate_python_class_to_java_class

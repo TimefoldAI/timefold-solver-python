@@ -136,12 +136,7 @@ class GetAttributeOnPythonObjectWithMap:
         if not hasattr(python_object, attribute_name):
             return None
         out = getattr(python_object, attribute_name)
-        try:
-            return convert_to_java_python_like_object(out, instance_map)
-        except Exception as e:
-            import traceback
-            traceback.print_exception(e)
-            raise e
+        return convert_to_java_python_like_object(out, instance_map)
 
 
 @jpype.JImplements('ai.timefold.jpyinterpreter.util.function.QuadConsumer', deferred=True)
@@ -149,8 +144,12 @@ class SetAttributeOnPythonObject:
     @jpype.JOverride()
     def accept(self, python_object, clone_map, attribute_name, value):
         from .conversions import unwrap_python_like_object
-        object.__setattr__(python_object, attribute_name, unwrap_python_like_object(value,
-                                                                                    clone_map))
+        unwrapped_object = unwrap_python_like_object(value,
+                                                     clone_map)
+        try:
+            setattr(python_object, attribute_name, unwrapped_object)
+        except:
+            object.__setattr__(python_object, attribute_name, unwrapped_object)
 
 
 @jpype.JImplements('java.util.function.BiConsumer', deferred=True)
@@ -188,7 +187,6 @@ class CallPythonFunction:
             return convert_to_java_python_like_object(out)
         except Exception as e:
             from ai.timefold.jpyinterpreter.types.errors import CPythonException
-            print(e)
             raise CPythonException(str(e))
 
 
