@@ -343,14 +343,17 @@ class SolverManager(Generic[Solution_, ProblemId_]):
 
     @staticmethod
     def create(solver_factory_or_config: 'SolverConfig | SolverFactory[Solution_]',
-               solver_manager_config: 'SolverManagerConfig'=None) -> 'SolverManager[Solution_, ProblemId_]':
+               solver_manager_config: 'SolverManagerConfig' = None) -> 'SolverManager[Solution_, ProblemId_]':
         """
-        Use a `SolverFactory` to build a `SolverManager`.
+        Use a `SolverConfig` or `SolverFactory` to build a `SolverManager`.
 
         Parameters
         ----------
-        solver_factory : SolverFactory[Solution_]
-            The `SolverFactory` to build the `SolverManager` from.
+        solver_factory_or_config : SolverConfig | SolverFactory[Solution_]
+            The `SolverConfig` or `SolverFactory` to build the `SolverManager` from.
+
+        solver_manager_config: SolverManagerConfig, optional
+            Additional settings that can be used to configure the `SolverManager`.
 
         Returns
         -------
