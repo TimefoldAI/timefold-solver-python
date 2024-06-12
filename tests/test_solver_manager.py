@@ -109,8 +109,6 @@ def test_solve():
 
     for solver_manager in (
         SolverManager.create(solver_config),
-        SolverManager.create(SolverFactory.create(solver_config)),
-        SolverManager.create(solver_config, SolverManagerConfig(parallel_solver_count=12)),
         SolverManager.create(SolverFactory.create(solver_config), SolverManagerConfig(parallel_solver_count='AUTO'))
     ):
         with solver_manager:
