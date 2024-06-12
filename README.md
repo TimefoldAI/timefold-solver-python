@@ -23,7 +23,7 @@ Cloud Optimization, Conference Scheduling, Job Shop Scheduling, Bin Packing and 
 
 Using Timefold Solver in Python is significantly slower than using Timefold Solver in Java or Kotlin.
 
-## Get started with Timefold Solver  for Python
+## Get started with Timefold Solver for Python
 
 * [Read a Getting Started guide](https://timefold.ai/docs)
 * [Clone the Quickstarts repository](https://github.com/TimefoldAI/timefold-quickstarts)
