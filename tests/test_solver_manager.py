@@ -83,6 +83,8 @@ def test_solve():
     )
     problem: Solution = Solution([Entity('A'), Entity('B'), Entity('C')], [Value(1), Value(2), Value(3)],
                                  SimpleScore.ONE)
+    impossible_problem: Solution = Solution([Entity('A')], [Value(1), Value(2), Value(3)],
+                                            SimpleScore.ONE)
 
     def assert_solver_run(solver_manager, solver_job):
         assert solver_manager.get_solver_status(1) != SolverStatus.NOT_SOLVING
@@ -120,12 +122,16 @@ def test_solve():
             assert_solver_run(solver_manager, solver_job)
 
             lock.acquire()
-            solver_job = solver_manager.solve(1, deepcopy(problem))
+            solver_job = solver_manager.solve(1, deepcopy(impossible_problem))
             assert_problem_change_solver_run(solver_manager, solver_job)
 
             def get_problem(problem_id):
                 assert problem_id == 1
                 return deepcopy(problem)
+
+            def get_impossible_problem(problem_id):
+                assert problem_id == 1
+                return deepcopy(impossible_problem)
 
             lock.acquire()
             solver_job = (solver_manager.solve_builder()
@@ -136,7 +142,7 @@ def test_solve():
             lock.acquire()
             solver_job = (solver_manager.solve_builder()
                           .with_problem_id(1)
-                          .with_problem_finder(get_problem)).run()
+                          .with_problem_finder(get_impossible_problem)).run()
             assert_problem_change_solver_run(solver_manager, solver_job)
 
             solution_list = []
@@ -160,7 +166,7 @@ def test_solve():
             lock.acquire()
             solver_job = (solver_manager.solve_builder()
                           .with_problem_id(1)
-                          .with_problem_finder(get_problem)
+                          .with_problem_finder(get_impossible_problem)
                           .with_best_solution_consumer(on_best_solution_changed)
                           ).run()
             assert_problem_change_solver_run(solver_manager, solver_job)
@@ -186,7 +192,7 @@ def test_solve():
             lock.acquire()
             solver_job = (solver_manager.solve_builder()
                           .with_problem_id(1)
-                          .with_problem_finder(get_problem)
+                          .with_problem_finder(get_impossible_problem)
                           .with_best_solution_consumer(on_best_solution_changed)
                           .with_final_best_solution_consumer(on_best_solution_changed)
                           ).run()
