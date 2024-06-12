@@ -2,7 +2,15 @@
 
 # Timefold Solver for Python
 
-[![PyPI](https://img.shields.io/pypi/v/timefold-solver "PyPI")](https://pypi.org/project/timefold-solver/)
+[![PyPI](https://img.shields.io/pypi/v/timefold-solver?style=for-the-badge& "PyPI")](https://pypi.org/project/timefold-solver/)
+[![License](https://img.shields.io/github/license/TimefoldAI/timefold-solver-python?style=for-the-badge&logo=apache)](https://www.apache.org/licenses/LICENSE-2.0)
+[![JVM support](https://img.shields.io/badge/Java-17+-brightgreen.svg?style=for-the-badge)](https://sdkman.io)
+[![Python support](https://img.shields.io/badge/Python-3.10+-brightgreen.svg?style=for-the-badge)](https://www.python.org/downloads)
+[![Commit Activity](https://img.shields.io/github/commit-activity/m/TimefoldAI/timefold-solver-python?label=commits&style=for-the-badge)](https://github.com/TimefoldAI/timefold-solver-python/pulse)
+
+[![Stackoverflow](https://img.shields.io/badge/stackoverflow-ask_question-orange.svg?logo=stackoverflow&style=for-the-badge)](https://stackoverflow.com/questions/tagged/timefold)
+[![GitHub Discussions](https://img.shields.io/github/discussions/TimefoldAI/timefold-solver?style=for-the-badge&logo=github)](https://github.com/TimefoldAI/timefold-solver/discussions)
+[![GitHub Issues](https://img.shields.io/github/issues/TimefoldAI/timefold-solver-python?style=for-the-badge&logo=github)](https://github.com/TimefoldAI/timefold-solver-python/issues)
 
 [![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=TimefoldAI_timefold-solver-python&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=TimefoldAI_timefold-solver-python)
 [![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=TimefoldAI_timefold-solver-python&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=TimefoldAI_timefold-solver-python)
@@ -15,10 +23,27 @@ Cloud Optimization, Conference Scheduling, Job Shop Scheduling, Bin Packing and 
 
 Using Timefold Solver in Python is significantly slower than using Timefold Solver in Java or Kotlin.
 
+## Get started with Timefold Solver for Python
+
+* [Read a Getting Started guide](https://timefold.ai/docs)
+* [Clone the Quickstarts repository](https://github.com/TimefoldAI/timefold-quickstarts)
+
 ## Requirements
 
 - [Install Python 3.10 or later.](https://www.python.org)
 - [Install JDK 17 or later](https://adoptium.net) with the environment variable `JAVA_HOME` configured to the JDK installation directory.
+  For example, with [Sdkman](https://sdkman.io/):
+  ```shell
+  $ sdk install java
+  ```
+
+## Build from source
+
+1. [Build the main branch of Timefold Solver for Java from source](https://github.com/TimefoldAI/timefold-solver?tab=readme-ov-file#build-from-source)
+2. Install the repo
+   ```shell
+   $ pip install git+https://github.com/TimefoldAI/timefold-solver-python.git
+   ```
 
 ## Source code overview
 
