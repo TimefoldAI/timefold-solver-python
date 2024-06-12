@@ -1,7 +1,7 @@
 from ..score import ConstraintFactory, Constraint, IncrementalScoreCalculator
 from .._timefold_java_interop import is_enterprise_installed
 
-from typing import Any, Optional, Callable, TypeVar, Generic, TYPE_CHECKING
+from typing import Any, Optional, Callable, TypeVar, Generic, Literal, TYPE_CHECKING
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
@@ -388,13 +388,13 @@ class SolverManagerConfig:
     termination_config: TerminationConfig, optional
         sets the solver TerminationConfig.
     """
-    parallel_solver_count: Optional[str] = field(default=None)
+    parallel_solver_count: Optional[int | Literal['AUTO']] = field(default=None)
 
     def _to_java_solver_manager_config(self):
         from ai.timefold.solver.core.config.solver import SolverManagerConfig as JavaSolverManagerConfig
         out = JavaSolverManagerConfig()
         if self.parallel_solver_count is not None:
-            out = out.withParallelSolverCount(self.parallel_solver_count)
+            out = out.withParallelSolverCount(str(self.parallel_solver_count))
         return out
 
 

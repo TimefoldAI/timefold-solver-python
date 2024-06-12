@@ -6,6 +6,7 @@ from timefold.solver.score import *
 import pytest
 from dataclasses import dataclass, field
 from typing import Annotated, List
+from copy import deepcopy
 
 
 def test_solve():
@@ -107,88 +108,94 @@ def test_solve():
         assert solution.value_list[0].value == 6
         assert solver_manager.get_solver_status(1) == SolverStatus.NOT_SOLVING
 
-    with SolverManager.create(SolverFactory.create(solver_config)) as solver_manager:
-        lock.acquire()
-        solver_job = solver_manager.solve(1, problem)
-        assert_solver_run(solver_manager, solver_job)
+    for solver_manager in (
+        SolverManager.create(solver_config),
+        SolverManager.create(SolverFactory.create(solver_config)),
+        SolverManager.create(solver_config, SolverManagerConfig(parallel_solver_count=1)),
+        SolverManager.create(SolverFactory.create(solver_config), SolverManagerConfig(parallel_solver_count='AUTO'))
+    ):
+        with solver_manager:
+            lock.acquire()
+            solver_job = solver_manager.solve(1, deepcopy(problem))
+            assert_solver_run(solver_manager, solver_job)
 
-        lock.acquire()
-        solver_job = solver_manager.solve(1, problem)
-        assert_problem_change_solver_run(solver_manager, solver_job)
+            lock.acquire()
+            solver_job = solver_manager.solve(1, deepcopy(problem))
+            assert_problem_change_solver_run(solver_manager, solver_job)
 
-        def get_problem(problem_id):
-            assert problem_id == 1
-            return problem
+            def get_problem(problem_id):
+                assert problem_id == 1
+                return deepcopy(problem)
 
-        lock.acquire()
-        solver_job = (solver_manager.solve_builder()
-                      .with_problem_id(1)
-                      .with_problem_finder(get_problem)).run()
-        assert_solver_run(solver_manager, solver_job)
+            lock.acquire()
+            solver_job = (solver_manager.solve_builder()
+                          .with_problem_id(1)
+                          .with_problem_finder(get_problem)).run()
+            assert_solver_run(solver_manager, solver_job)
 
-        lock.acquire()
-        solver_job = (solver_manager.solve_builder()
-                      .with_problem_id(1)
-                      .with_problem_finder(get_problem)).run()
-        assert_problem_change_solver_run(solver_manager, solver_job)
+            lock.acquire()
+            solver_job = (solver_manager.solve_builder()
+                          .with_problem_id(1)
+                          .with_problem_finder(get_problem)).run()
+            assert_problem_change_solver_run(solver_manager, solver_job)
 
-        solution_list = []
-        semaphore = Semaphore(0)
+            solution_list = []
+            semaphore = Semaphore(0)
 
-        def on_best_solution_changed(solution):
-            solution_list.append(solution)
-            semaphore.release()
+            def on_best_solution_changed(solution):
+                solution_list.append(solution)
+                semaphore.release()
 
-        lock.acquire()
-        solver_job = (solver_manager.solve_builder()
-                      .with_problem_id(1)
-                      .with_problem_finder(get_problem)
-                      .with_best_solution_consumer(on_best_solution_changed)
-                      ).run()
-        assert_solver_run(solver_manager, solver_job)
-        assert semaphore.acquire(timeout=1)
-        assert len(solution_list) == 1
+            lock.acquire()
+            solver_job = (solver_manager.solve_builder()
+                          .with_problem_id(1)
+                          .with_problem_finder(get_problem)
+                          .with_best_solution_consumer(on_best_solution_changed)
+                          ).run()
+            assert_solver_run(solver_manager, solver_job)
+            assert semaphore.acquire(timeout=1)
+            assert len(solution_list) == 1
 
-        solution_list = []
-        lock.acquire()
-        solver_job = (solver_manager.solve_builder()
-                      .with_problem_id(1)
-                      .with_problem_finder(get_problem)
-                      .with_best_solution_consumer(on_best_solution_changed)
-                      ).run()
-        assert_problem_change_solver_run(solver_manager, solver_job)
-        assert semaphore.acquire(timeout=1)
-        assert len(solution_list) == 1
+            solution_list = []
+            lock.acquire()
+            solver_job = (solver_manager.solve_builder()
+                          .with_problem_id(1)
+                          .with_problem_finder(get_problem)
+                          .with_best_solution_consumer(on_best_solution_changed)
+                          ).run()
+            assert_problem_change_solver_run(solver_manager, solver_job)
+            assert semaphore.acquire(timeout=1)
+            assert len(solution_list) == 1
 
-        solution_list = []
-        lock.acquire()
-        solver_job = (solver_manager.solve_builder()
-                      .with_problem_id(1)
-                      .with_problem_finder(get_problem)
-                      .with_best_solution_consumer(on_best_solution_changed)
-                      .with_final_best_solution_consumer(on_best_solution_changed)
-                      ).run()
-        assert_solver_run(solver_manager, solver_job)
-        # Wait for 2 acquires, one for best solution consumer,
-        # another for final best solution consumer
-        assert semaphore.acquire(timeout=1)
-        assert semaphore.acquire(timeout=1)
-        assert len(solution_list) == 2
+            solution_list = []
+            lock.acquire()
+            solver_job = (solver_manager.solve_builder()
+                          .with_problem_id(1)
+                          .with_problem_finder(get_problem)
+                          .with_best_solution_consumer(on_best_solution_changed)
+                          .with_final_best_solution_consumer(on_best_solution_changed)
+                          ).run()
+            assert_solver_run(solver_manager, solver_job)
+            # Wait for 2 acquires, one for best solution consumer,
+            # another for final best solution consumer
+            assert semaphore.acquire(timeout=1)
+            assert semaphore.acquire(timeout=1)
+            assert len(solution_list) == 2
 
-        solution_list = []
-        lock.acquire()
-        solver_job = (solver_manager.solve_builder()
-                      .with_problem_id(1)
-                      .with_problem_finder(get_problem)
-                      .with_best_solution_consumer(on_best_solution_changed)
-                      .with_final_best_solution_consumer(on_best_solution_changed)
-                      ).run()
-        assert_problem_change_solver_run(solver_manager, solver_job)
-        # Wait for 2 acquires, one for best solution consumer,
-        # another for final best solution consumer
-        assert semaphore.acquire(timeout=1)
-        assert semaphore.acquire(timeout=1)
-        assert len(solution_list) == 2
+            solution_list = []
+            lock.acquire()
+            solver_job = (solver_manager.solve_builder()
+                          .with_problem_id(1)
+                          .with_problem_finder(get_problem)
+                          .with_best_solution_consumer(on_best_solution_changed)
+                          .with_final_best_solution_consumer(on_best_solution_changed)
+                          ).run()
+            assert_problem_change_solver_run(solver_manager, solver_job)
+            # Wait for 2 acquires, one for best solution consumer,
+            # another for final best solution consumer
+            assert semaphore.acquire(timeout=1)
+            assert semaphore.acquire(timeout=1)
+            assert len(solution_list) == 2
 
 
 @pytest.mark.filterwarnings("ignore:.*Exception in thread.*:pytest.PytestUnhandledThreadExceptionWarning")
@@ -247,7 +254,7 @@ def test_error():
         try:
             (solver_manager.solve_builder()
              .with_problem_id(1)
-             .with_problem(problem)
+             .with_problem(deepcopy(problem))
              .with_exception_handler(my_exception_handler)
              .run().get_final_best_solution())
         except:
@@ -262,7 +269,7 @@ def test_error():
         try:
             (solver_manager.solve_builder()
              .with_problem_id(1)
-             .with_problem(problem)
+             .with_problem(deepcopy(problem))
              .with_best_solution_consumer(lambda solution: None)
              .with_exception_handler(my_exception_handler)
              .run().get_final_best_solution())
