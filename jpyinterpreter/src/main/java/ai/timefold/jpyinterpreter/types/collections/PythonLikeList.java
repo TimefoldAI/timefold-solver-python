@@ -139,8 +139,8 @@ public class PythonLikeList<T> extends AbstractPythonLikeObject implements List<
         remainderToAdd--;
     }
 
-    public PythonIterator getIterator() {
-        return new PythonIterator(delegate.iterator());
+    public DelegatePythonIterator getIterator() {
+        return new DelegatePythonIterator(delegate.iterator());
     }
 
     public PythonLikeList copy() {

@@ -22,6 +22,7 @@ import ai.timefold.jpyinterpreter.types.PythonLikeFunction;
 import ai.timefold.jpyinterpreter.types.PythonLikeType;
 import ai.timefold.jpyinterpreter.types.PythonNone;
 import ai.timefold.jpyinterpreter.types.PythonString;
+import ai.timefold.jpyinterpreter.types.collections.DelegatePythonIterator;
 import ai.timefold.jpyinterpreter.types.collections.PythonIterator;
 import ai.timefold.jpyinterpreter.types.collections.PythonLikeDict;
 import ai.timefold.jpyinterpreter.types.collections.PythonLikeFrozenSet;
@@ -94,7 +95,7 @@ public class JavaPythonTypeConversionImplementor {
         }
 
         if (object instanceof Iterator) {
-            return new PythonIterator((Iterator) object);
+            return new DelegatePythonIterator<>((Iterator) object);
         }
 
         if (object instanceof List) {

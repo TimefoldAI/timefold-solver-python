@@ -152,8 +152,8 @@ public class PythonLikeFrozenSet extends AbstractPythonLikeObject implements Set
         return PythonBoolean.valueOf(delegate.contains(query));
     }
 
-    public PythonIterator getIterator() {
-        return new PythonIterator(delegate.iterator());
+    public DelegatePythonIterator getIterator() {
+        return new DelegatePythonIterator(delegate.iterator());
     }
 
     public PythonBoolean isDisjoint(PythonLikeSet other) {

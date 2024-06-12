@@ -62,7 +62,7 @@ def copy_type_annotations(hinted_object, default_args, vargs_name, kwargs_name):
     out = HashMap()
     try:
         type_hints = get_type_hints(hinted_object, include_extras=True)
-    except NameError:
+    except (AttributeError, NameError, TypeError):
         # Occurs if get_type_hints cannot resolve a forward reference
         type_hints = hinted_object.__annotations__ if hasattr(hinted_object, '__annotations__') else {}
 

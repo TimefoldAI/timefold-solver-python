@@ -168,14 +168,14 @@ public class PythonLikeTuple<T extends PythonLikeObject> extends AbstractPythonL
         return PythonBoolean.valueOf(delegate.contains(item));
     }
 
-    public PythonIterator<T> getIterator() {
-        return new PythonIterator<T>(delegate.iterator());
+    public DelegatePythonIterator<T> getIterator() {
+        return new DelegatePythonIterator<T>(delegate.iterator());
     }
 
-    public PythonIterator getReversedIterator() {
+    public DelegatePythonIterator getReversedIterator() {
 
         final ListIterator<PythonLikeObject> listIterator = delegate.listIterator(delegate.size());
-        return new PythonIterator<>(new Iterator<>() {
+        return new DelegatePythonIterator<>(new Iterator<>() {
             @Override
             public boolean hasNext() {
                 return listIterator.hasPrevious();

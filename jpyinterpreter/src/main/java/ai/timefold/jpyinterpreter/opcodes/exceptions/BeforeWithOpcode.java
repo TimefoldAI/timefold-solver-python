@@ -2,31 +2,29 @@ package ai.timefold.jpyinterpreter.opcodes.exceptions;
 
 import ai.timefold.jpyinterpreter.FunctionMetadata;
 import ai.timefold.jpyinterpreter.PythonBytecodeInstruction;
-import ai.timefold.jpyinterpreter.PythonVersion;
 import ai.timefold.jpyinterpreter.StackMetadata;
 import ai.timefold.jpyinterpreter.ValueSourceInfo;
 import ai.timefold.jpyinterpreter.implementors.ExceptionImplementor;
 import ai.timefold.jpyinterpreter.opcodes.AbstractOpcode;
 import ai.timefold.jpyinterpreter.types.BuiltinTypes;
+import ai.timefold.jpyinterpreter.types.PythonLikeFunction;
 
-public class WithExceptStartOpcode extends AbstractOpcode {
+public class BeforeWithOpcode extends AbstractOpcode {
 
-    public WithExceptStartOpcode(PythonBytecodeInstruction instruction) {
+    public BeforeWithOpcode(PythonBytecodeInstruction instruction) {
         super(instruction);
     }
 
     @Override
     protected StackMetadata getStackMetadataAfterInstruction(FunctionMetadata functionMetadata, StackMetadata stackMetadata) {
-        if (functionMetadata.pythonCompiledFunction.pythonVersion.isAtLeast(PythonVersion.PYTHON_3_11)) {
-            return stackMetadata
-                    .push(ValueSourceInfo.of(this, BuiltinTypes.BASE_TYPE, stackMetadata.getValueSourceForStackIndex(1)));
-        }
         return stackMetadata
-                .push(ValueSourceInfo.of(this, BuiltinTypes.BASE_TYPE, stackMetadata.getValueSourceForStackIndex(6)));
+                .pop()
+                .push(ValueSourceInfo.of(this, PythonLikeFunction.getFunctionType(), stackMetadata.getTOSValueSource()))
+                .push(ValueSourceInfo.of(this, BuiltinTypes.BASE_TYPE, stackMetadata.getTOSValueSource()));
     }
 
     @Override
     public void implement(FunctionMetadata functionMetadata, StackMetadata stackMetadata) {
-        ExceptionImplementor.handleExceptionInWith(functionMetadata, stackMetadata);
+        ExceptionImplementor.beforeWith(functionMetadata, stackMetadata);
     }
 }

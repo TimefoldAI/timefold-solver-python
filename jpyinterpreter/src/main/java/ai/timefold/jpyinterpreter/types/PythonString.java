@@ -22,6 +22,7 @@ import ai.timefold.jpyinterpreter.PythonOverloadImplementor;
 import ai.timefold.jpyinterpreter.PythonUnaryOperator;
 import ai.timefold.jpyinterpreter.builtins.BinaryDunderBuiltin;
 import ai.timefold.jpyinterpreter.builtins.UnaryDunderBuiltin;
+import ai.timefold.jpyinterpreter.types.collections.DelegatePythonIterator;
 import ai.timefold.jpyinterpreter.types.collections.PythonIterator;
 import ai.timefold.jpyinterpreter.types.collections.PythonLikeDict;
 import ai.timefold.jpyinterpreter.types.collections.PythonLikeList;
@@ -433,8 +434,8 @@ public class PythonString extends AbstractPythonLikeObject implements PythonLike
         return PythonString.valueOf(value.repeat(timesAsInt));
     }
 
-    public PythonIterator getIterator() {
-        return new PythonIterator(value.chars().mapToObj(charVal -> new PythonString(Character.toString(charVal)))
+    public DelegatePythonIterator getIterator() {
+        return new DelegatePythonIterator(value.chars().mapToObj(charVal -> new PythonString(Character.toString(charVal)))
                 .iterator());
     }
 

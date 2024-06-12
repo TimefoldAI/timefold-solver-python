@@ -52,7 +52,7 @@ import ai.timefold.jpyinterpreter.types.PythonNone;
 import ai.timefold.jpyinterpreter.types.PythonSlice;
 import ai.timefold.jpyinterpreter.types.PythonString;
 import ai.timefold.jpyinterpreter.types.PythonSuperObject;
-import ai.timefold.jpyinterpreter.types.collections.PythonIterator;
+import ai.timefold.jpyinterpreter.types.collections.DelegatePythonIterator;
 import ai.timefold.jpyinterpreter.types.collections.PythonLikeDict;
 import ai.timefold.jpyinterpreter.types.collections.PythonLikeList;
 import ai.timefold.jpyinterpreter.types.collections.PythonLikeTuple;
@@ -753,7 +753,7 @@ public class GlobalBuiltins {
         final AtomicReference<PythonLikeObject> currentIndex = new AtomicReference(start);
         final AtomicBoolean shouldCallNext = new AtomicBoolean(true);
 
-        return new PythonIterator(new Iterator<PythonLikeObject>() {
+        return new DelegatePythonIterator(new Iterator<PythonLikeObject>() {
             @Override
             public boolean hasNext() {
                 if (shouldCallNext.get()) {
@@ -790,7 +790,7 @@ public class GlobalBuiltins {
         });
     }
 
-    public static PythonIterator filter(List<PythonLikeObject> positionalArgs,
+    public static DelegatePythonIterator filter(List<PythonLikeObject> positionalArgs,
             Map<PythonString, PythonLikeObject> keywordArgs, PythonLikeObject instance) {
         PythonLikeObject function;
         PythonLikeObject iterable;
@@ -835,7 +835,7 @@ public class GlobalBuiltins {
             predicate = (PythonLikeFunction) function;
         }
 
-        return new PythonIterator(StreamSupport.stream(
+        return new DelegatePythonIterator(StreamSupport.stream(
                 Spliterators.spliteratorUnknownSize(iterator, Spliterator.ORDERED),
                 false)
                 .filter(element -> PythonBoolean
@@ -1088,7 +1088,7 @@ public class GlobalBuiltins {
         throw new ValueError("builtin locals() is not supported when executed in Java bytecode");
     }
 
-    public static PythonIterator map(List<PythonLikeObject> positionalArgs,
+    public static DelegatePythonIterator map(List<PythonLikeObject> positionalArgs,
             Map<PythonString, PythonLikeObject> keywordArgs, PythonLikeObject instance) {
         PythonLikeFunction function;
         List<PythonLikeObject> iterableList = new ArrayList<>();
@@ -1138,7 +1138,7 @@ public class GlobalBuiltins {
             }
         };
 
-        return new PythonIterator(StreamSupport.stream(
+        return new DelegatePythonIterator(StreamSupport.stream(
                 Spliterators.spliteratorUnknownSize(iteratorIterator, Spliterator.ORDERED),
                 false)
                 .map(element -> function.$call(element, Map.of(), null))
@@ -1395,7 +1395,7 @@ public class GlobalBuiltins {
                 }
             };
 
-            return new PythonIterator(reversedIterator);
+            return new DelegatePythonIterator(reversedIterator);
         }
 
         throw new ValueError(sequenceType + " does not has a __reversed__ method and does not implement the Sequence protocol");
@@ -1569,7 +1569,7 @@ public class GlobalBuiltins {
         return positionalArgs.get(0).$getAttributeOrError("__dict__");
     }
 
-    public static PythonIterator zip(List<PythonLikeObject> positionalArgs,
+    public static DelegatePythonIterator zip(List<PythonLikeObject> positionalArgs,
             Map<PythonString, PythonLikeObject> keywordArgs, PythonLikeObject instance) {
         List<PythonLikeObject> iterableList = positionalArgs;
         boolean isStrict = false;
@@ -1596,7 +1596,7 @@ public class GlobalBuiltins {
 
         if (iteratorList.isEmpty()) {
             // Return an empty iterator if there are no iterators
-            return new PythonIterator(iteratorList.iterator());
+            return new DelegatePythonIterator(iteratorList.iterator());
         }
 
         Iterator<List<PythonLikeObject>> iteratorIterator = new Iterator<List<PythonLikeObject>>() {
@@ -1633,7 +1633,7 @@ public class GlobalBuiltins {
             }
         };
 
-        return new PythonIterator(iteratorIterator);
+        return new DelegatePythonIterator(iteratorIterator);
     }
 
     public static PythonLikeFunction importFunction(PythonInterpreter pythonInterpreter) {

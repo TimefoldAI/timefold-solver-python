@@ -11,7 +11,7 @@ import ai.timefold.jpyinterpreter.types.AbstractPythonLikeObject;
 import ai.timefold.jpyinterpreter.types.BuiltinTypes;
 import ai.timefold.jpyinterpreter.types.PythonLikeType;
 import ai.timefold.jpyinterpreter.types.PythonString;
-import ai.timefold.jpyinterpreter.types.collections.PythonIterator;
+import ai.timefold.jpyinterpreter.types.collections.DelegatePythonIterator;
 import ai.timefold.jpyinterpreter.types.collections.PythonLikeDict;
 import ai.timefold.jpyinterpreter.types.numeric.PythonBoolean;
 import ai.timefold.jpyinterpreter.types.numeric.PythonInteger;
@@ -58,16 +58,16 @@ public class DictValueView extends AbstractPythonLikeObject {
         return PythonInteger.valueOf(valueCollection.size());
     }
 
-    public PythonIterator<PythonLikeObject> getValueIterator() {
-        return new PythonIterator<>(valueCollection.iterator());
+    public DelegatePythonIterator<PythonLikeObject> getValueIterator() {
+        return new DelegatePythonIterator<>(valueCollection.iterator());
     }
 
     public PythonBoolean containsValue(PythonLikeObject value) {
         return PythonBoolean.valueOf(valueCollection.contains(value));
     }
 
-    public PythonIterator<PythonLikeObject> getReversedValueIterator() {
-        return new PythonIterator<>(IteratorUtils.iteratorMap(mapping.reversed(), mapping::get));
+    public DelegatePythonIterator<PythonLikeObject> getReversedValueIterator() {
+        return new DelegatePythonIterator<>(IteratorUtils.iteratorMap(mapping.reversed(), mapping::get));
     }
 
     public PythonString toRepresentation() {

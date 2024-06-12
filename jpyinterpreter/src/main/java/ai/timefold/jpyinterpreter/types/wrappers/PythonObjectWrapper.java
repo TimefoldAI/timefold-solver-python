@@ -7,22 +7,26 @@ import java.util.Map;
 import ai.timefold.jpyinterpreter.CPythonBackedPythonInterpreter;
 import ai.timefold.jpyinterpreter.PythonInterpreter;
 import ai.timefold.jpyinterpreter.PythonLikeObject;
+import ai.timefold.jpyinterpreter.builtins.UnaryDunderBuiltin;
 import ai.timefold.jpyinterpreter.types.CPythonBackedPythonLikeObject;
 import ai.timefold.jpyinterpreter.types.PythonLikeFunction;
 import ai.timefold.jpyinterpreter.types.PythonLikeType;
 import ai.timefold.jpyinterpreter.types.PythonString;
+import ai.timefold.jpyinterpreter.types.collections.PythonIterator;
 import ai.timefold.jpyinterpreter.types.errors.NotImplementedError;
 import ai.timefold.jpyinterpreter.types.numeric.PythonBoolean;
 import ai.timefold.jpyinterpreter.types.numeric.PythonInteger;
 
 public class PythonObjectWrapper extends CPythonBackedPythonLikeObject
         implements PythonLikeObject,
-        PythonLikeFunction, Comparable<PythonObjectWrapper> {
+        PythonLikeFunction, PythonIterator<PythonLikeObject>, Comparable<PythonObjectWrapper> {
 
     private final static PythonLikeType PYTHON_REFERENCE_TYPE =
             new PythonLikeType("python-reference", PythonObjectWrapper.class),
             $TYPE = PYTHON_REFERENCE_TYPE;
     private final Map<String, PythonLikeObject> cachedAttributeMap;
+
+    private PythonLikeObject cachedNext = null;
 
     public PythonObjectWrapper(OpaquePythonReference pythonReference) {
         super(PythonInterpreter.DEFAULT, CPythonType.lookupTypeOfPythonObject(pythonReference), pythonReference);
@@ -129,5 +133,38 @@ public class PythonObjectWrapper extends CPythonBackedPythonLikeObject
         PythonLikeFunction str = (PythonLikeFunction) maybeStr;
         PythonLikeObject result = str.$call(List.of(this), Map.of(), null);
         return result.toString();
+    }
+
+    @Override
+    public PythonLikeObject nextPythonItem() {
+        if (cachedNext != null) {
+            var out = cachedNext;
+            cachedNext = null;
+            return out;
+        }
+        return UnaryDunderBuiltin.NEXT.invoke(this);
+    }
+
+    @Override
+    public PythonIterator<PythonLikeObject> getIterator() {
+        return (PythonIterator<PythonLikeObject>) UnaryDunderBuiltin.ITERATOR.invoke(this);
+    }
+
+    @Override
+    public boolean hasNext() {
+        if (cachedNext != null) {
+            return true;
+        }
+        try {
+            cachedNext = nextPythonItem();
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    @Override
+    public PythonLikeObject next() {
+        return nextPythonItem();
     }
 }

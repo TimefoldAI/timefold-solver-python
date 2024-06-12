@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import ai.timefold.jpyinterpreter.CPythonBackedPythonInterpreter;
 import ai.timefold.jpyinterpreter.PythonInterpreter;
 import ai.timefold.jpyinterpreter.PythonLikeObject;
 import ai.timefold.jpyinterpreter.types.numeric.PythonInteger;
@@ -78,6 +79,10 @@ public class CPythonBackedPythonLikeObject extends AbstractPythonLikeObject impl
     }
 
     public void $writeFieldsToCPythonReference(OpaquePythonReference cloneMap) {
+        for (var attributeEntry : getExtraAttributeMap().entrySet()) {
+            CPythonBackedPythonInterpreter.setAttributeOnPythonReference($cpythonReference, cloneMap, attributeEntry.getKey(),
+                    attributeEntry.getValue());
+        }
     }
 
     @Override
