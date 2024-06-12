@@ -381,12 +381,15 @@ class SolverConfigOverride:
 @dataclass(kw_only=True)
 class SolverManagerConfig:
     """
-    Includes settings to override default Solver configuration.
+    Includes settings to configure a SolverManager.
 
     Attributes
     ----------
-    termination_config: TerminationConfig, optional
-        sets the solver TerminationConfig.
+    parallel_solver_count: int | 'AUTO', optional
+        If set to an integer, the number of parallel jobs that can be run
+        simultaneously.
+        If unset or set to 'AUTO', the number of parallel jobs is determined
+        based on the number of CPU cores available.
     """
     parallel_solver_count: Optional[int | Literal['AUTO']] = field(default=None)
 
