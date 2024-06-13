@@ -5,6 +5,7 @@ import jpype.imports
 from jpype.types import *
 import importlib.resources
 from typing import cast, TypeVar, Callable, Union, TYPE_CHECKING, Any
+from _jpyinterpreter import get_path
 from ._jpype_type_conversions import PythonSupplier, ConstraintProviderFunction, PythonConsumer
 
 if TYPE_CHECKING:
@@ -43,15 +44,15 @@ def extract_timefold_jars() -> list[str]:
     global _enterprise_installed
     try:
 
-        enterprise_dependencies = [str(importlib.resources.path('timefold.solver.enterprise.jars',
-                                                                p.name).__enter__())
+        enterprise_dependencies = [str(get_path('timefold.solver.enterprise.jars',
+                                                p.name).__enter__())
                                    for p in importlib.resources.files('timefold.solver.enterprise.jars').iterdir()
                                    if p.name.endswith(".jar")]
         _enterprise_installed = True
     except ModuleNotFoundError:
         enterprise_dependencies = []
         _enterprise_installed = False
-    return [str(importlib.resources.path('timefold.solver.jars', p.name).__enter__())
+    return [str(get_path('timefold.solver.jars', p.name).__enter__())
             for p in importlib.resources.files('timefold.solver.jars').iterdir()
             if p.name.endswith(".jar")] + enterprise_dependencies
 
