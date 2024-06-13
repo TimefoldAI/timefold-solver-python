@@ -127,13 +127,6 @@ def test_solve():
                       .with_problem_finder(get_problem)).run()
         assert_solver_run(solver_manager, solver_job)
 
-        # Disabled ; Flaky
-        # lock.acquire()
-        # solver_job = (solver_manager.solve_builder()
-        #               .with_problem_id(1)
-        #               .with_problem_finder(get_problem)).run()
-        # assert_problem_change_solver_run(solver_manager, solver_job)
-
         solution_list = []
         semaphore = Semaphore(0)
 
@@ -152,18 +145,6 @@ def test_solve():
         assert len(solution_list) == 1
 
         solution_list = []
-        # Disabled ; Flaky
-        # lock.acquire()
-        # solver_job = (solver_manager.solve_builder()
-        #               .with_problem_id(1)
-        #               .with_problem_finder(get_problem)
-        #               .with_best_solution_consumer(on_best_solution_changed)
-        #               ).run()
-        # assert_problem_change_solver_run(solver_manager, solver_job)
-        # assert semaphore.acquire(timeout=1)
-        # assert len(solution_list) == 1
-
-        solution_list = []
         lock.acquire()
         solver_job = (solver_manager.solve_builder()
                       .with_problem_id(1)
@@ -172,27 +153,12 @@ def test_solve():
                       .with_final_best_solution_consumer(on_best_solution_changed)
                       ).run()
         assert_solver_run(solver_manager, solver_job)
+
         # Wait for 2 acquires, one for best solution consumer,
         # another for final best solution consumer
         assert semaphore.acquire(timeout=1)
         assert semaphore.acquire(timeout=1)
         assert len(solution_list) == 2
-
-        solution_list = []
-        # Disabled ; Flaky
-        # lock.acquire()
-        # solver_job = (solver_manager.solve_builder()
-        #               .with_problem_id(1)
-        #               .with_problem_finder(get_problem)
-        #               .with_best_solution_consumer(on_best_solution_changed)
-        #               .with_final_best_solution_consumer(on_best_solution_changed)
-        #               ).run()
-        # assert_problem_change_solver_run(solver_manager, solver_job)
-        # Wait for 2 acquires, one for best solution consumer,
-        # another for final best solution consumer
-        # assert semaphore.acquire(timeout=1)
-        # assert semaphore.acquire(timeout=1)
-        # assert len(solution_list) == 2
 
 
 @pytest.mark.filterwarnings("ignore:.*Exception in thread.*:pytest.PytestUnhandledThreadExceptionWarning")
