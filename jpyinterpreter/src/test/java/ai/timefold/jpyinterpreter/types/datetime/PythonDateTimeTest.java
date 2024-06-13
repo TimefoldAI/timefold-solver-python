@@ -5,19 +5,21 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import java.time.Duration;
 import java.time.LocalDateTime;
 
+import ai.timefold.jpyinterpreter.types.PythonString;
+
 import org.junit.jupiter.api.Test;
 
 public class PythonDateTimeTest {
     @Test
     public void testIsoFormat() {
         PythonDateTime pythonDateTime = new PythonDateTime(LocalDateTime.of(2002, 3, 11, 1, 30, 45));
-        assertThat(pythonDateTime.iso_format()).isEqualTo("2002-03-11T01:30:45");
+        assertThat(pythonDateTime.iso_format()).isEqualTo(PythonString.valueOf("2002-03-11T01:30:45"));
     }
 
     @Test
     public void testCTime() {
         PythonDateTime pythonDateTime = new PythonDateTime(LocalDateTime.of(2002, 3, 11, 1, 30, 45));
-        assertThat(pythonDateTime.ctime()).isEqualTo("Mon Mar 11 01:30:45 2002");
+        assertThat(pythonDateTime.ctime()).isEqualTo(PythonString.valueOf("Mon Mar 11 01:30:45 2002"));
     }
 
     @Test

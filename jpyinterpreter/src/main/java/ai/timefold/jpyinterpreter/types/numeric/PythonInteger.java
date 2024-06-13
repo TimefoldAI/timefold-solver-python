@@ -161,11 +161,11 @@ public class PythonInteger extends AbstractPythonLikeObject implements PythonNum
 
         // Comparisons
         BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperator.EQUAL,
-                PythonInteger.class.getMethod("equal", PythonLikeObject.class));
+                PythonInteger.class.getMethod("pythonEquals", PythonLikeObject.class));
         BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperator.EQUAL,
-                PythonInteger.class.getMethod("equal", PythonInteger.class));
+                PythonInteger.class.getMethod("pythonEquals", PythonInteger.class));
         BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperator.EQUAL,
-                PythonInteger.class.getMethod("equal", PythonFloat.class));
+                PythonInteger.class.getMethod("pythonEquals", PythonFloat.class));
 
         BuiltinTypes.INT_TYPE.addLeftBinaryMethod(PythonBinaryOperator.NOT_EQUAL,
                 PythonInteger.class.getMethod("notEqual", PythonLikeObject.class));
@@ -648,11 +648,11 @@ public class PythonInteger extends AbstractPythonLikeObject implements PythonNum
         return new PythonInteger(value.xor(other.value));
     }
 
-    public PythonLikeObject equal(PythonLikeObject other) {
+    public PythonLikeObject pythonEquals(PythonLikeObject other) {
         if (other instanceof PythonInteger) {
-            return equal((PythonInteger) other);
+            return pythonEquals((PythonInteger) other);
         } else if (other instanceof PythonFloat) {
-            return equal((PythonFloat) other);
+            return pythonEquals((PythonFloat) other);
         } else {
             return NotImplemented.INSTANCE;
         }
@@ -708,7 +708,7 @@ public class PythonInteger extends AbstractPythonLikeObject implements PythonNum
         }
     }
 
-    public PythonBoolean equal(PythonInteger other) {
+    public PythonBoolean pythonEquals(PythonInteger other) {
         return PythonBoolean.valueOf(value.compareTo(other.value) == 0);
     }
 
@@ -732,7 +732,7 @@ public class PythonInteger extends AbstractPythonLikeObject implements PythonNum
         return PythonBoolean.valueOf(value.compareTo(other.value) >= 0);
     }
 
-    public PythonBoolean equal(PythonFloat other) {
+    public PythonBoolean pythonEquals(PythonFloat other) {
         return PythonBoolean.valueOf(value.doubleValue() == other.value);
     }
 
