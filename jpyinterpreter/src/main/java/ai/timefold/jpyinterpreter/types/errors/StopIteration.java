@@ -49,7 +49,7 @@ public class StopIteration extends PythonException {
      * @return this
      */
     @Override
-    public Throwable fillInStackTrace() {
+    public synchronized Throwable fillInStackTrace() {
         // Do nothing
         return this;
     }
