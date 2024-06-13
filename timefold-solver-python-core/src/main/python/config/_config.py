@@ -1,7 +1,7 @@
 from ..score import ConstraintFactory, Constraint, IncrementalScoreCalculator
 from .._timefold_java_interop import is_enterprise_installed
 
-from typing import Any, Optional, Callable, TypeVar, Generic, TYPE_CHECKING
+from typing import Any, Optional, Callable, TypeVar, Generic, Literal, TYPE_CHECKING
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
@@ -378,6 +378,29 @@ class SolverConfigOverride:
         return out
 
 
+@dataclass(kw_only=True)
+class SolverManagerConfig:
+    """
+    Includes settings to configure a SolverManager.
+
+    Attributes
+    ----------
+    parallel_solver_count: int | 'AUTO', optional
+        If set to an integer, the number of parallel jobs that can be run
+        simultaneously.
+        If unset or set to 'AUTO', the number of parallel jobs is determined
+        based on the number of CPU cores available.
+    """
+    parallel_solver_count: Optional[int | Literal['AUTO']] = field(default=None)
+
+    def _to_java_solver_manager_config(self):
+        from ai.timefold.solver.core.config.solver import SolverManagerConfig as JavaSolverManagerConfig
+        out = JavaSolverManagerConfig()
+        if self.parallel_solver_count is not None:
+            out = out.withParallelSolverCount(str(self.parallel_solver_count))
+        return out
+
+
 __all__ = ['Duration', 'EnvironmentMode', 'TerminationCompositionStyle',
-           'RequiresEnterpriseError', 'MoveThreadCount',
+           'RequiresEnterpriseError', 'MoveThreadCount', 'SolverManagerConfig',
            'SolverConfig', 'SolverConfigOverride', 'ScoreDirectorFactoryConfig', 'TerminationConfig']

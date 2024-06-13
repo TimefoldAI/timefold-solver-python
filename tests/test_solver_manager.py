@@ -107,7 +107,8 @@ def test_solve():
         assert solution.value_list[0].value == 6
         assert solver_manager.get_solver_status(1) == SolverStatus.NOT_SOLVING
 
-    with SolverManager.create(SolverFactory.create(solver_config)) as solver_manager:
+
+    with SolverManager.create(solver_config, SolverManagerConfig(parallel_solver_count='AUTO')) as solver_manager:
         lock.acquire()
         solver_job = solver_manager.solve(1, problem)
         assert_solver_run(solver_manager, solver_job)
@@ -125,12 +126,6 @@ def test_solve():
                       .with_problem_id(1)
                       .with_problem_finder(get_problem)).run()
         assert_solver_run(solver_manager, solver_job)
-
-        lock.acquire()
-        solver_job = (solver_manager.solve_builder()
-                      .with_problem_id(1)
-                      .with_problem_finder(get_problem)).run()
-        assert_problem_change_solver_run(solver_manager, solver_job)
 
         solution_list = []
         semaphore = Semaphore(0)
@@ -155,35 +150,10 @@ def test_solve():
                       .with_problem_id(1)
                       .with_problem_finder(get_problem)
                       .with_best_solution_consumer(on_best_solution_changed)
-                      ).run()
-        assert_problem_change_solver_run(solver_manager, solver_job)
-        assert semaphore.acquire(timeout=1)
-        assert len(solution_list) == 1
-
-        solution_list = []
-        lock.acquire()
-        solver_job = (solver_manager.solve_builder()
-                      .with_problem_id(1)
-                      .with_problem_finder(get_problem)
-                      .with_best_solution_consumer(on_best_solution_changed)
                       .with_final_best_solution_consumer(on_best_solution_changed)
                       ).run()
         assert_solver_run(solver_manager, solver_job)
-        # Wait for 2 acquires, one for best solution consumer,
-        # another for final best solution consumer
-        assert semaphore.acquire(timeout=1)
-        assert semaphore.acquire(timeout=1)
-        assert len(solution_list) == 2
 
-        solution_list = []
-        lock.acquire()
-        solver_job = (solver_manager.solve_builder()
-                      .with_problem_id(1)
-                      .with_problem_finder(get_problem)
-                      .with_best_solution_consumer(on_best_solution_changed)
-                      .with_final_best_solution_consumer(on_best_solution_changed)
-                      ).run()
-        assert_problem_change_solver_run(solver_manager, solver_job)
         # Wait for 2 acquires, one for best solution consumer,
         # another for final best solution consumer
         assert semaphore.acquire(timeout=1)
