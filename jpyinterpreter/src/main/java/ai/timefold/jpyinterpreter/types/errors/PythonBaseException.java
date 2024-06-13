@@ -65,7 +65,7 @@ public class PythonBaseException extends RuntimeException implements PythonLikeO
     }
 
     @Override
-    public Throwable initCause(Throwable cause) {
+    public synchronized Throwable initCause(Throwable cause) {
         super.initCause(cause);
         if (cause instanceof PythonLikeObject pythonError) {
             $setAttribute("__cause__", pythonError);

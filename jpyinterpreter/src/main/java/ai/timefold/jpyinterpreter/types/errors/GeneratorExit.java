@@ -45,7 +45,7 @@ public class GeneratorExit extends PythonException {
      * @return this
      */
     @Override
-    public Throwable fillInStackTrace() {
+    public synchronized Throwable fillInStackTrace() {
         // Do nothing
         return this;
     }
