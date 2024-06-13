@@ -20,6 +20,7 @@ import ai.timefold.jpyinterpreter.opcodes.descriptor.ExceptionOpDescriptor;
 import ai.timefold.jpyinterpreter.opcodes.descriptor.StackOpDescriptor;
 import ai.timefold.jpyinterpreter.types.PythonLikeType;
 import ai.timefold.jpyinterpreter.types.PythonNone;
+import ai.timefold.jpyinterpreter.types.PythonString;
 import ai.timefold.jpyinterpreter.types.errors.PythonAssertionError;
 import ai.timefold.jpyinterpreter.types.errors.PythonException;
 import ai.timefold.jpyinterpreter.types.errors.PythonTraceback;
@@ -111,15 +112,15 @@ public class ExceptionImplementorTest {
 
         assertThat(javaFunction.apply(0)).isEqualTo(1);
         assertThat(globalsMap.get("exception")).isEqualTo(PythonNone.INSTANCE);
-        assertThat(globalsMap.get("finally")).isEqualTo("Finally");
+        assertThat(globalsMap.get("finally")).isEqualTo(PythonString.valueOf("Finally"));
 
         assertThat(javaFunction.apply(1)).isEqualTo(1);
-        assertThat(globalsMap.get("exception")).isEqualTo("Assert");
-        assertThat(globalsMap.get("finally")).isEqualTo("Finally");
+        assertThat(globalsMap.get("exception")).isEqualTo(PythonString.valueOf("Assert"));
+        assertThat(globalsMap.get("finally")).isEqualTo(PythonString.valueOf("Finally"));
 
         assertThatCode(() -> javaFunction.apply(2)).isInstanceOf(StopIteration.class);
         assertThat(globalsMap.get("exception")).isEqualTo(PythonNone.INSTANCE);
-        assertThat(globalsMap.get("finally")).isEqualTo("Finally");
+        assertThat(globalsMap.get("finally")).isEqualTo(PythonString.valueOf("Finally"));
     }
 
     @Test

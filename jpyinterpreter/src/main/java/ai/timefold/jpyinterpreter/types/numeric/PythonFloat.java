@@ -125,11 +125,11 @@ public class PythonFloat extends AbstractPythonLikeObject implements PythonNumbe
 
         // Comparisons
         BuiltinTypes.FLOAT_TYPE.addLeftBinaryMethod(PythonBinaryOperator.EQUAL,
-                PythonFloat.class.getMethod("equal", PythonLikeObject.class));
+                PythonFloat.class.getMethod("pythonEquals", PythonLikeObject.class));
         BuiltinTypes.FLOAT_TYPE.addLeftBinaryMethod(PythonBinaryOperator.EQUAL,
-                PythonFloat.class.getMethod("equal", PythonInteger.class));
+                PythonFloat.class.getMethod("pythonEquals", PythonInteger.class));
         BuiltinTypes.FLOAT_TYPE.addLeftBinaryMethod(PythonBinaryOperator.EQUAL,
-                PythonFloat.class.getMethod("equal", PythonFloat.class));
+                PythonFloat.class.getMethod("pythonEquals", PythonFloat.class));
         BuiltinTypes.FLOAT_TYPE.addLeftBinaryMethod(PythonBinaryOperator.NOT_EQUAL,
                 PythonFloat.class.getMethod("notEqual", PythonLikeObject.class));
         BuiltinTypes.FLOAT_TYPE.addLeftBinaryMethod(PythonBinaryOperator.NOT_EQUAL,
@@ -550,11 +550,11 @@ public class PythonFloat extends AbstractPythonLikeObject implements PythonNumbe
         return new PythonFloat(Math.pow(value, other.value));
     }
 
-    public PythonLikeObject equal(PythonLikeObject other) {
+    public PythonLikeObject pythonEquals(PythonLikeObject other) {
         if (other instanceof PythonInteger) {
-            return equal((PythonInteger) other);
+            return pythonEquals((PythonInteger) other);
         } else if (other instanceof PythonFloat) {
-            return equal((PythonFloat) other);
+            return pythonEquals((PythonFloat) other);
         } else {
             return NotImplemented.INSTANCE;
         }
@@ -610,7 +610,7 @@ public class PythonFloat extends AbstractPythonLikeObject implements PythonNumbe
         }
     }
 
-    public PythonBoolean equal(PythonInteger other) {
+    public PythonBoolean pythonEquals(PythonInteger other) {
         return PythonBoolean.valueOf(value == other.value.doubleValue());
     }
 
@@ -634,7 +634,7 @@ public class PythonFloat extends AbstractPythonLikeObject implements PythonNumbe
         return PythonBoolean.valueOf(value >= other.value.doubleValue());
     }
 
-    public PythonBoolean equal(PythonFloat other) {
+    public PythonBoolean pythonEquals(PythonFloat other) {
         return PythonBoolean.valueOf(value == other.value);
     }
 
