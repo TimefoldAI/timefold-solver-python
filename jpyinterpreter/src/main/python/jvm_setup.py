@@ -2,13 +2,34 @@ import pathlib
 import jpype
 import jpype.imports
 import importlib.resources
-from typing import List
+import os
+from typing import List, ContextManager
+
+
+def _normalize_path(path):
+    """Normalize a path by ensuring it is a string.
+
+    If the resulting string contains path separators, an exception is raised.
+    """
+    str_path = str(path)
+    parent, file_name = os.path.split(str_path)
+    if parent:
+        raise ValueError(f'{path!r} must be only a file name')
+    return file_name
+
+
+def get_path(package: str, resource: str) -> ContextManager[pathlib.Path]:
+    """
+    Workaround since importlib.resources.path is now deprecated for removal
+    """
+    return importlib.resources.as_file(importlib.resources.files(package) /
+                                       _normalize_path(resource))
 
 
 def extract_python_translator_jars() -> list[str]:
     """Extracts and return a list of the Python Translator Java dependencies
     """
-    return [str(importlib.resources.path('jpyinterpreter.jars', p.name).__enter__())
+    return [str(get_path('jpyinterpreter.jars', p.name).__enter__())
             for p in importlib.resources.files('jpyinterpreter.jars').iterdir()
             if p.name.endswith(".jar")]
 
