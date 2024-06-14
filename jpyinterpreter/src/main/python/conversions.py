@@ -538,7 +538,7 @@ def unwrap_python_like_object(python_like_object, clone_map=None, default=NotImp
     elif isinstance(python_like_object, JavaNotImplemented):
         return clone_map.add_clone(python_like_object, NotImplemented)
     elif isinstance(python_like_object, PythonFloat):
-        return clone_map.add_clone(python_like_object, float(python_like_object.getValue()))
+        return clone_map.add_clone(python_like_object, python_like_object.getValue().doubleValue())
     elif isinstance(python_like_object, PythonString):
         return clone_map.add_clone(python_like_object, python_like_object.getValue())
     elif isinstance(python_like_object, PythonBytes):
