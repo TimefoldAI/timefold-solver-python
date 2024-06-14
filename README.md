@@ -21,7 +21,7 @@ Timefold Solver is *an AI constraint solver for Python* to optimize
 the Vehicle Routing Problem, Employee Rostering, Maintenance Scheduling, Task Assignment, School Timetabling,
 Cloud Optimization, Conference Scheduling, Job Shop Scheduling, Bin Packing and many more planning problems.
 
-Using Timefold Solver in Python is significantly slower than using Timefold Solver in Java or Kotlin.
+Using Timefold Solver in Python is significantly slower than using Timefold Solver in [Java](https://github.com/TimefoldAI/timefold-solver) or Kotlin.
 
 ## Get started with Timefold Solver for Python
 
