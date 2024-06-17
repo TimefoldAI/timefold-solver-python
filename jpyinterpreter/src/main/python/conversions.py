@@ -420,31 +420,31 @@ def convert_to_java_python_like_object(value, instance_map=None):
     elif isinstance(value, tuple):
         out = PythonLikeTuple()
         put_in_instance_map(instance_map, value, out)
-        for item in value:
+        for item in copy(value):
             out.add(convert_to_java_python_like_object(item, instance_map))
         return out
     elif isinstance(value, list):
         out = PythonLikeList()
         put_in_instance_map(instance_map, value, out)
-        for item in value:
+        for item in copy(value):
             out.add(convert_to_java_python_like_object(item, instance_map))
         return out
     elif isinstance(value, set):
         out = PythonLikeSet()
         put_in_instance_map(instance_map, value, out)
-        for item in value:
+        for item in copy(value):
             out.add(convert_to_java_python_like_object(item, instance_map))
         return out
     elif isinstance(value, frozenset):
         out = PythonLikeFrozenSet()
         put_in_instance_map(instance_map, value, out)
-        for item in value:
+        for item in value:  # No copy, frozenset does not change
             out.delegate.add(convert_to_java_python_like_object(item, instance_map))
         return out
     elif isinstance(value, dict):
         out = PythonLikeDict()
         put_in_instance_map(instance_map, value, out)
-        for map_key, map_value in value.items():
+        for map_key, map_value in copy(value).items():
             out.put(convert_to_java_python_like_object(map_key, instance_map),
                     convert_to_java_python_like_object(map_value, instance_map))
         return out
@@ -679,7 +679,7 @@ def unwrap_python_like_object(python_like_object, clone_map=None, default=NotImp
         if python_like_object.getClass() == PythonLikeGenericType:
             return clone_map.add_clone(python_like_object, type)
 
-        for (key, value) in type_to_compiled_java_class.items():
+        for (key, value) in copy(type_to_compiled_java_class).items():
             if value == python_like_object:
                 return clone_map.add_clone(python_like_object, key)
         else:
