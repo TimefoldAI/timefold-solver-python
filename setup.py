@@ -133,7 +133,7 @@ setup(
         'Timefold Homepage': 'https://timefold.ai',
     },
     classifiers=[
-        'Development Status :: 1 - Planning',
+        'Development Status :: 4 - Beta',
         'Programming Language :: Python :: 3',
         'Topic :: Scientific/Engineering :: Artificial Intelligence',
         'Topic :: Software Development :: Libraries :: Java Libraries',
