@@ -74,6 +74,16 @@ class SimpleScore(Score):
     def of(score: int) -> 'SimpleScore':
         return SimpleScore(score, init_score=0)
 
+    @staticmethod
+    def parse(score_text: str) -> 'SimpleScore':
+        if 'init' in score_text:
+            init, score = score_text.split('/')
+        else:
+            init = '0init'
+            score = score_text
+
+        return SimpleScore(int(score), init_score=int(init.rstrip('init')))
+
     def _to_java_score(self):
         if self.init_score < 0:
             return _java_score_mapping_dict['SimpleScore'].ofUninitialized(self.init_score, self.score)
@@ -126,6 +136,17 @@ class HardSoftScore(Score):
     @staticmethod
     def of(hard_score: int, soft_score: int) -> 'HardSoftScore':
         return HardSoftScore(hard_score, soft_score, init_score=0)
+
+    @staticmethod
+    def parse(score_text: str) -> 'HardSoftScore':
+        if 'init' in score_text:
+            init, hard, soft = score_text.split('/')
+        else:
+            init = '0init'
+            hard, soft = score_text.split('/')
+
+        return HardSoftScore(int(hard.rstrip('hard')), int(soft.rstrip('soft')),
+                             init_score=int(init.rstrip('init')))
 
     def _to_java_score(self):
         if self.init_score < 0:
@@ -193,6 +214,17 @@ class HardMediumSoftScore(Score):
     def of(hard_score: int, medium_score: int, soft_score: int) -> 'HardMediumSoftScore':
         return HardMediumSoftScore(hard_score, medium_score, soft_score, init_score=0)
 
+    @staticmethod
+    def parse(score_text: str) -> 'HardMediumSoftScore':
+        if 'init' in score_text:
+            init, hard, medium, soft = score_text.split('/')
+        else:
+            init = '0init'
+            hard, medium, soft = score_text.split('/')
+
+        return HardMediumSoftScore(int(hard.rstrip('hard')), int(medium.rstrip('medium')),
+                                   int(soft.rstrip('soft')), init_score=int(init.rstrip('init')))
+
     def _to_java_score(self):
         if self.init_score < 0:
             return _java_score_mapping_dict['HardMediumSoftScore'].ofUninitialized(self.init_score, self.hard_score,
@@ -239,6 +271,22 @@ class BendableScore(Score):
     def of(hard_scores: tuple[int, ...], soft_scores: tuple[int, ...]) -> 'BendableScore':
         return BendableScore(hard_scores, soft_scores, init_score=0)
 
+    @staticmethod
+    def parse(score_text: str) -> 'BendableScore':
+        if 'init' in score_text:
+            init, hard_score_text, soft_score_text = score_text.split('/[')
+        else:
+            hard_score_text, soft_score_text = score_text.split('/[')
+            # Remove leading [ from hard score text,
+            # since there is no init score in the text
+            # (and thus the split will not consume it)
+            hard_score_text = hard_score_text[1:]
+            init = '0init'
+
+        hard_scores = tuple([int(score) for score in hard_score_text[:hard_score_text.index(']')].split('/')])
+        soft_scores = tuple([int(score) for score in soft_score_text[:soft_score_text.index(']')].split('/')])
+        return BendableScore(hard_scores, soft_scores, init_score=int(init.rstrip('init')))
+
     def _to_java_score(self):
         IntArrayCls = JArray(JInt)
         hard_scores = IntArrayCls(self.hard_scores)
@@ -249,8 +297,10 @@ class BendableScore(Score):
             return _java_score_mapping_dict['BendableScore'].of(hard_scores, soft_scores)
 
     def __str__(self):
-        return (f'{list(self.hard_scores)}hard/{list(self.soft_scores)}soft' if self.is_solution_initialized else
-                f'{self.init_score}init/{list(self.hard_scores)}hard/{list(self.soft_scores)}soft')
+        hard_text = f'{str(list(self.hard_scores)).replace(", ", "/")}hard'
+        soft_text = f'{str(list(self.soft_scores)).replace(", ", "/")}soft'
+        return (f'{hard_text}/{soft_text}' if self.is_solution_initialized else
+                f'{self.init_score}init/{hard_text}/{soft_text}')
 
 
 # Import score conversions here to register conversions (circular import)
