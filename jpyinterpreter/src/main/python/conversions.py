@@ -300,7 +300,7 @@ def convert_object_to_java_python_like_object(value, instance_map=None):
 
         if isinstance(out, AbstractPythonLikeObject):
             try:
-                for (key, value) in object.__getattribute__(value, '__dict__').items():
+                for (key, value) in copy(object.__getattribute__(value, '__dict__')).items():
                     out.setAttribute(key, convert_to_java_python_like_object(value, instance_map))
             except AttributeError:
                 pass
@@ -340,7 +340,7 @@ def convert_object_to_java_python_like_object(value, instance_map=None):
 
             if isinstance(out, AbstractPythonLikeObject):
                 try:
-                    for (key, value) in object.__getattribute__(value, '__dict__').items():
+                    for (key, value) in copy(object.__getattribute__(value, '__dict__')).items():
                         out.setAttribute(key, convert_to_java_python_like_object(value, instance_map))
                 except AttributeError:
                     pass
