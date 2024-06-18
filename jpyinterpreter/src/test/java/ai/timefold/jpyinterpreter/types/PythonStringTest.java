@@ -1,9 +1,9 @@
 package ai.timefold.jpyinterpreter.types;
 
-import org.junit.jupiter.api.Test;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
+
+import org.junit.jupiter.api.Test;
 
 class PythonStringTest {
 
@@ -14,7 +14,7 @@ class PythonStringTest {
     @Test
     void asAsciiBytes() {
         var simple = PythonString.valueOf("abc");
-        assertThat(simple.asAsciiBytes().asByteArray()).isEqualTo(new byte[] { 'a', 'b', 'c'});
+        assertThat(simple.asAsciiBytes().asByteArray()).isEqualTo(new byte[] { 'a', 'b', 'c' });
 
         var unicode = PythonString.valueOf("π");
         // UTF-16 encoding
@@ -28,7 +28,7 @@ class PythonStringTest {
     @Test
     void asAsciiByteArray() {
         var simple = PythonString.valueOf("abc");
-        assertThat(simple.asAsciiByteArray().asByteArray()).isEqualTo(new byte[] { 'a', 'b', 'c'});
+        assertThat(simple.asAsciiByteArray().asByteArray()).isEqualTo(new byte[] { 'a', 'b', 'c' });
 
         var unicode = PythonString.valueOf("π");
         // UTF-16 encoding

@@ -1602,7 +1602,7 @@ public class PythonBytes extends AbstractPythonLikeObject implements PythonBytes
             return this;
         }
         var tail = PythonString.valueOf(asString.value.substring(1))
-                .withModifiedCodepoints(cp -> cp < 128? Character.toLowerCase(cp) : cp).value;
+                .withModifiedCodepoints(cp -> cp < 128 ? Character.toLowerCase(cp) : cp).value;
         var head = asString.value.charAt(0);
         if (head < 128) {
             head = Character.toTitleCase(head);
@@ -1657,8 +1657,7 @@ public class PythonBytes extends AbstractPythonLikeObject implements PythonBytes
 
     public PythonBytes lower() {
         return asAsciiString().withModifiedCodepoints(
-                cp -> cp < 128? Character.toLowerCase(cp) : cp
-        ).asAsciiBytes();
+                cp -> cp < 128 ? Character.toLowerCase(cp) : cp).asAsciiBytes();
     }
 
     public PythonLikeList<PythonBytes> splitLines() {
@@ -1677,13 +1676,7 @@ public class PythonBytes extends AbstractPythonLikeObject implements PythonBytes
 
     public PythonBytes swapCase() {
         return asAsciiString().withModifiedCodepoints(
-                cp -> {
-                    if (cp >= 128) {
-                        return cp;
-                    }
-                    return PythonString.CharacterCase.swapCase(cp);
-                }
-        ).asAsciiBytes();
+                cp -> cp < 128 ? PythonString.CharacterCase.swapCase(cp) : cp).asAsciiBytes();
     }
 
     public PythonBytes title() {
@@ -1692,8 +1685,7 @@ public class PythonBytes extends AbstractPythonLikeObject implements PythonBytes
 
     public PythonBytes upper() {
         return asAsciiString().withModifiedCodepoints(
-                cp -> cp < 128? Character.toUpperCase(cp) : cp
-        ).asAsciiBytes();
+                cp -> cp < 128 ? Character.toUpperCase(cp) : cp).asAsciiBytes();
     }
 
     public PythonBytes zfill(PythonInteger width) {

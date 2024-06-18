@@ -339,7 +339,8 @@ public class PythonByteArray extends AbstractPythonLikeObject implements PythonB
     }
 
     public final PythonLikeTuple asIntTuple() {
-        return IntStream.range(0, valueBuffer.limit()).mapToObj(index -> PythonBytes.BYTE_TO_INT[Byte.toUnsignedInt(valueBuffer.get(index))])
+        return IntStream.range(0, valueBuffer.limit())
+                .mapToObj(index -> PythonBytes.BYTE_TO_INT[Byte.toUnsignedInt(valueBuffer.get(index))])
                 .collect(Collectors.toCollection(PythonLikeTuple::new));
     }
 
@@ -1829,7 +1830,7 @@ public class PythonByteArray extends AbstractPythonLikeObject implements PythonB
             return asString.asAsciiByteArray();
         }
         var tail = PythonString.valueOf(asString.value.substring(1))
-                .withModifiedCodepoints(cp -> cp < 128? Character.toLowerCase(cp) : cp).value;
+                .withModifiedCodepoints(cp -> cp < 128 ? Character.toLowerCase(cp) : cp).value;
         var head = asString.value.charAt(0);
         if (head < 128) {
             head = Character.toTitleCase(head);
@@ -1885,8 +1886,7 @@ public class PythonByteArray extends AbstractPythonLikeObject implements PythonB
 
     public PythonByteArray lower() {
         return asAsciiString().withModifiedCodepoints(
-                cp -> cp < 128? Character.toLowerCase(cp) : cp
-        ).asAsciiByteArray();
+                cp -> cp < 128 ? Character.toLowerCase(cp) : cp).asAsciiByteArray();
     }
 
     public PythonLikeList<PythonByteArray> splitLines() {
@@ -1905,13 +1905,7 @@ public class PythonByteArray extends AbstractPythonLikeObject implements PythonB
 
     public PythonByteArray swapCase() {
         return asAsciiString().withModifiedCodepoints(
-                cp -> {
-                    if (cp >= 128) {
-                        return cp;
-                    }
-                    return PythonString.CharacterCase.swapCase(cp);
-                }
-        ).asAsciiByteArray();
+                cp -> cp < 128 ? PythonString.CharacterCase.swapCase(cp) : cp).asAsciiByteArray();
     }
 
     public PythonByteArray title() {
@@ -1920,8 +1914,7 @@ public class PythonByteArray extends AbstractPythonLikeObject implements PythonB
 
     public PythonByteArray upper() {
         return asAsciiString().withModifiedCodepoints(
-                cp -> cp < 128? Character.toUpperCase(cp) : cp
-        ).asAsciiByteArray();
+                cp -> cp < 128 ? Character.toUpperCase(cp) : cp).asAsciiByteArray();
     }
 
     public PythonByteArray zfill(PythonInteger width) {
