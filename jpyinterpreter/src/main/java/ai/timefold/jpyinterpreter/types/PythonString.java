@@ -1057,7 +1057,7 @@ public class PythonString extends AbstractPythonLikeObject implements PythonLike
         }
     }
 
-    private enum CharacterCase {
+    enum CharacterCase {
         UNCASED,
         LOWER,
         UPPER;

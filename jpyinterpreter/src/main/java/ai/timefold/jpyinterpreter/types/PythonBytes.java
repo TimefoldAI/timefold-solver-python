@@ -1681,10 +1681,7 @@ public class PythonBytes extends AbstractPythonLikeObject implements PythonBytes
                     if (cp >= 128) {
                         return cp;
                     }
-                    if (Character.isLowerCase(cp)) {
-                        return Character.toUpperCase(cp);
-                    }
-                    return Character.toLowerCase(cp);
+                    return PythonString.CharacterCase.swapCase(cp);
                 }
         ).asAsciiBytes();
     }
