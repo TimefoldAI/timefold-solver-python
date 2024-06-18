@@ -167,10 +167,10 @@ class MoveThreadCount(Enum):
 
 class RequiresEnterpriseError(EnvironmentError):
     def __init__(self, feature):
-        super().__init__(f'Feature {feature} requires timefold-solver-enterprise to be installed. '
+        super().__init__(f'Feature {feature} requires timefold-enterprise to be installed. '
                          f'See https://docs.timefold.ai/timefold-solver/latest/enterprise-edition/'
                          f'enterprise-edition#switchToEnterpriseEdition for instructions on how to '
-                         f'install timefold-solver-enterprise.')
+                         f'install timefold-enterprise.')
 
 
 Solution_ = TypeVar('Solution_')

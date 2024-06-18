@@ -19,7 +19,7 @@ check out [_Timefold Solver Enterprise Edition_](https://timefold.ai/pricing).
 
 To see Timefold Solver in action, check out [the quickstarts](https://github.com/TimefoldAI/timefold-quickstarts).
 
-Add `timefold-solver=={{projectVersion}}` to your `requirements.txt` or `pip install timefold-solver=={{projectVersion}}` file to get started.
+Add `timefold=={{projectVersion}}` to your `requirements.txt` or `pip install timefold=={{projectVersion}}` file to get started.
 
 # Additional notes
 

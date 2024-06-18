@@ -120,7 +120,7 @@ long_description = (this_directory / "README.md").read_text()
 timefold_solver_python_version = '999-dev0'
 
 setup(
-    name='timefold-solver',
+    name='timefold',
     version=timefold_solver_python_version,
     license='Apache License Version 2.0',
     license_file='LICENSE.txt',
