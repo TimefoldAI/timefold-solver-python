@@ -1,8 +1,10 @@
 package ai.timefold.jpyinterpreter;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 import ai.timefold.jpyinterpreter.types.PythonLikeType;
 
@@ -31,4 +33,23 @@ public record TypeHint(PythonLikeType type, List<AnnotationMetadata> annotationL
         return new TypeHint(type, Collections.emptyList());
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof TypeHint typeHint)) {
+            return false;
+        }
+        return Objects.equals(type, typeHint.type) && Objects.deepEquals(genericArgs,
+                typeHint.genericArgs)
+                && Objects.equals(javaGetterType,
+                        typeHint.javaGetterType)
+                && Objects.equals(annotationList, typeHint.annotationList);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(type, annotationList, Arrays.hashCode(genericArgs), javaGetterType);
+    }
 }
