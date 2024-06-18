@@ -28,7 +28,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: pypi
-      url: https://pypi.org/p/timefold-solver
+      url: https://pypi.org/p/timefold
     permissions:
       contents: write  # IMPORTANT: required for action to create release branch
       pull-requests: write # IMPORTANT: so release PR can be created

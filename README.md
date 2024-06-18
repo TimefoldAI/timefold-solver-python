@@ -2,7 +2,7 @@
 
 # Timefold Solver for Python
 
-[![PyPI](https://img.shields.io/pypi/v/timefold-solver?style=for-the-badge& "PyPI")](https://pypi.org/project/timefold-solver/)
+[![PyPI](https://img.shields.io/pypi/v/timefold?style=for-the-badge& "PyPI")](https://pypi.org/project/timefold/)
 [![License](https://img.shields.io/github/license/TimefoldAI/timefold-solver-python?style=for-the-badge&logo=apache)](https://www.apache.org/licenses/LICENSE-2.0)
 [![JVM support](https://img.shields.io/badge/Java-17+-brightgreen.svg?style=for-the-badge)](https://sdkman.io)
 [![Python support](https://img.shields.io/badge/Python-3.10+-brightgreen.svg?style=for-the-badge)](https://www.python.org/downloads)
