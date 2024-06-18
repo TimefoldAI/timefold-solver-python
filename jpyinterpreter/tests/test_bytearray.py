@@ -547,6 +547,7 @@ def test_capitalize():
     capitalize_verifier.verify(bytearray(b'hello world'), expected_result=bytearray(b'Hello world'))
     capitalize_verifier.verify(bytearray(b'Hello World'), expected_result=bytearray(b'Hello world'))
     capitalize_verifier.verify(bytearray(b'HELLO WORLD'), expected_result=bytearray(b'Hello world'))
+    capitalize_verifier.verify(bytearray('π'.encode()), expected_result=bytearray('π'.encode()))
 
 
 def test_center():
@@ -915,6 +916,7 @@ def test_lower():
     lower_verifier.verify(bytearray(b'[]'), expected_result=bytearray(b'[]'))
     lower_verifier.verify(bytearray(b'-'), expected_result=bytearray(b'-'))
     lower_verifier.verify(bytearray(b'%'), expected_result=bytearray(b'%'))
+    lower_verifier.verify(bytearray('π'.encode()), expected_result=bytearray('π'.encode()))
     lower_verifier.verify(bytearray(b'\n'), expected_result=bytearray(b'\n'))
     lower_verifier.verify(bytearray(b'\t'), expected_result=bytearray(b'\t'))
     lower_verifier.verify(bytearray(b' '), expected_result=bytearray(b' '))
@@ -1273,6 +1275,7 @@ def test_swapcase():
     swapcase_verifier.verify(bytearray(b'[]'), expected_result=bytearray(b'[]'))
     swapcase_verifier.verify(bytearray(b'-'), expected_result=bytearray(b'-'))
     swapcase_verifier.verify(bytearray(b'%'), expected_result=bytearray(b'%'))
+    swapcase_verifier.verify(bytearray('π'.encode()), expected_result=bytearray('π'.encode()))
     swapcase_verifier.verify(bytearray(b'\n'), expected_result=bytearray(b'\n'))
     swapcase_verifier.verify(bytearray(b'\t'), expected_result=bytearray(b'\t'))
     swapcase_verifier.verify(bytearray(b' '), expected_result=bytearray(b' '))
@@ -1297,6 +1300,7 @@ def test_title():
     title_verifier.verify(bytearray(b'[]'), expected_result=bytearray(b'[]'))
     title_verifier.verify(bytearray(b'-'), expected_result=bytearray(b'-'))
     title_verifier.verify(bytearray(b'%'), expected_result=bytearray(b'%'))
+    title_verifier.verify(bytearray('π'.encode()), expected_result=bytearray('π'.encode()))
     title_verifier.verify(bytearray(b'\n'), expected_result=bytearray(b'\n'))
     title_verifier.verify(bytearray(b'\t'), expected_result=bytearray(b'\t'))
     title_verifier.verify(bytearray(b' '), expected_result=bytearray(b' '))

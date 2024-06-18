@@ -279,6 +279,7 @@ def test_capitalize():
     capitalize_verifier.verify(b'hello world', expected_result=b'Hello world')
     capitalize_verifier.verify(b'Hello World', expected_result=b'Hello world')
     capitalize_verifier.verify(b'HELLO WORLD', expected_result=b'Hello world')
+    capitalize_verifier.verify('π'.encode(), expected_result='π'.encode())
 
 
 def test_center():
@@ -647,6 +648,7 @@ def test_lower():
     lower_verifier.verify(b'[]', expected_result=b'[]')
     lower_verifier.verify(b'-', expected_result=b'-')
     lower_verifier.verify(b'%', expected_result=b'%')
+    lower_verifier.verify('π'.encode(), expected_result='π'.encode())
     lower_verifier.verify(b'\n', expected_result=b'\n')
     lower_verifier.verify(b'\t', expected_result=b'\t')
     lower_verifier.verify(b' ', expected_result=b' ')
@@ -1005,6 +1007,7 @@ def test_swapcase():
     swapcase_verifier.verify(b'[]', expected_result=b'[]')
     swapcase_verifier.verify(b'-', expected_result=b'-')
     swapcase_verifier.verify(b'%', expected_result=b'%')
+    swapcase_verifier.verify('π'.encode(), expected_result='π'.encode())
     swapcase_verifier.verify(b'\n', expected_result=b'\n')
     swapcase_verifier.verify(b'\t', expected_result=b'\t')
     swapcase_verifier.verify(b' ', expected_result=b' ')
@@ -1029,6 +1032,7 @@ def test_title():
     title_verifier.verify(b'[]', expected_result=b'[]')
     title_verifier.verify(b'-', expected_result=b'-')
     title_verifier.verify(b'%', expected_result=b'%')
+    title_verifier.verify('π'.encode(), expected_result='π'.encode())
     title_verifier.verify(b'\n', expected_result=b'\n')
     title_verifier.verify(b'\t', expected_result=b'\t')
     title_verifier.verify(b' ', expected_result=b' ')
@@ -1061,6 +1065,7 @@ def test_upper():
     upper_verifier.verify(b'[]', expected_result=b'[]')
     upper_verifier.verify(b'-', expected_result=b'-')
     upper_verifier.verify(b'%', expected_result=b'%')
+    upper_verifier.verify('π'.encode(), expected_result='π'.encode())
     upper_verifier.verify(b'\n', expected_result=b'\n')
     upper_verifier.verify(b'\t', expected_result=b'\t')
     upper_verifier.verify(b' ', expected_result=b' ')

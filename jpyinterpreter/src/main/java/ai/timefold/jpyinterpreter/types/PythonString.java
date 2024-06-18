@@ -11,6 +11,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.IntPredicate;
+import java.util.function.IntUnaryOperator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -293,8 +294,9 @@ public class PythonString extends AbstractPythonLikeObject implements PythonLike
                 outIndex++;
             } else {
                 out[outIndex] = (byte) ((charDatum & 0xFF00) >> 8);
+                outIndex++;
                 out[outIndex] = (byte) (charDatum & 0x00FF);
-                outIndex += 2;
+                outIndex++;
             }
         }
         return new PythonBytes(out);
@@ -447,6 +449,10 @@ public class PythonString extends AbstractPythonLikeObject implements PythonLike
     }
 
     public PythonString title() {
+        return title(ignored -> true);
+    }
+
+    public PythonString title(IntPredicate predicate) {
         if (value.isEmpty()) {
             return this;
         }
@@ -458,10 +464,14 @@ public class PythonString extends AbstractPythonLikeObject implements PythonLike
         for (int i = 0; i < length; i++) {
             char character = value.charAt(i);
 
-            if (previousIsWordBoundary) {
-                out.append(Character.toTitleCase(character));
+            if (predicate.test(character)) {
+                if (previousIsWordBoundary) {
+                    out.append(Character.toTitleCase(character));
+                } else {
+                    out.append(Character.toLowerCase(character));
+                }
             } else {
-                out.append(Character.toLowerCase(character));
+                out.append(character);
             }
 
             previousIsWordBoundary = !Character.isAlphabetic(character);
@@ -476,11 +486,7 @@ public class PythonString extends AbstractPythonLikeObject implements PythonLike
     }
 
     public PythonString swapCase() {
-        return PythonString.valueOf(value.codePoints()
-                .map(CharacterCase::swapCase)
-                .collect(StringBuilder::new,
-                        StringBuilder::appendCodePoint, StringBuilder::append)
-                .toString());
+        return withModifiedCodepoints(CharacterCase::swapCase);
     }
 
     public PythonString lower() {
@@ -489,6 +495,14 @@ public class PythonString extends AbstractPythonLikeObject implements PythonLike
 
     public PythonString upper() {
         return PythonString.valueOf(value.toUpperCase());
+    }
+
+    public PythonString withModifiedCodepoints(IntUnaryOperator modifier) {
+        return PythonString.valueOf(value.codePoints()
+                .map(modifier)
+                .collect(StringBuilder::new,
+                        StringBuilder::appendCodePoint, StringBuilder::append)
+                .toString());
     }
 
     public PythonString center(PythonInteger width) {
@@ -1043,7 +1057,7 @@ public class PythonString extends AbstractPythonLikeObject implements PythonLike
         }
     }
 
-    private enum CharacterCase {
+    enum CharacterCase {
         UNCASED,
         LOWER,
         UPPER;
