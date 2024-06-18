@@ -52,4 +52,14 @@ public record TypeHint(PythonLikeType type, List<AnnotationMetadata> annotationL
     public int hashCode() {
         return Objects.hash(type, annotationList, Arrays.hashCode(genericArgs), javaGetterType);
     }
+
+    @Override
+    public String toString() {
+        return "TypeHint{" +
+                "type=" + type +
+                ", annotationList=" + annotationList +
+                ", genericArgs=" + Arrays.toString(genericArgs) +
+                ", javaGetterType=" + javaGetterType +
+                '}';
+    }
 }
