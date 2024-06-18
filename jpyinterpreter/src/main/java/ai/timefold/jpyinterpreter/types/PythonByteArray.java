@@ -339,7 +339,7 @@ public class PythonByteArray extends AbstractPythonLikeObject implements PythonB
     }
 
     public final PythonLikeTuple asIntTuple() {
-        return IntStream.range(0, valueBuffer.limit()).mapToObj(index -> PythonBytes.BYTE_TO_INT[valueBuffer.get(index) & 0xFF])
+        return IntStream.range(0, valueBuffer.limit()).mapToObj(index -> PythonBytes.BYTE_TO_INT[Byte.toUnsignedInt(valueBuffer.get(index))])
                 .collect(Collectors.toCollection(PythonLikeTuple::new));
     }
 
@@ -364,7 +364,7 @@ public class PythonByteArray extends AbstractPythonLikeObject implements PythonB
             throw new IndexError("position " + position + " is less than 0");
         }
 
-        return PythonBytes.BYTE_TO_INT[valueBuffer.get(index) & 0xFF];
+        return PythonBytes.BYTE_TO_INT[Byte.toUnsignedInt(valueBuffer.get(index))];
     }
 
     public PythonByteArray getSubsequence(PythonSlice slice) {
@@ -435,7 +435,7 @@ public class PythonByteArray extends AbstractPythonLikeObject implements PythonB
 
     public DelegatePythonIterator<PythonInteger> getIterator() {
         return new DelegatePythonIterator<>(IntStream.range(0, valueBuffer.limit())
-                .mapToObj(index -> PythonBytes.BYTE_TO_INT[valueBuffer.get(index)])
+                .mapToObj(index -> PythonBytes.BYTE_TO_INT[Byte.toUnsignedInt(valueBuffer.get(index))])
                 .iterator());
     }
 
@@ -707,7 +707,7 @@ public class PythonByteArray extends AbstractPythonLikeObject implements PythonB
         if (valueBuffer.limit() == 0) {
             throw new IndexError("pop from empty bytearray");
         }
-        PythonInteger out = PythonBytes.BYTE_TO_INT[valueBuffer.get(valueBuffer.limit() - 1) & 0xFF];
+        PythonInteger out = PythonBytes.BYTE_TO_INT[Byte.toUnsignedInt(valueBuffer.get(valueBuffer.limit() - 1))];
         valueBuffer.limit(valueBuffer.limit() - 1);
         return out;
     }
@@ -721,7 +721,7 @@ public class PythonByteArray extends AbstractPythonLikeObject implements PythonB
         if (indexAsInt < 0 || indexAsInt > valueBuffer.limit()) {
             throw new IndexError("index out of range for bytearray");
         }
-        PythonInteger out = PythonBytes.BYTE_TO_INT[valueBuffer.get(indexAsInt) & 0xFF];
+        PythonInteger out = PythonBytes.BYTE_TO_INT[Byte.toUnsignedInt(valueBuffer.get(indexAsInt))];
         removeBytesStartingAt(indexAsInt, 1);
         return out;
     }
@@ -1824,7 +1824,17 @@ public class PythonByteArray extends AbstractPythonLikeObject implements PythonB
     }
 
     public PythonByteArray capitalize() {
-        return asAsciiString().capitalize().asAsciiByteArray();
+        var asString = asAsciiString();
+        if (asString.value.isEmpty()) {
+            return asString.asAsciiByteArray();
+        }
+        var tail = PythonString.valueOf(asString.value.substring(1))
+                .withModifiedCodepoints(cp -> cp < 128? Character.toLowerCase(cp) : cp).value;
+        var head = asString.value.charAt(0);
+        if (head < 128) {
+            head = Character.toTitleCase(head);
+        }
+        return (PythonString.valueOf(head + tail)).asAsciiByteArray();
     }
 
     public PythonByteArray expandTabs() {
@@ -1874,7 +1884,9 @@ public class PythonByteArray extends AbstractPythonLikeObject implements PythonB
     }
 
     public PythonByteArray lower() {
-        return asAsciiString().lower().asAsciiByteArray();
+        return asAsciiString().withModifiedCodepoints(
+                cp -> cp < 128? Character.toLowerCase(cp) : cp
+        ).asAsciiByteArray();
     }
 
     public PythonLikeList<PythonByteArray> splitLines() {
@@ -1892,15 +1904,27 @@ public class PythonByteArray extends AbstractPythonLikeObject implements PythonB
     }
 
     public PythonByteArray swapCase() {
-        return asAsciiString().swapCase().asAsciiByteArray();
+        return asAsciiString().withModifiedCodepoints(
+                cp -> {
+                    if (cp >= 128) {
+                        return cp;
+                    }
+                    if (Character.isLowerCase(cp)) {
+                        return Character.toUpperCase(cp);
+                    }
+                    return Character.toLowerCase(cp);
+                }
+        ).asAsciiByteArray();
     }
 
     public PythonByteArray title() {
-        return asAsciiString().title().asAsciiByteArray();
+        return asAsciiString().title(cp -> cp < 128).asAsciiByteArray();
     }
 
     public PythonByteArray upper() {
-        return asAsciiString().upper().asAsciiByteArray();
+        return asAsciiString().withModifiedCodepoints(
+                cp -> cp < 128? Character.toUpperCase(cp) : cp
+        ).asAsciiByteArray();
     }
 
     public PythonByteArray zfill(PythonInteger width) {
