@@ -3,20 +3,25 @@ updates:
 - package-ecosystem: maven
   directory: "/"
   schedule:
-    interval: daily
-    time: '03:00'
+    interval: weekly
+    time: '05:00'
   open-pull-requests-limit: 10
   target-branch: "main"
   commit-message:
-    prefix: "[bot]"
+    prefix: "deps: "
 
 - package-ecosystem: pip
   directory: "/"
   schedule:
-    interval: daily
-    time: '03:00'
+    interval: weekly
+    time: '05:00'
   open-pull-requests-limit: 10
   target-branch: "main"
   commit-message:
-    prefix: "[bot]"
+    prefix: "deps: "
 
+- package-ecosystem: "github-actions"
+  directory: "/"
+  schedule:
+    interval: weekly
+    time: '05:00' # Otherwise it picks a random time.
