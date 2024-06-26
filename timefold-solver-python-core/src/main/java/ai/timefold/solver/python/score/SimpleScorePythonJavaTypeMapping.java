@@ -8,9 +8,9 @@ import ai.timefold.jpyinterpreter.PythonLikeObject;
 import ai.timefold.jpyinterpreter.types.PythonJavaTypeMapping;
 import ai.timefold.jpyinterpreter.types.PythonLikeType;
 import ai.timefold.jpyinterpreter.types.numeric.PythonInteger;
-import ai.timefold.solver.core.api.score.buildin.simple.SimpleScore;
+import ai.timefold.solver.core.api.score.buildin.simplelong.SimpleLongScore;
 
-public final class SimpleScorePythonJavaTypeMapping implements PythonJavaTypeMapping<PythonLikeObject, SimpleScore> {
+public final class SimpleScorePythonJavaTypeMapping implements PythonJavaTypeMapping<PythonLikeObject, SimpleLongScore> {
     private final PythonLikeType type;
     private final Constructor<?> constructor;
     private final Field initScoreField;
@@ -31,12 +31,12 @@ public final class SimpleScorePythonJavaTypeMapping implements PythonJavaTypeMap
     }
 
     @Override
-    public Class<? extends SimpleScore> getJavaType() {
-        return SimpleScore.class;
+    public Class<? extends SimpleLongScore> getJavaType() {
+        return SimpleLongScore.class;
     }
 
     @Override
-    public PythonLikeObject toPythonObject(SimpleScore javaObject) {
+    public PythonLikeObject toPythonObject(SimpleLongScore javaObject) {
         try {
             var instance = constructor.newInstance();
             initScoreField.set(instance, PythonInteger.valueOf(javaObject.initScore()));
@@ -48,14 +48,14 @@ public final class SimpleScorePythonJavaTypeMapping implements PythonJavaTypeMap
     }
 
     @Override
-    public SimpleScore toJavaObject(PythonLikeObject pythonObject) {
+    public SimpleLongScore toJavaObject(PythonLikeObject pythonObject) {
         try {
             var initScore = ((PythonInteger) initScoreField.get(pythonObject)).value.intValue();
-            var score = ((PythonInteger) scoreField.get(pythonObject)).value.intValue();
+            var score = ((PythonInteger) scoreField.get(pythonObject)).value.longValue();
             if (initScore == 0) {
-                return SimpleScore.of(score);
+                return SimpleLongScore.of(score);
             } else {
-                return SimpleScore.ofUninitialized(initScore, score);
+                return SimpleLongScore.ofUninitialized(initScore, score);
             }
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);

@@ -558,6 +558,31 @@ def test_custom_justifications():
     assert len(justifications) == 0
 
 
+def test_long_scores():
+    @constraint_provider
+    def define_constraints(constraint_factory: ConstraintFactory):
+        return [
+            constraint_factory.for_each(Entity)
+            .reward(SimpleScore.ONE, lambda e: e.value.number)
+            .as_constraint('Maximize value')
+        ]
+
+    score_manager = create_score_manager(define_constraints)
+    entity_a: Entity = Entity('A')
+    entity_b: Entity = Entity('B')
+
+    # Overflow an int
+    value_1 = Value(3_000_000_000)
+    value_2 = Value(6_000_000_000)
+
+    entity_a.value = value_1
+    entity_b.value = value_2
+
+    problem = Solution([entity_a, entity_b], [value_1, value_2])
+
+    assert score_manager.explain(problem).score == SimpleScore.of(9_000_000_000)
+
+
 ignored_python_functions = {
     '_call_comparison_java_joiner',
     '__init__',

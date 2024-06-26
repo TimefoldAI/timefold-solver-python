@@ -3,7 +3,7 @@ package ai.timefold.solver.python.score;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 import ai.timefold.jpyinterpreter.types.numeric.PythonInteger;
-import ai.timefold.solver.core.api.score.buildin.bendable.BendableScore;
+import ai.timefold.solver.core.api.score.buildin.bendablelong.BendableLongScore;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,12 +23,12 @@ class BendableScorePythonJavaTypeMappingTest {
 
     @Test
     void getJavaType() {
-        assertThat(typeMapping.getJavaType()).isEqualTo(BendableScore.class);
+        assertThat(typeMapping.getJavaType()).isEqualTo(BendableLongScore.class);
     }
 
     @Test
     void toPythonObject() {
-        var initializedScore = BendableScore.of(new int[] { 10, 20, 30 }, new int[] { 4, 5 });
+        var initializedScore = BendableLongScore.of(new long[] { 10, 20, 30 }, new long[] { 4, 5 });
 
         var initializedPythonScore = (PythonBendableScore) typeMapping.toPythonObject(initializedScore);
 
@@ -43,7 +43,7 @@ class BendableScorePythonJavaTypeMappingTest {
         assertThat(initializedPythonScore.soft_scores.get(0)).isEqualTo(PythonInteger.valueOf(4));
         assertThat(initializedPythonScore.soft_scores.get(1)).isEqualTo(PythonInteger.valueOf(5));
 
-        var uninitializedScore = BendableScore.ofUninitialized(-300, new int[] { 10, 20, 30 }, new int[] { 4, 5 });
+        var uninitializedScore = BendableLongScore.ofUninitialized(-300, new long[] { 10, 20, 30 }, new long[] { 4, 5 });
         var uninitializedPythonScore = (PythonBendableScore) typeMapping.toPythonObject(uninitializedScore);
 
         assertThat(uninitializedPythonScore.init_score).isEqualTo(PythonInteger.valueOf(-300));

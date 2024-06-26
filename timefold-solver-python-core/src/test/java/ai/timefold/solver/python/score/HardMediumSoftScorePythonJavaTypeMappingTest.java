@@ -3,7 +3,7 @@ package ai.timefold.solver.python.score;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 import ai.timefold.jpyinterpreter.types.numeric.PythonInteger;
-import ai.timefold.solver.core.api.score.buildin.hardmediumsoft.HardMediumSoftScore;
+import ai.timefold.solver.core.api.score.buildin.hardmediumsoftlong.HardMediumSoftLongScore;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,12 +23,12 @@ class HardMediumSoftScorePythonJavaTypeMappingTest {
 
     @Test
     void getJavaType() {
-        assertThat(typeMapping.getJavaType()).isEqualTo(HardMediumSoftScore.class);
+        assertThat(typeMapping.getJavaType()).isEqualTo(HardMediumSoftLongScore.class);
     }
 
     @Test
     void toPythonObject() {
-        var initializedScore = HardMediumSoftScore.of(300, 20, 1);
+        var initializedScore = HardMediumSoftLongScore.of(300, 20, 1);
 
         var initializedPythonScore = (PythonHardMediumSoftScore) typeMapping.toPythonObject(initializedScore);
 
@@ -37,7 +37,7 @@ class HardMediumSoftScorePythonJavaTypeMappingTest {
         assertThat(initializedPythonScore.medium_score).isEqualTo(PythonInteger.valueOf(20));
         assertThat(initializedPythonScore.soft_score).isEqualTo(PythonInteger.valueOf(1));
 
-        var uninitializedScore = HardMediumSoftScore.ofUninitialized(-4000, 300, 20, 1);
+        var uninitializedScore = HardMediumSoftLongScore.ofUninitialized(-4000, 300, 20, 1);
         var uninitializedPythonScore = (PythonHardMediumSoftScore) typeMapping.toPythonObject(uninitializedScore);
 
         assertThat(uninitializedPythonScore.init_score).isEqualTo(PythonInteger.valueOf(-4000));

@@ -1,10 +1,9 @@
 package ai.timefold.solver.python.score;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.junit.jupiter.api.Assertions.*;
 
 import ai.timefold.jpyinterpreter.types.numeric.PythonInteger;
-import ai.timefold.solver.core.api.score.buildin.simple.SimpleScore;
+import ai.timefold.solver.core.api.score.buildin.simplelong.SimpleLongScore;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -24,19 +23,19 @@ class SimpleScorePythonJavaTypeMappingTest {
 
     @Test
     void getJavaType() {
-        assertThat(typeMapping.getJavaType()).isEqualTo(SimpleScore.class);
+        assertThat(typeMapping.getJavaType()).isEqualTo(SimpleLongScore.class);
     }
 
     @Test
     void toPythonObject() {
-        var initializedScore = SimpleScore.of(10);
+        var initializedScore = SimpleLongScore.of(10);
 
         var initializedPythonScore = (PythonSimpleScore) typeMapping.toPythonObject(initializedScore);
 
         assertThat(initializedPythonScore.init_score).isEqualTo(PythonInteger.ZERO);
         assertThat(initializedPythonScore.score).isEqualTo(PythonInteger.valueOf(10));
 
-        var uninitializedScore = SimpleScore.ofUninitialized(-5, 20);
+        var uninitializedScore = SimpleLongScore.ofUninitialized(-5, 20);
         var uninitializedPythonScore = (PythonSimpleScore) typeMapping.toPythonObject(uninitializedScore);
 
         assertThat(uninitializedPythonScore.init_score).isEqualTo(PythonInteger.valueOf(-5));

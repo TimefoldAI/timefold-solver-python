@@ -1,8 +1,9 @@
 from .._jpype_type_conversions import (_convert_to_java_compatible_object, PythonFunction, PythonBiFunction,
                                        PythonTriFunction, PythonQuadFunction, PythonPentaFunction, PythonToIntFunction,
                                        PythonToIntBiFunction, PythonToIntTriFunction, PythonToIntQuadFunction,
-                                       PythonPredicate, PythonBiPredicate, PythonTriPredicate, PythonQuadPredicate,
-                                       PythonPentaPredicate)
+                                       PythonToLongFunction, PythonToLongBiFunction, PythonToLongTriFunction,
+                                       PythonToLongQuadFunction, PythonPredicate, PythonBiPredicate,
+                                       PythonTriPredicate, PythonQuadPredicate, PythonPentaPredicate)
 from _jpyinterpreter import translate_python_bytecode_to_java_bytecode, check_current_python_version_supported
 import jpype.imports  # noqa
 from jpype import JImplements, JOverride
@@ -205,6 +206,46 @@ def default_to_int_function_cast(function, arg_count):
         raise ValueError(f'Unexpected argument count: {arg_count}')
 
 
+def to_long_function_cast(function, *type_args):
+    arg_count = len(inspect.signature(function).parameters)
+    if len(type_args) != arg_count:
+        raise ValueError(f'Invalid function: expected {len(type_args)} arguments but got {arg_count}')
+
+    if _check_if_type_args_are_python_object_wrappers(type_args):
+        return default_to_long_function_cast(function, arg_count)
+
+    from java.util.function import ToLongFunction, ToLongBiFunction
+    from ai.timefold.solver.core.api.function import ToLongTriFunction, ToLongQuadFunction
+    try:
+        _check_if_bytecode_translation_possible()
+        if arg_count == 1:
+            return translate_python_bytecode_to_java_bytecode(function, ToLongFunction, *type_args)
+        elif arg_count == 2:
+            return translate_python_bytecode_to_java_bytecode(function, ToLongBiFunction, *type_args)
+        elif arg_count == 3:
+            return translate_python_bytecode_to_java_bytecode(function, ToLongTriFunction, *type_args)
+        elif arg_count == 4:
+            return translate_python_bytecode_to_java_bytecode(function, ToLongQuadFunction, *type_args)
+    except:  # noqa
+        return default_to_long_function_cast(function, arg_count)
+
+    raise ValueError(f'Unexpected argument count: {arg_count}')
+
+
+def default_to_long_function_cast(function, arg_count):
+    if arg_count == 1:
+        return PythonToLongFunction(lambda a: _convert_to_java_compatible_object(function(a)))
+    elif arg_count == 2:
+        return PythonToLongBiFunction(lambda a, b: _convert_to_java_compatible_object(function(a, b)))
+    elif arg_count == 3:
+        return PythonToLongTriFunction(lambda a, b, c: _convert_to_java_compatible_object(function(a, b, c)))
+    elif arg_count == 4:
+        return PythonToLongQuadFunction(lambda a, b, c, d: _convert_to_java_compatible_object(function(a, b, c, d)))
+    else:
+        raise ValueError(f'Unexpected argument count: {arg_count}')
+
+
 __all__ = ['predicate_cast',
            'function_cast',
-           'to_int_function_cast']
+           'to_int_function_cast',
+           'to_long_function_cast']

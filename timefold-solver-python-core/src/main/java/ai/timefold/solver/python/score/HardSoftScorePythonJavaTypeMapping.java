@@ -8,9 +8,9 @@ import ai.timefold.jpyinterpreter.PythonLikeObject;
 import ai.timefold.jpyinterpreter.types.PythonJavaTypeMapping;
 import ai.timefold.jpyinterpreter.types.PythonLikeType;
 import ai.timefold.jpyinterpreter.types.numeric.PythonInteger;
-import ai.timefold.solver.core.api.score.buildin.hardsoft.HardSoftScore;
+import ai.timefold.solver.core.api.score.buildin.hardsoftlong.HardSoftLongScore;
 
-public final class HardSoftScorePythonJavaTypeMapping implements PythonJavaTypeMapping<PythonLikeObject, HardSoftScore> {
+public final class HardSoftScorePythonJavaTypeMapping implements PythonJavaTypeMapping<PythonLikeObject, HardSoftLongScore> {
     private final PythonLikeType type;
     private final Constructor<?> constructor;
     private final Field initScoreField;
@@ -33,12 +33,12 @@ public final class HardSoftScorePythonJavaTypeMapping implements PythonJavaTypeM
     }
 
     @Override
-    public Class<? extends HardSoftScore> getJavaType() {
-        return HardSoftScore.class;
+    public Class<? extends HardSoftLongScore> getJavaType() {
+        return HardSoftLongScore.class;
     }
 
     @Override
-    public PythonLikeObject toPythonObject(HardSoftScore javaObject) {
+    public PythonLikeObject toPythonObject(HardSoftLongScore javaObject) {
         try {
             var instance = constructor.newInstance();
             initScoreField.set(instance, PythonInteger.valueOf(javaObject.initScore()));
@@ -51,15 +51,15 @@ public final class HardSoftScorePythonJavaTypeMapping implements PythonJavaTypeM
     }
 
     @Override
-    public HardSoftScore toJavaObject(PythonLikeObject pythonObject) {
+    public HardSoftLongScore toJavaObject(PythonLikeObject pythonObject) {
         try {
             var initScore = ((PythonInteger) initScoreField.get(pythonObject)).value.intValue();
-            var hardScore = ((PythonInteger) hardScoreField.get(pythonObject)).value.intValue();
-            var softScore = ((PythonInteger) softScoreField.get(pythonObject)).value.intValue();
+            var hardScore = ((PythonInteger) hardScoreField.get(pythonObject)).value.longValue();
+            var softScore = ((PythonInteger) softScoreField.get(pythonObject)).value.longValue();
             if (initScore == 0) {
-                return HardSoftScore.of(hardScore, softScore);
+                return HardSoftLongScore.of(hardScore, softScore);
             } else {
-                return HardSoftScore.ofUninitialized(initScore, hardScore, softScore);
+                return HardSoftLongScore.ofUninitialized(initScore, hardScore, softScore);
             }
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
