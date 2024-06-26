@@ -3,6 +3,7 @@ from jpype import JClass
 from typing import Callable, Any, Sequence, TypeVar, List, Set, Dict, TYPE_CHECKING, overload
 if TYPE_CHECKING:
     from ai.timefold.solver.core.api.score.stream.common import SequenceChain
+    from ai.timefold.solver.core.api.score.stream.common import LoadBalance
     from ai.timefold.solver.core.api.score.stream.uni import UniConstraintCollector
     from ai.timefold.solver.core.api.score.stream.bi import BiConstraintCollector
     from ai.timefold.solver.core.api.score.stream.tri import TriConstraintCollector
@@ -61,6 +62,14 @@ class CollectAndThenCollector:
     mapping_function: Callable
 
 
+@dataclasses.dataclass
+class LoadBalanceCollector:
+    collector_creator: Callable
+    balanced_item_function: Callable
+    load_function: Callable | None
+    initial_load_function: Callable | None
+
+
 def extract_collector(collector_info, *type_arguments):
     if isinstance(collector_info, NoArgsConstraintCollector):
         return collector_info.collector_creator()
@@ -89,6 +98,15 @@ def extract_collector(collector_info, *type_arguments):
         delegate_collector = extract_collector(collector_info.delegate_collector, *type_arguments)
         mapping_function = function_cast(collector_info.mapping_function, JClass('java.lang.Object'))
         return collector_info.collector_creator(delegate_collector, mapping_function)
+    elif isinstance(collector_info, LoadBalanceCollector):
+        balanced_item_function = function_cast(collector_info.balanced_item_function,  *type_arguments)
+        if collector_info.load_function is None:
+            return collector_info.collector_creator(balanced_item_function)
+        load_function = function_cast(collector_info.load_function,  *type_arguments)
+        if collector_info.initial_load_function is None:
+            return collector_info.collector_creator(balanced_item_function, load_function)
+        initial_load_function = function_cast(collector_info.initial_load_function,  *type_arguments)
+        return collector_info.collector_creator(balanced_item_function, load_function, initial_load_function)
     else:
         raise ValueError(f'Invalid Collector: {collector_info}. '
                          f'Create Collectors via timefold.solver.constraint.ConstraintCollectors.')
@@ -135,6 +153,7 @@ class ConstraintCollectors:
     C = TypeVar('C')
     D = TypeVar('D')
     E = TypeVar('E')
+    Balanced = TypeVar('Balanced')
 
     #  Method return type variables
     A_ = TypeVar('A_')
@@ -142,6 +161,7 @@ class ConstraintCollectors:
     C_ = TypeVar('C_')
     D_ = TypeVar('D_')
     E_ = TypeVar('E_')
+    Balanced_ = TypeVar('Balanced_')
 
     @staticmethod
     def _delegate():
@@ -993,6 +1013,120 @@ class ConstraintCollectors:
         else:
             raise ValueError
 
+    @overload
+    @staticmethod
+    def load_balance(balanced_item_function: Callable[[A], Balanced_]) -> \
+            'UniConstraintCollector[A, Any, LoadBalance[Balanced_]]':
+        ...
+
+    @overload
+    @staticmethod
+    def load_balance(balanced_item_function: Callable[[A], Balanced_], load_function: Callable[[A], int]) -> \
+            'UniConstraintCollector[A, Any, LoadBalance[Balanced_]]':
+        ...
+
+    @overload
+    @staticmethod
+    def load_balance(balanced_item_function: Callable[[A], Balanced_], load_function: Callable[[A], int],
+                     initial_load_function: Callable[[A], int]) -> \
+            'UniConstraintCollector[A, Any, LoadBalance[Balanced_]]':
+        ...
+
+    @overload
+    @staticmethod
+    def load_balance(balanced_item_function: Callable[[A, B], Balanced_]) -> \
+            'BiConstraintCollector[A, B, Any, LoadBalance[Balanced_]]':
+        ...
+
+    @overload
+    @staticmethod
+    def load_balance(balanced_item_function: Callable[[A, B], Balanced_], load_function: Callable[[A, B], int]) -> \
+            'BiConstraintCollector[A, B, Any, LoadBalance[Balanced_]]':
+        ...
+
+    @overload
+    @staticmethod
+    def load_balance(balanced_item_function: Callable[[A, B], Balanced_], load_function: Callable[[A, B], int],
+                     initial_load_function: Callable[[A, B], int]) -> \
+            'BiConstraintCollector[A, B, Any, LoadBalance[Balanced_]]':
+        ...
+
+    @overload
+    @staticmethod
+    def load_balance(balanced_item_function: Callable[[A, B, C], Balanced_]) -> \
+            'TriConstraintCollector[A, B, C, Any, LoadBalance[Balanced_]]':
+        ...
+
+    @overload
+    @staticmethod
+    def load_balance(balanced_item_function: Callable[[A, B, C], Balanced_],
+                     load_function: Callable[[A, B, C], int]) -> \
+            'TriConstraintCollector[A, B, C, Any, LoadBalance[Balanced_]]':
+        ...
+
+    @overload
+    @staticmethod
+    def load_balance(balanced_item_function: Callable[[A, B, C], Balanced_], load_function: Callable[[A, B, C], int],
+                     initial_load_function: Callable[[A, B, C], int]) -> \
+            'TriConstraintCollector[A, B, C, Any, LoadBalance[Balanced_]]':
+        ...
+
+    @overload
+    @staticmethod
+    def load_balance(balanced_item_function: Callable[[A, B, C, D], Balanced_]) -> \
+            'QuadConstraintCollector[A, B, C, D, Any, LoadBalance[Balanced_]]':
+        ...
+
+    @overload
+    @staticmethod
+    def load_balance(balanced_item_function: Callable[[A, B, C, D], Balanced_],
+                     load_function: Callable[[A, B, C, D], int]) -> \
+            'QuadConstraintCollector[A, B, C, D, Any, LoadBalance[Balanced_]]':
+        ...
+
+    @overload
+    @staticmethod
+    def load_balance(balanced_item_function: Callable[[A, B, C, D], Balanced_],
+                     load_function: Callable[[A, B, C, D], int],
+                     initial_load_function: Callable[[A, B, C, D], int]) -> \
+            'QuadConstraintCollector[A, B, C, D, Any, LoadBalance[Balanced_]]':
+        ...
+
+    @staticmethod
+    def load_balance(balanced_item_function, load_function=None, initial_load_function=None):
+        """
+        Returns a collector that takes a stream of items and calculates the unfairness measure from them.
+        The load for every item is provided by the load_function,
+        with the starting load provided by the initial_load_function.
+
+        When this collector is used in a constraint stream,
+        it is recommended to use a score type which supports real numbers.
+        This is so that the unfairness measure keeps its precision
+        without forcing the other constraints to be multiplied by a large constant,
+        which would otherwise be required to implement fixed-point arithmetic.
+
+        Parameters
+        ----------
+        balanced_item_function:
+             The function that returns the item which should be load-balanced.
+        load_function:
+            How much the item should count for in the formula.
+        initial_load_function:
+            The initial value of the metric, allowing to provide initial state
+            without requiring the entire previous planning windows in the working memory.
+            If this function is provided, load_function must be provided as well.
+        """
+        if None == load_function == initial_load_function:
+            return LoadBalanceCollector(ConstraintCollectors._delegate().loadBalance, balanced_item_function, None,
+                                        None)
+        elif None == initial_load_function:
+            return LoadBalanceCollector(ConstraintCollectors._delegate().loadBalance, balanced_item_function,
+                                        load_function, None)
+        elif None == load_function:
+            raise ValueError("load_function cannot be None if initial_load_function is not None")
+        else:
+            return LoadBalanceCollector(ConstraintCollectors._delegate().loadBalance, balanced_item_function,
+                                        load_function, initial_load_function)
 
 # Must be at the bottom, constraint_stream depends on this module
 from ._constraint_stream import *

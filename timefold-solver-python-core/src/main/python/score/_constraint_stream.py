@@ -454,6 +454,20 @@ class UniConstraintStream(Generic[A]):
         else:
             raise RuntimeError(f'Unhandled constraint stream type {type(other)}.')
 
+    def complement(self, cls: type[A]) -> 'UniConstraintStream[A]':
+        """
+        Adds to the stream all instances of a given class which are not yet present in it.
+        These instances must be present in the solution,
+        which means the class needs to be either a planning entity or a problem fact.
+
+        Parameters
+        ----------
+        cls : Type[A]
+            the type of the instances to add to the stream.
+        """
+        result = self.delegate.complement(get_class(cls))
+        return TriConstraintCollector(result, self.package, self.a_type)
+
     def penalize(self, constraint_weight: ScoreType, match_weigher: Callable[[A], int] = None) -> \
             'UniConstraintBuilder[A, ScoreType]':
         """
@@ -1000,6 +1014,40 @@ class BiConstraintStream(Generic[A, B]):
         else:
             raise RuntimeError(f'Unhandled constraint stream type {type(other)}.')
 
+    @overload
+    def complement(self, cls: type[A]) -> 'BiConstraintStream[A, B]':
+        ...
+
+    @overload
+    def complement(self, cls: type[A], padding: Callable[[A], B]) -> 'BiConstraintStream[A, B]':
+        ...
+
+    def complement(self, cls: type[A], padding=None):
+        """
+        Adds to the stream all instances of a given class which are not yet present in it.
+        These instances must be present in the solution,
+        which means the class needs to be either a planning entity or a problem fact.
+
+        The instances will be read from the first element of the input tuple.
+        When an output tuple needs to be created for the newly inserted instances,
+        the first element will be the new instance.
+        The rest of the tuple will be padded with the result of the padding function.
+
+        Parameters
+        ----------
+        cls : Type[A]
+            the type of the instances to add to the stream.
+
+        padding : Callable[[A], B]
+            a function that computes the padding value for the second fact in the new tuple.
+        """
+        if None == padding:
+            result = self.delegate.complement(get_class(cls))
+            return TriConstraintCollector(result, self.package, self.a_type, self.b_type)
+        java_padding = function_cast(padding, self.a_type)
+        result = self.delegate.complement(get_class(cls), java_padding)
+        return TriConstraintCollector(result, self.package, self.a_type, self.b_type)
+
     def penalize(self, constraint_weight: ScoreType, match_weigher: Callable[[A, B], int] = None) -> \
             'BiConstraintBuilder[A, B, ScoreType]':
         """
@@ -1544,6 +1592,51 @@ class TriConstraintStream(Generic[A, B, C]):
         else:
             raise RuntimeError(f'Unhandled constraint stream type {type(other)}.')
 
+    @overload
+    def complement(self, cls: type[A]) -> 'TriConstraintStream[A, B, C]':
+        ...
+
+    @overload
+    def complement(self, cls: type[A], padding_b: Callable[[A], B], padding_c: Callable[[A], C]) \
+            -> 'TriConstraintStream[A, B, C]':
+        ...
+
+    def complement(self, cls: type[A], padding_b=None, padding_c=None):
+        """
+        Adds to the stream all instances of a given class which are not yet present in it.
+        These instances must be present in the solution,
+        which means the class needs to be either a planning entity or a problem fact.
+
+        The instances will be read from the first element of the input tuple.
+        When an output tuple needs to be created for the newly inserted instances,
+        the first element will be the new instance.
+        The rest of the tuple will be padded with the result of the padding function,
+        applied on the new instance.
+
+        Padding functions are optional, but if one is provided, then both must-be provided.
+
+        Parameters
+        ----------
+        cls : Type[A]
+            the type of the instances to add to the stream.
+
+        padding_b : Callable[[A], B]
+            a function that computes the padding value for the second fact in the new tuple.
+
+        padding_c : Callable[[A], C]
+            a function that computes the padding value for the third fact in the new tuple.
+        """
+        if None == padding_b == padding_c:
+            result = self.delegate.complement(get_class(cls))
+            return TriConstraintCollector(result, self.package, self.a_type, self.b_type, self.c_type)
+        specified_count = sum(x is not None for x in [padding_b, padding_c])
+        if specified_count != 0:
+            raise ValueError(f'If a padding function is provided, both are expected, got {specified_count} instead.')
+        java_padding_b = function_cast(padding_b, self.a_type)
+        java_padding_c = function_cast(padding_c, self.a_type)
+        result = self.delegate.complement(get_class(cls), java_padding_b, java_padding_c)
+        return TriConstraintCollector(result, self.package, self.a_type, self.b_type, self.c_type)
+
     def penalize(self, constraint_weight: ScoreType,
                  match_weigher: Callable[[A, B, C], int] = None) -> 'TriConstraintBuilder[A, B, C, ScoreType]':
         """
@@ -2016,7 +2109,6 @@ class QuadConstraintStream(Generic[A, B, C, D]):
                                        JClass('java.lang.Object'))
         if len(mapping_functions) == 4:
             return QuadConstraintStream(self.delegate.map(*translated_functions), self.package,
-
                                         JClass('java.lang.Object'), JClass('java.lang.Object'),
                                         JClass('java.lang.Object'), JClass('java.lang.Object'))
         raise RuntimeError(f'Impossible state: missing case for {len(mapping_functions)}.')
@@ -2027,7 +2119,6 @@ class QuadConstraintStream(Generic[A, B, C, D]):
         """
         translated_function = function_cast(flattening_function, self.d_type)
         return QuadConstraintStream(self.delegate.flattenLast(translated_function), self.package,
-
                                     self.a_type, self.b_type, self.c_type, JClass('java.lang.Object'))
 
     def distinct(self) -> 'QuadConstraintStream[A,B,C,D]':
@@ -2082,6 +2173,55 @@ class QuadConstraintStream(Generic[A, B, C, D]):
                                         self.b_type, self.c_type, self.d_type)
         else:
             raise RuntimeError(f'Unhandled constraint stream type {type(other)}.')
+
+    @overload
+    def complement(self, cls: type[A]) -> 'QuadConstraintStream[A, B, C, D]':
+        ...
+
+    @overload
+    def complement(self, cls: type[A], padding_b: Callable[[A], B], padding_c: Callable[[A], C],
+                   padding_d: Callable[[A], D]) -> 'QuadConstraintStream[A, B, C, D]':
+        ...
+
+    def complement(self, cls: type[A], padding_b=None, padding_c=None, padding_d=None):
+        """
+        Adds to the stream all instances of a given class which are not yet present in it.
+        These instances must be present in the solution,
+        which means the class needs to be either a planning entity or a problem fact.
+
+        The instances will be read from the first element of the input tuple.
+        When an output tuple needs to be created for the newly inserted instances,
+        the first element will be the new instance.
+        The rest of the tuple will be padded with the result of the padding function,
+        applied on the new instance.
+
+        Padding functions are optional, but if one is provided, then all three must-be provided.
+
+        Parameters
+        ----------
+        cls : Type[A]
+            the type of the instances to add to the stream.
+
+        padding_b : Callable[[A], B]
+            a function that computes the padding value for the second fact in the new tuple.
+
+        padding_c : Callable[[A], C]
+            a function that computes the padding value for the third fact in the new tuple.
+
+        padding_d : Callable[[A], D]
+            a function that computes the padding value for the fourth fact in the new tuple.
+        """
+        if None == padding_b == padding_c == padding_d:
+            result = self.delegate.complement(get_class(cls))
+            return QuadConstraintCollector(result, self.package, self.a_type, self.b_type, self.c_type, self.d_type)
+        specified_count = sum(x is not None for x in [padding_b, padding_c, padding_d])
+        if specified_count != 0:
+            raise ValueError(f'If a padding function is provided, all 3 are expected, got {specified_count} instead.')
+        java_padding_b = function_cast(padding_b, self.a_type)
+        java_padding_c = function_cast(padding_c, self.a_type)
+        java_padding_d = function_cast(padding_d, self.a_type)
+        result = self.delegate.complement(get_class(cls), java_padding_b, java_padding_c, java_padding_d)
+        return QuadConstraintCollector(result, self.package, self.a_type, self.b_type, self.c_type, self.d_type)
 
     def penalize(self, constraint_weight: ScoreType,
                  match_weigher: Callable[[A, B, C, D], int] = None) -> 'QuadConstraintBuilder[A, B, C, D, ScoreType]':
