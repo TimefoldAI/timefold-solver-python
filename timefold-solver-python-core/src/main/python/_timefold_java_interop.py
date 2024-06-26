@@ -106,10 +106,10 @@ def register_score_python_java_type_mappings():
     _scores_registered = True
 
     from .score._score import SimpleScore, HardSoftScore, HardMediumSoftScore, BendableScore
-    from ai.timefold.solver.core.api.score.buildin.simple import SimpleScore as _SimpleScore
-    from ai.timefold.solver.core.api.score.buildin.hardsoft import HardSoftScore as _HardSoftScore
-    from ai.timefold.solver.core.api.score.buildin.hardmediumsoft import HardMediumSoftScore as _HardMediumSoftScore
-    from ai.timefold.solver.core.api.score.buildin.bendable import BendableScore as _BendableScore
+    from ai.timefold.solver.core.api.score.buildin.simplelong import SimpleLongScore as _SimpleScore
+    from ai.timefold.solver.core.api.score.buildin.hardsoftlong import HardSoftLongScore as _HardSoftScore
+    from ai.timefold.solver.core.api.score.buildin.hardmediumsoftlong import HardMediumSoftLongScore as _HardMediumSoftScore
+    from ai.timefold.solver.core.api.score.buildin.bendablelong import BendableLongScore as _BendableScore
 
     from ai.timefold.solver.python.score import (SimpleScorePythonJavaTypeMapping,
                                                  HardSoftScorePythonJavaTypeMapping,

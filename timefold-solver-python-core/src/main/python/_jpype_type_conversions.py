@@ -138,6 +138,56 @@ class PythonToIntPentaFunction:
         return JInt(self.delegate(argument1, argument2, argument3, argument4, argument5))
 
 
+@JImplements('java.util.function.ToLongFunction', deferred=True)
+class PythonToLongFunction:
+    def __init__(self, delegate):
+        self.delegate = delegate
+
+    @JOverride
+    def applyAsLong(self, argument):
+        return JLong(self.delegate(argument))
+
+
+@JImplements('java.util.function.ToLongBiFunction', deferred=True)
+class PythonToLongBiFunction:
+    def __init__(self, delegate):
+        self.delegate = delegate
+
+    @JOverride
+    def applyAsLong(self, argument1, argument2):
+        return JLong(self.delegate(argument1, argument2))
+
+
+@JImplements('ai.timefold.solver.core.api.function.ToLongTriFunction', deferred=True)
+class PythonToLongTriFunction:
+    def __init__(self, delegate):
+        self.delegate = delegate
+
+    @JOverride
+    def applyAsLong(self, argument1, argument2, argument3):
+        return JLong(self.delegate(argument1, argument2, argument3))
+
+
+@JImplements('ai.timefold.solver.core.api.function.ToLongQuadFunction', deferred=True)
+class PythonToLongQuadFunction:
+    def __init__(self, delegate):
+        self.delegate = delegate
+
+    @JOverride
+    def applyAsLong(self, argument1, argument2, argument3, argument4):
+        return JLong(self.delegate(argument1, argument2, argument3, argument4))
+
+
+@JImplements('ai.timefold.solver.core.api.function.ToLongPentaFunction', deferred=True)
+class PythonToLongPentaFunction:
+    def __init__(self, delegate):
+        self.delegate = delegate
+
+    @JOverride
+    def applyAsLong(self, argument1, argument2, argument3, argument4, argument5):
+        return JLong(self.delegate(argument1, argument2, argument3, argument4, argument5))
+
+
 
 @JImplements('java.util.function.Predicate', deferred=True)
 class PythonPredicate:

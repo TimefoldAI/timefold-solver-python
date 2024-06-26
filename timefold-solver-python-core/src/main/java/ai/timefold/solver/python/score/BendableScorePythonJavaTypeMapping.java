@@ -9,9 +9,9 @@ import ai.timefold.jpyinterpreter.types.PythonJavaTypeMapping;
 import ai.timefold.jpyinterpreter.types.PythonLikeType;
 import ai.timefold.jpyinterpreter.types.collections.PythonLikeTuple;
 import ai.timefold.jpyinterpreter.types.numeric.PythonInteger;
-import ai.timefold.solver.core.api.score.buildin.bendable.BendableScore;
+import ai.timefold.solver.core.api.score.buildin.bendablelong.BendableLongScore;
 
-public final class BendableScorePythonJavaTypeMapping implements PythonJavaTypeMapping<PythonLikeObject, BendableScore> {
+public final class BendableScorePythonJavaTypeMapping implements PythonJavaTypeMapping<PythonLikeObject, BendableLongScore> {
     private final PythonLikeType type;
     private final Constructor<?> constructor;
     private final Field initScoreField;
@@ -34,20 +34,20 @@ public final class BendableScorePythonJavaTypeMapping implements PythonJavaTypeM
     }
 
     @Override
-    public Class<? extends BendableScore> getJavaType() {
-        return BendableScore.class;
+    public Class<? extends BendableLongScore> getJavaType() {
+        return BendableLongScore.class;
     }
 
-    private static PythonLikeTuple<PythonInteger> toPythonList(int[] scores) {
+    private static PythonLikeTuple<PythonInteger> toPythonList(long[] scores) {
         PythonLikeTuple<PythonInteger> out = new PythonLikeTuple<>();
-        for (int score : scores) {
+        for (long score : scores) {
             out.add(PythonInteger.valueOf(score));
         }
         return out;
     }
 
     @Override
-    public PythonLikeObject toPythonObject(BendableScore javaObject) {
+    public PythonLikeObject toPythonObject(BendableLongScore javaObject) {
         try {
             var instance = constructor.newInstance();
             initScoreField.set(instance, PythonInteger.valueOf(javaObject.initScore()));
@@ -60,23 +60,23 @@ public final class BendableScorePythonJavaTypeMapping implements PythonJavaTypeM
     }
 
     @Override
-    public BendableScore toJavaObject(PythonLikeObject pythonObject) {
+    public BendableLongScore toJavaObject(PythonLikeObject pythonObject) {
         try {
             var initScore = ((PythonInteger) initScoreField.get(pythonObject)).value.intValue();
             var hardScoreTuple = ((PythonLikeTuple) hardScoresField.get(pythonObject));
             var softScoreTuple = ((PythonLikeTuple) softScoresField.get(pythonObject));
-            int[] hardScores = new int[hardScoreTuple.size()];
-            int[] softScores = new int[softScoreTuple.size()];
+            long[] hardScores = new long[hardScoreTuple.size()];
+            long[] softScores = new long[softScoreTuple.size()];
             for (int i = 0; i < hardScores.length; i++) {
-                hardScores[i] = ((PythonInteger) hardScoreTuple.get(i)).value.intValue();
+                hardScores[i] = ((PythonInteger) hardScoreTuple.get(i)).value.longValue();
             }
             for (int i = 0; i < softScores.length; i++) {
-                softScores[i] = ((PythonInteger) softScoreTuple.get(i)).value.intValue();
+                softScores[i] = ((PythonInteger) softScoreTuple.get(i)).value.longValue();
             }
             if (initScore == 0) {
-                return BendableScore.of(hardScores, softScores);
+                return BendableLongScore.of(hardScores, softScores);
             } else {
-                return BendableScore.ofUninitialized(initScore, hardScores, softScores);
+                return BendableLongScore.ofUninitialized(initScore, hardScores, softScores);
             }
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
