@@ -414,3 +414,85 @@ def test_ctime():
     verifier = verifier_for(function)
 
     verifier.verify(datetime(2002, 12, 4), expected_result='Wed Dec  4 00:00:00 2002')
+
+
+def test_strftime():
+    def function(x: datetime, fmt: str) -> str:
+        return x.strftime(fmt)
+
+    verifier = verifier_for(function)
+
+    verifier.verify(datetime(1, 2, 3, 4, 5, 6, 7), '%a',
+                    expected_result='Sat')
+    verifier.verify(datetime(1, 2, 3, 4, 5, 6, 7), '%A',
+                    expected_result='Saturday')
+    verifier.verify(datetime(1, 2, 3, 4, 5, 6, 7), '%W',
+                    expected_result='05')
+    verifier.verify(datetime(1, 2, 3, 4, 5, 6, 7), '%d',
+                    expected_result='03')
+    verifier.verify(datetime(1, 2, 3, 4, 5, 6, 7), '%b',
+                    expected_result='Feb')
+    verifier.verify(datetime(1, 2, 3, 4, 5, 6, 7), '%B',
+                    expected_result='February')
+    verifier.verify(datetime(1, 2, 3, 4, 5, 6, 7), '%m',
+                    expected_result='02')
+    verifier.verify(datetime(1, 2, 3, 4, 5, 6, 7), '%y',
+                    expected_result='01')
+    verifier.verify(datetime(1001, 2, 3, 4, 5, 6, 7), '%y',
+                    expected_result='01')
+    # %Y have different results depending on the platform;
+    # Windows 0-pad it, Linux does not.
+    # verifier.verify(datetime(1, 2, 3, 4, 5, 6, 7), '%Y',
+    #                 expected_result='1')
+    verifier.verify(datetime(1, 2, 3, 4, 5, 6, 7), '%j',
+                    expected_result='034')
+    verifier.verify(datetime(1, 2, 3, 4, 5, 6, 7), '%U',
+                    expected_result='04')
+    verifier.verify(datetime(1, 2, 3, 4, 5, 6, 7), '%W',
+                    expected_result='05')
+    # %Y have different results depending on the platform;
+    # Windows 0-pad it, Linux does not.
+    # verifier.verify(datetime(1, 2, 3, 4, 5, 6, 7), '%G',
+    #                 expected_result='1')
+    verifier.verify(datetime(1, 2, 3, 4, 5, 6, 7), '%u',
+                    expected_result='6')
+    verifier.verify(datetime(1, 2, 3, 4, 5, 6, 7), '%%',
+                    expected_result='%')
+    verifier.verify(datetime(1, 2, 3, 4, 5, 6, 7), '%V',
+                    expected_result='05')
+    verifier.verify(datetime(1, 2, 3, 4, 5, 6, 7), '%H',
+                    expected_result='04')
+    verifier.verify(datetime(12, 2, 3, 13, 5, 6, 7), '%I',
+                    expected_result='01')
+    verifier.verify(datetime(13, 2, 3, 4, 5, 6, 7), '%p',
+                    expected_result='AM')
+    verifier.verify(datetime(1, 2, 3, 4, 5, 6, 7), '%M',
+                    expected_result='05')
+    verifier.verify(datetime(1, 2, 3, 4, 5, 6, 7), '%S',
+                    expected_result='06')
+    verifier.verify(datetime(1, 2, 3, 4, 5, 6, 7), '%f',
+                    expected_result='000007')
+    # %X is locale-specific, and Java/Python locale definitions can slightly differ
+    # ex: en_US = '4:05:06 AM' in Java, but '04:05:06 AM' in Python
+    # verifier.verify(datetime(1, 2, 3, 4, 5, 6, 7), '%X',
+    #                 expected_result='04:05:06 AM')
+    verifier.verify(datetime(1, 2, 3, 4, 5, 6, 7), '%%',
+                    expected_result='%')
+
+
+def test_strptime():
+    def function(date_string: str, fmt: str) -> datetime:
+        return datetime.strptime(date_string, fmt)
+
+    verifier = verifier_for(function)
+
+    verifier.verify("21 June, 2018", "%d %B, %Y",
+                    expected_result=datetime(2018, 6, 21))
+    verifier.verify("12/11/2018 09:15:32", "%m/%d/%Y %H:%M:%S",
+                    expected_result=datetime(2018, 12, 11, 9, 15, 32))
+    verifier.verify("12/11/2018 09:15:32", "%d/%m/%Y %H:%M:%S",
+                    expected_result=datetime(2018, 11, 12, 9, 15, 32))
+    verifier.verify("09:15:32", "%H:%M:%S",
+                    expected_result=datetime(1900, 1, 1, 9, 15, 32))
+    verifier.verify("text", "%H:%M:%S",
+                    expected_error=ValueError)
