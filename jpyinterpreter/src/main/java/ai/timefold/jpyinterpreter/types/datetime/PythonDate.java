@@ -108,6 +108,11 @@ public class PythonDate<T extends PythonDate<?>> extends AbstractPythonLikeObjec
         DATE_TYPE.addMethod("isoformat",
                 PythonDate.class.getMethod("iso_format"));
 
+        DATE_TYPE.addMethod("strftime",
+                ArgumentSpec.forFunctionReturning("strftime", PythonString.class.getName())
+                        .addArgument("format", PythonString.class.getName())
+                        .asPythonFunctionSignature(PythonDate.class.getMethod("strftime", PythonString.class)));
+
         DATE_TYPE.addMethod("ctime",
                 PythonDate.class.getMethod("ctime"));
 
@@ -363,8 +368,8 @@ public class PythonDate<T extends PythonDate<?>> extends AbstractPythonLikeObjec
     }
 
     public PythonString strftime(PythonString format) {
-        // TODO
-        throw new UnsupportedOperationException();
+        var formatter = PythonDateTimeFormatter.getDateTimeFormatter(format.value);
+        return PythonString.valueOf(formatter.format(localDate));
     }
 
     @Override

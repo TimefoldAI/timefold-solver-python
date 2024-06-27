@@ -170,4 +170,30 @@ def test_str():
     verifier.verify(time(1, 2, 3, 4, None, fold=0), expected_result='01:02:03.000004')
 
 
+def test_strftime():
+    def function(x: time, fmt: str) -> str:
+        return x.strftime(fmt)
+
+    verifier = verifier_for(function)
+
+    verifier.verify(time(1, 2, 3, 4, None, fold=0), '%H',
+                    expected_result='01')
+    verifier.verify(time(13, 2, 3, 4, None, fold=0), '%I',
+                    expected_result='01')
+    verifier.verify(time(13, 2, 3, 4, None, fold=0), '%p',
+                    expected_result='PM')
+    verifier.verify(time(1, 2, 3, 4, None, fold=0), '%M',
+                    expected_result='02')
+    verifier.verify(time(1, 2, 3, 4, None, fold=0), '%S',
+                    expected_result='03')
+    verifier.verify(time(1, 2, 3, 4, None, fold=0), '%f',
+                    expected_result='000004')
+
+    # %X is locale-specific, and Java/Python locale definitions can slightly differ
+    # ex: en_US = '1:02:03 AM' in Java, but '01:02:03 AM' in Python
+    # verifier.verify(time(1, 2, 3, 4, None, fold=0), '%X',
+    #                 expected_result='01:02:03 AM')
+    verifier.verify(time(1, 2, 3, 4, None, fold=0), '%%',
+                    expected_result='%')
+
 # TODO: strftime, __format__, utcoffset, dst, tzname

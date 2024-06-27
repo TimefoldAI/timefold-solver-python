@@ -1,6 +1,7 @@
 package ai.timefold.jpyinterpreter.types.datetime;
 
 import java.time.Clock;
+import java.time.DateTimeException;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -10,8 +11,10 @@ import java.time.YearMonth;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.format.TextStyle;
 import java.time.temporal.Temporal;
+import java.time.temporal.TemporalQuery;
 import java.util.List;
 import java.util.Locale;
 import java.util.regex.Matcher;
@@ -120,6 +123,16 @@ public class PythonDateTime extends PythonDate<PythonDateTime> implements Planni
                                 PythonNumber.class,
                                 PythonLikeObject.class)));
 
+        DATE_TIME_TYPE.addMethod("strptime",
+                ArgumentSpec.forFunctionReturning("strptime", PythonDateTime.class.getName())
+                        .addArgument("datetime_type", PythonLikeType.class.getName())
+                        .addArgument("date_string", PythonString.class.getName())
+                        .addArgument("format", PythonString.class.getName())
+                        .asClassPythonFunctionSignature(PythonDateTime.class.getMethod("strptime",
+                                PythonLikeType.class,
+                                PythonString.class,
+                                PythonString.class)));
+
         DATE_TIME_TYPE.addMethod("utcfromtimestamp",
                 ArgumentSpec.forFunctionReturning("utcfromtimestamp", PythonDate.class.getName())
                         .addArgument("date_type", PythonLikeType.class.getName())
@@ -202,6 +215,11 @@ public class PythonDateTime extends PythonDate<PythonDateTime> implements Planni
                         .addArgument("timespec", PythonString.class.getName(), PythonString.valueOf("auto"))
                         .asPythonFunctionSignature(
                                 PythonDateTime.class.getMethod("iso_format", PythonString.class, PythonString.class)));
+
+        DATE_TIME_TYPE.addMethod("strftime",
+                ArgumentSpec.forFunctionReturning("strftime", PythonString.class.getName())
+                        .addArgument("format", PythonString.class.getName())
+                        .asPythonFunctionSignature(PythonDateTime.class.getMethod("strftime", PythonString.class)));
 
         DATE_TIME_TYPE.addMethod("ctime",
                 PythonDateTime.class.getMethod("ctime"));
@@ -506,6 +524,38 @@ public class PythonDateTime extends PythonDate<PythonDateTime> implements Planni
         }
     }
 
+    private static <T> T tryParseOrNull(DateTimeFormatter formatter, String text, TemporalQuery<T> query) {
+        try {
+            return formatter.parse(text, query);
+        } catch (DateTimeException e) {
+            return null;
+        }
+    }
+
+    public static PythonDateTime strptime(PythonLikeType type, PythonString date_string, PythonString format) {
+        if (type != DATE_TIME_TYPE) {
+            throw new TypeError("Unknown datetime type (" + type + ").");
+        }
+        var formatter = PythonDateTimeFormatter.getDateTimeFormatter(format.value);
+        var asZonedDateTime = tryParseOrNull(formatter, date_string.value, ZonedDateTime::from);
+        if (asZonedDateTime != null) {
+            return new PythonDateTime(asZonedDateTime);
+        }
+        var asLocalDateTime = tryParseOrNull(formatter, date_string.value, LocalDateTime::from);
+        if (asLocalDateTime != null) {
+            return new PythonDateTime(asLocalDateTime);
+        }
+        var asLocalDate = tryParseOrNull(formatter, date_string.value, LocalDate::from);
+        if (asLocalDate != null) {
+            return new PythonDateTime(asLocalDate.atTime(LocalTime.MIDNIGHT));
+        }
+        var asLocalTime = tryParseOrNull(formatter, date_string.value, LocalTime::from);
+        if (asLocalTime != null) {
+            return new PythonDateTime(asLocalTime.atDate(LocalDate.of(1900, 1, 1)));
+        }
+        throw new ValueError("data " + date_string.repr() + " does not match the format " + format.repr());
+    }
+
     public PythonDateTime add_time_delta(PythonTimeDelta summand) {
         if (dateTime instanceof LocalDateTime) {
             return new PythonDateTime(((LocalDateTime) dateTime).plus(summand.duration));
@@ -699,8 +749,8 @@ public class PythonDateTime extends PythonDate<PythonDateTime> implements Planni
 
     @Override
     public PythonString strftime(PythonString format) {
-        // TODO
-        throw new UnsupportedOperationException();
+        var formatter = PythonDateTimeFormatter.getDateTimeFormatter(format.value);
+        return PythonString.valueOf(formatter.format(dateTime));
     }
 
     @Override

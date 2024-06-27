@@ -312,3 +312,49 @@ def test_ctime():
     verifier = verifier_for(function)
 
     verifier.verify(date(2002, 12, 4), expected_result='Wed Dec  4 00:00:00 2002')
+
+
+def test_strftime():
+    def function(x: date, fmt: str) -> str:
+        return x.strftime(fmt)
+
+    verifier = verifier_for(function)
+
+    verifier.verify(date(1, 2, 3), '%a',
+                    expected_result='Sat')
+    verifier.verify(date(1, 2, 3), '%A',
+                    expected_result='Saturday')
+    verifier.verify(date(1, 2, 3), '%W',
+                    expected_result='05')
+    verifier.verify(date(1, 2, 3), '%d',
+                    expected_result='03')
+    verifier.verify(date(1, 2, 3), '%b',
+                    expected_result='Feb')
+    verifier.verify(date(1, 2, 3), '%B',
+                    expected_result='February')
+    verifier.verify(date(1, 2, 3), '%m',
+                    expected_result='02')
+    verifier.verify(date(1, 2, 3), '%y',
+                    expected_result='01')
+    verifier.verify(date(1001, 2, 3), '%y',
+                    expected_result='01')
+    # %Y have different results depending on the platform;
+    # Windows 0-pad it, Linux does not.
+    # verifier.verify(date(1, 2, 3), '%Y',
+    #                 expected_result='1')
+    verifier.verify(date(1, 2, 3), '%j',
+                    expected_result='034')
+    verifier.verify(date(1, 2, 3), '%U',
+                    expected_result='04')
+    verifier.verify(date(1, 2, 3), '%W',
+                    expected_result='05')
+    # %Y have different results depending on the platform;
+    # Windows 0-pad it, Linux does not.
+    # verifier.verify(date(1, 2, 3), '%G',
+    #                 expected_result='1')
+    verifier.verify(date(1, 2, 3), '%u',
+                    expected_result='6')
+    verifier.verify(date(1, 2, 3), '%%',
+                    expected_result='%')
+    verifier.verify(date(1, 2, 3), '%V',
+                    expected_result='05')
