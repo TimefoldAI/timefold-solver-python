@@ -54,12 +54,19 @@ def init(*args, path: List[str] = None, include_translator_jars: bool = True,
     if include_translator_jars:
         path = path + extract_python_translator_jars()
 
-    locale_and_country = locale.getlocale()[0]
+    user_locale = locale.getlocale()[0]
     extra_jvm_args = []
-    if locale_and_country is not None:
-        lang, country = locale_and_country.rsplit('_', maxsplit=1)
-        extra_jvm_args.append(f'-Duser.language={lang}')
-        extra_jvm_args.append(f'-Duser.country={country}')
+    if user_locale is not None:
+        user_locale = locale.normalize(user_locale)
+        if '.' in user_locale:
+            user_locale, _ = user_locale.split('.', 1)
+        if '_' in user_locale:
+            lang, country = user_locale.rsplit('_', maxsplit=1)
+            extra_jvm_args.append(f'-Duser.language={lang}')
+            extra_jvm_args.append(f'-Duser.country={country}')
+        else:
+            extra_jvm_args.append(f'-Duser.language={user_locale}')
+
 
     jpype.startJVM(*args, *extra_jvm_args, classpath=path, convertStrings=True)  # noqa
 
