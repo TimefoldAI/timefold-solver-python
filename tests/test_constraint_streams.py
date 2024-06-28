@@ -265,6 +265,87 @@ def test_join_uni():
     assert score_manager.explain(problem).score.score == 8
 
 
+def test_if_exists_uni():
+    @constraint_provider
+    def define_constraints(constraint_factory: ConstraintFactory):
+        return [
+            constraint_factory.for_each(Entity)
+            .if_exists(Entity, Joiners.equal(lambda entity: entity.code))
+            .reward(SimpleScore.ONE, lambda e1: e1.value.number)
+            .as_constraint('Count')
+        ]
+
+    score_manager = create_score_manager(define_constraints)
+    entity_a1: Entity = Entity('A')
+    entity_a2: Entity = Entity('A')
+    entity_b1: Entity = Entity('B')
+    entity_b2: Entity = Entity('B')
+
+    value_1 = Value(1)
+    value_2 = Value(2)
+
+    problem = Solution([entity_a1, entity_a2, entity_b1, entity_b2], [value_1, value_2])
+
+    entity_a1.value = value_1
+
+    # With itself
+    assert score_manager.explain(problem).score.score == 1
+
+    entity_a1.value = value_1
+    entity_a2.value = value_1
+
+    entity_b1.value = value_2
+    entity_b2.value = value_2
+
+    # 1 + 2 + 1 + 2
+    assert score_manager.explain(problem).score.score == 6
+
+    entity_a1.value = value_2
+    entity_b1.value = value_1
+
+    # 1 + 2 + 1 + 2
+    assert score_manager.explain(problem).score.score == 6
+
+
+def test_if_not_exists_uni():
+    @constraint_provider
+    def define_constraints(constraint_factory: ConstraintFactory):
+        return [
+            constraint_factory.for_each(Entity)
+            .if_not_exists(Entity, Joiners.equal(lambda entity: entity.code))
+            .reward(SimpleScore.ONE, lambda e1: e1.value.number)
+            .as_constraint('Count')
+        ]
+
+    score_manager = create_score_manager(define_constraints)
+    entity_a1: Entity = Entity('A')
+    entity_a2: Entity = Entity('A')
+    entity_b1: Entity = Entity('B')
+    entity_b2: Entity = Entity('B')
+
+    value_1 = Value(1)
+    value_2 = Value(2)
+
+    problem = Solution([entity_a1, entity_a2, entity_b1, entity_b2], [value_1, value_2])
+
+    entity_a1.value = value_1
+
+    assert score_manager.explain(problem).score.score == 0
+
+    entity_a1.value = value_1
+    entity_a2.value = value_1
+
+    entity_b1.value = value_2
+    entity_b2.value = value_2
+
+    assert score_manager.explain(problem).score.score == 0
+
+    entity_a1.value = value_2
+    entity_b1.value = value_1
+
+    assert score_manager.explain(problem).score.score == 0
+
+
 def test_map():
     @constraint_provider
     def define_constraints(constraint_factory: ConstraintFactory):

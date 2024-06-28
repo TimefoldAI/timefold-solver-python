@@ -58,7 +58,7 @@ class UniConstraintStream(Generic[A]):
     def join(self, unistream_or_type: Union['UniConstraintStream[B_]', Type[B_]], *joiners: 'BiJoiner[A, B_]') -> \
             'BiConstraintStream[A,B_]':
         """
-        Create a new `BiConstraintStream` for every combination of A and B that satisfy all specified joiners.
+        Create a new `BiConstraintStream` for every combination of A and B that satisfies all specified joiners.
         """
         b_type = None
         if isinstance(unistream_or_type, UniConstraintStream):
@@ -72,26 +72,42 @@ class UniConstraintStream(Generic[A]):
         return BiConstraintStream(join_result, self.package,
                                   self.a_type, b_type)
 
+    @overload
     def if_exists(self, item_type: Type[B_], *joiners: 'BiJoiner[A, B_]') -> 'UniConstraintStream[A]':
+        ...
+
+    @overload
+    def if_exists(self, other_stream: 'UniConstraintStream[B_]', *joiners: 'BiJoiner[A, B_]') \
+            -> 'UniConstraintStream[A]':
+        ...
+
+    def if_exists(self, unistream_or_type: Union['UniConstraintStream[B_]', Type[B_]],
+                  *joiners: 'BiJoiner[A, B_]') -> 'UniConstraintStream[A]':
         """
-        Create a new UniConstraintStream for every A where B exists that satisfy all specified joiners.
+        Create a new `UniConstraintStream` for every A where B exists that satisfies all specified joiners.
         """
-        item_type = get_class(item_type)
-        return UniConstraintStream(self.delegate.ifExists(item_type,
-                                                          extract_joiners(joiners, self.a_type, item_type)),
+        b_type = None
+        if isinstance(unistream_or_type, UniConstraintStream):
+            b_type = unistream_or_type.a_type
+            unistream_or_type = unistream_or_type.delegate
+        else:
+            b_type = get_class(unistream_or_type)
+            unistream_or_type = b_type
+        return UniConstraintStream(self.delegate.ifExists(unistream_or_type,
+                                                          extract_joiners(joiners,
+                                                                          self.a_type, b_type)),
                                    self.package, self.a_type)
 
     def if_exists_including_unassigned(self, item_type: Type[B_], *joiners: 'BiJoiner[A, B_]') -> \
             'UniConstraintStream[A]':
         """
-        Create a new `UniConstraintStream` for every A where B exists that satisfy all specified joiners.
+        Create a new `UniConstraintStream` for every A where B exists that satisfies all specified joiners.
         """
         item_type = get_class(item_type)
         return UniConstraintStream(self.delegate.ifExistsIncludingUnassigned(item_type,
-                                                                             extract_joiners(joiners, self.a_type,
-                                                                                             item_type)),
-                                   self.package,
-                                   self.a_type)
+                                                                             extract_joiners(joiners,
+                                                                                             self.a_type, item_type)),
+                                   self.package, self.a_type)
 
     def if_exists_other(self, item_type: Type[B_], *joiners: 'BiJoiner[A, B_]') -> 'UniConstraintStream[A]':
         """
@@ -101,8 +117,7 @@ class UniConstraintStream(Generic[A]):
         item_type = get_class(item_type)
         return UniConstraintStream(self.delegate.ifExistsOther(cast(Type['A_'], item_type),
                                                                extract_joiners(joiners,
-                                                                               self.a_type,
-                                                                               item_type)),
+                                                                               self.a_type, item_type)),
                                    self.package, self.a_type)
 
     def if_exists_other_including_unassigned(self, item_type: Type, *joiners: 'BiJoiner') -> \
@@ -115,65 +130,69 @@ class UniConstraintStream(Generic[A]):
         item_type = get_class(item_type)
         return UniConstraintStream(self.delegate.ifExistsOtherIncludingUnassigned(cast(Type['A_'], item_type),
                                                                                   extract_joiners(joiners,
-                                                                                                  self.a_type,
-                                                                                                  item_type)),
-                                   self.package,
+                                                                                                  self.a_type, item_type)),
+                                   self.package, self.a_type)
 
-                                   self.a_type)
-
+    @overload
     def if_not_exists(self, item_type: Type[B_], *joiners: 'BiJoiner[A, B_]') -> 'UniConstraintStream[A]':
+        ...
+
+    @overload
+    def if_not_exists(self, other_stream: 'UniConstraintStream[B_]', *joiners: 'BiJoiner[A, B_]') \
+            -> 'UniConstraintStream[A]':
+        ...
+
+    def if_not_exists(self, unistream_or_type: Union['UniConstraintStream[B_]', Type[B_]],
+                      *joiners: 'BiJoiner[A, B_]') -> 'UniConstraintStream[A]':
         """
-        Create a new `UniConstraintStream` for every A where there does not exist a B where all specified joiners
-        are satisfied.
+        Create a new `UniConstraintStream` for every A where B does not exist that satisfies all specified joiners.
         """
-        item_type = get_class(item_type)
-        return UniConstraintStream(self.delegate.ifNotExists(item_type, extract_joiners(joiners, self.a_type,
-                                                                                        item_type)),
+        b_type = None
+        if isinstance(unistream_or_type, UniConstraintStream):
+            b_type = unistream_or_type.a_type
+            unistream_or_type = unistream_or_type.delegate
+        else:
+            b_type = get_class(unistream_or_type)
+            unistream_or_type = b_type
+        return UniConstraintStream(self.delegate.ifNotExists(unistream_or_type,
+                                                             extract_joiners(joiners,
+                                                                             self.a_type, b_type)),
                                    self.package, self.a_type)
 
     def if_not_exists_including_unassigned(self, item_type: Type[B_], *joiners: 'BiJoiner[A, B_]') -> \
             'UniConstraintStream[A]':
         """
-        Create a new `UniConstraintStream` for every A where there does not exist a B where all specified joiners are
-        satisfied.
-       """
+        Create a new `UniConstraintStream` for every A where B does not exist that satisfies all specified joiners.
+        """
         item_type = get_class(item_type)
         return UniConstraintStream(self.delegate.ifNotExistsIncludingUnassigned(item_type,
                                                                                 extract_joiners(joiners,
-                                                                                                self.a_type,
-                                                                                                item_type)),
-                                   self.package,
-
-                                   self.a_type)
+                                                                                                self.a_type, item_type)),
+                                   self.package, self.a_type)
 
     def if_not_exists_other(self, item_type: Type[B_], *joiners: 'BiJoiner[A, B_]') -> \
             'UniConstraintStream[A]':
         """
-        Create a new `UniConstraintStream` for every A where there does not exist a different A where all specified
-        joiners are satisfied.
+        Create a new `UniConstraintStream` for every A where B does not exist that satisfies all specified joiners.
         """
         item_type = get_class(item_type)
         return UniConstraintStream(self.delegate.ifNotExistsOther(cast(Type['A_'], item_type),
                                                                   extract_joiners(joiners,
                                                                                   self.a_type,
                                                                                   item_type)),
-                                   self.package,
-
-                                   self.a_type)
+                                   self.package, self.a_type)
 
     def if_not_exists_other_including_unassigned(self, item_type: Type[B_], *joiners: 'BiJoiner[A, B_]') -> \
             'UniConstraintStream[A]':
         """
-        Create a new `UniConstraintStream` for every A where there does not exist a different A where all specified
-        joiners are satisfied.
+        Create a new `UniConstraintStream` for every A where a different A does not exist
+        that satisfies all specified joiners.
         """
         item_type = get_class(item_type)
         return UniConstraintStream(self.delegate.ifNotExistsOtherIncludingUnassigned(cast(Type['A_'], item_type),
                                                                                      extract_joiners(joiners,
-                                                                                                     self.a_type,
-                                                                                                     item_type)),
-                                   self.package,
-                                   self.a_type)
+                                                                                                     self.a_type, item_type)),
+                                   self.package, self.a_type)
 
     @overload
     def group_by(self, key_mapping: Callable[[A], A_]) -> 'UniConstraintStream[A_]':
@@ -714,7 +733,7 @@ class BiConstraintStream(Generic[A, B]):
     def join(self, unistream_or_type: Union[UniConstraintStream[C_], Type[C_]],
              *joiners: 'TriJoiner[A,B,C_]') -> 'TriConstraintStream[A,B,C_]':
         """
-        Create a new `TriConstraintStream` for every combination of A, B and C that satisfy all specified joiners.
+        Create a new `TriConstraintStream` for every combination of A, B and C that satisfies all specified joiners.
         """
         c_type = None
         if isinstance(unistream_or_type, UniConstraintStream):
@@ -724,62 +743,86 @@ class BiConstraintStream(Generic[A, B]):
             c_type = get_class(unistream_or_type)
             unistream_or_type = c_type
 
-        join_result = self.delegate.join(unistream_or_type, extract_joiners(joiners, self.a_type, self.b_type, c_type))
+        join_result = self.delegate.join(unistream_or_type, extract_joiners(joiners,
+                                                                            self.a_type, self.b_type, c_type))
         return TriConstraintStream(join_result, self.package,
-
                                    self.a_type, self.b_type, c_type)
 
+    @overload
     def if_exists(self, item_type: Type[C_], *joiners: 'TriJoiner[A, B, C_]') -> 'BiConstraintStream[A,B]':
+        ...
+
+    @overload
+    def if_exists(self, other_stream: 'UniConstraintStream[C_]', *joiners: 'TriJoiner[A, B, C_]') \
+            -> 'BiConstraintStream[A,B]':
+        ...
+
+    def if_exists(self, unistream_or_type: Union['UniConstraintStream[C_]', Type[C_]],
+                  *joiners: 'TriJoiner[A, B, C_]') -> 'BiConstraintStream[A,B]':
         """
-        Create a new `BiConstraintStream` for every A, B where C exists that satisfy all specified joiners.
+        Create a new `BiConstraintStream` for every A, B where C exists that satisfies all specified joiners.
         """
-        item_type = get_class(item_type)
-        return BiConstraintStream(self.delegate.ifExists(item_type,
-                                                         extract_joiners(joiners, self.a_type,
-                                                                         self.b_type, item_type)),
-                                  self.package,
-                                  self.a_type, self.b_type)
+        c_type = None
+        if isinstance(unistream_or_type, UniConstraintStream):
+            c_type = unistream_or_type.a_type
+            unistream_or_type = unistream_or_type.delegate
+        else:
+            c_type = get_class(unistream_or_type)
+            unistream_or_type = c_type
+        return BiConstraintStream(self.delegate.ifExists(unistream_or_type,
+                                                         extract_joiners(joiners,
+                                                                         self.a_type, self.b_type, c_type)),
+                                  self.package, self.a_type, self.b_type)
 
     def if_exists_including_unassigned(self, item_type: Type[C_], *joiners: 'TriJoiner[A, B, C_]') -> \
             'BiConstraintStream[A,B]':
         """
-        Create a new `BiConstraintStream` for every A, B where C exists that satisfy all specified joiners.
+        Create a new `BiConstraintStream` for every A, B where C exists that satisfies all specified joiners.
         """
         item_type = get_class(item_type)
         return BiConstraintStream(self.delegate.ifExistsIncludingUnassigned(item_type, extract_joiners(joiners,
                                                                                                        self.a_type,
                                                                                                        self.b_type,
                                                                                                        item_type)),
-                                  self.package,
+                                  self.package, self.a_type, self.b_type)
 
-                                  self.a_type, self.b_type)
+    @overload
+    def if_not_exists(self, item_type: Type[C_], *joiners: 'TriJoiner[A, B, C_]') -> 'BiConstraintStream[A,B]':
+        ...
 
-    def if_not_exists(self, item_type: Type[C_], *joiners: 'TriJoiner[A, B, C_]') -> \
-            'BiConstraintStream[A,B]':
+    @overload
+    def if_not_exists(self, other_stream: 'UniConstraintStream[C_]', *joiners: 'TriJoiner[A, B, C_]')\
+            -> 'BiConstraintStream[A,B]':
+        ...
+
+    def if_not_exists(self, unistream_or_type: Union['UniConstraintStream[C_]', Type[C_]],
+                      *joiners: 'TriJoiner[A, B, C_]') -> 'BiConstraintStream[A,B]':
         """
-        Create a new `BiConstraintStream` for every A, B, where there does not exist a C where all specified joiners
-        are satisfied.
-       """
-        item_type = get_class(item_type)
-        return BiConstraintStream(self.delegate.ifNotExists(item_type, extract_joiners(joiners, self.a_type,
-                                                                                       self.b_type, item_type)),
-                                  self.package,
-                                  self.a_type, self.b_type)
+        Create a new `BiConstraintStream` for every A, B where C does not exist that satisfies all specified joiners.
+        """
+        c_type = None
+        if isinstance(unistream_or_type, UniConstraintStream):
+            c_type = unistream_or_type.a_type
+            unistream_or_type = unistream_or_type.delegate
+        else:
+            c_type = get_class(unistream_or_type)
+            unistream_or_type = c_type
+        return BiConstraintStream(self.delegate.ifNotExists(unistream_or_type,
+                                                            extract_joiners(joiners,
+                                                                            self.a_type, self.b_type, c_type)),
+                                  self.package, self.a_type, self.b_type)
 
     def if_not_exists_including_unassigned(self, item_type: Type[C_], *joiners: 'TriJoiner[A, B, C_]') -> \
             'BiConstraintStream[A,B]':
         """
-        Create a new `BiConstraintStream` for every A, B, where there does not exist a C where all specified joiners
-        are satisfied.
+        Create a new `BiConstraintStream` for every A, B where C does not exist that satisfies all specified joiners.
         """
         item_type = get_class(item_type)
         return BiConstraintStream(self.delegate.ifNotExistsIncludingUnassigned(item_type,
                                                                                extract_joiners(joiners,
-                                                                                               self.a_type,
-                                                                                               self.b_type,
+                                                                                               self.a_type, self.b_type,
                                                                                                item_type)),
-                                  self.package,
-                                  self.a_type, self.b_type)
+                                  self.package, self.a_type, self.b_type)
 
     @overload
     def group_by(self, key_mapping: Callable[[A, B], A_]) -> 'UniConstraintStream[A_]':
@@ -1349,7 +1392,7 @@ class TriConstraintStream(Generic[A, B, C]):
     def join(self, unistream_or_type: Union[UniConstraintStream[D_], Type[D_]],
              *joiners: 'QuadJoiner[A, B, C, D_]') -> 'QuadConstraintStream[A,B,C,D_]':
         """
-        Create a new `QuadConstraintStream` for every combination of A, B and C that satisfy all specified joiners.
+        Create a new `QuadConstraintStream` for every combination of A, B and C that satisfies all specified joiners.
         """
         d_type = None
         if isinstance(unistream_or_type, UniConstraintStream):
@@ -1359,54 +1402,85 @@ class TriConstraintStream(Generic[A, B, C]):
             d_type = get_class(unistream_or_type)
             unistream_or_type = d_type
 
-        join_result = self.delegate.join(unistream_or_type, extract_joiners(joiners, self.a_type, self.b_type,
-                                                                            self.c_type, d_type))
+        join_result = self.delegate.join(unistream_or_type, extract_joiners(joiners,
+                                                                            self.a_type, self.b_type, self.c_type,
+                                                                            d_type))
         return QuadConstraintStream(join_result, self.package,
                                     self.a_type, self.b_type, self.c_type, d_type)
 
+    @overload
     def if_exists(self, item_type: Type[D_], *joiners: 'QuadJoiner[A, B, C, D_]') -> \
             'TriConstraintStream[A,B,C]':
+        ...
+
+    @overload
+    def if_exists(self, other_stream: 'UniConstraintStream[D_]', *joiners: 'QuadJoiner[A, B, C, D_]') -> \
+            'TriConstraintStream[A,B,C]':
+        ...
+
+    def if_exists(self, unistream_or_type: Union['UniConstraintStream[D_]', Type[D_]],
+                  *joiners: 'QuadJoiner[A, B, C, D_]') -> 'TriConstraintStream[A,B,C]':
         """
-        Create a new `TriConstraintStream` for every A, B, C where D exists that satisfy all specified joiners.
+        Create a new `TriConstraintStream` for every A, B, C where D exists that satisfies all specified joiners.
         """
-        item_type = get_class(item_type)
-        return TriConstraintStream(self.delegate.ifExists(item_type, extract_joiners(joiners, self.a_type,
-                                                                                     self.b_type, self.c_type,
-                                                                                     item_type)), self.package,
-                                   self.a_type, self.b_type, self.c_type)
+        d_type = None
+        if isinstance(unistream_or_type, UniConstraintStream):
+            d_type = unistream_or_type.a_type
+            unistream_or_type = unistream_or_type.delegate
+        else:
+            d_type = get_class(unistream_or_type)
+            unistream_or_type = d_type
+        return TriConstraintStream(self.delegate.ifExists(unistream_or_type,
+                                                          extract_joiners(joiners,
+                                                                          self.a_type, self.b_type, self.c_type,
+                                                                          d_type)),
+                                   self.package, self.a_type, self.b_type, self.c_type)
 
     def if_exists_including_unassigned(self, item_type: Type[D_], *joiners: 'QuadJoiner[A, B, C, D_]') -> \
             'TriConstraintStream[A,B,C]':
         """
-        Create a new `TriConstraintStream` for every A, B where D exists that satisfy all specified joiners.
+        Create a new `TriConstraintStream` for every A, B where D exists that satisfies all specified joiners.
         """
         item_type = get_class(item_type)
-        return TriConstraintStream(self.delegate.ifExistsIncludingUnassigned(item_type, extract_joiners(joiners,
-                                                                                                        self.a_type,
-                                                                                                        self.b_type,
-                                                                                                        self.c_type,
-                                                                                                        item_type)),
+        return TriConstraintStream(self.delegate.ifExistsIncludingUnassigned(item_type,
+                                                                             extract_joiners(joiners,
+                                                                                             self.a_type, self.b_type,
+                                                                                             self.c_type, item_type)),
                                    self.package, self.a_type, self.b_type, self.c_type)
 
+    @overload
     def if_not_exists(self, item_type: Type[D_], *joiners: 'QuadJoiner[A, B, C, D_]') -> \
             'TriConstraintStream[A,B,C]':
+        ...
+
+    @overload
+    def if_not_exists(self, other_stream: 'UniConstraintStream[D_]', *joiners: 'QuadJoiner[A, B, C, D_]') -> \
+            'TriConstraintStream[A,B,C]':
+        ...
+
+    def if_not_exists(self, unistream_or_type: Union['UniConstraintStream[D_]', Type[D_]],
+                      *joiners: 'QuadJoiner[A, B, C, D_]') -> 'TriConstraintStream[A,B,C]':
         """
-        Create a new `TriConstraintStream` for every A, B, C where there does not exist a D where all specified joiners
-        are satisfied.
+        Create a new `TriConstraintStream` for every A, B, C where D does not exist
+        that satisfies all specified joiners.
         """
-        item_type = get_class(item_type)
-        return TriConstraintStream(self.delegate.ifNotExists(item_type, extract_joiners(joiners,
-                                                                                        self.a_type,
-                                                                                        self.b_type,
-                                                                                        self.c_type,
-                                                                                        item_type)),
+        d_type = None
+        if isinstance(unistream_or_type, UniConstraintStream):
+            d_type = unistream_or_type.a_type
+            unistream_or_type = unistream_or_type.delegate
+        else:
+            d_type = get_class(unistream_or_type)
+            unistream_or_type = d_type
+        return TriConstraintStream(self.delegate.ifNotExists(unistream_or_type,
+                                                             extract_joiners(joiners,
+                                                                             self.a_type, self.b_type, self.c_type,
+                                                                             d_type)),
                                    self.package, self.a_type, self.b_type, self.c_type)
 
     def if_not_exists_including_unassigned(self, item_type: Type[D_], *joiners: 'QuadJoiner[A, B, C, D_]') -> \
             'TriConstraintStream[A,B,C]':
         """
-        Create a new `TriConstraintStream` for every A, B, C where there does not exist a D where all specified joiners
-        are satisfied.
+        Create a new `TriConstraintStream` for every A, B, C where D does not exist that satisfies all specified joiners.
         """
         item_type = get_class(item_type)
         return TriConstraintStream(self.delegate.ifNotExistsIncludingUnassigned(item_type,
@@ -1575,8 +1649,8 @@ class TriConstraintStream(Generic[A, B, C]):
             raise ValueError(f'At least one mapping function is required for map.')
         if len(mapping_functions) > 4:
             raise ValueError(f'At most four mapping functions can be passed to map (got {len(mapping_functions)}).')
-        translated_functions = tuple(map(lambda mapping_function: function_cast(mapping_function, self.a_type,
-                                                                                self.b_type, self.c_type),
+        translated_functions = tuple(map(lambda mapping_function: function_cast(mapping_function,
+                                                                                self.a_type, self.b_type, self.c_type),
                                          mapping_functions))
         if len(mapping_functions) == 1:
             return UniConstraintStream(self.delegate.map(*translated_functions), self.package,
@@ -1989,25 +2063,38 @@ class QuadConstraintStream(Generic[A, B, C, D]):
                                     self.a_type,
                                     self.b_type, self.c_type, self.d_type)
 
+    @overload
     def if_exists(self, item_type: Type[E_], *joiners: 'PentaJoiner[A, B, C, D, E_]') -> \
             'QuadConstraintStream[A,B,C,D]':
+        ...
+
+    @overload
+    def if_exists(self, other_stream: 'UniConstraintCollector[E_]', *joiners: 'PentaJoiner[A, B, C, D, E_]') -> \
+            'QuadConstraintStream[A,B,C,D]':
+        ...
+
+    def if_exists(self, unistream_or_type: Union['UniConstraintStream[E_]', Type[E_]],
+                  *joiners: 'PentaJoiner[A, B, C, D, E_]') -> 'QuadConstraintStream[A,B,C,D]':
         """
-        Create a new `QuadConstraintStream` for every A, B, C, D where E exists that satisfy all specified joiners.
+        Create a new `QuadConstraintStream` for every A, B, C, D where E exists that satisfies all specified joiners.
         """
-        item_type = get_class(item_type)
-        return QuadConstraintStream(self.delegate.ifExists(item_type, extract_joiners(joiners,
-                                                                                      self.a_type,
-                                                                                      self.b_type,
-                                                                                      self.c_type,
-                                                                                      self.d_type,
-                                                                                      item_type)),
-                                    self.package,
-                                    self.a_type, self.b_type, self.c_type, self.d_type)
+        e_type = None
+        if isinstance(unistream_or_type, UniConstraintStream):
+            e_type = unistream_or_type.a_type
+            unistream_or_type = unistream_or_type.delegate
+        else:
+            e_type = get_class(unistream_or_type)
+            unistream_or_type = e_type
+        return QuadConstraintStream(self.delegate.ifExists(unistream_or_type,
+                                                           extract_joiners(joiners,
+                                                                           self.a_type, self.b_type, self.c_type,
+                                                                           self.d_type, e_type)),
+                                    self.package, self.a_type, self.b_type, self.c_type, self.d_type)
 
     def if_exists_including_unassigned(self, item_type: Type[E_], *joiners: 'PentaJoiner[A, B, C, D, E_]') -> \
             'QuadConstraintStream[A,B,C,D]':
         """
-        Create a new `QuadConstraintStream` for every A, B, C, D where E exists that satisfy all specified joiners.
+        Create a new `QuadConstraintStream` for every A, B, C, D where E exists that satisfies all specified joiners.
         """
         item_type = get_class(item_type)
         return QuadConstraintStream(self.delegate.ifExistsIncludingUnassigned(item_type,
@@ -2020,27 +2107,40 @@ class QuadConstraintStream(Generic[A, B, C, D]):
                                     self.package,
                                     self.a_type, self.b_type, self.c_type, self.d_type)
 
+    @overload
     def if_not_exists(self, item_type: Type[E_], *joiners: 'PentaJoiner[A, B, C, D, E_]') -> \
             'QuadConstraintStream[A,B,C,D]':
+        ...
+
+    @overload
+    def if_not_exists(self, other_stream: 'UniConstraintCollector[E_]', *joiners: 'PentaJoiner[A, B, C, D, E_]') -> \
+            'QuadConstraintStream[A,B,C,D]':
+        ...
+
+    def if_not_exists(self, unistream_or_type: Union['UniConstraintStream[E_]', Type[E_]],
+                      *joiners: 'PentaJoiner[A, B, C, D, E_]') -> 'QuadConstraintStream[A,B,C,D]':
         """
-        Create a new `QuadConstraintStream` for every A, B, C, D where there does not exist an E where all specified
-        joiners are satisfied.
+        Create a new `QuadConstraintStream` for every A, B, C, D where E does not exist
+        that satisfies all specified joiners.
         """
-        item_type = get_class(item_type)
-        return QuadConstraintStream(self.delegate.ifNotExists(item_type, extract_joiners(joiners,
-                                                                                         self.a_type,
-                                                                                         self.b_type,
-                                                                                         self.c_type,
-                                                                                         self.d_type,
-                                                                                         item_type)),
-                                    self.package,
-                                    self.a_type, self.b_type, self.c_type, self.d_type)
+        e_type = None
+        if isinstance(unistream_or_type, UniConstraintStream):
+            e_type = unistream_or_type.a_type
+            unistream_or_type = unistream_or_type.delegate
+        else:
+            e_type = get_class(unistream_or_type)
+            unistream_or_type = e_type
+        return QuadConstraintStream(self.delegate.ifNotExists(unistream_or_type,
+                                                              extract_joiners(joiners,
+                                                                              self.a_type, self.b_type, self.c_type,
+                                                                              self.d_type, e_type)),
+                                    self.package, self.a_type, self.b_type, self.c_type, self.d_type)
 
     def if_not_exists_including_unassigned(self, item_type: Type[E_], *joiners: 'PentaJoiner[A, B, C, D, E_]') -> \
             'QuadConstraintStream[A,B,C,D]':
         """
-        Create a new `QuadConstraintStream` for every A, B, C, D where there does not exist an E where all specified
-        joiners are satisfied.
+        Create a new `QuadConstraintStream` for every A, B, C,
+        D where E does not exist that satisfies all specified joiners.
         """
         item_type = get_class(item_type)
         return QuadConstraintStream(self.delegate.ifNotExistsIncludingUnassigned(item_type,
