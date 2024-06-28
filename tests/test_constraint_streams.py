@@ -721,6 +721,7 @@ ignored_java_functions = {
 
 
 def test_has_all_methods():
+    missing = []
     for python_type, java_type in ((UniConstraintStream, JavaUniConstraintStream),
                                    (BiConstraintStream, JavaBiConstraintStream),
                                    (TriConstraintStream, JavaTriConstraintStream),
@@ -732,7 +733,6 @@ def test_has_all_methods():
                                    (Joiners, JavaJoiners),
                                    (ConstraintCollectors, JavaConstraintCollectors),
                                    (ConstraintFactory, JavaConstraintFactory)):
-        missing = []
         for function_name, function_impl in inspect.getmembers(java_type, inspect.isfunction):
             if function_name in ignored_java_functions:
                 continue
@@ -745,8 +745,10 @@ def test_has_all_methods():
             # change h_t_t_p -> http
             snake_case_name = re.sub('([a-z0-9])([A-Z])', r'\1_\2', snake_case_name).lower()
             if not hasattr(python_type, snake_case_name):
-                missing.append(snake_case_name)
+                missing.append((java_type, python_type, snake_case_name))
 
-        if missing:
-            raise AssertionError(f'{python_type} is missing methods ({missing}) '
-                                 f'from java_type ({java_type}).)')
+    if missing:
+        assertion_msg = ''
+        for java_type, python_type, snake_case_name in missing:
+            assertion_msg += f'{python_type} is missing a method ({snake_case_name}) from java_type ({java_type}).)\n'
+        raise AssertionError(assertion_msg)
