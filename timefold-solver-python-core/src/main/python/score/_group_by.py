@@ -1013,78 +1013,78 @@ class ConstraintCollectors:
         else:
             raise ValueError
 
-    @overload
+    @overload  # noqa
     @staticmethod
     def load_balance(balanced_item_function: Callable[[A], Balanced_]) -> \
             'UniConstraintCollector[A, Any, LoadBalance[Balanced_]]':
         ...
 
-    @overload
+    @overload  # noqa
     @staticmethod
     def load_balance(balanced_item_function: Callable[[A], Balanced_], load_function: Callable[[A], int]) -> \
             'UniConstraintCollector[A, Any, LoadBalance[Balanced_]]':
         ...
 
-    @overload
+    @overload  # noqa
     @staticmethod
     def load_balance(balanced_item_function: Callable[[A], Balanced_], load_function: Callable[[A], int],
                      initial_load_function: Callable[[A], int]) -> \
             'UniConstraintCollector[A, Any, LoadBalance[Balanced_]]':
         ...
 
-    @overload
+    @overload  # noqa
     @staticmethod
     def load_balance(balanced_item_function: Callable[[A, B], Balanced_]) -> \
             'BiConstraintCollector[A, B, Any, LoadBalance[Balanced_]]':
         ...
 
-    @overload
+    @overload  # noqa
     @staticmethod
     def load_balance(balanced_item_function: Callable[[A, B], Balanced_], load_function: Callable[[A, B], int]) -> \
             'BiConstraintCollector[A, B, Any, LoadBalance[Balanced_]]':
         ...
 
-    @overload
+    @overload  # noqa
     @staticmethod
     def load_balance(balanced_item_function: Callable[[A, B], Balanced_], load_function: Callable[[A, B], int],
                      initial_load_function: Callable[[A, B], int]) -> \
             'BiConstraintCollector[A, B, Any, LoadBalance[Balanced_]]':
         ...
 
-    @overload
+    @overload  # noqa
     @staticmethod
     def load_balance(balanced_item_function: Callable[[A, B, C], Balanced_]) -> \
             'TriConstraintCollector[A, B, C, Any, LoadBalance[Balanced_]]':
         ...
 
-    @overload
+    @overload  # noqa
     @staticmethod
     def load_balance(balanced_item_function: Callable[[A, B, C], Balanced_],
                      load_function: Callable[[A, B, C], int]) -> \
             'TriConstraintCollector[A, B, C, Any, LoadBalance[Balanced_]]':
         ...
 
-    @overload
+    @overload  # noqa
     @staticmethod
     def load_balance(balanced_item_function: Callable[[A, B, C], Balanced_], load_function: Callable[[A, B, C], int],
                      initial_load_function: Callable[[A, B, C], int]) -> \
             'TriConstraintCollector[A, B, C, Any, LoadBalance[Balanced_]]':
         ...
 
-    @overload
+    @overload  # noqa
     @staticmethod
     def load_balance(balanced_item_function: Callable[[A, B, C, D], Balanced_]) -> \
             'QuadConstraintCollector[A, B, C, D, Any, LoadBalance[Balanced_]]':
         ...
 
-    @overload
+    @overload  # noqa
     @staticmethod
     def load_balance(balanced_item_function: Callable[[A, B, C, D], Balanced_],
                      load_function: Callable[[A, B, C, D], int]) -> \
             'QuadConstraintCollector[A, B, C, D, Any, LoadBalance[Balanced_]]':
         ...
 
-    @overload
+    @overload  # noqa
     @staticmethod
     def load_balance(balanced_item_function: Callable[[A, B, C, D], Balanced_],
                      load_function: Callable[[A, B, C, D], int],
