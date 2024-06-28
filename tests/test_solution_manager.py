@@ -127,6 +127,21 @@ def assert_score_analysis(problem: Solution, score_analysis: ScoreAnalysis):
     assert_constraint_analysis(problem, constraint_analysis)
 
 
+def assert_score_analysis_summary(score_analysis: ScoreAnalysis):
+    summary = score_analysis.summary
+    assert "Explanation of score (3):" in summary
+    assert "Constraint matches:" in summary
+    assert "3: constraint (Maximize Value) has 3 matches:" in summary
+    assert "1: justified with" in summary
+
+    match = score_analysis.constraint_analyses[0]
+    match_summary = match.summary
+    assert "Explanation of score (3):" in match_summary
+    assert "Constraint matches:" in match_summary
+    assert "3: constraint (Maximize Value) has 3 matches:" in match_summary
+    assert "1: justified with" in match_summary
+
+
 def assert_solution_manager(solution_manager: SolutionManager[Solution]):
     problem: Solution = Solution([Entity('A', 1), Entity('B', 1), Entity('C', 1)], [1, 2, 3])
     assert problem.score is None
@@ -139,6 +154,9 @@ def assert_solution_manager(solution_manager: SolutionManager[Solution]):
 
     score_analysis = solution_manager.analyze(problem)
     assert_score_analysis(problem, score_analysis)
+
+    score_analysis = solution_manager.analyze(problem)
+    assert_score_analysis_summary(score_analysis)
 
 
 def test_solver_manager_score_manager():

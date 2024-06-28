@@ -445,13 +445,18 @@ class ConstraintAnalysis(Generic[Score_]):
          but still non-zero constraint weight; non-empty if constraint has matches.
          This is a list to simplify access to individual elements,
          but it contains no duplicates just like `set` wouldn't.
-
+    summary : str
+        Returns a diagnostic text
+        that explains part of the score quality through the ConstraintAnalysis API.
     """
     _delegate: '_JavaConstraintAnalysis[Score_]'
 
     def __init__(self, delegate: '_JavaConstraintAnalysis[Score_]'):
         self._delegate = delegate
         delegate.constraintRef()
+
+    def __str__(self):
+        return self.summary
 
     @property
     def constraint_ref(self) -> ConstraintRef:
@@ -479,6 +484,9 @@ class ConstraintAnalysis(Generic[Score_]):
     def score(self) -> Score_:
         return to_python_score(self._delegate.score())
 
+    @property
+    def summary(self) -> str:
+        return self._delegate.summarize()
 
 class ScoreAnalysis:
     """
@@ -510,6 +518,16 @@ class ScoreAnalysis:
     constraint_analyses : list[ConstraintAnalysis]
         Individual ConstraintAnalysis instances that make up this ScoreAnalysis.
 
+    summary : str
+        Returns a diagnostic text
+        that explains the solution through the `ConstraintMatch` API
+        to identify which constraints cause that score quality.
+
+        In case of an infeasible solution, this can help diagnose the cause of that.
+        Do not parse the return value, its format may change without warning.
+        Instead, to provide this information in a UI or a service,
+        use `constraint_analyses` and convert those into a domain-specific API.
+
     Notes
     -----
     the constructors of this record are off-limits.
@@ -519,6 +537,9 @@ class ScoreAnalysis:
 
     def __init__(self, delegate: '_JavaScoreAnalysis'):
         self._delegate = delegate
+
+    def __str__(self):
+        return self.summary
 
     @property
     def score(self) -> 'Score':
@@ -540,6 +561,10 @@ class ScoreAnalysis:
             ConstraintAnalysis(analysis) for analysis in cast(
                 list['_JavaConstraintAnalysis[Score]'], self._delegate.constraintAnalyses())
         ]
+
+    @property
+    def summary(self) -> str:
+        return self._delegate.summarize()
 
 
 __all__ = ['ScoreExplanation',
