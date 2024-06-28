@@ -419,14 +419,28 @@ class UniConstraintStream(Generic[A]):
         ...
 
     @overload
+    def concat(self, other: 'BiConstraintStream[A, B_]', padding_b: Callable[[A], B_]) -> 'BiConstraintStream[A, B_]':
+        ...
+
+    @overload
     def concat(self, other: 'TriConstraintStream[A, B_, C_]') -> 'TriConstraintStream[A, B_, C_]':
+        ...
+
+    @overload
+    def concat(self, other: 'TriConstraintStream[A, B_, C_]', padding_b: Callable[[A], B_],
+               padding_c: Callable[[A], C_]) -> 'TriConstraintStream[A, B_, C_]':
         ...
 
     @overload
     def concat(self, other: 'QuadConstraintStream[A, B_, C_, D_]') -> 'QuadConstraintStream[A, B_, C_, D_]':
         ...
 
-    def concat(self, other):
+    @overload
+    def concat(self, other: 'QuadConstraintStream[A, B_, C_, D_]', padding_b: Callable[[A], B_],
+               padding_c: Callable[[A], C_], padding_d: Callable[[A], D_]) -> 'QuadConstraintStream[A, B_, C_, D_]':
+        ...
+
+    def concat(self, other, padding_b=None, padding_c=None, padding_d=None):
         """
         The concat building block allows you
         to create a constraint stream containing tuples of two other constraint streams.
@@ -436,21 +450,46 @@ class UniConstraintStream(Generic[A]):
         when they come from the same source of data, the tuples will be repeated downstream.
         If this is undesired, use the distinct building block.
         """
+        specified_count = sum(x is not None for x in [padding_b, padding_c, padding_d])
         if isinstance(other, UniConstraintStream):
-            return UniConstraintStream(self.delegate.concat(other.delegate), self.package,
-                                       self.a_type)
+            if specified_count == 0:
+                return UniConstraintStream(self.delegate.concat(other.delegate), self.package,
+                                           self.a_type)
+            else:
+                raise ValueError(f'Concatenating UniConstraintStreams requires no padding functions, '
+                                 f'got {specified_count} instead.')
         elif isinstance(other, BiConstraintStream):
-            return BiConstraintStream(self.delegate.concat(other.delegate), self.package,
-                                      self.a_type,
-                                      other.b_type)
+            if specified_count == 0:
+                return BiConstraintStream(self.delegate.concat(other.delegate), self.package,
+                                          self.a_type, other.b_type)
+            elif specified_count > 1:
+                raise ValueError(f'Concatenating Uni and BiConstraintStream requires 1 padding function, '
+                                 f'got {specified_count} instead.')
+            elif padding_b is None:
+                raise ValueError(f'Concatenating Uni and BiConstraintStream requires padding_b to be provided.')
+            return BiConstraintStream(self.delegate.concat(other.delegate, padding_b), self.package,
+                                      self.a_type, other.b_type)
         elif isinstance(other, TriConstraintStream):
-            return TriConstraintStream(self.delegate.concat(other.delegate), self.package,
-                                       self.a_type,
-                                       other.b_type, other.c_type)
+            if specified_count == 0:
+                return TriConstraintStream(self.delegate.concat(other.delegate), self.package,
+                                           self.a_type, other.b_type, other.c_type)
+            elif specified_count != 2:
+                raise ValueError(f'Concatenating Uni and TriConstraintStream requires 2 padding functions, '
+                                 f'got {specified_count} instead.')
+            elif padding_d is not None:
+                raise ValueError(f'Concatenating Uni and TriConstraintStream requires '
+                                 f'padding_b and padding_c to be provided.')
+            return TriConstraintStream(self.delegate.concat(other.delegate, padding_b, padding_c), self.package,
+                                       self.a_type, other.b_type, other.c_type)
         elif isinstance(other, QuadConstraintStream):
-            return QuadConstraintStream(self.delegate.concat(other.delegate), self.package,
-                                        self.a_type,
-                                        other.b_type, other.c_type, other.d_type)
+            if specified_count == 0:
+                return QuadConstraintStream(self.delegate.concat(other.delegate),
+                                            self.package, self.a_type, other.b_type, other.c_type, other.d_type)
+            elif specified_count != 3:
+                raise ValueError(f'Concatenating Uni and QuadConstraintStream requires 3 padding functions, '
+                                 f'got {specified_count} instead.')
+            return QuadConstraintStream(self.delegate.concat(other.delegate, padding_b, padding_c, padding_d),
+                                        self.package, self.a_type, other.b_type, other.c_type, other.d_type)
         else:
             raise RuntimeError(f'Unhandled constraint stream type {type(other)}.')
 
@@ -466,7 +505,7 @@ class UniConstraintStream(Generic[A]):
             the type of the instances to add to the stream.
         """
         result = self.delegate.complement(get_class(cls))
-        return TriConstraintCollector(result, self.package, self.a_type)
+        return UniConstraintStream(result, self.package, self.a_type)
 
     def penalize(self, constraint_weight: ScoreType, match_weigher: Callable[[A], int] = None) -> \
             'UniConstraintBuilder[A, ScoreType]':
@@ -975,6 +1014,10 @@ class BiConstraintStream(Generic[A, B]):
         ...
 
     @overload
+    def concat(self, other: 'UniConstraintStream[A]', padding_b: Callable[[A], B]) -> 'BiConstraintStream[A, B]':
+        ...
+
+    @overload
     def concat(self, other: 'BiConstraintStream[A, B]') -> 'BiConstraintStream[A, B]':
         ...
 
@@ -983,10 +1026,20 @@ class BiConstraintStream(Generic[A, B]):
         ...
 
     @overload
+    def concat(self, other: 'TriConstraintStream[A, B, C_]', padding_c: Callable[[A, B], C_]) \
+            -> 'TriConstraintStream[A, B, C_]':
+        ...
+
+    @overload
     def concat(self, other: 'QuadConstraintStream[A, B, C_, D_]') -> 'QuadConstraintStream[A, B, C_, D_]':
         ...
 
-    def concat(self, other):
+    @overload
+    def concat(self, other: 'QuadConstraintStream[A, B, C_, D_]', padding_c: Callable[[A, B], C_],
+               padding_d: Callable[[A, B], D_]) -> 'QuadConstraintStream[A, B, C_, D_]':
+        ...
+
+    def concat(self, other, padding_b=None, padding_c=None, padding_d=None):
         """
         The concat building block allows you
         to create a constraint stream containing tuples of two other constraint streams.
@@ -996,21 +1049,48 @@ class BiConstraintStream(Generic[A, B]):
         when they come from the same source of data, the tuples will be repeated downstream.
         If this is undesired, use the distinct building block.
         """
+        specified_count = sum(x is not None for x in [padding_b, padding_c, padding_d])
         if isinstance(other, UniConstraintStream):
-            return BiConstraintStream(self.delegate.concat(other.delegate), self.package,
+            if specified_count == 0:
+                return BiConstraintStream(self.delegate.concat(other.delegate), self.package,
+                                          self.a_type, self.b_type)
+            elif specified_count != 1:
+                raise ValueError(f'Concatenating Bi and UniConstraintStream requires one padding function, '
+                                 f'got {specified_count} instead.')
+            elif padding_b is None:
+                raise ValueError(f'Concatenating Bi and UniConstraintStream requires padding_b to be provided.')
+            return BiConstraintStream(self.delegate.concat(other.delegate, padding_b), self.package,
                                       self.a_type, self.b_type)
         elif isinstance(other, BiConstraintStream):
-            return BiConstraintStream(self.delegate.concat(other.delegate), self.package,
-                                      self.a_type,
-                                      self.b_type)
+            if specified_count == 0:
+                return BiConstraintStream(self.delegate.concat(other.delegate), self.package,
+                                          self.a_type, self.b_type)
+            else:
+                raise ValueError(f'Concatenating BiConstraintStreams requires no padding function, '
+                                 f'got {specified_count} instead.')
         elif isinstance(other, TriConstraintStream):
-            return TriConstraintStream(self.delegate.concat(other.delegate), self.package,
-                                       self.a_type,
-                                       self.b_type, other.c_type)
+            if specified_count == 0:
+                return TriConstraintStream(self.delegate.concat(other.delegate), self.package,
+                                           self.a_type, self.b_type, other.c_type)
+            elif specified_count != 1:
+                raise ValueError(f'Concatenating Bi and TriConstraintStream requires one padding function, '
+                                 f'got {specified_count} instead.')
+            elif padding_c is None:
+                raise ValueError(f'Concatenating Bi and TriConstraintStream requires padding_c to be provided.')
+            return TriConstraintStream(self.delegate.concat(other.delegate, padding_c), self.package,
+                                       self.a_type, self.b_type, other.c_type)
         elif isinstance(other, QuadConstraintStream):
-            return QuadConstraintStream(self.delegate.concat(other.delegate), self.package,
-                                        self.a_type,
-                                        self.b_type, other.c_type, other.d_type)
+            if specified_count == 0:
+                return QuadConstraintStream(self.delegate.concat(other.delegate), self.package,
+                                            self.a_type, self.b_type, other.c_type, other.d_type)
+            elif specified_count != 2:
+                raise ValueError(f'Concatenating Bi and QuadConstraintStream requires two padding functions, '
+                                 f'got {specified_count} instead.')
+            elif padding_b is not None:
+                raise ValueError(f'Concatenating Bi and QuadConstraintStream requires '
+                                 f'padding_c and padding_d to be provided.')
+            return QuadConstraintStream(self.delegate.concat(other.delegate, padding_c, padding_d), self.package,
+                                        self.a_type, self.b_type, other.c_type, other.d_type)
         else:
             raise RuntimeError(f'Unhandled constraint stream type {type(other)}.')
 
@@ -1043,10 +1123,10 @@ class BiConstraintStream(Generic[A, B]):
         """
         if None == padding:
             result = self.delegate.complement(get_class(cls))
-            return TriConstraintCollector(result, self.package, self.a_type, self.b_type)
+            return BiConstraintStream(result, self.package, self.a_type, self.b_type)
         java_padding = function_cast(padding, self.a_type)
         result = self.delegate.complement(get_class(cls), java_padding)
-        return TriConstraintCollector(result, self.package, self.a_type, self.b_type)
+        return BiConstraintStream(result, self.package, self.a_type, self.b_type)
 
     def penalize(self, constraint_weight: ScoreType, match_weigher: Callable[[A, B], int] = None) -> \
             'BiConstraintBuilder[A, B, ScoreType]':
@@ -1552,7 +1632,17 @@ class TriConstraintStream(Generic[A, B, C]):
         ...
 
     @overload
+    def concat(self, other: 'UniConstraintStream[A]', padding_b: Callable[[A], B], padding_c: Callable[[A], C]) \
+            -> 'TriConstraintStream[A, B, C]':
+        ...
+
+    @overload
     def concat(self, other: 'BiConstraintStream[A, B]') -> 'TriConstraintStream[A, B, C]':
+        ...
+
+    @overload
+    def concat(self, other: 'BiConstraintStream[A, B]', padding_c: Callable[[A, B], C]) \
+            -> 'TriConstraintStream[A, B, C]':
         ...
 
     @overload
@@ -1563,7 +1653,12 @@ class TriConstraintStream(Generic[A, B, C]):
     def concat(self, other: 'QuadConstraintStream[A, B, C, D_]') -> 'QuadConstraintStream[A, B, C, D_]':
         ...
 
-    def concat(self, other):
+    @overload
+    def concat(self, other: 'QuadConstraintStream[A, B, C, D_]', padding_d: Callable[[A, B, C], D_]) \
+            -> 'QuadConstraintStream[A, B, C, D_]':
+        ...
+
+    def concat(self, other, padding_b=None, padding_c=None, padding_d=None):
         """
         The concat building block allows you
         to create a constraint stream containing tuples of two other constraint streams.
@@ -1573,22 +1668,48 @@ class TriConstraintStream(Generic[A, B, C]):
         when they come from the same source of data, the tuples will be repeated downstream.
         If this is undesired, use the distinct building block.
         """
+        specified_count = sum(x is not None for x in [padding_b, padding_c, padding_d])
         if isinstance(other, UniConstraintStream):
-            return TriConstraintStream(self.delegate.concat(other.delegate), self.package,
-                                       self.a_type,
-                                       self.b_type, self.c_type)
+            if specified_count == 0:
+                return TriConstraintStream(self.delegate.concat(other.delegate), self.package,
+                                           self.a_type, self.b_type, self.c_type)
+            elif specified_count != 2:
+                raise ValueError(f'Concatenating Tri and UniConstraintStream requires 2 padding functions, '
+                                 f'got {specified_count} instead.')
+            elif padding_d is not None:
+                raise ValueError(f'Concatenating Tri and UniConstraintStream requires '
+                                 f'padding_b and padding_c to be provided.')
+            return TriConstraintStream(self.delegate.concat(other.delegate, padding_b, padding_c), self.package,
+                                       self.a_type, self.b_type, self.c_type)
         elif isinstance(other, BiConstraintStream):
-            return TriConstraintStream(self.delegate.concat(other.delegate), self.package,
-                                       self.a_type,
-                                       self.b_type, self.c_type)
+            if specified_count == 0:
+                return TriConstraintStream(self.delegate.concat(other.delegate), self.package,
+                                           self.a_type, self.b_type, self.c_type)
+            elif specified_count != 1:
+                raise ValueError(f'Concatenating Tri and BiConstraintStream requires 1 padding function, '
+                                 f'got {specified_count} instead.')
+            elif padding_c is None:
+                raise ValueError(f'Concatenating Tri and BiConstraintStream requires padding_c to be provided.')
+            return TriConstraintStream(self.delegate.concat(other.delegate, padding_c), self.package,
+                                       self.a_type, self.b_type, self.c_type)
         elif isinstance(other, TriConstraintStream):
-            return TriConstraintStream(self.delegate.concat(other.delegate), self.package,
-                                       self.a_type,
-                                       self.b_type, self.c_type)
+            if specified_count == 0:
+                return TriConstraintStream(self.delegate.concat(other.delegate), self.package,
+                                           self.a_type, self.b_type, self.c_type)
+            else:
+                raise ValueError(f'Concatenating TriConstraintStreams requires no padding functions, '
+                                 f'got {specified_count} instead.')
         elif isinstance(other, QuadConstraintStream):
-            return QuadConstraintStream(self.delegate.concat(other.delegate), self.package,
-                                        self.a_type,
-                                        self.b_type, self.c_type, other.d_type)
+            if specified_count == 0:
+                return QuadConstraintStream(self.delegate.concat(other.delegate), self.package,
+                                            self.a_type, self.b_type, self.c_type, other.d_type)
+            elif specified_count != 1:
+                raise ValueError(f'Concatenating Tri and QuadConstraintStream requires 1 padding function, '
+                                 f'got {specified_count} instead.')
+            elif padding_d is None:
+                raise ValueError(f'Concatenating Tri and QuadConstraintStream requires padding_d to be provided.')
+            return QuadConstraintStream(self.delegate.concat(other.delegate, padding_d), self.package,
+                                        self.a_type, self.b_type, self.c_type, other.d_type)
         else:
             raise RuntimeError(f'Unhandled constraint stream type {type(other)}.')
 
@@ -1628,14 +1749,14 @@ class TriConstraintStream(Generic[A, B, C]):
         """
         if None == padding_b == padding_c:
             result = self.delegate.complement(get_class(cls))
-            return TriConstraintCollector(result, self.package, self.a_type, self.b_type, self.c_type)
+            return TriConstraintStream(result, self.package, self.a_type, self.b_type, self.c_type)
         specified_count = sum(x is not None for x in [padding_b, padding_c])
         if specified_count != 0:
             raise ValueError(f'If a padding function is provided, both are expected, got {specified_count} instead.')
         java_padding_b = function_cast(padding_b, self.a_type)
         java_padding_c = function_cast(padding_c, self.a_type)
         result = self.delegate.complement(get_class(cls), java_padding_b, java_padding_c)
-        return TriConstraintCollector(result, self.package, self.a_type, self.b_type, self.c_type)
+        return TriConstraintStream(result, self.package, self.a_type, self.b_type, self.c_type)
 
     def penalize(self, constraint_weight: ScoreType,
                  match_weigher: Callable[[A, B, C], int] = None) -> 'TriConstraintBuilder[A, B, C, ScoreType]':
@@ -2134,6 +2255,20 @@ class QuadConstraintStream(Generic[A, B, C, D]):
         ...
 
     @overload
+    def concat(self, other: 'UniConstraintStream[A]', padding_b: Callable[[A], B], padding_c: Callable[[A], C],
+               padding_d: Callable[[A], D]) -> 'QuadConstraintStream[A, B, C, D]':
+        ...
+
+    @overload
+    def concat(self, other: 'BiConstraintStream[A, B]') -> 'QuadConstraintStream[A, B, C, D]':
+        ...
+
+    @overload
+    def concat(self, other: 'BiConstraintStream[A, B]', padding_c: Callable[[A, B], C],
+               padding_d: Callable[[A, B], D]) -> 'QuadConstraintStream[A, B, C, D]':
+        ...
+
+    @overload
     def concat(self, other: 'BiConstraintStream[A, B]') -> 'QuadConstraintStream[A, B, C, D]':
         ...
 
@@ -2142,10 +2277,15 @@ class QuadConstraintStream(Generic[A, B, C, D]):
         ...
 
     @overload
+    def concat(self, other: 'TriConstraintStream[A, B, C]', padding_d: Callable[[A, B, C], D]) \
+            -> 'QuadConstraintStream[A, B, C, D]':
+        ...
+
+    @overload
     def concat(self, other: 'QuadConstraintStream[A, B, C, D]') -> 'QuadConstraintStream[A, B, C, D]':
         ...
 
-    def concat(self, other):
+    def concat(self, other, padding_b=None, padding_c=None, padding_d=None):
         """
         The concat building block allows you
         to create a constraint stream containing tuples of two other constraint streams.
@@ -2155,22 +2295,47 @@ class QuadConstraintStream(Generic[A, B, C, D]):
         when they come from the same source of data, the tuples will be repeated downstream.
         If this is undesired, use the distinct building block.
         """
+        specified_count = sum(x is not None for x in [padding_b, padding_c, padding_d])
         if isinstance(other, UniConstraintStream):
-            return QuadConstraintStream(self.delegate.concat(other.delegate), self.package,
-                                        self.a_type,
-                                        self.b_type, self.c_type, self.d_type)
+            if specified_count == 0:
+                return QuadConstraintStream(self.delegate.concat(other.delegate), self.package,
+                                            self.a_type, self.b_type, self.c_type, self.d_type)
+            elif specified_count != 3:
+                raise ValueError(f'Concatenating Uni and QuadConstraintStream requires 3 padding functions, '
+                                 f'got {specified_count} instead.')
+            return QuadConstraintStream(self.delegate.concat(other.delegate, padding_b, padding_c, padding_d),
+                                        self.package,
+                                        self.a_type, self.b_type, self.c_type, self.d_type)
         elif isinstance(other, BiConstraintStream):
-            return QuadConstraintStream(self.delegate.concat(other.delegate), self.package,
-                                        self.a_type,
-                                        self.b_type, self.c_type, self.d_type)
+            if specified_count == 0:
+                return QuadConstraintStream(self.delegate.concat(other.delegate), self.package,
+                                            self.a_type, self.b_type, self.c_type, self.d_type)
+            elif specified_count != 2:
+                raise ValueError(f'Concatenating Bi and QuadConstraintStream requires 2 padding functions, '
+                                 f'got {specified_count} instead.')
+            elif padding_b is not None:
+                raise ValueError(f'Concatenating Bi and QuadConstraintStream requires '
+                                 f'padding_c and padding_d to be provided.')
+            return QuadConstraintStream(self.delegate.concat(other.delegate, padding_c, padding_d), self.package,
+                                        self.a_type, self.b_type, self.c_type, self.d_type)
         elif isinstance(other, TriConstraintStream):
-            return QuadConstraintStream(self.delegate.concat(other.delegate), self.package,
-                                        self.a_type,
-                                        self.b_type, self.c_type, self.d_type)
+            if specified_count == 0:
+                return QuadConstraintStream(self.delegate.concat(other.delegate), self.package,
+                                            self.a_type, self.b_type, self.c_type, self.d_type)
+            elif specified_count != 1:
+                raise ValueError(f'Concatenating Tri and QuadConstraintStream requires 1 padding function, '
+                                 f'got {specified_count} instead.')
+            elif padding_d is None:
+                raise ValueError(f'Concatenating Bi and QuadConstraintStream requires padding_d to be provided.')
+            return QuadConstraintStream(self.delegate.concat(other.delegate, padding_d), self.package,
+                                        self.a_type, self.b_type, self.c_type, self.d_type)
         elif isinstance(other, QuadConstraintStream):
-            return QuadConstraintStream(self.delegate.concat(other.delegate), self.package,
-                                        self.a_type,
-                                        self.b_type, self.c_type, self.d_type)
+            if specified_count == 0:
+                return QuadConstraintStream(self.delegate.concat(other.delegate), self.package,
+                                            self.a_type, self.b_type, self.c_type, self.d_type)
+            else:
+                raise ValueError(f'Concatenating QuadConstraintStreams requires no padding functions, '
+                                 f'got {specified_count} instead.')
         else:
             raise RuntimeError(f'Unhandled constraint stream type {type(other)}.')
 
@@ -2213,7 +2378,7 @@ class QuadConstraintStream(Generic[A, B, C, D]):
         """
         if None == padding_b == padding_c == padding_d:
             result = self.delegate.complement(get_class(cls))
-            return QuadConstraintCollector(result, self.package, self.a_type, self.b_type, self.c_type, self.d_type)
+            return QuadConstraintStream(result, self.package, self.a_type, self.b_type, self.c_type, self.d_type)
         specified_count = sum(x is not None for x in [padding_b, padding_c, padding_d])
         if specified_count != 0:
             raise ValueError(f'If a padding function is provided, all 3 are expected, got {specified_count} instead.')
@@ -2221,7 +2386,7 @@ class QuadConstraintStream(Generic[A, B, C, D]):
         java_padding_c = function_cast(padding_c, self.a_type)
         java_padding_d = function_cast(padding_d, self.a_type)
         result = self.delegate.complement(get_class(cls), java_padding_b, java_padding_c, java_padding_d)
-        return QuadConstraintCollector(result, self.package, self.a_type, self.b_type, self.c_type, self.d_type)
+        return QuadConstraintStream(result, self.package, self.a_type, self.b_type, self.c_type, self.d_type)
 
     def penalize(self, constraint_weight: ScoreType,
                  match_weigher: Callable[[A, B, C, D], int] = None) -> 'QuadConstraintBuilder[A, B, C, D, ScoreType]':

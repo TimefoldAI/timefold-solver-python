@@ -436,6 +436,41 @@ def test_concat():
 
     assert score_manager.explain(problem).score.score == 1
 
+def test_complement():
+    @constraint_provider
+    def define_constraints(constraint_factory: ConstraintFactory):
+        return [
+            constraint_factory.for_each(Entity)
+            .filter(lambda e: e.value.number == 1)
+            .complement(Entity)
+            .reward(SimpleScore.ONE)
+            .as_constraint('Count')
+        ]
+
+    score_manager = create_score_manager(define_constraints)
+    entity_a: Entity = Entity('A')
+    entity_b: Entity = Entity('B')
+
+    value_1 = Value(1)
+    value_2 = Value(2)
+    value_3 = Value(3)
+
+    problem = Solution([entity_a, entity_b], [value_1, value_2, value_3])
+
+    assert score_manager.explain(problem).score.score == 0
+
+    entity_a.value = value_1
+
+    assert score_manager.explain(problem).score.score == 1
+
+    entity_b.value = value_2
+
+    assert score_manager.explain(problem).score.score == 2
+
+    entity_b.value = value_3
+
+    assert score_manager.explain(problem).score.score == 2
+
 
 def test_custom_indictments():
     @dataclass(unsafe_hash=True)
