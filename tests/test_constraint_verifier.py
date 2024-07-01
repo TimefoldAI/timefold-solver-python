@@ -5,9 +5,16 @@ from timefold.solver.score import *
 from timefold.solver.config import *
 from timefold.solver.test import *
 
+import inspect
+import re
 from typing import Annotated, List
 from dataclasses import dataclass, field
 
+from ai.timefold.solver.test.api.score.stream import (ConstraintVerifier as JavaConstraintVerifier,
+                                                      SingleConstraintAssertion as JavaSingleConstraintAssertion,
+                                                      SingleConstraintVerification as JavaSingleConstraintVerification,
+                                                      MultiConstraintAssertion as JavaMultiConstraintAssertion,
+                                                      MultiConstraintVerification as JavaMultiConstraintVerification)
 
 def verifier_suite(verifier: ConstraintVerifier, same_value, is_value_one,
                    solution, e1, e2, e3, v1, v2, v3):
@@ -268,3 +275,39 @@ def test_constraint_verifier_create():
 
     verifier_suite(verifier, same_value, is_value_one,
                    solution, e1, e2, e3, v1, v2, v3)
+
+
+ignored_java_functions = {
+    'equals',
+    'getClass',
+    'hashCode',
+    'notify',
+    'notifyAll',
+    'toString',
+    'wait',
+    'withConstraintStreamImplType'
+}
+
+
+def test_has_all_methods():
+    missing = []
+    for python_type, java_type in ((ConstraintVerifier, JavaConstraintVerifier),
+                                   (SingleConstraintAssertion, JavaSingleConstraintAssertion),
+                                   (SingleConstraintVerification, JavaSingleConstraintVerification),
+                                   (MultiConstraintAssertion, JavaMultiConstraintAssertion),
+                                   (MultiConstraintVerification, JavaMultiConstraintVerification)):
+        for function_name, function_impl in inspect.getmembers(java_type, inspect.isfunction):
+            if function_name in ignored_java_functions:
+                continue
+            snake_case_name = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', function_name)
+            # change h_t_t_p -> http
+            snake_case_name = re.sub('([a-z0-9])([A-Z])', r'\1_\2', snake_case_name).lower()
+            if not hasattr(python_type, snake_case_name):
+                missing.append((java_type, python_type, snake_case_name))
+
+    if missing:
+        assertion_msg = ''
+        for java_type, python_type, snake_case_name in missing:
+            assertion_msg += f'{python_type} is missing a method ({snake_case_name}) from java_type ({java_type}).)\n'
+        raise AssertionError(assertion_msg)
+

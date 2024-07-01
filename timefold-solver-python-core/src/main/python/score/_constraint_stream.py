@@ -58,7 +58,7 @@ class UniConstraintStream(Generic[A]):
     def join(self, unistream_or_type: Union['UniConstraintStream[B_]', Type[B_]], *joiners: 'BiJoiner[A, B_]') -> \
             'BiConstraintStream[A,B_]':
         """
-        Create a new `BiConstraintStream` for every combination of A and B that satisfy all specified joiners.
+        Create a new `BiConstraintStream` for every combination of A and B that satisfies all specified joiners.
         """
         b_type = None
         if isinstance(unistream_or_type, UniConstraintStream):
@@ -72,26 +72,42 @@ class UniConstraintStream(Generic[A]):
         return BiConstraintStream(join_result, self.package,
                                   self.a_type, b_type)
 
+    @overload
     def if_exists(self, item_type: Type[B_], *joiners: 'BiJoiner[A, B_]') -> 'UniConstraintStream[A]':
+        ...
+
+    @overload
+    def if_exists(self, other_stream: 'UniConstraintStream[B_]', *joiners: 'BiJoiner[A, B_]') \
+            -> 'UniConstraintStream[A]':
+        ...
+
+    def if_exists(self, unistream_or_type: Union['UniConstraintStream[B_]', Type[B_]],
+                  *joiners: 'BiJoiner[A, B_]') -> 'UniConstraintStream[A]':
         """
-        Create a new UniConstraintStream for every A where B exists that satisfy all specified joiners.
+        Create a new `UniConstraintStream` for every A where B exists that satisfies all specified joiners.
         """
-        item_type = get_class(item_type)
-        return UniConstraintStream(self.delegate.ifExists(item_type,
-                                                          extract_joiners(joiners, self.a_type, item_type)),
+        b_type = None
+        if isinstance(unistream_or_type, UniConstraintStream):
+            b_type = unistream_or_type.a_type
+            unistream_or_type = unistream_or_type.delegate
+        else:
+            b_type = get_class(unistream_or_type)
+            unistream_or_type = b_type
+        return UniConstraintStream(self.delegate.ifExists(unistream_or_type,
+                                                          extract_joiners(joiners,
+                                                                          self.a_type, b_type)),
                                    self.package, self.a_type)
 
     def if_exists_including_unassigned(self, item_type: Type[B_], *joiners: 'BiJoiner[A, B_]') -> \
             'UniConstraintStream[A]':
         """
-        Create a new `UniConstraintStream` for every A where B exists that satisfy all specified joiners.
+        Create a new `UniConstraintStream` for every A where B exists that satisfies all specified joiners.
         """
         item_type = get_class(item_type)
         return UniConstraintStream(self.delegate.ifExistsIncludingUnassigned(item_type,
-                                                                             extract_joiners(joiners, self.a_type,
-                                                                                             item_type)),
-                                   self.package,
-                                   self.a_type)
+                                                                             extract_joiners(joiners,
+                                                                                             self.a_type, item_type)),
+                                   self.package, self.a_type)
 
     def if_exists_other(self, item_type: Type[B_], *joiners: 'BiJoiner[A, B_]') -> 'UniConstraintStream[A]':
         """
@@ -101,8 +117,7 @@ class UniConstraintStream(Generic[A]):
         item_type = get_class(item_type)
         return UniConstraintStream(self.delegate.ifExistsOther(cast(Type['A_'], item_type),
                                                                extract_joiners(joiners,
-                                                                               self.a_type,
-                                                                               item_type)),
+                                                                               self.a_type, item_type)),
                                    self.package, self.a_type)
 
     def if_exists_other_including_unassigned(self, item_type: Type, *joiners: 'BiJoiner') -> \
@@ -115,65 +130,69 @@ class UniConstraintStream(Generic[A]):
         item_type = get_class(item_type)
         return UniConstraintStream(self.delegate.ifExistsOtherIncludingUnassigned(cast(Type['A_'], item_type),
                                                                                   extract_joiners(joiners,
-                                                                                                  self.a_type,
-                                                                                                  item_type)),
-                                   self.package,
+                                                                                                  self.a_type, item_type)),
+                                   self.package, self.a_type)
 
-                                   self.a_type)
-
+    @overload
     def if_not_exists(self, item_type: Type[B_], *joiners: 'BiJoiner[A, B_]') -> 'UniConstraintStream[A]':
+        ...
+
+    @overload
+    def if_not_exists(self, other_stream: 'UniConstraintStream[B_]', *joiners: 'BiJoiner[A, B_]') \
+            -> 'UniConstraintStream[A]':
+        ...
+
+    def if_not_exists(self, unistream_or_type: Union['UniConstraintStream[B_]', Type[B_]],
+                      *joiners: 'BiJoiner[A, B_]') -> 'UniConstraintStream[A]':
         """
-        Create a new `UniConstraintStream` for every A where there does not exist a B where all specified joiners
-        are satisfied.
+        Create a new `UniConstraintStream` for every A where B does not exist that satisfies all specified joiners.
         """
-        item_type = get_class(item_type)
-        return UniConstraintStream(self.delegate.ifNotExists(item_type, extract_joiners(joiners, self.a_type,
-                                                                                        item_type)),
+        b_type = None
+        if isinstance(unistream_or_type, UniConstraintStream):
+            b_type = unistream_or_type.a_type
+            unistream_or_type = unistream_or_type.delegate
+        else:
+            b_type = get_class(unistream_or_type)
+            unistream_or_type = b_type
+        return UniConstraintStream(self.delegate.ifNotExists(unistream_or_type,
+                                                             extract_joiners(joiners,
+                                                                             self.a_type, b_type)),
                                    self.package, self.a_type)
 
     def if_not_exists_including_unassigned(self, item_type: Type[B_], *joiners: 'BiJoiner[A, B_]') -> \
             'UniConstraintStream[A]':
         """
-        Create a new `UniConstraintStream` for every A where there does not exist a B where all specified joiners are
-        satisfied.
-       """
+        Create a new `UniConstraintStream` for every A where B does not exist that satisfies all specified joiners.
+        """
         item_type = get_class(item_type)
         return UniConstraintStream(self.delegate.ifNotExistsIncludingUnassigned(item_type,
                                                                                 extract_joiners(joiners,
-                                                                                                self.a_type,
-                                                                                                item_type)),
-                                   self.package,
-
-                                   self.a_type)
+                                                                                                self.a_type, item_type)),
+                                   self.package, self.a_type)
 
     def if_not_exists_other(self, item_type: Type[B_], *joiners: 'BiJoiner[A, B_]') -> \
             'UniConstraintStream[A]':
         """
-        Create a new `UniConstraintStream` for every A where there does not exist a different A where all specified
-        joiners are satisfied.
+        Create a new `UniConstraintStream` for every A where B does not exist that satisfies all specified joiners.
         """
         item_type = get_class(item_type)
         return UniConstraintStream(self.delegate.ifNotExistsOther(cast(Type['A_'], item_type),
                                                                   extract_joiners(joiners,
                                                                                   self.a_type,
                                                                                   item_type)),
-                                   self.package,
-
-                                   self.a_type)
+                                   self.package, self.a_type)
 
     def if_not_exists_other_including_unassigned(self, item_type: Type[B_], *joiners: 'BiJoiner[A, B_]') -> \
             'UniConstraintStream[A]':
         """
-        Create a new `UniConstraintStream` for every A where there does not exist a different A where all specified
-        joiners are satisfied.
+        Create a new `UniConstraintStream` for every A where a different A does not exist
+        that satisfies all specified joiners.
         """
         item_type = get_class(item_type)
         return UniConstraintStream(self.delegate.ifNotExistsOtherIncludingUnassigned(cast(Type['A_'], item_type),
                                                                                      extract_joiners(joiners,
-                                                                                                     self.a_type,
-                                                                                                     item_type)),
-                                   self.package,
-                                   self.a_type)
+                                                                                                     self.a_type, item_type)),
+                                   self.package, self.a_type)
 
     @overload
     def group_by(self, key_mapping: Callable[[A], A_]) -> 'UniConstraintStream[A_]':
@@ -419,14 +438,28 @@ class UniConstraintStream(Generic[A]):
         ...
 
     @overload
+    def concat(self, other: 'BiConstraintStream[A, B_]', padding_b: Callable[[A], B_]) -> 'BiConstraintStream[A, B_]':
+        ...
+
+    @overload
     def concat(self, other: 'TriConstraintStream[A, B_, C_]') -> 'TriConstraintStream[A, B_, C_]':
+        ...
+
+    @overload
+    def concat(self, other: 'TriConstraintStream[A, B_, C_]', padding_b: Callable[[A], B_],
+               padding_c: Callable[[A], C_]) -> 'TriConstraintStream[A, B_, C_]':
         ...
 
     @overload
     def concat(self, other: 'QuadConstraintStream[A, B_, C_, D_]') -> 'QuadConstraintStream[A, B_, C_, D_]':
         ...
 
-    def concat(self, other):
+    @overload
+    def concat(self, other: 'QuadConstraintStream[A, B_, C_, D_]', padding_b: Callable[[A], B_],
+               padding_c: Callable[[A], C_], padding_d: Callable[[A], D_]) -> 'QuadConstraintStream[A, B_, C_, D_]':
+        ...
+
+    def concat(self, other, padding_b=None, padding_c=None, padding_d=None):
         """
         The concat building block allows you
         to create a constraint stream containing tuples of two other constraint streams.
@@ -436,23 +469,62 @@ class UniConstraintStream(Generic[A]):
         when they come from the same source of data, the tuples will be repeated downstream.
         If this is undesired, use the distinct building block.
         """
+        specified_count = sum(x is not None for x in [padding_b, padding_c, padding_d])
         if isinstance(other, UniConstraintStream):
-            return UniConstraintStream(self.delegate.concat(other.delegate), self.package,
-                                       self.a_type)
+            if specified_count == 0:
+                return UniConstraintStream(self.delegate.concat(other.delegate), self.package,
+                                           self.a_type)
+            else:
+                raise ValueError(f'Concatenating UniConstraintStreams requires no padding functions, '
+                                 f'got {specified_count} instead.')
         elif isinstance(other, BiConstraintStream):
-            return BiConstraintStream(self.delegate.concat(other.delegate), self.package,
-                                      self.a_type,
-                                      other.b_type)
+            if specified_count == 0:
+                return BiConstraintStream(self.delegate.concat(other.delegate), self.package,
+                                          self.a_type, other.b_type)
+            elif specified_count > 1:
+                raise ValueError(f'Concatenating Uni and BiConstraintStream requires 1 padding function, '
+                                 f'got {specified_count} instead.')
+            elif padding_b is None:
+                raise ValueError(f'Concatenating Uni and BiConstraintStream requires padding_b to be provided.')
+            return BiConstraintStream(self.delegate.concat(other.delegate, padding_b), self.package,
+                                      self.a_type, other.b_type)
         elif isinstance(other, TriConstraintStream):
-            return TriConstraintStream(self.delegate.concat(other.delegate), self.package,
-                                       self.a_type,
-                                       other.b_type, other.c_type)
+            if specified_count == 0:
+                return TriConstraintStream(self.delegate.concat(other.delegate), self.package,
+                                           self.a_type, other.b_type, other.c_type)
+            elif specified_count != 2:
+                raise ValueError(f'Concatenating Uni and TriConstraintStream requires 2 padding functions, '
+                                 f'got {specified_count} instead.')
+            elif padding_d is not None:
+                raise ValueError(f'Concatenating Uni and TriConstraintStream requires '
+                                 f'padding_b and padding_c to be provided.')
+            return TriConstraintStream(self.delegate.concat(other.delegate, padding_b, padding_c), self.package,
+                                       self.a_type, other.b_type, other.c_type)
         elif isinstance(other, QuadConstraintStream):
-            return QuadConstraintStream(self.delegate.concat(other.delegate), self.package,
-                                        self.a_type,
-                                        other.b_type, other.c_type, other.d_type)
+            if specified_count == 0:
+                return QuadConstraintStream(self.delegate.concat(other.delegate),
+                                            self.package, self.a_type, other.b_type, other.c_type, other.d_type)
+            elif specified_count != 3:
+                raise ValueError(f'Concatenating Uni and QuadConstraintStream requires 3 padding functions, '
+                                 f'got {specified_count} instead.')
+            return QuadConstraintStream(self.delegate.concat(other.delegate, padding_b, padding_c, padding_d),
+                                        self.package, self.a_type, other.b_type, other.c_type, other.d_type)
         else:
             raise RuntimeError(f'Unhandled constraint stream type {type(other)}.')
+
+    def complement(self, cls: type[A]) -> 'UniConstraintStream[A]':
+        """
+        Adds to the stream all instances of a given class which are not yet present in it.
+        These instances must be present in the solution,
+        which means the class needs to be either a planning entity or a problem fact.
+
+        Parameters
+        ----------
+        cls : Type[A]
+            the type of the instances to add to the stream.
+        """
+        result = self.delegate.complement(get_class(cls))
+        return UniConstraintStream(result, self.package, self.a_type)
 
     def penalize(self, constraint_weight: ScoreType, match_weigher: Callable[[A], int] = None) -> \
             'UniConstraintBuilder[A, ScoreType]':
@@ -662,7 +734,7 @@ class BiConstraintStream(Generic[A, B]):
     def join(self, unistream_or_type: Union[UniConstraintStream[C_], Type[C_]],
              *joiners: 'TriJoiner[A,B,C_]') -> 'TriConstraintStream[A,B,C_]':
         """
-        Create a new `TriConstraintStream` for every combination of A, B and C that satisfy all specified joiners.
+        Create a new `TriConstraintStream` for every combination of A, B and C that satisfies all specified joiners.
         """
         c_type = None
         if isinstance(unistream_or_type, UniConstraintStream):
@@ -672,62 +744,86 @@ class BiConstraintStream(Generic[A, B]):
             c_type = get_class(unistream_or_type)
             unistream_or_type = c_type
 
-        join_result = self.delegate.join(unistream_or_type, extract_joiners(joiners, self.a_type, self.b_type, c_type))
+        join_result = self.delegate.join(unistream_or_type, extract_joiners(joiners,
+                                                                            self.a_type, self.b_type, c_type))
         return TriConstraintStream(join_result, self.package,
-
                                    self.a_type, self.b_type, c_type)
 
+    @overload
     def if_exists(self, item_type: Type[C_], *joiners: 'TriJoiner[A, B, C_]') -> 'BiConstraintStream[A,B]':
+        ...
+
+    @overload
+    def if_exists(self, other_stream: 'UniConstraintStream[C_]', *joiners: 'TriJoiner[A, B, C_]') \
+            -> 'BiConstraintStream[A,B]':
+        ...
+
+    def if_exists(self, unistream_or_type: Union['UniConstraintStream[C_]', Type[C_]],
+                  *joiners: 'TriJoiner[A, B, C_]') -> 'BiConstraintStream[A,B]':
         """
-        Create a new `BiConstraintStream` for every A, B where C exists that satisfy all specified joiners.
+        Create a new `BiConstraintStream` for every A, B where C exists that satisfies all specified joiners.
         """
-        item_type = get_class(item_type)
-        return BiConstraintStream(self.delegate.ifExists(item_type,
-                                                         extract_joiners(joiners, self.a_type,
-                                                                         self.b_type, item_type)),
-                                  self.package,
-                                  self.a_type, self.b_type)
+        c_type = None
+        if isinstance(unistream_or_type, UniConstraintStream):
+            c_type = unistream_or_type.a_type
+            unistream_or_type = unistream_or_type.delegate
+        else:
+            c_type = get_class(unistream_or_type)
+            unistream_or_type = c_type
+        return BiConstraintStream(self.delegate.ifExists(unistream_or_type,
+                                                         extract_joiners(joiners,
+                                                                         self.a_type, self.b_type, c_type)),
+                                  self.package, self.a_type, self.b_type)
 
     def if_exists_including_unassigned(self, item_type: Type[C_], *joiners: 'TriJoiner[A, B, C_]') -> \
             'BiConstraintStream[A,B]':
         """
-        Create a new `BiConstraintStream` for every A, B where C exists that satisfy all specified joiners.
+        Create a new `BiConstraintStream` for every A, B where C exists that satisfies all specified joiners.
         """
         item_type = get_class(item_type)
         return BiConstraintStream(self.delegate.ifExistsIncludingUnassigned(item_type, extract_joiners(joiners,
                                                                                                        self.a_type,
                                                                                                        self.b_type,
                                                                                                        item_type)),
-                                  self.package,
+                                  self.package, self.a_type, self.b_type)
 
-                                  self.a_type, self.b_type)
+    @overload
+    def if_not_exists(self, item_type: Type[C_], *joiners: 'TriJoiner[A, B, C_]') -> 'BiConstraintStream[A,B]':
+        ...
 
-    def if_not_exists(self, item_type: Type[C_], *joiners: 'TriJoiner[A, B, C_]') -> \
-            'BiConstraintStream[A,B]':
+    @overload
+    def if_not_exists(self, other_stream: 'UniConstraintStream[C_]', *joiners: 'TriJoiner[A, B, C_]')\
+            -> 'BiConstraintStream[A,B]':
+        ...
+
+    def if_not_exists(self, unistream_or_type: Union['UniConstraintStream[C_]', Type[C_]],
+                      *joiners: 'TriJoiner[A, B, C_]') -> 'BiConstraintStream[A,B]':
         """
-        Create a new `BiConstraintStream` for every A, B, where there does not exist a C where all specified joiners
-        are satisfied.
-       """
-        item_type = get_class(item_type)
-        return BiConstraintStream(self.delegate.ifNotExists(item_type, extract_joiners(joiners, self.a_type,
-                                                                                       self.b_type, item_type)),
-                                  self.package,
-                                  self.a_type, self.b_type)
+        Create a new `BiConstraintStream` for every A, B where C does not exist that satisfies all specified joiners.
+        """
+        c_type = None
+        if isinstance(unistream_or_type, UniConstraintStream):
+            c_type = unistream_or_type.a_type
+            unistream_or_type = unistream_or_type.delegate
+        else:
+            c_type = get_class(unistream_or_type)
+            unistream_or_type = c_type
+        return BiConstraintStream(self.delegate.ifNotExists(unistream_or_type,
+                                                            extract_joiners(joiners,
+                                                                            self.a_type, self.b_type, c_type)),
+                                  self.package, self.a_type, self.b_type)
 
     def if_not_exists_including_unassigned(self, item_type: Type[C_], *joiners: 'TriJoiner[A, B, C_]') -> \
             'BiConstraintStream[A,B]':
         """
-        Create a new `BiConstraintStream` for every A, B, where there does not exist a C where all specified joiners
-        are satisfied.
+        Create a new `BiConstraintStream` for every A, B where C does not exist that satisfies all specified joiners.
         """
         item_type = get_class(item_type)
         return BiConstraintStream(self.delegate.ifNotExistsIncludingUnassigned(item_type,
                                                                                extract_joiners(joiners,
-                                                                                               self.a_type,
-                                                                                               self.b_type,
+                                                                                               self.a_type, self.b_type,
                                                                                                item_type)),
-                                  self.package,
-                                  self.a_type, self.b_type)
+                                  self.package, self.a_type, self.b_type)
 
     @overload
     def group_by(self, key_mapping: Callable[[A, B], A_]) -> 'UniConstraintStream[A_]':
@@ -962,6 +1058,10 @@ class BiConstraintStream(Generic[A, B]):
         ...
 
     @overload
+    def concat(self, other: 'UniConstraintStream[A]', padding_b: Callable[[A], B]) -> 'BiConstraintStream[A, B]':
+        ...
+
+    @overload
     def concat(self, other: 'BiConstraintStream[A, B]') -> 'BiConstraintStream[A, B]':
         ...
 
@@ -970,10 +1070,20 @@ class BiConstraintStream(Generic[A, B]):
         ...
 
     @overload
+    def concat(self, other: 'TriConstraintStream[A, B, C_]', padding_c: Callable[[A, B], C_]) \
+            -> 'TriConstraintStream[A, B, C_]':
+        ...
+
+    @overload
     def concat(self, other: 'QuadConstraintStream[A, B, C_, D_]') -> 'QuadConstraintStream[A, B, C_, D_]':
         ...
 
-    def concat(self, other):
+    @overload
+    def concat(self, other: 'QuadConstraintStream[A, B, C_, D_]', padding_c: Callable[[A, B], C_],
+               padding_d: Callable[[A, B], D_]) -> 'QuadConstraintStream[A, B, C_, D_]':
+        ...
+
+    def concat(self, other, padding_b=None, padding_c=None, padding_d=None):
         """
         The concat building block allows you
         to create a constraint stream containing tuples of two other constraint streams.
@@ -983,23 +1093,84 @@ class BiConstraintStream(Generic[A, B]):
         when they come from the same source of data, the tuples will be repeated downstream.
         If this is undesired, use the distinct building block.
         """
+        specified_count = sum(x is not None for x in [padding_b, padding_c, padding_d])
         if isinstance(other, UniConstraintStream):
-            return BiConstraintStream(self.delegate.concat(other.delegate), self.package,
+            if specified_count == 0:
+                return BiConstraintStream(self.delegate.concat(other.delegate), self.package,
+                                          self.a_type, self.b_type)
+            elif specified_count != 1:
+                raise ValueError(f'Concatenating Bi and UniConstraintStream requires one padding function, '
+                                 f'got {specified_count} instead.')
+            elif padding_b is None:
+                raise ValueError(f'Concatenating Bi and UniConstraintStream requires padding_b to be provided.')
+            return BiConstraintStream(self.delegate.concat(other.delegate, padding_b), self.package,
                                       self.a_type, self.b_type)
         elif isinstance(other, BiConstraintStream):
-            return BiConstraintStream(self.delegate.concat(other.delegate), self.package,
-                                      self.a_type,
-                                      self.b_type)
+            if specified_count == 0:
+                return BiConstraintStream(self.delegate.concat(other.delegate), self.package,
+                                          self.a_type, self.b_type)
+            else:
+                raise ValueError(f'Concatenating BiConstraintStreams requires no padding function, '
+                                 f'got {specified_count} instead.')
         elif isinstance(other, TriConstraintStream):
-            return TriConstraintStream(self.delegate.concat(other.delegate), self.package,
-                                       self.a_type,
-                                       self.b_type, other.c_type)
+            if specified_count == 0:
+                return TriConstraintStream(self.delegate.concat(other.delegate), self.package,
+                                           self.a_type, self.b_type, other.c_type)
+            elif specified_count != 1:
+                raise ValueError(f'Concatenating Bi and TriConstraintStream requires one padding function, '
+                                 f'got {specified_count} instead.')
+            elif padding_c is None:
+                raise ValueError(f'Concatenating Bi and TriConstraintStream requires padding_c to be provided.')
+            return TriConstraintStream(self.delegate.concat(other.delegate, padding_c), self.package,
+                                       self.a_type, self.b_type, other.c_type)
         elif isinstance(other, QuadConstraintStream):
-            return QuadConstraintStream(self.delegate.concat(other.delegate), self.package,
-                                        self.a_type,
-                                        self.b_type, other.c_type, other.d_type)
+            if specified_count == 0:
+                return QuadConstraintStream(self.delegate.concat(other.delegate), self.package,
+                                            self.a_type, self.b_type, other.c_type, other.d_type)
+            elif specified_count != 2:
+                raise ValueError(f'Concatenating Bi and QuadConstraintStream requires two padding functions, '
+                                 f'got {specified_count} instead.')
+            elif padding_b is not None:
+                raise ValueError(f'Concatenating Bi and QuadConstraintStream requires '
+                                 f'padding_c and padding_d to be provided.')
+            return QuadConstraintStream(self.delegate.concat(other.delegate, padding_c, padding_d), self.package,
+                                        self.a_type, self.b_type, other.c_type, other.d_type)
         else:
             raise RuntimeError(f'Unhandled constraint stream type {type(other)}.')
+
+    @overload
+    def complement(self, cls: type[A]) -> 'BiConstraintStream[A, B]':
+        ...
+
+    @overload
+    def complement(self, cls: type[A], padding: Callable[[A], B]) -> 'BiConstraintStream[A, B]':
+        ...
+
+    def complement(self, cls: type[A], padding=None):
+        """
+        Adds to the stream all instances of a given class which are not yet present in it.
+        These instances must be present in the solution,
+        which means the class needs to be either a planning entity or a problem fact.
+
+        The instances will be read from the first element of the input tuple.
+        When an output tuple needs to be created for the newly inserted instances,
+        the first element will be the new instance.
+        The rest of the tuple will be padded with the result of the padding function.
+
+        Parameters
+        ----------
+        cls : Type[A]
+            the type of the instances to add to the stream.
+
+        padding : Callable[[A], B]
+            a function that computes the padding value for the second fact in the new tuple.
+        """
+        if None == padding:
+            result = self.delegate.complement(get_class(cls))
+            return BiConstraintStream(result, self.package, self.a_type, self.b_type)
+        java_padding = function_cast(padding, self.a_type)
+        result = self.delegate.complement(get_class(cls), java_padding)
+        return BiConstraintStream(result, self.package, self.a_type, self.b_type)
 
     def penalize(self, constraint_weight: ScoreType, match_weigher: Callable[[A, B], int] = None) -> \
             'BiConstraintBuilder[A, B, ScoreType]':
@@ -1222,7 +1393,7 @@ class TriConstraintStream(Generic[A, B, C]):
     def join(self, unistream_or_type: Union[UniConstraintStream[D_], Type[D_]],
              *joiners: 'QuadJoiner[A, B, C, D_]') -> 'QuadConstraintStream[A,B,C,D_]':
         """
-        Create a new `QuadConstraintStream` for every combination of A, B and C that satisfy all specified joiners.
+        Create a new `QuadConstraintStream` for every combination of A, B and C that satisfies all specified joiners.
         """
         d_type = None
         if isinstance(unistream_or_type, UniConstraintStream):
@@ -1232,54 +1403,85 @@ class TriConstraintStream(Generic[A, B, C]):
             d_type = get_class(unistream_or_type)
             unistream_or_type = d_type
 
-        join_result = self.delegate.join(unistream_or_type, extract_joiners(joiners, self.a_type, self.b_type,
-                                                                            self.c_type, d_type))
+        join_result = self.delegate.join(unistream_or_type, extract_joiners(joiners,
+                                                                            self.a_type, self.b_type, self.c_type,
+                                                                            d_type))
         return QuadConstraintStream(join_result, self.package,
                                     self.a_type, self.b_type, self.c_type, d_type)
 
+    @overload
     def if_exists(self, item_type: Type[D_], *joiners: 'QuadJoiner[A, B, C, D_]') -> \
             'TriConstraintStream[A,B,C]':
+        ...
+
+    @overload
+    def if_exists(self, other_stream: 'UniConstraintStream[D_]', *joiners: 'QuadJoiner[A, B, C, D_]') -> \
+            'TriConstraintStream[A,B,C]':
+        ...
+
+    def if_exists(self, unistream_or_type: Union['UniConstraintStream[D_]', Type[D_]],
+                  *joiners: 'QuadJoiner[A, B, C, D_]') -> 'TriConstraintStream[A,B,C]':
         """
-        Create a new `TriConstraintStream` for every A, B, C where D exists that satisfy all specified joiners.
+        Create a new `TriConstraintStream` for every A, B, C where D exists that satisfies all specified joiners.
         """
-        item_type = get_class(item_type)
-        return TriConstraintStream(self.delegate.ifExists(item_type, extract_joiners(joiners, self.a_type,
-                                                                                     self.b_type, self.c_type,
-                                                                                     item_type)), self.package,
-                                   self.a_type, self.b_type, self.c_type)
+        d_type = None
+        if isinstance(unistream_or_type, UniConstraintStream):
+            d_type = unistream_or_type.a_type
+            unistream_or_type = unistream_or_type.delegate
+        else:
+            d_type = get_class(unistream_or_type)
+            unistream_or_type = d_type
+        return TriConstraintStream(self.delegate.ifExists(unistream_or_type,
+                                                          extract_joiners(joiners,
+                                                                          self.a_type, self.b_type, self.c_type,
+                                                                          d_type)),
+                                   self.package, self.a_type, self.b_type, self.c_type)
 
     def if_exists_including_unassigned(self, item_type: Type[D_], *joiners: 'QuadJoiner[A, B, C, D_]') -> \
             'TriConstraintStream[A,B,C]':
         """
-        Create a new `TriConstraintStream` for every A, B where D exists that satisfy all specified joiners.
+        Create a new `TriConstraintStream` for every A, B where D exists that satisfies all specified joiners.
         """
         item_type = get_class(item_type)
-        return TriConstraintStream(self.delegate.ifExistsIncludingUnassigned(item_type, extract_joiners(joiners,
-                                                                                                        self.a_type,
-                                                                                                        self.b_type,
-                                                                                                        self.c_type,
-                                                                                                        item_type)),
+        return TriConstraintStream(self.delegate.ifExistsIncludingUnassigned(item_type,
+                                                                             extract_joiners(joiners,
+                                                                                             self.a_type, self.b_type,
+                                                                                             self.c_type, item_type)),
                                    self.package, self.a_type, self.b_type, self.c_type)
 
+    @overload
     def if_not_exists(self, item_type: Type[D_], *joiners: 'QuadJoiner[A, B, C, D_]') -> \
             'TriConstraintStream[A,B,C]':
+        ...
+
+    @overload
+    def if_not_exists(self, other_stream: 'UniConstraintStream[D_]', *joiners: 'QuadJoiner[A, B, C, D_]') -> \
+            'TriConstraintStream[A,B,C]':
+        ...
+
+    def if_not_exists(self, unistream_or_type: Union['UniConstraintStream[D_]', Type[D_]],
+                      *joiners: 'QuadJoiner[A, B, C, D_]') -> 'TriConstraintStream[A,B,C]':
         """
-        Create a new `TriConstraintStream` for every A, B, C where there does not exist a D where all specified joiners
-        are satisfied.
+        Create a new `TriConstraintStream` for every A, B, C where D does not exist
+        that satisfies all specified joiners.
         """
-        item_type = get_class(item_type)
-        return TriConstraintStream(self.delegate.ifNotExists(item_type, extract_joiners(joiners,
-                                                                                        self.a_type,
-                                                                                        self.b_type,
-                                                                                        self.c_type,
-                                                                                        item_type)),
+        d_type = None
+        if isinstance(unistream_or_type, UniConstraintStream):
+            d_type = unistream_or_type.a_type
+            unistream_or_type = unistream_or_type.delegate
+        else:
+            d_type = get_class(unistream_or_type)
+            unistream_or_type = d_type
+        return TriConstraintStream(self.delegate.ifNotExists(unistream_or_type,
+                                                             extract_joiners(joiners,
+                                                                             self.a_type, self.b_type, self.c_type,
+                                                                             d_type)),
                                    self.package, self.a_type, self.b_type, self.c_type)
 
     def if_not_exists_including_unassigned(self, item_type: Type[D_], *joiners: 'QuadJoiner[A, B, C, D_]') -> \
             'TriConstraintStream[A,B,C]':
         """
-        Create a new `TriConstraintStream` for every A, B, C where there does not exist a D where all specified joiners
-        are satisfied.
+        Create a new `TriConstraintStream` for every A, B, C where D does not exist that satisfies all specified joiners.
         """
         item_type = get_class(item_type)
         return TriConstraintStream(self.delegate.ifNotExistsIncludingUnassigned(item_type,
@@ -1448,8 +1650,8 @@ class TriConstraintStream(Generic[A, B, C]):
             raise ValueError(f'At least one mapping function is required for map.')
         if len(mapping_functions) > 4:
             raise ValueError(f'At most four mapping functions can be passed to map (got {len(mapping_functions)}).')
-        translated_functions = tuple(map(lambda mapping_function: function_cast(mapping_function, self.a_type,
-                                                                                self.b_type, self.c_type),
+        translated_functions = tuple(map(lambda mapping_function: function_cast(mapping_function,
+                                                                                self.a_type, self.b_type, self.c_type),
                                          mapping_functions))
         if len(mapping_functions) == 1:
             return UniConstraintStream(self.delegate.map(*translated_functions), self.package,
@@ -1505,7 +1707,17 @@ class TriConstraintStream(Generic[A, B, C]):
         ...
 
     @overload
+    def concat(self, other: 'UniConstraintStream[A]', padding_b: Callable[[A], B], padding_c: Callable[[A], C]) \
+            -> 'TriConstraintStream[A, B, C]':
+        ...
+
+    @overload
     def concat(self, other: 'BiConstraintStream[A, B]') -> 'TriConstraintStream[A, B, C]':
+        ...
+
+    @overload
+    def concat(self, other: 'BiConstraintStream[A, B]', padding_c: Callable[[A, B], C]) \
+            -> 'TriConstraintStream[A, B, C]':
         ...
 
     @overload
@@ -1516,7 +1728,12 @@ class TriConstraintStream(Generic[A, B, C]):
     def concat(self, other: 'QuadConstraintStream[A, B, C, D_]') -> 'QuadConstraintStream[A, B, C, D_]':
         ...
 
-    def concat(self, other):
+    @overload
+    def concat(self, other: 'QuadConstraintStream[A, B, C, D_]', padding_d: Callable[[A, B, C], D_]) \
+            -> 'QuadConstraintStream[A, B, C, D_]':
+        ...
+
+    def concat(self, other, padding_b=None, padding_c=None, padding_d=None):
         """
         The concat building block allows you
         to create a constraint stream containing tuples of two other constraint streams.
@@ -1526,24 +1743,95 @@ class TriConstraintStream(Generic[A, B, C]):
         when they come from the same source of data, the tuples will be repeated downstream.
         If this is undesired, use the distinct building block.
         """
+        specified_count = sum(x is not None for x in [padding_b, padding_c, padding_d])
         if isinstance(other, UniConstraintStream):
-            return TriConstraintStream(self.delegate.concat(other.delegate), self.package,
-                                       self.a_type,
-                                       self.b_type, self.c_type)
+            if specified_count == 0:
+                return TriConstraintStream(self.delegate.concat(other.delegate), self.package,
+                                           self.a_type, self.b_type, self.c_type)
+            elif specified_count != 2:
+                raise ValueError(f'Concatenating Tri and UniConstraintStream requires 2 padding functions, '
+                                 f'got {specified_count} instead.')
+            elif padding_d is not None:
+                raise ValueError(f'Concatenating Tri and UniConstraintStream requires '
+                                 f'padding_b and padding_c to be provided.')
+            return TriConstraintStream(self.delegate.concat(other.delegate, padding_b, padding_c), self.package,
+                                       self.a_type, self.b_type, self.c_type)
         elif isinstance(other, BiConstraintStream):
-            return TriConstraintStream(self.delegate.concat(other.delegate), self.package,
-                                       self.a_type,
-                                       self.b_type, self.c_type)
+            if specified_count == 0:
+                return TriConstraintStream(self.delegate.concat(other.delegate), self.package,
+                                           self.a_type, self.b_type, self.c_type)
+            elif specified_count != 1:
+                raise ValueError(f'Concatenating Tri and BiConstraintStream requires 1 padding function, '
+                                 f'got {specified_count} instead.')
+            elif padding_c is None:
+                raise ValueError(f'Concatenating Tri and BiConstraintStream requires padding_c to be provided.')
+            return TriConstraintStream(self.delegate.concat(other.delegate, padding_c), self.package,
+                                       self.a_type, self.b_type, self.c_type)
         elif isinstance(other, TriConstraintStream):
-            return TriConstraintStream(self.delegate.concat(other.delegate), self.package,
-                                       self.a_type,
-                                       self.b_type, self.c_type)
+            if specified_count == 0:
+                return TriConstraintStream(self.delegate.concat(other.delegate), self.package,
+                                           self.a_type, self.b_type, self.c_type)
+            else:
+                raise ValueError(f'Concatenating TriConstraintStreams requires no padding functions, '
+                                 f'got {specified_count} instead.')
         elif isinstance(other, QuadConstraintStream):
-            return QuadConstraintStream(self.delegate.concat(other.delegate), self.package,
-                                        self.a_type,
-                                        self.b_type, self.c_type, other.d_type)
+            if specified_count == 0:
+                return QuadConstraintStream(self.delegate.concat(other.delegate), self.package,
+                                            self.a_type, self.b_type, self.c_type, other.d_type)
+            elif specified_count != 1:
+                raise ValueError(f'Concatenating Tri and QuadConstraintStream requires 1 padding function, '
+                                 f'got {specified_count} instead.')
+            elif padding_d is None:
+                raise ValueError(f'Concatenating Tri and QuadConstraintStream requires padding_d to be provided.')
+            return QuadConstraintStream(self.delegate.concat(other.delegate, padding_d), self.package,
+                                        self.a_type, self.b_type, self.c_type, other.d_type)
         else:
             raise RuntimeError(f'Unhandled constraint stream type {type(other)}.')
+
+    @overload
+    def complement(self, cls: type[A]) -> 'TriConstraintStream[A, B, C]':
+        ...
+
+    @overload
+    def complement(self, cls: type[A], padding_b: Callable[[A], B], padding_c: Callable[[A], C]) \
+            -> 'TriConstraintStream[A, B, C]':
+        ...
+
+    def complement(self, cls: type[A], padding_b=None, padding_c=None):
+        """
+        Adds to the stream all instances of a given class which are not yet present in it.
+        These instances must be present in the solution,
+        which means the class needs to be either a planning entity or a problem fact.
+
+        The instances will be read from the first element of the input tuple.
+        When an output tuple needs to be created for the newly inserted instances,
+        the first element will be the new instance.
+        The rest of the tuple will be padded with the result of the padding function,
+        applied on the new instance.
+
+        Padding functions are optional, but if one is provided, then both must-be provided.
+
+        Parameters
+        ----------
+        cls : Type[A]
+            the type of the instances to add to the stream.
+
+        padding_b : Callable[[A], B]
+            a function that computes the padding value for the second fact in the new tuple.
+
+        padding_c : Callable[[A], C]
+            a function that computes the padding value for the third fact in the new tuple.
+        """
+        if None == padding_b == padding_c:
+            result = self.delegate.complement(get_class(cls))
+            return TriConstraintStream(result, self.package, self.a_type, self.b_type, self.c_type)
+        specified_count = sum(x is not None for x in [padding_b, padding_c])
+        if specified_count != 0:
+            raise ValueError(f'If a padding function is provided, both are expected, got {specified_count} instead.')
+        java_padding_b = function_cast(padding_b, self.a_type)
+        java_padding_c = function_cast(padding_c, self.a_type)
+        result = self.delegate.complement(get_class(cls), java_padding_b, java_padding_c)
+        return TriConstraintStream(result, self.package, self.a_type, self.b_type, self.c_type)
 
     def penalize(self, constraint_weight: ScoreType,
                  match_weigher: Callable[[A, B, C], int] = None) -> 'TriConstraintBuilder[A, B, C, ScoreType]':
@@ -1777,25 +2065,38 @@ class QuadConstraintStream(Generic[A, B, C, D]):
                                     self.a_type,
                                     self.b_type, self.c_type, self.d_type)
 
+    @overload
     def if_exists(self, item_type: Type[E_], *joiners: 'PentaJoiner[A, B, C, D, E_]') -> \
             'QuadConstraintStream[A,B,C,D]':
+        ...
+
+    @overload
+    def if_exists(self, other_stream: 'UniConstraintCollector[E_]', *joiners: 'PentaJoiner[A, B, C, D, E_]') -> \
+            'QuadConstraintStream[A,B,C,D]':
+        ...
+
+    def if_exists(self, unistream_or_type: Union['UniConstraintStream[E_]', Type[E_]],
+                  *joiners: 'PentaJoiner[A, B, C, D, E_]') -> 'QuadConstraintStream[A,B,C,D]':
         """
-        Create a new `QuadConstraintStream` for every A, B, C, D where E exists that satisfy all specified joiners.
+        Create a new `QuadConstraintStream` for every A, B, C, D where E exists that satisfies all specified joiners.
         """
-        item_type = get_class(item_type)
-        return QuadConstraintStream(self.delegate.ifExists(item_type, extract_joiners(joiners,
-                                                                                      self.a_type,
-                                                                                      self.b_type,
-                                                                                      self.c_type,
-                                                                                      self.d_type,
-                                                                                      item_type)),
-                                    self.package,
-                                    self.a_type, self.b_type, self.c_type, self.d_type)
+        e_type = None
+        if isinstance(unistream_or_type, UniConstraintStream):
+            e_type = unistream_or_type.a_type
+            unistream_or_type = unistream_or_type.delegate
+        else:
+            e_type = get_class(unistream_or_type)
+            unistream_or_type = e_type
+        return QuadConstraintStream(self.delegate.ifExists(unistream_or_type,
+                                                           extract_joiners(joiners,
+                                                                           self.a_type, self.b_type, self.c_type,
+                                                                           self.d_type, e_type)),
+                                    self.package, self.a_type, self.b_type, self.c_type, self.d_type)
 
     def if_exists_including_unassigned(self, item_type: Type[E_], *joiners: 'PentaJoiner[A, B, C, D, E_]') -> \
             'QuadConstraintStream[A,B,C,D]':
         """
-        Create a new `QuadConstraintStream` for every A, B, C, D where E exists that satisfy all specified joiners.
+        Create a new `QuadConstraintStream` for every A, B, C, D where E exists that satisfies all specified joiners.
         """
         item_type = get_class(item_type)
         return QuadConstraintStream(self.delegate.ifExistsIncludingUnassigned(item_type,
@@ -1808,27 +2109,40 @@ class QuadConstraintStream(Generic[A, B, C, D]):
                                     self.package,
                                     self.a_type, self.b_type, self.c_type, self.d_type)
 
+    @overload
     def if_not_exists(self, item_type: Type[E_], *joiners: 'PentaJoiner[A, B, C, D, E_]') -> \
             'QuadConstraintStream[A,B,C,D]':
+        ...
+
+    @overload
+    def if_not_exists(self, other_stream: 'UniConstraintCollector[E_]', *joiners: 'PentaJoiner[A, B, C, D, E_]') -> \
+            'QuadConstraintStream[A,B,C,D]':
+        ...
+
+    def if_not_exists(self, unistream_or_type: Union['UniConstraintStream[E_]', Type[E_]],
+                      *joiners: 'PentaJoiner[A, B, C, D, E_]') -> 'QuadConstraintStream[A,B,C,D]':
         """
-        Create a new `QuadConstraintStream` for every A, B, C, D where there does not exist an E where all specified
-        joiners are satisfied.
+        Create a new `QuadConstraintStream` for every A, B, C, D where E does not exist
+        that satisfies all specified joiners.
         """
-        item_type = get_class(item_type)
-        return QuadConstraintStream(self.delegate.ifNotExists(item_type, extract_joiners(joiners,
-                                                                                         self.a_type,
-                                                                                         self.b_type,
-                                                                                         self.c_type,
-                                                                                         self.d_type,
-                                                                                         item_type)),
-                                    self.package,
-                                    self.a_type, self.b_type, self.c_type, self.d_type)
+        e_type = None
+        if isinstance(unistream_or_type, UniConstraintStream):
+            e_type = unistream_or_type.a_type
+            unistream_or_type = unistream_or_type.delegate
+        else:
+            e_type = get_class(unistream_or_type)
+            unistream_or_type = e_type
+        return QuadConstraintStream(self.delegate.ifNotExists(unistream_or_type,
+                                                              extract_joiners(joiners,
+                                                                              self.a_type, self.b_type, self.c_type,
+                                                                              self.d_type, e_type)),
+                                    self.package, self.a_type, self.b_type, self.c_type, self.d_type)
 
     def if_not_exists_including_unassigned(self, item_type: Type[E_], *joiners: 'PentaJoiner[A, B, C, D, E_]') -> \
             'QuadConstraintStream[A,B,C,D]':
         """
-        Create a new `QuadConstraintStream` for every A, B, C, D where there does not exist an E where all specified
-        joiners are satisfied.
+        Create a new `QuadConstraintStream` for every A, B, C,
+        D where E does not exist that satisfies all specified joiners.
         """
         item_type = get_class(item_type)
         return QuadConstraintStream(self.delegate.ifNotExistsIncludingUnassigned(item_type,
@@ -2018,7 +2332,6 @@ class QuadConstraintStream(Generic[A, B, C, D]):
                                        JClass('java.lang.Object'))
         if len(mapping_functions) == 4:
             return QuadConstraintStream(self.delegate.map(*translated_functions), self.package,
-
                                         JClass('java.lang.Object'), JClass('java.lang.Object'),
                                         JClass('java.lang.Object'), JClass('java.lang.Object'))
         raise RuntimeError(f'Impossible state: missing case for {len(mapping_functions)}.')
@@ -2029,7 +2342,6 @@ class QuadConstraintStream(Generic[A, B, C, D]):
         """
         translated_function = function_cast(flattening_function, self.d_type)
         return QuadConstraintStream(self.delegate.flattenLast(translated_function), self.package,
-
                                     self.a_type, self.b_type, self.c_type, JClass('java.lang.Object'))
 
     def distinct(self) -> 'QuadConstraintStream[A,B,C,D]':
@@ -2045,6 +2357,20 @@ class QuadConstraintStream(Generic[A, B, C, D]):
         ...
 
     @overload
+    def concat(self, other: 'UniConstraintStream[A]', padding_b: Callable[[A], B], padding_c: Callable[[A], C],
+               padding_d: Callable[[A], D]) -> 'QuadConstraintStream[A, B, C, D]':
+        ...
+
+    @overload
+    def concat(self, other: 'BiConstraintStream[A, B]') -> 'QuadConstraintStream[A, B, C, D]':
+        ...
+
+    @overload
+    def concat(self, other: 'BiConstraintStream[A, B]', padding_c: Callable[[A, B], C],
+               padding_d: Callable[[A, B], D]) -> 'QuadConstraintStream[A, B, C, D]':
+        ...
+
+    @overload
     def concat(self, other: 'BiConstraintStream[A, B]') -> 'QuadConstraintStream[A, B, C, D]':
         ...
 
@@ -2053,10 +2379,15 @@ class QuadConstraintStream(Generic[A, B, C, D]):
         ...
 
     @overload
+    def concat(self, other: 'TriConstraintStream[A, B, C]', padding_d: Callable[[A, B, C], D]) \
+            -> 'QuadConstraintStream[A, B, C, D]':
+        ...
+
+    @overload
     def concat(self, other: 'QuadConstraintStream[A, B, C, D]') -> 'QuadConstraintStream[A, B, C, D]':
         ...
 
-    def concat(self, other):
+    def concat(self, other, padding_b=None, padding_c=None, padding_d=None):
         """
         The concat building block allows you
         to create a constraint stream containing tuples of two other constraint streams.
@@ -2066,24 +2397,98 @@ class QuadConstraintStream(Generic[A, B, C, D]):
         when they come from the same source of data, the tuples will be repeated downstream.
         If this is undesired, use the distinct building block.
         """
+        specified_count = sum(x is not None for x in [padding_b, padding_c, padding_d])
         if isinstance(other, UniConstraintStream):
-            return QuadConstraintStream(self.delegate.concat(other.delegate), self.package,
-                                        self.a_type,
-                                        self.b_type, self.c_type, self.d_type)
+            if specified_count == 0:
+                return QuadConstraintStream(self.delegate.concat(other.delegate), self.package,
+                                            self.a_type, self.b_type, self.c_type, self.d_type)
+            elif specified_count != 3:
+                raise ValueError(f'Concatenating Uni and QuadConstraintStream requires 3 padding functions, '
+                                 f'got {specified_count} instead.')
+            return QuadConstraintStream(self.delegate.concat(other.delegate, padding_b, padding_c, padding_d),
+                                        self.package,
+                                        self.a_type, self.b_type, self.c_type, self.d_type)
         elif isinstance(other, BiConstraintStream):
-            return QuadConstraintStream(self.delegate.concat(other.delegate), self.package,
-                                        self.a_type,
-                                        self.b_type, self.c_type, self.d_type)
+            if specified_count == 0:
+                return QuadConstraintStream(self.delegate.concat(other.delegate), self.package,
+                                            self.a_type, self.b_type, self.c_type, self.d_type)
+            elif specified_count != 2:
+                raise ValueError(f'Concatenating Bi and QuadConstraintStream requires 2 padding functions, '
+                                 f'got {specified_count} instead.')
+            elif padding_b is not None:
+                raise ValueError(f'Concatenating Bi and QuadConstraintStream requires '
+                                 f'padding_c and padding_d to be provided.')
+            return QuadConstraintStream(self.delegate.concat(other.delegate, padding_c, padding_d), self.package,
+                                        self.a_type, self.b_type, self.c_type, self.d_type)
         elif isinstance(other, TriConstraintStream):
-            return QuadConstraintStream(self.delegate.concat(other.delegate), self.package,
-                                        self.a_type,
-                                        self.b_type, self.c_type, self.d_type)
+            if specified_count == 0:
+                return QuadConstraintStream(self.delegate.concat(other.delegate), self.package,
+                                            self.a_type, self.b_type, self.c_type, self.d_type)
+            elif specified_count != 1:
+                raise ValueError(f'Concatenating Tri and QuadConstraintStream requires 1 padding function, '
+                                 f'got {specified_count} instead.')
+            elif padding_d is None:
+                raise ValueError(f'Concatenating Bi and QuadConstraintStream requires padding_d to be provided.')
+            return QuadConstraintStream(self.delegate.concat(other.delegate, padding_d), self.package,
+                                        self.a_type, self.b_type, self.c_type, self.d_type)
         elif isinstance(other, QuadConstraintStream):
-            return QuadConstraintStream(self.delegate.concat(other.delegate), self.package,
-                                        self.a_type,
-                                        self.b_type, self.c_type, self.d_type)
+            if specified_count == 0:
+                return QuadConstraintStream(self.delegate.concat(other.delegate), self.package,
+                                            self.a_type, self.b_type, self.c_type, self.d_type)
+            else:
+                raise ValueError(f'Concatenating QuadConstraintStreams requires no padding functions, '
+                                 f'got {specified_count} instead.')
         else:
             raise RuntimeError(f'Unhandled constraint stream type {type(other)}.')
+
+    @overload
+    def complement(self, cls: type[A]) -> 'QuadConstraintStream[A, B, C, D]':
+        ...
+
+    @overload
+    def complement(self, cls: type[A], padding_b: Callable[[A], B], padding_c: Callable[[A], C],
+                   padding_d: Callable[[A], D]) -> 'QuadConstraintStream[A, B, C, D]':
+        ...
+
+    def complement(self, cls: type[A], padding_b=None, padding_c=None, padding_d=None):
+        """
+        Adds to the stream all instances of a given class which are not yet present in it.
+        These instances must be present in the solution,
+        which means the class needs to be either a planning entity or a problem fact.
+
+        The instances will be read from the first element of the input tuple.
+        When an output tuple needs to be created for the newly inserted instances,
+        the first element will be the new instance.
+        The rest of the tuple will be padded with the result of the padding function,
+        applied on the new instance.
+
+        Padding functions are optional, but if one is provided, then all three must-be provided.
+
+        Parameters
+        ----------
+        cls : Type[A]
+            the type of the instances to add to the stream.
+
+        padding_b : Callable[[A], B]
+            a function that computes the padding value for the second fact in the new tuple.
+
+        padding_c : Callable[[A], C]
+            a function that computes the padding value for the third fact in the new tuple.
+
+        padding_d : Callable[[A], D]
+            a function that computes the padding value for the fourth fact in the new tuple.
+        """
+        if None == padding_b == padding_c == padding_d:
+            result = self.delegate.complement(get_class(cls))
+            return QuadConstraintStream(result, self.package, self.a_type, self.b_type, self.c_type, self.d_type)
+        specified_count = sum(x is not None for x in [padding_b, padding_c, padding_d])
+        if specified_count != 0:
+            raise ValueError(f'If a padding function is provided, all 3 are expected, got {specified_count} instead.')
+        java_padding_b = function_cast(padding_b, self.a_type)
+        java_padding_c = function_cast(padding_c, self.a_type)
+        java_padding_d = function_cast(padding_d, self.a_type)
+        result = self.delegate.complement(get_class(cls), java_padding_b, java_padding_c, java_padding_d)
+        return QuadConstraintStream(result, self.package, self.a_type, self.b_type, self.c_type, self.d_type)
 
     def penalize(self, constraint_weight: ScoreType,
                  match_weigher: Callable[[A, B, C, D], int] = None) -> 'QuadConstraintBuilder[A, B, C, D, ScoreType]':
