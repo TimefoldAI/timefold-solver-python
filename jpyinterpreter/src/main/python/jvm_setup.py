@@ -3,6 +3,7 @@ import jpype
 import jpype.imports
 import importlib.resources
 import os
+import locale
 from typing import List, ContextManager
 
 
@@ -52,7 +53,24 @@ def init(*args, path: List[str] = None, include_translator_jars: bool = True,
         path = []
     if include_translator_jars:
         path = path + extract_python_translator_jars()
-    jpype.startJVM(*args, classpath=path, convertStrings=True)  # noqa
+
+    user_locale = locale.getlocale()[0]
+    extra_jvm_args = []
+    if user_locale is not None:
+        user_locale = locale.normalize(user_locale)
+        if '.' in user_locale:
+            user_locale, _ = user_locale.split('.', 1)
+        if '_' in user_locale:
+            lang, country = user_locale.rsplit('_', maxsplit=1)
+            extra_jvm_args.append(f'-Duser.language={lang}')
+            extra_jvm_args.append(f'-Duser.country={country}')
+        else:
+            extra_jvm_args.append(f'-Duser.language={user_locale}')
+    else:
+        # C Locale
+        extra_jvm_args.append(f'-Duser.language=C')
+
+    jpype.startJVM(*args, *extra_jvm_args, classpath=path, convertStrings=True)  # noqa
 
     if class_output_path is not None:
         from ai.timefold.jpyinterpreter import InterpreterStartupOptions # noqa

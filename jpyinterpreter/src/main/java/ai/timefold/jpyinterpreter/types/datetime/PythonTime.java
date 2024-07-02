@@ -90,6 +90,11 @@ public class PythonTime extends AbstractPythonLikeObject implements PlanningImmu
                         .addArgument("timespec", PythonString.class.getName(), PythonString.valueOf("auto"))
                         .asPythonFunctionSignature(PythonTime.class.getMethod("isoformat", PythonString.class)));
 
+        TIME_TYPE.addMethod("strftime",
+                ArgumentSpec.forFunctionReturning("strftime", PythonString.class.getName())
+                        .addArgument("format", PythonString.class.getName())
+                        .asPythonFunctionSignature(PythonTime.class.getMethod("strftime", PythonString.class)));
+
         TIME_TYPE.addMethod("tzname",
                 PythonTime.class.getMethod("tzname"));
 
@@ -326,6 +331,11 @@ public class PythonTime extends AbstractPythonLikeObject implements PlanningImmu
                 throw new ValueError("Invalid timespec: " + formatSpec.repr());
         }
         return PythonString.valueOf(result);
+    }
+
+    public PythonString strftime(PythonString formatSpec) {
+        var formatter = PythonDateTimeFormatter.getDateTimeFormatter(formatSpec.value);
+        return PythonString.valueOf(formatter.format(localTime));
     }
 
     @Override
