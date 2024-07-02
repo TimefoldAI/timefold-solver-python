@@ -146,6 +146,7 @@ setup(
     python_requires='>=3.10',
     install_requires=[
         'JPype1>=1.5.0',
+        'multipledispatch>=1.0.0'
     ],
     cmdclass={'build_py': FetchDependencies},
     package_data={
