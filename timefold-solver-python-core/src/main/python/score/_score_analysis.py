@@ -446,9 +446,11 @@ class ConstraintAnalysis(Generic[Score_]):
          but still non-zero constraint weight; non-empty if constraint has matches.
          This is a list to simplify access to individual elements,
          but it contains no duplicates just like `set` wouldn't.
-    summary : str
+    summarize : str
         Returns a diagnostic text
         that explains part of the score quality through the ConstraintAnalysis API.
+    match_count : int
+        Return the match count of the constraint.
     """
     _delegate: '_JavaConstraintAnalysis[Score_]'
 
@@ -480,6 +482,10 @@ class ConstraintAnalysis(Generic[Score_]):
     def matches(self) -> list[MatchAnalysis[Score_]]:
         return [MatchAnalysis(match_analysis)
                 for match_analysis in cast(list['_JavaMatchAnalysis[Score_]'], self._delegate.matches())]
+
+    @property
+    def match_count(self) -> int:
+        return self._delegate.matchCount()
 
     @property
     def score(self) -> Score_:

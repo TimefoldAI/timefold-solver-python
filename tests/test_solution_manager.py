@@ -216,3 +216,43 @@ def test_score_manager_constraint_analysis_map():
 
     constraint_analysis = score_analysis.constraint_analysis(ConstraintRef('package', 'Maximize Value'))
     assert constraint_analysis.constraint_name == 'Maximize Value'
+    assert constraint_analysis.match_count == 3
+
+
+ignored_java_functions = {
+    'equals',
+    'getClass',
+    'hashCode',
+    'notify',
+    'notifyAll',
+    'toString',
+    'wait',
+    'compareTo',
+}
+
+
+def test_has_all_methods():
+    missing = []
+    for python_type, java_type in ((ScoreExplanation, JavaScoreExplanation),
+                                   (ScoreAnalysis, JavaScoreAnalysis),
+                                   (ConstraintAnalysis, JavaConstraintAnalysis),
+                                   (ScoreExplanation, JavaScoreExplanation),
+                                   (ConstraintMatch, JavaConstraintMatch),
+                                   (ConstraintMatchTotal, JavaConstraintMatchTotal),
+                                   (Indictment, JavaIndictment)):
+        for function_name, function_impl in inspect.getmembers(java_type, inspect.isfunction):
+            if function_name in ignored_java_functions:
+                continue
+
+            snake_case_name = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', function_name)
+            snake_case_name = re.sub('([a-z0-9])([A-Z])', r'\1_\2', snake_case_name).lower()
+            snake_case_name_without_prefix = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', function_name[3:] if function_name.startswith("get") else function_name)
+            snake_case_name_without_prefix = re.sub('([a-z0-9])([A-Z])', r'\1_\2', snake_case_name_without_prefix).lower()
+            if not hasattr(python_type, snake_case_name) and not hasattr(python_type, snake_case_name_without_prefix):
+                missing.append((java_type, python_type, snake_case_name))
+
+    if missing:
+        assertion_msg = ''
+        for java_type, python_type, snake_case_name in missing:
+            assertion_msg += f'{python_type} is missing a method ({snake_case_name}) from java_type ({java_type}).)\n'
+        raise AssertionError(assertion_msg)
