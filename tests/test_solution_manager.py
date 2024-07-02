@@ -31,8 +31,8 @@ class Entity:
 def my_constraints(constraint_factory: ConstraintFactory):
     return [
         constraint_factory.for_each(Entity)
-                          .reward(SimpleScore.ONE, lambda entity: entity.value)
-                          .as_constraint('package', 'Maximize Value'),
+        .reward(SimpleScore.ONE, lambda entity: entity.value)
+        .as_constraint('package', 'Maximize Value'),
     ]
 
 
@@ -204,6 +204,7 @@ def test_score_manager_diff():
     constraint_analyses = score_analysis.constraint_analyses
     assert len(constraint_analyses) == 1
 
+
 def test_score_manager_constraint_analysis_map():
     solution_manager = SolutionManager.create(SolverFactory.create(solver_config))
     problem: Solution = Solution([Entity('A', 1), Entity('B', 1), Entity('C', 1)], [1, 2, 3])
@@ -230,6 +231,10 @@ ignored_java_functions = {
     'compareTo',
 }
 
+ignored_java_functions_per_class = {
+    'Indictment': {'getJustification'}  # deprecated
+}
+
 
 def test_has_all_methods():
     missing = []
@@ -237,17 +242,22 @@ def test_has_all_methods():
                                    (ScoreAnalysis, JavaScoreAnalysis),
                                    (ConstraintAnalysis, JavaConstraintAnalysis),
                                    (ScoreExplanation, JavaScoreExplanation),
-                                   (ConstraintMatch, JavaConstraintMatch),
-                                   (ConstraintMatchTotal, JavaConstraintMatchTotal),
                                    (Indictment, JavaIndictment)):
+        type_name = python_type.__name__
+        ignored_java_functions_type = ignored_java_functions_per_class[
+            type_name] if type_name in ignored_java_functions_per_class else {}
+
         for function_name, function_impl in inspect.getmembers(java_type, inspect.isfunction):
-            if function_name in ignored_java_functions:
+            if function_name in ignored_java_functions or function_name in ignored_java_functions_type:
                 continue
 
             snake_case_name = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', function_name)
             snake_case_name = re.sub('([a-z0-9])([A-Z])', r'\1_\2', snake_case_name).lower()
-            snake_case_name_without_prefix = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', function_name[3:] if function_name.startswith("get") else function_name)
-            snake_case_name_without_prefix = re.sub('([a-z0-9])([A-Z])', r'\1_\2', snake_case_name_without_prefix).lower()
+            snake_case_name_without_prefix = re.sub('(.)([A-Z][a-z]+)', r'\1_\2',
+                                                    function_name[3:] if function_name.startswith(
+                                                        "get") else function_name)
+            snake_case_name_without_prefix = re.sub('([a-z0-9])([A-Z])', r'\1_\2',
+                                                    snake_case_name_without_prefix).lower()
             if not hasattr(python_type, snake_case_name) and not hasattr(python_type, snake_case_name_without_prefix):
                 missing.append((java_type, python_type, snake_case_name))
 

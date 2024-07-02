@@ -243,6 +243,7 @@ class Indictment(Generic[Score_]):
         The object that was involved in causing the constraints to match.
         It is part of `ConstraintMatch.indicted_objects` of every `ConstraintMatch`
         in `constraint_match_set`.
+
     """
     def __init__(self, delegate: '_JavaIndictment[Score_]'):
         self._delegate = delegate
