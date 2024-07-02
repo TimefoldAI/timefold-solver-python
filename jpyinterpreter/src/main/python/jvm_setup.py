@@ -66,7 +66,9 @@ def init(*args, path: List[str] = None, include_translator_jars: bool = True,
             extra_jvm_args.append(f'-Duser.country={country}')
         else:
             extra_jvm_args.append(f'-Duser.language={user_locale}')
-
+    else:
+        # C Locale
+        extra_jvm_args.append(f'-Duser.language=C')
 
     jpype.startJVM(*args, *extra_jvm_args, classpath=path, convertStrings=True)  # noqa
 

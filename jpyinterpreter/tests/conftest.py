@@ -204,7 +204,7 @@ def pytest_sessionstart(session):
     import pathlib
     import sys
 
-    locale.setlocale(locale.LC_ALL, 'en_US')
+    locale.setlocale(locale.LC_ALL, 'C')
     class_output_path = None
     if session.config.getoption('--output-generated-classes') != 'false':
         class_output_path = pathlib.Path('target', 'tox-generated-classes', 'python',
