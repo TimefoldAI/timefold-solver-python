@@ -3,6 +3,19 @@ from timefold.solver.domain import *
 from timefold.solver.config import *
 from timefold.solver.score import *
 
+import inspect
+import re
+
+from ai.timefold.solver.core.api.score import ScoreExplanation as JavaScoreExplanation
+from ai.timefold.solver.core.api.score.analysis import (
+    ConstraintAnalysis as JavaConstraintAnalysis,
+    MatchAnalysis as JavaMatchAnalysis,
+    ScoreAnalysis as JavaScoreAnalysis)
+from ai.timefold.solver.core.api.score.constraint import Indictment as JavaIndictment
+from ai.timefold.solver.core.api.score.constraint import (ConstraintRef as JavaConstraintRef,
+                                                          ConstraintMatch as JavaConstraintMatch,
+                                                          ConstraintMatchTotal as JavaConstraintMatchTotal)
+
 from dataclasses import dataclass, field
 from typing import Annotated, List
 
@@ -128,14 +141,14 @@ def assert_score_analysis(problem: Solution, score_analysis: ScoreAnalysis):
 
 
 def assert_score_analysis_summary(score_analysis: ScoreAnalysis):
-    summary = score_analysis.summary
+    summary = score_analysis.summarize
     assert "Explanation of score (3):" in summary
     assert "Constraint matches:" in summary
     assert "3: constraint (Maximize Value) has 3 matches:" in summary
     assert "1: justified with" in summary
 
     match = score_analysis.constraint_analyses[0]
-    match_summary = match.summary
+    match_summary = match.summarize
     assert "Explanation of score (3):" in match_summary
     assert "Constraint matches:" in match_summary
     assert "3: constraint (Maximize Value) has 3 matches:" in match_summary
@@ -166,3 +179,40 @@ def test_solver_manager_score_manager():
 
 def test_solver_factory_score_manager():
     assert_solution_manager(SolutionManager.create(SolverFactory.create(solver_config)))
+
+
+def test_score_manager_solution_initialization():
+    solution_manager = SolutionManager.create(SolverFactory.create(solver_config))
+    problem: Solution = Solution([Entity('A', 1), Entity('B', 1), Entity('C', 1)], [1, 2, 3])
+    score_analysis = solution_manager.analyze(problem)
+    assert score_analysis.is_solution_initialized
+
+    second_problem: Solution = Solution([Entity('A', None), Entity('B', None), Entity('C', None)], [1, 2, 3])
+    second_score_analysis = solution_manager.analyze(second_problem)
+    assert not second_score_analysis.is_solution_initialized
+
+
+def test_score_manager_diff():
+    solution_manager = SolutionManager.create(SolverFactory.create(solver_config))
+    problem: Solution = Solution([Entity('A', 1), Entity('B', 1), Entity('C', 1)], [1, 2, 3])
+    score_analysis = solution_manager.analyze(problem)
+    second_problem: Solution = Solution([Entity('A', 1), Entity('B', 1), Entity('C', 1), Entity('D', 1)], [1, 2, 3])
+    second_score_analysis = solution_manager.analyze(second_problem)
+    diff = score_analysis.diff(second_score_analysis)
+    assert diff.score.score == -1
+
+    constraint_analyses = score_analysis.constraint_analyses
+    assert len(constraint_analyses) == 1
+
+def test_score_manager_constraint_analysis_map():
+    solution_manager = SolutionManager.create(SolverFactory.create(solver_config))
+    problem: Solution = Solution([Entity('A', 1), Entity('B', 1), Entity('C', 1)], [1, 2, 3])
+    score_analysis = solution_manager.analyze(problem)
+    constraints = score_analysis.constraint_analyses
+    assert len(constraints) == 1
+
+    constraint_analysis = score_analysis.constraint_analysis('package', 'Maximize Value')
+    assert constraint_analysis.constraint_name == 'Maximize Value'
+
+    constraint_analysis = score_analysis.constraint_analysis(ConstraintRef('package', 'Maximize Value'))
+    assert constraint_analysis.constraint_name == 'Maximize Value'

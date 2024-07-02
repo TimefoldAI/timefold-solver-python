@@ -2,6 +2,7 @@ from .._timefold_java_interop import get_class
 from .._jpype_type_conversions import to_python_score
 from _jpyinterpreter import unwrap_python_like_object, add_java_interface
 from dataclasses import dataclass
+from multipledispatch import dispatch
 
 from typing import TypeVar, Generic, Union, TYPE_CHECKING, Any, cast, Optional, Type
 
@@ -456,7 +457,7 @@ class ConstraintAnalysis(Generic[Score_]):
         delegate.constraintRef()
 
     def __str__(self):
-        return self.summary
+        return self.summarize
 
     @property
     def constraint_ref(self) -> ConstraintRef:
@@ -485,7 +486,7 @@ class ConstraintAnalysis(Generic[Score_]):
         return to_python_score(self._delegate.score())
 
     @property
-    def summary(self) -> str:
+    def summarize(self) -> str:
         return self._delegate.summarize()
 
 class ScoreAnalysis:
@@ -518,15 +519,19 @@ class ScoreAnalysis:
     constraint_analyses : list[ConstraintAnalysis]
         Individual ConstraintAnalysis instances that make up this ScoreAnalysis.
 
-    summary : str
-        Returns a diagnostic text
-        that explains the solution through the `ConstraintMatch` API
-        to identify which constraints cause that score quality.
+    summarize : str
+        Returns a diagnostic text that explains the solution through the `ConstraintAnalysis` API to identify which
+        Constraints cause that score quality.
+        The string is built fresh every time the method is called.
 
         In case of an infeasible solution, this can help diagnose the cause of that.
+
         Do not parse the return value, its format may change without warning.
-        Instead, to provide this information in a UI or a service,
-        use `constraint_analyses` and convert those into a domain-specific API.
+        Instead, provide this information in a UI or a service,
+        use `constraintAnalyses()`
+        and convert those into a domain-specific API.
+
+    is_solution_initialized : bool
 
     Notes
     -----
@@ -539,7 +544,7 @@ class ScoreAnalysis:
         self._delegate = delegate
 
     def __str__(self):
-        return self.summary
+        return self.summarize
 
     @property
     def score(self) -> 'Score':
@@ -562,9 +567,80 @@ class ScoreAnalysis:
                 list['_JavaConstraintAnalysis[Score]'], self._delegate.constraintAnalyses())
         ]
 
+    @dispatch(str, str)
+    def constraint_analysis(self, constraint_package: str, constraint_name: str) -> ConstraintAnalysis:
+        """
+        Performs a lookup on `constraint_map`.
+
+        Parameters
+        ----------
+        constraint_package : str
+        constraint_name : str
+
+        Returns
+        -------
+        ConstraintAnalysis
+            None if no constraint matches of such constraint are present
+        """
+        return ConstraintAnalysis(self._delegate.getConstraintAnalysis(constraint_package, constraint_name))
+
+    @dispatch(ConstraintRef)
+    def constraint_analysis(self, constraint_ref: ConstraintRef) -> ConstraintAnalysis:
+        """
+        Performs a lookup on `constraint_map`.
+
+        Parameters
+        ----------
+        constraint_ref : ConstraintRef
+
+        Returns
+        -------
+        ConstraintAnalysis
+            None if no constraint matches of such constraint are present
+        """
+        return self.constraint_analysis(constraint_ref.package_name, constraint_ref.constraint_name)
+
     @property
-    def summary(self) -> str:
+    def summarize(self) -> str:
         return self._delegate.summarize()
+
+    @property
+    def is_solution_initialized(self) -> bool:
+        return self._delegate.isSolutionInitialized()
+
+
+    def diff(self, other: 'ScoreAnalysis') -> 'ScoreAnalysis':
+        """
+        Compare this `ScoreAnalysis to another `ScoreAnalysis`
+        and retrieve the difference between them.
+        The comparison is in the direction of `this - other`.
+
+        Example: if `this` has a score of 100 and `other` has a score of 90,
+        the returned score will be 10.
+        If this and other were inverted, the score would have been -10.
+        The same applies to all other properties of `ScoreAnalysis`.
+
+        In order to properly diff `MatchAnalysis` against each other,
+        we rely on the user implementing `ConstraintJustification` equality correctly.
+        In other words, the diff will consider two justifications equal if the user says they are equal,
+        and it expects the hash code to be consistent with equals.
+
+        If one `ScoreAnalysis` provides `MatchAnalysis` and the other doesn't, exception is thrown.
+        Such `ScoreAnalysis` instances are mutually incompatible.
+
+        Parameters
+        ----------
+        other : ScoreAnalysis
+
+        Returns
+        -------
+        ScoreExplanation
+            The `ScoreAnalysis` corresponding to the diff.
+        """
+        return ScoreAnalysis(self._delegate.diff(other._delegate))
+
+
+
 
 
 __all__ = ['ScoreExplanation',
