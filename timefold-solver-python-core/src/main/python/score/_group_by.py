@@ -122,18 +122,18 @@ def perform_group_by(constraint_stream, package, group_by_args, *type_arguments)
             created_collector = extract_collector(collector_info, *type_arguments)
             actual_group_by_args.append(created_collector)
 
-    if len(group_by_args) == 1:
+    if len(group_by_args) is 1:
         return UniConstraintStream(constraint_stream.groupBy(*actual_group_by_args), package,
                                    JClass('java.lang.Object'))
-    elif len(group_by_args) == 2:
+    elif len(group_by_args) is 2:
         return BiConstraintStream(constraint_stream.groupBy(*actual_group_by_args), package,
                                   JClass('java.lang.Object'),
                                   JClass('java.lang.Object'))
-    elif len(group_by_args) == 3:
+    elif len(group_by_args) is 3:
         return TriConstraintStream(constraint_stream.groupBy(*actual_group_by_args), package,
                                    JClass('java.lang.Object'),
                                    JClass('java.lang.Object'), JClass('java.lang.Object'))
-    elif len(group_by_args) == 4:
+    elif len(group_by_args) is 4:
         return QuadConstraintStream(constraint_stream.groupBy(*actual_group_by_args), package,
                                     JClass('java.lang.Object'),
                                     JClass('java.lang.Object'), JClass('java.lang.Object'),
@@ -1107,26 +1107,27 @@ class ConstraintCollectors:
 
         Parameters
         ----------
-        balanced_item_function:
+        balanced_item_function: Callable[[ParameterTypes, ...], Balanced_]
              The function that returns the item which should be load-balanced.
-        load_function:
+        load_function: Callable[[ParameterTypes, ...], int]
             How much the item should count for in the formula.
-        initial_load_function:
+        initial_load_function: Callable[[ParameterTypes, ...], int]
             The initial value of the metric, allowing to provide initial state
             without requiring the entire previous planning windows in the working memory.
             If this function is provided, load_function must be provided as well.
         """
-        if None == load_function == initial_load_function:
+        if load_function is None and initial_load_function is None:
             return LoadBalanceCollector(ConstraintCollectors._delegate().loadBalance, balanced_item_function, None,
                                         None)
-        elif None == initial_load_function:
+        elif initial_load_function is None:
             return LoadBalanceCollector(ConstraintCollectors._delegate().loadBalance, balanced_item_function,
                                         load_function, None)
-        elif None == load_function:
+        elif load_function is None:
             raise ValueError("load_function cannot be None if initial_load_function is not None")
         else:
             return LoadBalanceCollector(ConstraintCollectors._delegate().loadBalance, balanced_item_function,
                                         load_function, initial_load_function)
+
 
 # Must be at the bottom, constraint_stream depends on this module
 from ._constraint_stream import *

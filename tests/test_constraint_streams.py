@@ -223,6 +223,29 @@ def test_filter_quad():
     assert score_manager.explain(problem).score.score == 1
 
 
+def test_flatten_last():
+    @constraint_provider
+    def define_constraints(constraint_factory: ConstraintFactory):
+        return [
+            constraint_factory.for_each(Entity)
+            .map(lambda entity: (1, 2, 3))
+            .flatten_last(lambda the_tuple: the_tuple)
+            .reward(SimpleScore.ONE)
+            .as_constraint('Count')
+        ]
+
+    score_manager = create_score_manager(define_constraints)
+
+    entity_a: Entity = Entity('A')
+
+    value_1 = Value(1)
+
+    problem = Solution([entity_a], [value_1])
+    entity_a.value = value_1
+
+    assert score_manager.explain(problem).score == SimpleScore.of(3)
+
+
 def test_join_uni():
     @constraint_provider
     def define_constraints(constraint_factory: ConstraintFactory):
