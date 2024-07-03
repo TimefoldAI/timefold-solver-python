@@ -220,6 +220,13 @@ def test_score_manager_constraint_analysis_map():
     assert constraint_analysis.match_count == 3
 
 
+def test_score_manager_constraint_ref():
+    constraint_ref = ConstraintRef.parse_id('package/Maximize Value')
+
+    assert constraint_ref.package_name == 'package'
+    assert constraint_ref.constraint_name == 'Maximize Value'
+
+
 ignored_java_functions = {
     'equals',
     'getClass',
@@ -232,7 +239,8 @@ ignored_java_functions = {
 }
 
 ignored_java_functions_per_class = {
-    'Indictment': {'getJustification'}  # deprecated
+    'Indictment': {'getJustification'},  # deprecated
+    'ConstraintRef': {'of', 'packageName', 'constraintName'}  # built-in constructor and properties with @dataclass
 }
 
 
@@ -242,6 +250,7 @@ def test_has_all_methods():
                                    (ScoreAnalysis, JavaScoreAnalysis),
                                    (ConstraintAnalysis, JavaConstraintAnalysis),
                                    (ScoreExplanation, JavaScoreExplanation),
+                                   (ConstraintRef, JavaConstraintRef),
                                    (Indictment, JavaIndictment)):
         type_name = python_type.__name__
         ignored_java_functions_type = ignored_java_functions_per_class[
