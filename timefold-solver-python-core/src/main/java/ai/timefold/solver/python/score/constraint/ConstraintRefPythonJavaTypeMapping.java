@@ -50,8 +50,8 @@ public final class ConstraintRefPythonJavaTypeMapping implements PythonJavaTypeM
     @Override
     public ConstraintRef toJavaObject(PythonLikeObject pythonObject) {
         try {
-            var packageName = ((PythonString) packageNameField.get(pythonObject)).value.toString();
-            var constraintName = ((PythonString) constraintNameField.get(pythonObject)).value.toString();
+            var packageName = ((PythonString) packageNameField.get(pythonObject)).value;
+            var constraintName = ((PythonString) constraintNameField.get(pythonObject)).value;
             return ConstraintRef.of(packageName, constraintName);
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
