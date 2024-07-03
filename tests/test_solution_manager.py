@@ -240,7 +240,16 @@ ignored_java_functions = {
 
 ignored_java_functions_per_class = {
     'Indictment': {'getJustification'},  # deprecated
-    'ConstraintRef': {'of', 'packageName', 'constraintName'}  # built-in constructor and properties with @dataclass
+    'ConstraintRef': {'of', 'packageName', 'constraintName'},  # built-in constructor and properties with @dataclass
+    'ConstraintMatch': {
+        'getConstraintRef',  # built-in constructor and properties with @dataclass
+        'getConstraintPackage',  # deprecated
+        'getConstraintName',  # deprecated
+        'getConstraintId',  # deprecated
+        'getJustificationList',  # deprecated
+        'getJustification',  # built-in constructor and properties with @dataclass
+        'getScore',  # built-in constructor and properties with @dataclass
+    }
 }
 
 
@@ -250,6 +259,7 @@ def test_has_all_methods():
                                    (ScoreAnalysis, JavaScoreAnalysis),
                                    (ConstraintAnalysis, JavaConstraintAnalysis),
                                    (ScoreExplanation, JavaScoreExplanation),
+                                   (ConstraintMatch, JavaConstraintMatch),
                                    (ConstraintRef, JavaConstraintRef),
                                    (Indictment, JavaIndictment)):
         type_name = python_type.__name__

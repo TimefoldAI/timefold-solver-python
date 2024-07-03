@@ -98,14 +98,13 @@ def update_log_level() -> None:
     PythonLoggingToLogbackAdapter.setLevel(logger.getEffectiveLevel())
 
 
-def register_python_java_type_mappings():
+def register_score_python_java_type_mappings():
     global _scores_registered, _java_score_mapping_dict, _python_score_mapping_dict
     if _scores_registered:
         return
 
     _scores_registered = True
 
-    # score types
     from .score._score import SimpleScore, HardSoftScore, HardMediumSoftScore, BendableScore
     from ai.timefold.solver.core.api.score.buildin.simplelong import SimpleLongScore as _SimpleScore
     from ai.timefold.solver.core.api.score.buildin.hardsoftlong import HardSoftLongScore as _HardSoftScore
@@ -137,20 +136,6 @@ def register_python_java_type_mappings():
     add_python_java_type_mapping(HardSoftScorePythonJavaTypeMapping(HardSoftScoreType))
     add_python_java_type_mapping(HardMediumSoftScorePythonJavaTypeMapping(HardMediumSoftScoreType))
     add_python_java_type_mapping(BendableScorePythonJavaTypeMapping(BendableScoreType))
-
-    # score analysis types
-    from .score._score_analysis import ConstraintRef
-    from ai.timefold.solver.core.api.score.constraint import ConstraintRef as _ConstraintRef
-
-    from ai.timefold.solver.python.score.constraint import ConstraintRefPythonJavaTypeMapping
-
-    _python_score_mapping_dict['ConstraintRef'] = ConstraintRef
-
-    _java_score_mapping_dict['ConstraintRef'] = _ConstraintRef
-
-    ConstraintRefType = translate_python_class_to_java_class(ConstraintRef)
-
-    add_python_java_type_mapping(ConstraintRefPythonJavaTypeMapping(ConstraintRefType))
 
 
 def forward_logging_events(event: 'PythonLoggingEvent') -> None:
@@ -316,7 +301,7 @@ def _add_to_compilation_queue(python_class: type | PythonSupplier) -> None:
 def _process_compilation_queue() -> None:
     global _compilation_queue
 
-    register_python_java_type_mappings()
+    register_score_python_java_type_mappings()
     while len(_compilation_queue) > 0:
         python_class = _compilation_queue.pop(0)
 
@@ -339,7 +324,7 @@ def _generate_constraint_provider_class(original_function: Callable[['_Constrain
                                         wrapped_constraint_provider: Callable[['_ConstraintFactory'],
                                                                               list['_Constraint']]) -> JClass:
     ensure_init()
-    register_python_java_type_mappings()
+    register_score_python_java_type_mappings()
     from ai.timefold.solver.python import PythonWrapperGenerator  # noqa
     from ai.timefold.solver.core.api.score.stream import ConstraintProvider
     class_identifier = _get_class_identifier_for_object(original_function)

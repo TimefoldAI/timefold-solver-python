@@ -90,7 +90,8 @@ class ConstraintRef:
                              constraint_name=constraint_name).constraint_id
 
     def _to_java(self):
-        return _java_score_mapping_dict['ConstraintRef'].of(self.package_name, self.constraint_name)
+        from ai.timefold.solver.core.api.score.constraint import ConstraintRef as JavaConstraintRef
+        return JavaConstraintRef.of(self.package_name, self.constraint_name)
 
 
 def _safe_hash(obj: Any) -> int:
@@ -117,6 +118,10 @@ class ConstraintMatch(Generic[Score_]):
     @property
     def identification_string(self) -> str:
         return self.constraint_ref.constraint_id
+
+    @property
+    def get_indicted_object_list(self):
+        return self.indicted_objects
 
     def __hash__(self) -> int:
         combined_hash = hash(self.constraint_ref)
