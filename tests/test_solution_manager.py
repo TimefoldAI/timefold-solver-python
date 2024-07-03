@@ -141,14 +141,14 @@ def assert_score_analysis(problem: Solution, score_analysis: ScoreAnalysis):
 
 
 def assert_score_analysis_summary(score_analysis: ScoreAnalysis):
-    summary = score_analysis.summarize
+    summary = score_analysis.summary
     assert "Explanation of score (3):" in summary
     assert "Constraint matches:" in summary
     assert "3: constraint (Maximize Value) has 3 matches:" in summary
     assert "1: justified with" in summary
 
     match = score_analysis.constraint_analyses[0]
-    match_summary = match.summarize
+    match_summary = match.summary
     assert "Explanation of score (3):" in match_summary
     assert "Constraint matches:" in match_summary
     assert "3: constraint (Maximize Value) has 3 matches:" in match_summary
@@ -201,6 +201,10 @@ def test_score_manager_diff():
     diff = score_analysis.diff(second_score_analysis)
     assert diff.score.score == -1
 
+    diff_operation = score_analysis - second_score_analysis
+    assert diff_operation.score.score == -1
+    print(diff, diff_operation)
+
     constraint_analyses = score_analysis.constraint_analyses
     assert len(constraint_analyses) == 1
 
@@ -241,6 +245,8 @@ ignored_java_functions = {
 ignored_java_functions_per_class = {
     'Indictment': {'getJustification'},  # deprecated
     'ConstraintRef': {'of', 'packageName', 'constraintName'},  # built-in constructor and properties with @dataclass
+    'ConstraintAnalysis': {'summarize'},  # using summary instead
+    'ScoreAnalysis': {'summarize'},  # using summary instead
     'ConstraintMatch': {
         'getConstraintRef',  # built-in constructor and properties with @dataclass
         'getConstraintPackage',  # deprecated

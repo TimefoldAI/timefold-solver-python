@@ -3,9 +3,8 @@ from .._jpype_type_conversions import to_python_score
 from .._timefold_java_interop import _java_score_mapping_dict
 from _jpyinterpreter import unwrap_python_like_object, add_java_interface
 from dataclasses import dataclass
-from multipledispatch import dispatch
 
-from typing import TypeVar, Generic, Union, TYPE_CHECKING, Any, cast, Optional, Type
+from typing import overload, TypeVar, Generic, Union, TYPE_CHECKING, Any, cast, Optional, Type
 
 if TYPE_CHECKING:
     # These imports require a JVM to be running, so only import if type checking
@@ -120,7 +119,7 @@ class ConstraintMatch(Generic[Score_]):
         return self.constraint_ref.constraint_id
 
     @property
-    def get_indicted_object_list(self):
+    def indicted_object_list(self):
         return self.indicted_objects
 
     def __hash__(self) -> int:
@@ -467,7 +466,7 @@ class ConstraintAnalysis(Generic[Score_]):
          but still non-zero constraint weight; non-empty if constraint has matches.
          This is a list to simplify access to individual elements,
          but it contains no duplicates just like `set` wouldn't.
-    summarize : str
+    summary : str
         Returns a diagnostic text
         that explains part of the score quality through the ConstraintAnalysis API.
     match_count : int
@@ -513,7 +512,7 @@ class ConstraintAnalysis(Generic[Score_]):
         return to_python_score(self._delegate.score())
 
     @property
-    def summarize(self) -> str:
+    def summary(self) -> str:
         return self._delegate.summarize()
 
 
@@ -547,7 +546,7 @@ class ScoreAnalysis:
     constraint_analyses : list[ConstraintAnalysis]
         Individual ConstraintAnalysis instances that make up this ScoreAnalysis.
 
-    summarize : str
+    summary : str
         Returns a diagnostic text that explains the solution through the `ConstraintAnalysis` API to identify which
         Constraints cause that score quality.
         The string is built fresh every time the method is called.
@@ -572,7 +571,10 @@ class ScoreAnalysis:
         self._delegate = delegate
 
     def __str__(self):
-        return self.summarize
+        return self.summary
+
+    def __sub__(self, other):
+        return self.diff(other)
 
     @property
     def score(self) -> 'Score':
@@ -595,8 +597,15 @@ class ScoreAnalysis:
                 list['_JavaConstraintAnalysis[Score]'], self._delegate.constraintAnalyses())
         ]
 
-    @dispatch(str, str)
+    @overload
     def constraint_analysis(self, constraint_package: str, constraint_name: str) -> ConstraintAnalysis:
+        ...
+
+    @overload
+    def constraint_analysis(self, constraint_ref: 'ConstraintRef') -> ConstraintAnalysis:
+        ...
+
+    def constraint_analysis(self, *args) -> ConstraintAnalysis:
         """
         Performs a lookup on `constraint_map`.
 
@@ -604,21 +613,6 @@ class ScoreAnalysis:
         ----------
         constraint_package : str
         constraint_name : str
-
-        Returns
-        -------
-        ConstraintAnalysis
-            None if no constraint matches of such constraint are present
-        """
-        return ConstraintAnalysis(self._delegate.getConstraintAnalysis(constraint_package, constraint_name))
-
-    @dispatch(ConstraintRef)
-    def constraint_analysis(self, constraint_ref: 'ConstraintRef') -> ConstraintAnalysis:
-        """
-        Performs a lookup on `constraint_map`.
-
-        Parameters
-        ----------
         constraint_ref : ConstraintRef
 
         Returns
@@ -626,10 +620,14 @@ class ScoreAnalysis:
         ConstraintAnalysis
             None if no constraint matches of such constraint are present
         """
-        return ConstraintAnalysis(self._delegate.getConstraintAnalysis(constraint_ref._to_java()))
+        print(args)
+        if len(args) == 1:
+            return ConstraintAnalysis(self._delegate.getConstraintAnalysis(args[0]._to_java()))
+        else:
+            return ConstraintAnalysis(self._delegate.getConstraintAnalysis(args[0], args[1]))
 
     @property
-    def summarize(self) -> str:
+    def summary(self) -> str:
         return self._delegate.summarize()
 
     @property
