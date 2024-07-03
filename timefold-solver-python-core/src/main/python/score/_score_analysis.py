@@ -479,7 +479,7 @@ class ConstraintAnalysis(Generic[Score_]):
         delegate.constraintRef()
 
     def __str__(self):
-        return self.summarize
+        return self.summary
 
     @property
     def constraint_ref(self) -> ConstraintRef:
@@ -611,16 +611,16 @@ class ScoreAnalysis:
 
         Parameters
         ----------
-        constraint_package : str
-        constraint_name : str
-        constraint_ref : ConstraintRef
+        *args: *tuple[str, str] | *tuple[ConstraintRef]
+            Either two strings or a single ConstraintRef can be passed as positional arguments.
+            If two strings are passed, they are taken to be the constraint package and constraint name, respectively.
+            If a ConstraintRef is passed, it is used to perform the lookup.
 
         Returns
         -------
         ConstraintAnalysis
             None if no constraint matches of such constraint are present
         """
-        print(args)
         if len(args) == 1:
             return ConstraintAnalysis(self._delegate.getConstraintAnalysis(args[0]._to_java()))
         else:

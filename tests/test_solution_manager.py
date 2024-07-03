@@ -147,12 +147,18 @@ def assert_score_analysis_summary(score_analysis: ScoreAnalysis):
     assert "3: constraint (Maximize Value) has 3 matches:" in summary
     assert "1: justified with" in summary
 
+    summary_str = str(score_analysis)
+    assert summary == summary_str
+
     match = score_analysis.constraint_analyses[0]
     match_summary = match.summary
     assert "Explanation of score (3):" in match_summary
     assert "Constraint matches:" in match_summary
     assert "3: constraint (Maximize Value) has 3 matches:" in match_summary
     assert "1: justified with" in match_summary
+
+    match_summary_str = str(match)
+    assert match_summary == match_summary_str
 
 
 def assert_solution_manager(solution_manager: SolutionManager[Solution]):
@@ -203,7 +209,6 @@ def test_score_manager_diff():
 
     diff_operation = score_analysis - second_score_analysis
     assert diff_operation.score.score == -1
-    print(diff, diff_operation)
 
     constraint_analyses = score_analysis.constraint_analyses
     assert len(constraint_analyses) == 1
