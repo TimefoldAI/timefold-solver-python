@@ -475,7 +475,7 @@ class ConstraintAnalysis(Generic[Score_]):
         delegate.constraintRef()
 
     def __str__(self):
-        return self.summarize
+        return self.summarize()
 
     @property
     def constraint_ref(self) -> ConstraintRef:
@@ -507,7 +507,6 @@ class ConstraintAnalysis(Generic[Score_]):
     def score(self) -> Score_:
         return to_python_score(self._delegate.score())
 
-    @property
     def summarize(self) -> str:
         return self._delegate.summarize()
 
@@ -567,7 +566,7 @@ class ScoreAnalysis:
         self._delegate = delegate
 
     def __str__(self):
-        return self.summarize
+        return self.summarize()
 
     def __sub__(self, other):
         return self.diff(other)
@@ -622,7 +621,6 @@ class ScoreAnalysis:
         else:
             return ConstraintAnalysis(self._delegate.getConstraintAnalysis(args[0], args[1]))
 
-    @property
     def summarize(self) -> str:
         return self._delegate.summarize()
 

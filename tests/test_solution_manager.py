@@ -141,7 +141,7 @@ def assert_score_analysis(problem: Solution, score_analysis: ScoreAnalysis):
 
 
 def assert_score_analysis_summary(score_analysis: ScoreAnalysis):
-    summary = score_analysis.summarize
+    summary = score_analysis.summarize()
     assert "Explanation of score (3):" in summary
     assert "Constraint matches:" in summary
     assert "3: constraint (Maximize Value) has 3 matches:" in summary
@@ -151,7 +151,7 @@ def assert_score_analysis_summary(score_analysis: ScoreAnalysis):
     assert summary == summary_str
 
     match = score_analysis.constraint_analyses[0]
-    match_summary = match.summarize
+    match_summary = match.summarize()
     assert "Explanation of score (3):" in match_summary
     assert "Constraint matches:" in match_summary
     assert "3: constraint (Maximize Value) has 3 matches:" in match_summary
