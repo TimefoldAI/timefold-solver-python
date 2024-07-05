@@ -462,7 +462,7 @@ class ConstraintAnalysis(Generic[Score_]):
          but still non-zero constraint weight; non-empty if constraint has matches.
          This is a list to simplify access to individual elements,
          but it contains no duplicates just like `set` wouldn't.
-    summarize : str
+    summary : str
         Returns a diagnostic text
         that explains part of the score quality through the ConstraintAnalysis API.
     match_count : int
@@ -475,7 +475,7 @@ class ConstraintAnalysis(Generic[Score_]):
         delegate.constraintRef()
 
     def __str__(self):
-        return self.summarize()
+        return self.summary
 
     @property
     def constraint_ref(self) -> ConstraintRef:
@@ -507,7 +507,8 @@ class ConstraintAnalysis(Generic[Score_]):
     def score(self) -> Score_:
         return to_python_score(self._delegate.score())
 
-    def summarize(self) -> str:
+    @property
+    def summary(self) -> str:
         return self._delegate.summarize()
 
 
@@ -541,7 +542,7 @@ class ScoreAnalysis:
     constraint_analyses : list[ConstraintAnalysis]
         Individual ConstraintAnalysis instances that make up this ScoreAnalysis.
 
-    summarize : str
+    summary : str
         Returns a diagnostic text that explains the solution through the `ConstraintAnalysis` API to identify which
         Constraints cause that score quality.
         The string is built fresh every time the method is called.
@@ -566,7 +567,7 @@ class ScoreAnalysis:
         self._delegate = delegate
 
     def __str__(self):
-        return self.summarize()
+        return self.summary
 
     def __sub__(self, other):
         return self.diff(other)
@@ -621,7 +622,8 @@ class ScoreAnalysis:
         else:
             return ConstraintAnalysis(self._delegate.getConstraintAnalysis(args[0], args[1]))
 
-    def summarize(self) -> str:
+    @property
+    def summary(self) -> str:
         return self._delegate.summarize()
 
     @property
