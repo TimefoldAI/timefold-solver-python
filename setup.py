@@ -145,7 +145,7 @@ setup(
     test_suite='tests',
     python_requires='>=3.10',
     install_requires=[
-        'JPype1>=1.5.0',
+        'JPype1>=1.5.0'
     ],
     cmdclass={'build_py': FetchDependencies},
     package_data={

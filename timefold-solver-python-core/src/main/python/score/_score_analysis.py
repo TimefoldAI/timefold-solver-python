@@ -1,9 +1,10 @@
 from .._timefold_java_interop import get_class
 from .._jpype_type_conversions import to_python_score
+from .._timefold_java_interop import _java_score_mapping_dict
 from _jpyinterpreter import unwrap_python_like_object, add_java_interface
 from dataclasses import dataclass
 
-from typing import TypeVar, Generic, Union, TYPE_CHECKING, Any, cast, Optional, Type
+from typing import overload, TypeVar, Generic, Union, TYPE_CHECKING, Any, cast, Optional, Type
 
 if TYPE_CHECKING:
     # These imports require a JVM to be running, so only import if type checking
@@ -41,16 +42,26 @@ class ConstraintRef:
         The constraint name.
         It might not be unique, but `constraint_id` is unique.
         When using a `constraint_configuration`, it is equal to the `ConstraintWeight.constraint_name`.
+
+    constraint_id : str
+        Always derived from `packageName` and `constraintName`.
     """
     package_name: str
     constraint_name: str
 
     @property
     def constraint_id(self) -> str:
-        """
-        Always derived from packageName and constraintName.
-        """
         return f'{self.package_name}/{self.constraint_name}'
+
+    @staticmethod
+    def parse_id(constraint_id: str):
+        slash_index = constraint_id.rfind('/')
+        if slash_index == -1:
+            raise ValueError(
+                f'The constraint_id {constraint_id} is invalid as it does not contain a package separator \'/\'.')
+        package_name = constraint_id[:slash_index]
+        constraint_name = constraint_id[slash_index + 1:]
+        return ConstraintRef(package_name, constraint_name)
 
     @staticmethod
     def compose_constraint_id(solution_type_or_package: Union[type, str], constraint_name: str) -> str:
@@ -76,6 +87,10 @@ class ConstraintRef:
             package = get_class(solution_type_or_package).getPackage().getName()
         return ConstraintRef(package_name=package,
                              constraint_name=constraint_name).constraint_id
+
+    def _to_java(self):
+        from ai.timefold.solver.core.api.score.constraint import ConstraintRef as JavaConstraintRef
+        return JavaConstraintRef.of(self.package_name, self.constraint_name)
 
 
 def _safe_hash(obj: Any) -> int:
@@ -200,7 +215,7 @@ def _map_constraint_match_set(constraint_match_set: set['_JavaConstraintMatch'])
                                                      .getConstraintRef().constraintName()),
                         justification=_unwrap_justification(constraint_match.getJustification()),
                         indicted_objects=tuple([unwrap_python_like_object(indicted)
-                                               for indicted in cast(list, constraint_match.getIndictedObjectList())]),
+                                                for indicted in cast(list, constraint_match.getIndictedObjectList())]),
                         score=to_python_score(constraint_match.getScore())
                         )
         for constraint_match in constraint_match_set
@@ -213,7 +228,7 @@ def _unwrap_justification(justification: Any) -> ConstraintJustification:
     if isinstance(justification, _JavaDefaultConstraintJustification):
         fact_list = justification.getFacts()
         return DefaultConstraintJustification(facts=tuple([unwrap_python_like_object(fact)
-                                                          for fact in cast(list, fact_list)]),
+                                                           for fact in cast(list, fact_list)]),
                                               impact=to_python_score(justification.getImpact()))
     else:
         return unwrap_python_like_object(justification)
@@ -242,7 +257,9 @@ class Indictment(Generic[Score_]):
         The object that was involved in causing the constraints to match.
         It is part of `ConstraintMatch.indicted_objects` of every `ConstraintMatch`
         in `constraint_match_set`.
+
     """
+
     def __init__(self, delegate: '_JavaIndictment[Score_]'):
         self._delegate = delegate
 
@@ -445,13 +462,20 @@ class ConstraintAnalysis(Generic[Score_]):
          but still non-zero constraint weight; non-empty if constraint has matches.
          This is a list to simplify access to individual elements,
          but it contains no duplicates just like `set` wouldn't.
-
+    summary : str
+        Returns a diagnostic text
+        that explains part of the score quality through the ConstraintAnalysis API.
+    match_count : int
+        Return the match count of the constraint.
     """
     _delegate: '_JavaConstraintAnalysis[Score_]'
 
     def __init__(self, delegate: '_JavaConstraintAnalysis[Score_]'):
         self._delegate = delegate
         delegate.constraintRef()
+
+    def __str__(self):
+        return self.summary
 
     @property
     def constraint_ref(self) -> ConstraintRef:
@@ -476,8 +500,16 @@ class ConstraintAnalysis(Generic[Score_]):
                 for match_analysis in cast(list['_JavaMatchAnalysis[Score_]'], self._delegate.matches())]
 
     @property
+    def match_count(self) -> int:
+        return self._delegate.matchCount()
+
+    @property
     def score(self) -> Score_:
         return to_python_score(self._delegate.score())
+
+    @property
+    def summary(self) -> str:
+        return self._delegate.summarize()
 
 
 class ScoreAnalysis:
@@ -510,6 +542,20 @@ class ScoreAnalysis:
     constraint_analyses : list[ConstraintAnalysis]
         Individual ConstraintAnalysis instances that make up this ScoreAnalysis.
 
+    summary : str
+        Returns a diagnostic text that explains the solution through the `ConstraintAnalysis` API to identify which
+        Constraints cause that score quality.
+        The string is built fresh every time the method is called.
+
+        In case of an infeasible solution, this can help diagnose the cause of that.
+
+        Do not parse the return value, its format may change without warning.
+        Instead, provide this information in a UI or a service,
+        use `constraintAnalyses()`
+        and convert those into a domain-specific API.
+
+    is_solution_initialized : bool
+
     Notes
     -----
     the constructors of this record are off-limits.
@@ -519,6 +565,12 @@ class ScoreAnalysis:
 
     def __init__(self, delegate: '_JavaScoreAnalysis'):
         self._delegate = delegate
+
+    def __str__(self):
+        return self.summary
+
+    def __sub__(self, other):
+        return self.diff(other)
 
     @property
     def score(self) -> 'Score':
@@ -540,6 +592,73 @@ class ScoreAnalysis:
             ConstraintAnalysis(analysis) for analysis in cast(
                 list['_JavaConstraintAnalysis[Score]'], self._delegate.constraintAnalyses())
         ]
+
+    @overload
+    def constraint_analysis(self, constraint_package: str, constraint_name: str) -> ConstraintAnalysis:
+        ...
+
+    @overload
+    def constraint_analysis(self, constraint_ref: 'ConstraintRef') -> ConstraintAnalysis:
+        ...
+
+    def constraint_analysis(self, *args) -> ConstraintAnalysis:
+        """
+        Performs a lookup on `constraint_map`.
+
+        Parameters
+        ----------
+        *args: *tuple[str, str] | *tuple[ConstraintRef]
+            Either two strings or a single ConstraintRef can be passed as positional arguments.
+            If two strings are passed, they are taken to be the constraint package and constraint name, respectively.
+            If a ConstraintRef is passed, it is used to perform the lookup.
+
+        Returns
+        -------
+        ConstraintAnalysis
+            None if no constraint matches of such constraint are present
+        """
+        if len(args) == 1:
+            return ConstraintAnalysis(self._delegate.getConstraintAnalysis(args[0]._to_java()))
+        else:
+            return ConstraintAnalysis(self._delegate.getConstraintAnalysis(args[0], args[1]))
+
+    @property
+    def summary(self) -> str:
+        return self._delegate.summarize()
+
+    @property
+    def is_solution_initialized(self) -> bool:
+        return self._delegate.isSolutionInitialized()
+
+    def diff(self, other: 'ScoreAnalysis') -> 'ScoreAnalysis':
+        """
+        Compare this `ScoreAnalysis to another `ScoreAnalysis`
+        and retrieve the difference between them.
+        The comparison is in the direction of `this - other`.
+
+        Example: if `this` has a score of 100 and `other` has a score of 90,
+        the returned score will be 10.
+        If this and other were inverted, the score would have been -10.
+        The same applies to all other properties of `ScoreAnalysis`.
+
+        In order to properly diff `MatchAnalysis` against each other,
+        we rely on the user implementing `ConstraintJustification` equality correctly.
+        In other words, the diff will consider two justifications equal if the user says they are equal,
+        and it expects the hash code to be consistent with equals.
+
+        If one `ScoreAnalysis` provides `MatchAnalysis` and the other doesn't, exception is thrown.
+        Such `ScoreAnalysis` instances are mutually incompatible.
+
+        Parameters
+        ----------
+        other : ScoreAnalysis
+
+        Returns
+        -------
+        ScoreExplanation
+            The `ScoreAnalysis` corresponding to the diff.
+        """
+        return ScoreAnalysis(self._delegate.diff(other._delegate))
 
 
 __all__ = ['ScoreExplanation',
