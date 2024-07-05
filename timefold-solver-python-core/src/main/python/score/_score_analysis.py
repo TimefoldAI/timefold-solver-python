@@ -57,7 +57,7 @@ class ConstraintRef:
     def parse_id(constraint_id: str):
         slash_index = constraint_id.rfind('/')
         if slash_index == -1:
-            raise IndexError(
+            raise ValueError(
                 f'The constraint_id {constraint_id} is invalid as it does not contain a package separator \'/\'.')
         package_name = constraint_id[:slash_index]
         constraint_name = constraint_id[slash_index + 1:]
