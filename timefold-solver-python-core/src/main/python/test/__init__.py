@@ -173,7 +173,7 @@ class SingleConstraintAssertion:
     def __init__(self, delegate):
         self.delegate = delegate
 
-    def justifies_with(self, message: str = None, *justifications: 'ConstraintJustification') \
+    def justifies_with(self, *justifications: 'ConstraintJustification', message: str = None) \
             -> 'SingleConstraintAssertion':
         """
         Asserts that the constraint being tested, given a set of facts, results in given justifications.
@@ -192,15 +192,22 @@ class SingleConstraintAssertion:
             when the expected justifications are not observed
         """
         from java.lang import AssertionError as JavaAssertionError  # noqa
+        from _jpyinterpreter import convert_to_java_python_like_object
+        from java.util import HashMap
+        reference_map = HashMap()
+        wrapped_justifications = []
+        for justification in justifications:
+            wrapped_justification = convert_to_java_python_like_object(justification, reference_map)
+            wrapped_justifications.append(wrapped_justification)
         try:
             if message is None:
-                return self.delegate.justifiesWith(justifications)
+                return SingleConstraintAssertion(self.delegate.justifiesWith(*wrapped_justifications))
             else:
-                return self.delegate.justifiesWith(message, justifications)
+                return SingleConstraintAssertion(self.delegate.justifiesWith(message, *wrapped_justifications))
         except JavaAssertionError as e:
             raise AssertionError(e.getMessage())
 
-    def justifies_with_exactly(self, message: str = None, *justifications: 'ConstraintJustification') \
+    def justifies_with_exactly(self, *justifications: 'ConstraintJustification', message: str = None) \
             -> 'SingleConstraintAssertion':
         """
         Asserts that the constraint being tested, given a set of facts, results in given justifications an no others.
@@ -219,15 +226,22 @@ class SingleConstraintAssertion:
             when the expected justifications are not observed
         """
         from java.lang import AssertionError as JavaAssertionError  # noqa
+        from _jpyinterpreter import convert_to_java_python_like_object
+        from java.util import HashMap
+        reference_map = HashMap()
+        wrapped_justifications = []
+        for justification in justifications:
+            wrapped_justification = convert_to_java_python_like_object(justification, reference_map)
+            wrapped_justifications.append(wrapped_justification)
         try:
             if message is None:
-                return self.delegate.justifiesWithExactly(justifications)
+                return SingleConstraintAssertion(self.delegate.justifiesWithExactly(*wrapped_justifications))
             else:
-                return self.delegate.justifiesWithExactly(message, justifications)
+                return SingleConstraintAssertion(self.delegate.justifiesWithExactly(message, *wrapped_justifications))
         except JavaAssertionError as e:
             raise AssertionError(e.getMessage())
 
-    def indicts_with(self, message: str = None, *indictments) -> 'SingleConstraintAssertion':
+    def indicts_with(self, *indictments, message: str = None) -> 'SingleConstraintAssertion':
         """
         Asserts that the constraint being tested, given a set of facts, results in given indictments.
 
@@ -245,15 +259,22 @@ class SingleConstraintAssertion:
             when the expected indictments are not observed
         """
         from java.lang import AssertionError as JavaAssertionError  # noqa
+        from _jpyinterpreter import convert_to_java_python_like_object
+        from java.util import HashMap
+        reference_map = HashMap()
+        wrapped_indictments = []
+        for indictment in indictments:
+            wrapped_indictment = convert_to_java_python_like_object(indictment, reference_map)
+            wrapped_indictments.append(wrapped_indictment)
         try:
             if message is None:
-                return self.delegate.indictsWith(indictments)
+                return SingleConstraintAssertion(self.delegate.indictsWith(*wrapped_indictments))
             else:
-                return self.delegate.indictsWith(message, indictments)
+                return SingleConstraintAssertion(self.delegate.indictsWith(message, *wrapped_indictments))
         except JavaAssertionError as e:
             raise AssertionError(e.getMessage())
 
-    def indicts_with_exactly(self, message: str = None, *indictments) -> 'SingleConstraintAssertion':
+    def indicts_with_exactly(self, *indictments, message: str = None) -> 'SingleConstraintAssertion':
         """
         Asserts that the constraint being tested, given a set of facts, results in given indictments an no others.
 
@@ -271,11 +292,18 @@ class SingleConstraintAssertion:
             when the expected indictments are not observed
         """
         from java.lang import AssertionError as JavaAssertionError  # noqa
+        from _jpyinterpreter import convert_to_java_python_like_object
+        from java.util import HashMap
+        reference_map = HashMap()
+        wrapped_indictments = []
+        for indictment in indictments:
+            wrapped_indictment = convert_to_java_python_like_object(indictment, reference_map)
+            wrapped_indictments.append(wrapped_indictment)
         try:
             if message is None:
-                return self.delegate.indictsWithExactly(indictments)
+                return SingleConstraintAssertion(self.delegate.indictsWithExactly(*wrapped_indictments))
             else:
-                return self.delegate.indictsWithExactly(message, indictments)
+                return SingleConstraintAssertion(self.delegate.indictsWithExactly(message, *wrapped_indictments))
         except JavaAssertionError as e:
             raise AssertionError(e.getMessage())
 

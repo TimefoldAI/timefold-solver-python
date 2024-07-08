@@ -17,6 +17,7 @@ from ai.timefold.solver.test.api.score.stream import (ConstraintVerifier as Java
                                                       MultiConstraintVerification as JavaMultiConstraintVerification)
 
 def verifier_suite(verifier: ConstraintVerifier, same_value, is_value_one,
+                   EntityValueIndictment, EntityValueJustification, EntityValuePairJustification,
                    solution, e1, e2, e3, v1, v2, v3):
     verifier.verify_that(same_value) \
         .given(e1, e2) \
@@ -37,6 +38,11 @@ def verifier_suite(verifier: ConstraintVerifier, same_value, is_value_one,
             .given(e1, e2) \
             .penalizes(1)
 
+    with pytest.raises(AssertionError):
+        verifier.verify_that(same_value) \
+            .given(e1, e2) \
+            .indicts_with_exactly(EntityValueIndictment(e1, v1))
+
     e1.value = v1
     e2.value = v1
     e3.value = v1
@@ -47,7 +53,47 @@ def verifier_suite(verifier: ConstraintVerifier, same_value, is_value_one,
 
     verifier.verify_that(same_value) \
         .given(e1, e2) \
-        .penalizes()
+        .penalizes(1)
+
+    verifier.verify_that(same_value) \
+        .given(e1, e2) \
+        .indicts_with(EntityValueIndictment(e1, e1.value), EntityValueIndictment(e2, v1)) \
+        .penalizes_by(1)
+
+    verifier.verify_that(same_value) \
+        .given(e1, e2) \
+        .indicts_with_exactly(EntityValueIndictment(e1, e1.value), EntityValueIndictment(e2, v1)) \
+        .penalizes_by(1)
+
+    verifier.verify_that(same_value) \
+        .given(e1, e2) \
+        .indicts_with(EntityValueIndictment(e1, v1))
+
+    verifier.verify_that(same_value) \
+        .given(e1, e2) \
+        .justifies_with(EntityValuePairJustification((e1, e2), v1, SimpleScore(-1))) \
+        .penalizes_by(1)
+
+    verifier.verify_that(same_value) \
+        .given(e1, e2) \
+        .justifies_with_exactly(EntityValuePairJustification((e1, e2), v1, SimpleScore(-1))) \
+        .penalizes_by(1)
+
+    with pytest.raises(AssertionError):
+        verifier.verify_that(same_value) \
+            .given(e1, e2) \
+            .indicts_with_exactly(EntityValueIndictment(e1, v1))
+
+
+    with pytest.raises(AssertionError):
+        verifier.verify_that(same_value) \
+            .given(e1, e2) \
+            .justifies_with(EntityValuePairJustification((e1, e2), v1, SimpleScore(1)))
+
+    with pytest.raises(AssertionError):
+        verifier.verify_that(same_value) \
+            .given(e1, e2, e3) \
+            .justifies_with_exactly(EntityValuePairJustification((e1, e2), v1, SimpleScore(1)))
 
     with pytest.raises(AssertionError):
         verifier.verify_that(same_value) \
@@ -70,7 +116,25 @@ def verifier_suite(verifier: ConstraintVerifier, same_value, is_value_one,
 
     verifier.verify_that(same_value) \
         .given(e1, e2, e3) \
+        .penalizes_more_than(2)
+
+    verifier.verify_that(same_value) \
+        .given(e1, e2, e3) \
+        .penalizes_less_than(4)
+
+    verifier.verify_that(same_value) \
+        .given(e1, e2, e3) \
         .penalizes()
+
+    with pytest.raises(AssertionError):
+        verifier.verify_that(same_value) \
+            .given(e1, e2, e3) \
+            .penalizes_more_than(3)
+
+    with pytest.raises(AssertionError):
+        verifier.verify_that(same_value) \
+            .given(e1, e2, e3) \
+            .penalizes_less_than(3)
 
     with pytest.raises(AssertionError):
         verifier.verify_that(same_value) \
@@ -199,21 +263,55 @@ def verifier_suite(verifier: ConstraintVerifier, same_value, is_value_one,
 
 
 def test_constraint_verifier_create():
-    @dataclass
+    @dataclass(unsafe_hash=True)
     class Value:
         code: str
 
+        def __str__(self):
+            return f'Value({self.code})'
+
     @planning_entity
-    @dataclass
+    @dataclass(unsafe_hash=True)
     class Entity:
         code: str
-        value: Annotated[Value, PlanningVariable] = field(default=None)
+        value: Annotated[Value | None, PlanningVariable] = field(default=None)
+
+        def __str__(self):
+            return f'Entity({self.code}, {self.value})'
+
+    @dataclass(unsafe_hash=True)
+    class EntityValueIndictment:
+        entity: Entity
+        value: Value
+
+        def __str__(self):
+            return f'EntityValueIndictment({self.entity}, {self.value})'
+
+    @dataclass(unsafe_hash=True)
+    class EntityValueJustification(ConstraintJustification):
+        entity: Entity
+        value: Value
+        score: SimpleScore
+
+        def __str__(self):
+            return f'EntityValueJustification({self.entity}, {self.value}, {self.score})'
+
+    @dataclass(unsafe_hash=True)
+    class EntityValuePairJustification(ConstraintJustification):
+        entities: tuple[Entity]
+        value: Value
+        score: SimpleScore
+
+        def __str__(self):
+            return f'EntityValuePairJustification({self.entities}, {self.value}, {self.score})'
 
     def same_value(constraint_factory: ConstraintFactory):
         return (constraint_factory.for_each(Entity)
                 .join(Entity, Joiners.less_than(lambda e: e.code),
                       Joiners.equal(lambda e: e.value))
                 .penalize(SimpleScore.ONE)
+                .indict_with(lambda e1, e2: [EntityValueIndictment(e1, e1.value), EntityValueIndictment(e2, e2.value)])
+                .justify_with(lambda e1, e2, score: EntityValuePairJustification((e1, e2), e1.value, score))
                 .as_constraint('Same Value')
                 )
 
@@ -221,6 +319,8 @@ def test_constraint_verifier_create():
         return (constraint_factory.for_each(Entity)
                 .filter(lambda e: e.value.code == 'v1')
                 .reward(SimpleScore.ONE)
+                .indict_with(lambda e: [EntityValueIndictment(e, e.value)])
+                .justify_with(lambda e, score: EntityValueJustification(e, e.value, score))
                 .as_constraint('Value 1')
                 )
 
@@ -259,6 +359,7 @@ def test_constraint_verifier_create():
     solution = Solution([e1, e2, e3], [v1, v2, v3])
 
     verifier_suite(verifier, same_value, is_value_one,
+                   EntityValueIndictment, EntityValueJustification, EntityValuePairJustification,
                    solution, e1, e2, e3, v1, v2, v3)
 
     verifier = ConstraintVerifier.build(my_constraints, Solution, Entity)
@@ -274,6 +375,7 @@ def test_constraint_verifier_create():
     solution = Solution([e1, e2, e3], [v1, v2, v3])
 
     verifier_suite(verifier, same_value, is_value_one,
+                   EntityValueIndictment, EntityValueJustification, EntityValuePairJustification,
                    solution, e1, e2, e3, v1, v2, v3)
 
 
