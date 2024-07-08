@@ -25,7 +25,7 @@ from ..config import SolverConfig
 
 if TYPE_CHECKING:
     # These imports require a JVM to be running, so only import if type checking
-    from ai.timefold.solver.core.api.score.stream import Constraint, ConstraintFactory
+    from ai.timefold.solver.core.api.score.stream import Constraint, ConstraintFactory, ConstraintJustification
     from ai.timefold.solver.core.config.solver import SolverConfig
     from ai.timefold.solver.core.api.score import Score
 
@@ -173,6 +173,140 @@ class SingleConstraintAssertion:
     def __init__(self, delegate):
         self.delegate = delegate
 
+    def justifies_with(self, *justifications: 'ConstraintJustification', message: str = None) \
+            -> 'SingleConstraintAssertion':
+        """
+        Asserts that the constraint being tested, given a set of facts, results in given justifications.
+
+        Parameters
+        ----------
+        justifications : ConstraintVerifier
+            zero or more justification to check for
+
+        message : str, optional
+            description of the scenario being asserted
+
+        Raises
+        ------
+        AssertionError
+            when the expected justifications are not observed
+        """
+        from java.lang import AssertionError as JavaAssertionError  # noqa
+        from _jpyinterpreter import convert_to_java_python_like_object
+        from java.util import HashMap
+        reference_map = HashMap()
+        wrapped_justifications = []
+        for justification in justifications:
+            wrapped_justification = convert_to_java_python_like_object(justification, reference_map)
+            wrapped_justifications.append(wrapped_justification)
+        try:
+            if message is None:
+                return SingleConstraintAssertion(self.delegate.justifiesWith(*wrapped_justifications))
+            else:
+                return SingleConstraintAssertion(self.delegate.justifiesWith(message, *wrapped_justifications))
+        except JavaAssertionError as e:
+            raise AssertionError(e.getMessage())
+
+    def justifies_with_exactly(self, *justifications: 'ConstraintJustification', message: str = None) \
+            -> 'SingleConstraintAssertion':
+        """
+        Asserts that the constraint being tested, given a set of facts, results in given justifications an no others.
+
+        Parameters
+        ----------
+        justifications : ConstraintVerifier
+            zero or more justification to check for
+
+        message : str, optional
+            description of the scenario being asserted
+
+        Raises
+        ------
+        AssertionError
+            when the expected justifications are not observed
+        """
+        from java.lang import AssertionError as JavaAssertionError  # noqa
+        from _jpyinterpreter import convert_to_java_python_like_object
+        from java.util import HashMap
+        reference_map = HashMap()
+        wrapped_justifications = []
+        for justification in justifications:
+            wrapped_justification = convert_to_java_python_like_object(justification, reference_map)
+            wrapped_justifications.append(wrapped_justification)
+        try:
+            if message is None:
+                return SingleConstraintAssertion(self.delegate.justifiesWithExactly(*wrapped_justifications))
+            else:
+                return SingleConstraintAssertion(self.delegate.justifiesWithExactly(message, *wrapped_justifications))
+        except JavaAssertionError as e:
+            raise AssertionError(e.getMessage())
+
+    def indicts_with(self, *indictments, message: str = None) -> 'SingleConstraintAssertion':
+        """
+        Asserts that the constraint being tested, given a set of facts, results in given indictments.
+
+        Parameters
+        ----------
+        indictments : ConstraintVerifier
+            zero or more indictments to check for
+
+        message : str, optional
+            description of the scenario being asserted
+
+        Raises
+        ------
+        AssertionError
+            when the expected indictments are not observed
+        """
+        from java.lang import AssertionError as JavaAssertionError  # noqa
+        from _jpyinterpreter import convert_to_java_python_like_object
+        from java.util import HashMap
+        reference_map = HashMap()
+        wrapped_indictments = []
+        for indictment in indictments:
+            wrapped_indictment = convert_to_java_python_like_object(indictment, reference_map)
+            wrapped_indictments.append(wrapped_indictment)
+        try:
+            if message is None:
+                return SingleConstraintAssertion(self.delegate.indictsWith(*wrapped_indictments))
+            else:
+                return SingleConstraintAssertion(self.delegate.indictsWith(message, *wrapped_indictments))
+        except JavaAssertionError as e:
+            raise AssertionError(e.getMessage())
+
+    def indicts_with_exactly(self, *indictments, message: str = None) -> 'SingleConstraintAssertion':
+        """
+        Asserts that the constraint being tested, given a set of facts, results in given indictments an no others.
+
+        Parameters
+        ----------
+        indictments : ConstraintVerifier
+            zero or more justification to check for
+
+        message : str, optional
+            description of the scenario being asserted
+
+        Raises
+        ------
+        AssertionError
+            when the expected indictments are not observed
+        """
+        from java.lang import AssertionError as JavaAssertionError  # noqa
+        from _jpyinterpreter import convert_to_java_python_like_object
+        from java.util import HashMap
+        reference_map = HashMap()
+        wrapped_indictments = []
+        for indictment in indictments:
+            wrapped_indictment = convert_to_java_python_like_object(indictment, reference_map)
+            wrapped_indictments.append(wrapped_indictment)
+        try:
+            if message is None:
+                return SingleConstraintAssertion(self.delegate.indictsWithExactly(*wrapped_indictments))
+            else:
+                return SingleConstraintAssertion(self.delegate.indictsWithExactly(message, *wrapped_indictments))
+        except JavaAssertionError as e:
+            raise AssertionError(e.getMessage())
+
     def penalizes(self, times: int = None, message: str = None) -> None:
         """
         Asserts that the Constraint being tested, given a set of facts, results in a given number of penalties.
@@ -208,6 +342,66 @@ class SingleConstraintAssertion:
         except JavaAssertionError as e:
             raise AssertionError(e.getMessage())
 
+    def penalizes_less_than(self, times: int, message: str = None) -> None:
+        """
+        Asserts that the Constraint being tested, given a set of facts,
+        results in less than a given number of penalties.
+
+        Ignores the constraint and match weights: it only asserts the number of matches
+        For example: if there are two matches with weight of 10 each, this assertion will check for 2 matches.
+
+        Parameters
+        ----------
+        times : int
+            the expected number of penalties.
+
+        message : str, optional
+            description of the scenario being asserted
+
+        Raises
+        ------
+        AssertionError
+            when the expected penalty is not observed if `times` is provided
+        """
+        from java.lang import AssertionError as JavaAssertionError  # noqa
+        try:
+            if times is not None and message is None:
+                self.delegate.penalizesLessThan(times)
+            else:
+                self.delegate.penalizesLessThan(times, message)
+        except JavaAssertionError as e:
+            raise AssertionError(e.getMessage())
+
+    def penalizes_more_than(self, times: int, message: str = None) -> None:
+        """
+        Asserts that the Constraint being tested, given a set of facts,
+        results in more than a given number of penalties.
+
+        Ignores the constraint and match weights: it only asserts the number of matches
+        For example: if there are two matches with weight of 10 each, this assertion will check for 2 matches.
+
+        Parameters
+        ----------
+        times : int
+            the expected number of penalties.
+
+        message : str, optional
+            description of the scenario being asserted
+
+        Raises
+        ------
+        AssertionError
+            when the expected penalty is not observed if `times` is provided
+        """
+        from java.lang import AssertionError as JavaAssertionError  # noqa
+        try:
+            if times is not None and message is None:
+                self.delegate.penalizesMoreThan(times)
+            else:
+                self.delegate.penalizesMoreThan(times, message)
+        except JavaAssertionError as e:
+            raise AssertionError(e.getMessage())
+
     def penalizes_by(self, match_weight_total: int, message: str = None):
         """
         Asserts that the `Constraint` being tested, given a set of facts, results in a specific penalty.
@@ -235,6 +429,68 @@ class SingleConstraintAssertion:
                 self.delegate.penalizesBy(match_weight_total)
             else:
                 self.delegate.penalizesBy(match_weight_total, message)
+        except JavaAssertionError as e:
+            raise AssertionError(e.getMessage())
+
+    def penalizes_by_less_than(self, match_weight_total: int, message: str = None):
+        """
+        Asserts that the `Constraint` being tested, given a set of facts, results in less than a specific penalty.
+
+        Ignores the constraint weight: it only asserts the match weights.
+        For example: a match with a match weight of 10 on a constraint with a constraint weight of -2hard reduces the
+        score by -20hard.
+        In that case, this assertion checks for 10.
+
+        Parameters
+        ----------
+        match_weight_total : int
+            the expected penalty
+
+        message : str, optional
+            description of the scenario being asserted
+
+        Raises
+        ------
+        AssertionError
+            when the expected penalty is not observed
+        """
+        from java.lang import AssertionError as JavaAssertionError  # noqa
+        try:
+            if message is None:
+                self.delegate.penalizesByLessThan(match_weight_total)
+            else:
+                self.delegate.penalizesByLessThan(match_weight_total, message)
+        except JavaAssertionError as e:
+            raise AssertionError(e.getMessage())
+
+    def penalizes_by_more_than(self, match_weight_total: int, message: str = None):
+        """
+        Asserts that the `Constraint` being tested, given a set of facts, results in more than a specific penalty.
+
+        Ignores the constraint weight: it only asserts the match weights.
+        For example: a match with a match weight of 10 on a constraint with a constraint weight of -2hard reduces the
+        score by -20hard.
+        In that case, this assertion checks for 10.
+
+        Parameters
+        ----------
+        match_weight_total : int
+            the expected penalty
+
+        message : str, optional
+            description of the scenario being asserted
+
+        Raises
+        ------
+        AssertionError
+            when the expected penalty is not observed
+        """
+        from java.lang import AssertionError as JavaAssertionError  # noqa
+        try:
+            if message is None:
+                self.delegate.penalizesByMoreThan(match_weight_total)
+            else:
+                self.delegate.penalizesByMoreThan(match_weight_total, message)
         except JavaAssertionError as e:
             raise AssertionError(e.getMessage())
 
@@ -273,6 +529,66 @@ class SingleConstraintAssertion:
         except JavaAssertionError as e:
             raise AssertionError(e.getMessage())
 
+    def rewards_less_than(self, times: int, message: str = None):
+        """
+        Asserts that the Constraint being tested, given a set of facts,
+        results in a less than a given number of rewards.
+
+        Ignores the constraint and match weights: it only asserts the number of matches
+        For example: if there are two matches with weight of 10 each, this assertion will check for 2 matches.
+
+        Parameters
+        ----------
+        times : int
+            the expected number of rewards.
+
+        message : str, optional
+            description of the scenario being asserted
+
+        Raises
+        ------
+        AssertionError
+            when the expected reward is not observed if times is provided
+        """
+        from java.lang import AssertionError as JavaAssertionError  # noqa
+        try:
+            if times is not None and message is None:
+                self.delegate.rewardsLessThan(times)
+            else:
+                self.delegate.rewardsLessThan(times, message)
+        except JavaAssertionError as e:
+            raise AssertionError(e.getMessage())
+
+    def rewards_more_than(self, times: int, message: str = None):
+        """
+        Asserts that the Constraint being tested, given a set of facts,
+        results in more than a given number of rewards.
+
+        Ignores the constraint and match weights: it only asserts the number of matches
+        For example: if there are two matches with weight of 10 each, this assertion will check for 2 matches.
+
+        Parameters
+        ----------
+        times : int
+            the expected number of rewards.
+
+        message : str, optional
+            description of the scenario being asserted
+
+        Raises
+        ------
+        AssertionError
+            when the expected reward is not observed if times is provided
+        """
+        from java.lang import AssertionError as JavaAssertionError  # noqa
+        try:
+            if times is not None and message is None:
+                self.delegate.rewardsMoreThan(times)
+            else:
+                self.delegate.rewardsMoreThan(times, message)
+        except JavaAssertionError as e:
+            raise AssertionError(e.getMessage())
+
     def rewards_with(self, match_weight_total: int, message: str = None):
         """
         Asserts that the Constraint being tested, given a set of facts, results in a specific reward.
@@ -300,6 +616,66 @@ class SingleConstraintAssertion:
                 self.delegate.rewardsWith(match_weight_total)
             else:
                 self.delegate.rewardsWith(match_weight_total, message)
+        except JavaAssertionError as e:
+            raise AssertionError(e.getMessage())
+
+    def rewards_with_less_than(self, match_weight_total: int, message: str = None):
+        """
+        Asserts that the Constraint being tested, given a set of facts, results in less than a specific reward.
+        Ignores the constraint weight: it only asserts the match weights.
+        For example: a match with a match weight of 10 on a constraint with a constraint weight of
+        -2hard reduces the score by -20hard.
+        In that case, this assertion checks for 10.
+
+        Parameters
+        ----------
+        match_weight_total : int
+            at least 0, expected sum of match weights of matches of the constraint.
+
+        message : str, optional
+            description of the scenario being asserted
+
+        Raises
+        ------
+        AssertionError
+            when the expected reward is not observed
+        """
+        from java.lang import AssertionError as JavaAssertionError  # noqa
+        try:
+            if message is None:
+                self.delegate.rewardsWithLessThan(match_weight_total)
+            else:
+                self.delegate.rewardsWithLessThan(match_weight_total, message)
+        except JavaAssertionError as e:
+            raise AssertionError(e.getMessage())
+
+    def rewards_with_more_than(self, match_weight_total: int, message: str = None):
+        """
+        Asserts that the Constraint being tested, given a set of facts, results in more than a specific reward.
+        Ignores the constraint weight: it only asserts the match weights.
+        For example: a match with a match weight of 10 on a constraint with a constraint weight of
+        -2hard reduces the score by -20hard.
+        In that case, this assertion checks for 10.
+
+        Parameters
+        ----------
+        match_weight_total : int
+            at least 0, expected sum of match weights of matches of the constraint.
+
+        message : str, optional
+            description of the scenario being asserted
+
+        Raises
+        ------
+        AssertionError
+            when the expected reward is not observed
+        """
+        from java.lang import AssertionError as JavaAssertionError  # noqa
+        try:
+            if message is None:
+                self.delegate.rewardsWithMoreThan(match_weight_total)
+            else:
+                self.delegate.rewardsWithMoreThan(match_weight_total, message)
         except JavaAssertionError as e:
             raise AssertionError(e.getMessage())
 

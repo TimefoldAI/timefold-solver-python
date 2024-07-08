@@ -223,6 +223,29 @@ def test_filter_quad():
     assert score_manager.explain(problem).score.score == 1
 
 
+def test_flatten_last():
+    @constraint_provider
+    def define_constraints(constraint_factory: ConstraintFactory):
+        return [
+            constraint_factory.for_each(Entity)
+            .map(lambda entity: (1, 2, 3))
+            .flatten_last(lambda the_tuple: the_tuple)
+            .reward(SimpleScore.ONE)
+            .as_constraint('Count')
+        ]
+
+    score_manager = create_score_manager(define_constraints)
+
+    entity_a: Entity = Entity('A')
+
+    value_1 = Value(1)
+
+    problem = Solution([entity_a], [value_1])
+    entity_a.value = value_1
+
+    assert score_manager.explain(problem).score == SimpleScore.of(3)
+
+
 def test_join_uni():
     @constraint_provider
     def define_constraints(constraint_factory: ConstraintFactory):
@@ -263,6 +286,87 @@ def test_join_uni():
 
     # 1 * 2 + 1 * 2 + 1 * 2 + 1 * 2
     assert score_manager.explain(problem).score.score == 8
+
+
+def test_if_exists_uni():
+    @constraint_provider
+    def define_constraints(constraint_factory: ConstraintFactory):
+        return [
+            constraint_factory.for_each(Entity)
+            .if_exists(Entity, Joiners.equal(lambda entity: entity.code))
+            .reward(SimpleScore.ONE, lambda e1: e1.value.number)
+            .as_constraint('Count')
+        ]
+
+    score_manager = create_score_manager(define_constraints)
+    entity_a1: Entity = Entity('A')
+    entity_a2: Entity = Entity('A')
+    entity_b1: Entity = Entity('B')
+    entity_b2: Entity = Entity('B')
+
+    value_1 = Value(1)
+    value_2 = Value(2)
+
+    problem = Solution([entity_a1, entity_a2, entity_b1, entity_b2], [value_1, value_2])
+
+    entity_a1.value = value_1
+
+    # With itself
+    assert score_manager.explain(problem).score.score == 1
+
+    entity_a1.value = value_1
+    entity_a2.value = value_1
+
+    entity_b1.value = value_2
+    entity_b2.value = value_2
+
+    # 1 + 2 + 1 + 2
+    assert score_manager.explain(problem).score.score == 6
+
+    entity_a1.value = value_2
+    entity_b1.value = value_1
+
+    # 1 + 2 + 1 + 2
+    assert score_manager.explain(problem).score.score == 6
+
+
+def test_if_not_exists_uni():
+    @constraint_provider
+    def define_constraints(constraint_factory: ConstraintFactory):
+        return [
+            constraint_factory.for_each(Entity)
+            .if_not_exists(Entity, Joiners.equal(lambda entity: entity.code))
+            .reward(SimpleScore.ONE, lambda e1: e1.value.number)
+            .as_constraint('Count')
+        ]
+
+    score_manager = create_score_manager(define_constraints)
+    entity_a1: Entity = Entity('A')
+    entity_a2: Entity = Entity('A')
+    entity_b1: Entity = Entity('B')
+    entity_b2: Entity = Entity('B')
+
+    value_1 = Value(1)
+    value_2 = Value(2)
+
+    problem = Solution([entity_a1, entity_a2, entity_b1, entity_b2], [value_1, value_2])
+
+    entity_a1.value = value_1
+
+    assert score_manager.explain(problem).score.score == 0
+
+    entity_a1.value = value_1
+    entity_a2.value = value_1
+
+    entity_b1.value = value_2
+    entity_b2.value = value_2
+
+    assert score_manager.explain(problem).score.score == 0
+
+    entity_a1.value = value_2
+    entity_b1.value = value_1
+
+    assert score_manager.explain(problem).score.score == 0
 
 
 def test_map():
@@ -435,6 +539,41 @@ def test_concat():
     entity_b.value = value_3
 
     assert score_manager.explain(problem).score.score == 1
+
+def test_complement():
+    @constraint_provider
+    def define_constraints(constraint_factory: ConstraintFactory):
+        return [
+            constraint_factory.for_each(Entity)
+            .filter(lambda e: e.value.number == 1)
+            .complement(Entity)
+            .reward(SimpleScore.ONE)
+            .as_constraint('Count')
+        ]
+
+    score_manager = create_score_manager(define_constraints)
+    entity_a: Entity = Entity('A')
+    entity_b: Entity = Entity('B')
+
+    value_1 = Value(1)
+    value_2 = Value(2)
+    value_3 = Value(3)
+
+    problem = Solution([entity_a, entity_b], [value_1, value_2, value_3])
+
+    assert score_manager.explain(problem).score.score == 0
+
+    entity_a.value = value_1
+
+    assert score_manager.explain(problem).score.score == 1
+
+    entity_b.value = value_2
+
+    assert score_manager.explain(problem).score.score == 2
+
+    entity_b.value = value_3
+
+    assert score_manager.explain(problem).score.score == 2
 
 
 def test_custom_indictments():
@@ -630,6 +769,7 @@ ignored_java_functions = {
 
 
 def test_has_all_methods():
+    missing = []
     for python_type, java_type in ((UniConstraintStream, JavaUniConstraintStream),
                                    (BiConstraintStream, JavaBiConstraintStream),
                                    (TriConstraintStream, JavaTriConstraintStream),
@@ -641,7 +781,6 @@ def test_has_all_methods():
                                    (Joiners, JavaJoiners),
                                    (ConstraintCollectors, JavaConstraintCollectors),
                                    (ConstraintFactory, JavaConstraintFactory)):
-        missing = []
         for function_name, function_impl in inspect.getmembers(java_type, inspect.isfunction):
             if function_name in ignored_java_functions:
                 continue
@@ -654,8 +793,10 @@ def test_has_all_methods():
             # change h_t_t_p -> http
             snake_case_name = re.sub('([a-z0-9])([A-Z])', r'\1_\2', snake_case_name).lower()
             if not hasattr(python_type, snake_case_name):
-                missing.append(snake_case_name)
+                missing.append((java_type, python_type, snake_case_name))
 
-        if missing:
-            raise AssertionError(f'{python_type} is missing methods ({missing}) '
-                                 f'from java_type ({java_type}).)')
+    if missing:
+        assertion_msg = ''
+        for java_type, python_type, snake_case_name in missing:
+            assertion_msg += f'{python_type} is missing a method ({snake_case_name}) from java_type ({java_type}).)\n'
+        raise AssertionError(assertion_msg)

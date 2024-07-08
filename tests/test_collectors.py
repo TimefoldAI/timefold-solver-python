@@ -563,24 +563,39 @@ def test_collect_and_then():
     assert score_manager.explain(problem).score == SimpleScore.of(4)
 
 
-def test_flatten_last():
+def test_load_balance():
     @constraint_provider
     def define_constraints(constraint_factory: ConstraintFactory):
         return [
             constraint_factory.for_each(Entity)
-            .map(lambda entity: (1, 2, 3))
-            .flatten_last(lambda the_tuple: the_tuple)
-            .reward(SimpleScore.ONE)
-            .as_constraint('Count')
+            .group_by(ConstraintCollectors.load_balance(
+                lambda entity: entity.value
+            ))
+            .reward(SimpleScore.ONE,
+                    lambda balance: balance.unfairness().movePointRight(3).intValue())
+            .as_constraint('Balanced value')
         ]
 
     score_manager = create_score_manager(define_constraints)
 
     entity_a: Entity = Entity('A')
+    entity_b: Entity = Entity('B')
+    entity_c: Entity = Entity('C')
 
     value_1 = Value(1)
+    value_2 = Value(2)
 
-    problem = Solution([entity_a], [value_1])
+    problem = Solution([entity_a, entity_b], [value_1])
     entity_a.value = value_1
+    entity_b.value = value_1
+    entity_c.value = value_1
 
-    assert score_manager.explain(problem).score == SimpleScore.of(3)
+    assert score_manager.explain(problem).score == SimpleScore.of(0)
+
+    problem = Solution([entity_a, entity_b, entity_c], [value_1, value_2])
+
+    assert score_manager.explain(problem).score == SimpleScore.of(0)
+
+    entity_c.value = value_2
+
+    assert score_manager.explain(problem).score == SimpleScore.of(707)
