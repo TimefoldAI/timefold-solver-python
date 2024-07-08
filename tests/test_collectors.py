@@ -572,7 +572,7 @@ def test_load_balance():
                 lambda entity: entity.value
             ))
             .reward(SimpleScore.ONE,
-                    lambda balance: balance.unfairness().multiply(BigDecimal.valueOf(1000)).intValue())
+                    lambda balance: balance.unfairness().movePointRight(3).intValue())
             .as_constraint('Balanced value')
         ]
 
@@ -594,8 +594,8 @@ def test_load_balance():
 
     entity_c.value = value_2
 
-    assert score_manager.explain(problem).score == SimpleScore.of(2) // FIXME
+    assert score_manager.explain(problem).score == SimpleScore.of(707)
 
     entity_b.value = value_2
 
-    assert score_manager.explain(problem).score == SimpleScore.of(4) // FIXME
+    assert score_manager.explain(problem).score == SimpleScore.of(707)
