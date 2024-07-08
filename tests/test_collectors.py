@@ -585,17 +585,17 @@ def test_load_balance():
     value_1 = Value(1)
     value_2 = Value(2)
 
-    problem = Solution([entity_a, entity_b, entity_c], [value_1, value_2])
+    problem = Solution([entity_a, entity_b], [value_1])
     entity_a.value = value_1
     entity_b.value = value_1
     entity_c.value = value_1
 
     assert score_manager.explain(problem).score == SimpleScore.of(0)
 
+    problem = Solution([entity_a, entity_b, entity_c], [value_1, value_2])
+
+    assert score_manager.explain(problem).score == SimpleScore.of(0)
+
     entity_c.value = value_2
-
-    assert score_manager.explain(problem).score == SimpleScore.of(707)
-
-    entity_b.value = value_2
 
     assert score_manager.explain(problem).score == SimpleScore.of(707)
