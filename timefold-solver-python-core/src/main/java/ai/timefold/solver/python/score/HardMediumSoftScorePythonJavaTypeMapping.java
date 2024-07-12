@@ -50,7 +50,7 @@ public final class HardMediumSoftScorePythonJavaTypeMapping
             softScoreField.set(instance, PythonInteger.valueOf(javaObject.softScore()));
             return (PythonLikeObject) instance;
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
-            throw new RuntimeException(e);
+            throw new IllegalStateException(e);
         }
     }
 
@@ -67,7 +67,7 @@ public final class HardMediumSoftScorePythonJavaTypeMapping
                 return HardMediumSoftLongScore.ofUninitialized(initScore, hardScore, mediumScore, softScore);
             }
         } catch (IllegalAccessException e) {
-            throw new RuntimeException(e);
+            throw new IllegalStateException(e);
         }
     }
 }

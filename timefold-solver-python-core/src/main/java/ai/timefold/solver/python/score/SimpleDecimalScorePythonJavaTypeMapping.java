@@ -45,7 +45,7 @@ public final class SimpleDecimalScorePythonJavaTypeMapping
             scoreField.set(instance, new PythonDecimal(javaObject.score()));
             return (PythonLikeObject) instance;
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
-            throw new RuntimeException(e);
+            throw new IllegalStateException(e);
         }
     }
 
@@ -60,7 +60,7 @@ public final class SimpleDecimalScorePythonJavaTypeMapping
                 return SimpleBigDecimalScore.ofUninitialized(initScore, score);
             }
         } catch (IllegalAccessException e) {
-            throw new RuntimeException(e);
+            throw new IllegalStateException(e);
         }
     }
 }

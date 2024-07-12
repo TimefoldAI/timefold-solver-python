@@ -43,7 +43,7 @@ public final class SimpleScorePythonJavaTypeMapping implements PythonJavaTypeMap
             scoreField.set(instance, PythonInteger.valueOf(javaObject.score()));
             return (PythonLikeObject) instance;
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
-            throw new RuntimeException(e);
+            throw new IllegalStateException(e);
         }
     }
 
@@ -58,7 +58,7 @@ public final class SimpleScorePythonJavaTypeMapping implements PythonJavaTypeMap
                 return SimpleLongScore.ofUninitialized(initScore, score);
             }
         } catch (IllegalAccessException e) {
-            throw new RuntimeException(e);
+            throw new IllegalStateException(e);
         }
     }
 }

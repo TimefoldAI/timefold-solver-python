@@ -58,7 +58,7 @@ public final class BendableDecimalScorePythonJavaTypeMapping
             softScoresField.set(instance, toPythonList(javaObject.softScores()));
             return (PythonLikeObject) instance;
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
-            throw new RuntimeException(e);
+            throw new IllegalStateException(e);
         }
     }
 
@@ -82,7 +82,7 @@ public final class BendableDecimalScorePythonJavaTypeMapping
                 return BendableBigDecimalScore.ofUninitialized(initScore, hardScores, softScores);
             }
         } catch (IllegalAccessException e) {
-            throw new RuntimeException(e);
+            throw new IllegalStateException(e);
         }
     }
 }

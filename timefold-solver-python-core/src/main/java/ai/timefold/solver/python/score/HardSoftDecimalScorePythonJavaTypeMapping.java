@@ -48,7 +48,7 @@ public final class HardSoftDecimalScorePythonJavaTypeMapping
             softScoreField.set(instance, new PythonDecimal(javaObject.softScore()));
             return (PythonLikeObject) instance;
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
-            throw new RuntimeException(e);
+            throw new IllegalStateException(e);
         }
     }
 
@@ -64,7 +64,7 @@ public final class HardSoftDecimalScorePythonJavaTypeMapping
                 return HardSoftBigDecimalScore.ofUninitialized(initScore, hardScore, softScore);
             }
         } catch (IllegalAccessException e) {
-            throw new RuntimeException(e);
+            throw new IllegalStateException(e);
         }
     }
 }
