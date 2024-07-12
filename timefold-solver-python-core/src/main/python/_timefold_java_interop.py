@@ -105,37 +105,68 @@ def register_score_python_java_type_mappings():
 
     _scores_registered = True
 
-    from .score._score import SimpleScore, HardSoftScore, HardMediumSoftScore, BendableScore
+    from decimal import Decimal
+    from .score._score import (SimpleScore, HardSoftScore, HardMediumSoftScore, BendableScore,
+                               SimpleDecimalScore, HardSoftDecimalScore, HardMediumSoftDecimalScore,
+                               BendableDecimalScore)
     from ai.timefold.solver.core.api.score.buildin.simplelong import SimpleLongScore as _SimpleScore
     from ai.timefold.solver.core.api.score.buildin.hardsoftlong import HardSoftLongScore as _HardSoftScore
     from ai.timefold.solver.core.api.score.buildin.hardmediumsoftlong import HardMediumSoftLongScore as _HardMediumSoftScore
     from ai.timefold.solver.core.api.score.buildin.bendablelong import BendableLongScore as _BendableScore
 
+    from ai.timefold.solver.core.api.score.buildin.simplebigdecimal import SimpleBigDecimalScore as _SimpleDecimalScore
+    from ai.timefold.solver.core.api.score.buildin.hardsoftbigdecimal import HardSoftBigDecimalScore as _HardSoftDecimalScore
+    from ai.timefold.solver.core.api.score.buildin.hardmediumsoftbigdecimal import HardMediumSoftBigDecimalScore as _HardMediumSoftDecimalScore
+    from ai.timefold.solver.core.api.score.buildin.bendablebigdecimal import BendableBigDecimalScore as _BendableDecimalScore
+
     from ai.timefold.solver.python.score import (SimpleScorePythonJavaTypeMapping,
                                                  HardSoftScorePythonJavaTypeMapping,
                                                  HardMediumSoftScorePythonJavaTypeMapping,
-                                                 BendableScorePythonJavaTypeMapping)
+                                                 BendableScorePythonJavaTypeMapping,
+                                                 SimpleDecimalScorePythonJavaTypeMapping,
+                                                 HardSoftDecimalScorePythonJavaTypeMapping,
+                                                 HardMediumSoftDecimalScorePythonJavaTypeMapping,
+                                                 BendableDecimalScorePythonJavaTypeMapping,
+                                                 )
     from _jpyinterpreter import translate_python_class_to_java_class, add_python_java_type_mapping
 
     _python_score_mapping_dict['SimpleScore'] = SimpleScore
     _python_score_mapping_dict['HardSoftScore'] = HardSoftScore
     _python_score_mapping_dict['HardMediumSoftScore'] = HardMediumSoftScore
     _python_score_mapping_dict['BendableScore'] = BendableScore
+    _python_score_mapping_dict['SimpleDecimalScore'] = SimpleDecimalScore
+    _python_score_mapping_dict['HardSoftDecimalScore'] = HardSoftDecimalScore
+    _python_score_mapping_dict['HardMediumSoftDecimalScore'] = HardMediumSoftDecimalScore
+    _python_score_mapping_dict['BendableDecimalScore'] = BendableDecimalScore
 
     _java_score_mapping_dict['SimpleScore'] = _SimpleScore
     _java_score_mapping_dict['HardSoftScore'] = _HardSoftScore
     _java_score_mapping_dict['HardMediumSoftScore'] = _HardMediumSoftScore
     _java_score_mapping_dict['BendableScore'] = _BendableScore
+    _java_score_mapping_dict['SimpleDecimalScore'] = _SimpleDecimalScore
+    _java_score_mapping_dict['HardSoftDecimalScore'] = _HardSoftDecimalScore
+    _java_score_mapping_dict['HardMediumSoftDecimalScore'] = _HardMediumSoftDecimalScore
+    _java_score_mapping_dict['BendableDecimalScore'] = _BendableDecimalScore
 
     SimpleScoreType = translate_python_class_to_java_class(SimpleScore)
     HardSoftScoreType = translate_python_class_to_java_class(HardSoftScore)
     HardMediumSoftScoreType = translate_python_class_to_java_class(HardMediumSoftScore)
     BendableScoreType = translate_python_class_to_java_class(BendableScore)
 
+    SimpleDecimalScoreType = translate_python_class_to_java_class(SimpleDecimalScore)
+    HardSoftDecimalScoreType = translate_python_class_to_java_class(HardSoftDecimalScore)
+    HardMediumSoftDecimalScoreType = translate_python_class_to_java_class(HardMediumSoftDecimalScore)
+    BendableDecimalScoreType = translate_python_class_to_java_class(BendableDecimalScore)
+
     add_python_java_type_mapping(SimpleScorePythonJavaTypeMapping(SimpleScoreType))
     add_python_java_type_mapping(HardSoftScorePythonJavaTypeMapping(HardSoftScoreType))
     add_python_java_type_mapping(HardMediumSoftScorePythonJavaTypeMapping(HardMediumSoftScoreType))
     add_python_java_type_mapping(BendableScorePythonJavaTypeMapping(BendableScoreType))
+
+    add_python_java_type_mapping(SimpleDecimalScorePythonJavaTypeMapping(SimpleDecimalScoreType))
+    add_python_java_type_mapping(HardSoftDecimalScorePythonJavaTypeMapping(HardSoftDecimalScoreType))
+    add_python_java_type_mapping(HardMediumSoftDecimalScorePythonJavaTypeMapping(HardMediumSoftDecimalScoreType))
+    add_python_java_type_mapping(BendableDecimalScorePythonJavaTypeMapping(BendableDecimalScoreType))
 
 
 def forward_logging_events(event: 'PythonLoggingEvent') -> None:

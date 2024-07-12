@@ -1,5 +1,6 @@
 package ai.timefold.jpyinterpreter.types.numeric;
 
+import java.math.BigDecimal;
 import java.math.BigInteger;
 
 import ai.timefold.jpyinterpreter.PythonLikeObject;
@@ -20,22 +21,28 @@ public interface PythonNumber extends PythonLikeComparable<PythonNumber>,
         Number value = getValue();
         Number otherValue = pythonNumber.getValue();
 
-        if (value instanceof BigInteger) {
-            if (otherValue instanceof BigInteger) {
-                return ((BigInteger) value).compareTo((BigInteger) otherValue);
+        if (value instanceof BigInteger self) {
+            if (otherValue instanceof BigInteger other) {
+                return self.compareTo(other);
             } else {
                 return Double.compare(value.longValue(), otherValue.doubleValue());
             }
-        } else {
-            return Double.compare(value.doubleValue(), otherValue.doubleValue());
         }
+        if (value instanceof BigDecimal self) {
+            if (otherValue instanceof BigDecimal other) {
+                return self.compareTo(other);
+            } else {
+                return Double.compare(value.doubleValue(), otherValue.doubleValue());
+            }
+        }
+        return Double.compare(value.doubleValue(), otherValue.doubleValue());
     }
 
     static PythonInteger computeHash(PythonInteger numerator, PythonInteger denominator) {
         PythonInteger P = MODULUS;
         // Remove common factors of P.  (Unnecessary if m and n already coprime.)
 
-        while (numerator.modulo(P) == PythonInteger.ZERO && denominator.modulo(P) == PythonInteger.ZERO) {
+        while (numerator.modulo(P).equals(PythonInteger.ZERO) && denominator.modulo(P).equals(PythonInteger.ZERO)) {
             numerator = numerator.floorDivide(P);
             denominator = denominator.floorDivide(P);
         }

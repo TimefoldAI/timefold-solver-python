@@ -132,6 +132,7 @@ def init_type_to_compiled_java_class():
     import ai.timefold.jpyinterpreter.types.datetime as java_datetime_types
     import datetime
     import builtins
+    import decimal
 
     if len(type_to_compiled_java_class) > 0:
         return
@@ -145,6 +146,7 @@ def init_type_to_compiled_java_class():
     type_to_compiled_java_class[float] = BuiltinTypes.FLOAT_TYPE
     type_to_compiled_java_class[complex] = BuiltinTypes.COMPLEX_TYPE
     type_to_compiled_java_class[bool] = BuiltinTypes.BOOLEAN_TYPE
+    type_to_compiled_java_class[decimal.Decimal] = BuiltinTypes.DECIMAL_TYPE
 
     type_to_compiled_java_class[type(None)] = BuiltinTypes.NONE_TYPE
     type_to_compiled_java_class[str] = BuiltinTypes.STRING_TYPE
@@ -370,12 +372,14 @@ def convert_to_java_python_like_object(value, instance_map=None):
     from java.util import HashMap
     from java.math import BigInteger
     from types import ModuleType
+    from decimal import Decimal
     from ai.timefold.jpyinterpreter import PythonLikeObject, CPythonBackedPythonInterpreter
     from ai.timefold.jpyinterpreter.types import PythonString, PythonBytes, PythonByteArray, PythonNone, \
         PythonModule, PythonSlice, PythonRange, NotImplemented as JavaNotImplemented
     from ai.timefold.jpyinterpreter.types.collections import PythonLikeList, PythonLikeTuple, PythonLikeSet, \
         PythonLikeFrozenSet, PythonLikeDict
-    from ai.timefold.jpyinterpreter.types.numeric import PythonInteger, PythonFloat, PythonBoolean, PythonComplex
+    from ai.timefold.jpyinterpreter.types.numeric import PythonInteger, PythonFloat, PythonBoolean, PythonComplex, \
+        PythonDecimal
     from ai.timefold.jpyinterpreter.types.wrappers import PythonObjectWrapper, CPythonType, OpaquePythonReference
 
     if instance_map is None:
@@ -398,6 +402,10 @@ def convert_to_java_python_like_object(value, instance_map=None):
         return out
     elif isinstance(value, float):
         out = PythonFloat.valueOf(JDouble(value))
+        put_in_instance_map(instance_map, value, out)
+        return out
+    elif isinstance(value, Decimal):
+        out = PythonDecimal.valueOf(str(value))
         put_in_instance_map(instance_map, value, out)
         return out
     elif isinstance(value, complex):
@@ -519,10 +527,12 @@ def unwrap_python_like_object(python_like_object, clone_map=None, default=NotImp
         PythonModule, PythonSlice, PythonRange, CPythonBackedPythonLikeObject, PythonLikeType, PythonLikeGenericType, \
         NotImplemented as JavaNotImplemented, PythonCell, PythonLikeFunction
     from ai.timefold.jpyinterpreter.types.collections import PythonLikeTuple, PythonLikeFrozenSet
-    from ai.timefold.jpyinterpreter.types.numeric import PythonInteger, PythonFloat, PythonBoolean, PythonComplex
+    from ai.timefold.jpyinterpreter.types.numeric import PythonInteger, PythonFloat, PythonBoolean, PythonComplex, \
+        PythonDecimal
     from ai.timefold.jpyinterpreter.types.wrappers import JavaObjectWrapper, PythonObjectWrapper, CPythonType, \
         OpaquePythonReference
     from types import CellType
+    from decimal import Decimal
 
     if clone_map is None:
         clone_map = PythonCloneMap(IdentityHashMap(), dict())
@@ -552,6 +562,8 @@ def unwrap_python_like_object(python_like_object, clone_map=None, default=NotImp
         return clone_map.add_clone(python_like_object, python_like_object == PythonBoolean.TRUE)
     elif isinstance(python_like_object, PythonInteger):
         return clone_map.add_clone(python_like_object, int(python_like_object.getValue().toString(16), 16))
+    elif isinstance(python_like_object, PythonDecimal):
+        return clone_map.add_clone(python_like_object, Decimal(str(python_like_object)))
     elif isinstance(python_like_object, PythonComplex):
         real = unwrap_python_like_object(python_like_object.getReal(), clone_map, default)
         imaginary = unwrap_python_like_object(python_like_object.getImaginary(), clone_map, default)

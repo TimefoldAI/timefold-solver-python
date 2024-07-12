@@ -1,6 +1,7 @@
 package ai.timefold.jpyinterpreter.implementors;
 
 import java.lang.reflect.Field;
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
@@ -31,6 +32,7 @@ import ai.timefold.jpyinterpreter.types.collections.PythonLikeSet;
 import ai.timefold.jpyinterpreter.types.collections.PythonLikeTuple;
 import ai.timefold.jpyinterpreter.types.errors.TypeError;
 import ai.timefold.jpyinterpreter.types.numeric.PythonBoolean;
+import ai.timefold.jpyinterpreter.types.numeric.PythonDecimal;
 import ai.timefold.jpyinterpreter.types.numeric.PythonFloat;
 import ai.timefold.jpyinterpreter.types.numeric.PythonInteger;
 import ai.timefold.jpyinterpreter.types.numeric.PythonNumber;
@@ -65,76 +67,79 @@ public class JavaPythonTypeConversionImplementor {
             return existingObject;
         }
 
-        if (object instanceof OpaqueJavaReference) {
-            return ((OpaqueJavaReference) object).proxy();
+        if (object instanceof OpaqueJavaReference opaqueJavaReference) {
+            return opaqueJavaReference.proxy();
         }
 
-        if (object instanceof PythonLikeObject) {
+        if (object instanceof PythonLikeObject instance) {
             // Object already a PythonLikeObject; need to do nothing
-            return (PythonLikeObject) object;
+            return instance;
         }
 
         if (object instanceof Byte || object instanceof Short || object instanceof Integer || object instanceof Long) {
             return PythonInteger.valueOf(((Number) object).longValue());
         }
 
-        if (object instanceof BigInteger) {
-            return PythonInteger.valueOf((BigInteger) object);
+        if (object instanceof BigInteger integer) {
+            return PythonInteger.valueOf(integer);
+        }
+
+        if (object instanceof BigDecimal decimal) {
+            return new PythonDecimal(decimal);
         }
 
         if (object instanceof Float || object instanceof Double) {
             return PythonFloat.valueOf(((Number) object).doubleValue());
         }
 
-        if (object instanceof Boolean) {
-            return PythonBoolean.valueOf((Boolean) object);
+        if (object instanceof Boolean booleanValue) {
+            return PythonBoolean.valueOf(booleanValue);
         }
 
-        if (object instanceof String) {
-            return PythonString.valueOf((String) object);
+        if (object instanceof String string) {
+            return PythonString.valueOf(string);
         }
 
-        if (object instanceof Iterator) {
-            return new DelegatePythonIterator<>((Iterator) object);
+        if (object instanceof Iterator iterator) {
+            return new DelegatePythonIterator<>(iterator);
         }
 
-        if (object instanceof List) {
+        if (object instanceof List list) {
             PythonLikeList out = new PythonLikeList();
             createdObjectMap.put(object, out);
-            for (Object item : (List) object) {
+            for (Object item : list) {
                 out.add(wrapJavaObject(item));
             }
             return out;
         }
 
-        if (object instanceof Set) {
+        if (object instanceof Set set) {
             PythonLikeSet out = new PythonLikeSet();
             createdObjectMap.put(object, out);
-            for (Object item : (Set) object) {
+            for (Object item : set) {
                 out.add(wrapJavaObject(item));
             }
             return out;
         }
 
-        if (object instanceof Map) {
+        if (object instanceof Map map) {
             PythonLikeDict out = new PythonLikeDict();
             createdObjectMap.put(object, out);
-            Set<Map.Entry<?, ?>> entrySet = ((Map) object).entrySet();
+            Set<Map.Entry<?, ?>> entrySet = map.entrySet();
             for (Map.Entry<?, ?> entry : entrySet) {
                 out.put(wrapJavaObject(entry.getKey()), wrapJavaObject(entry.getValue()));
             }
             return out;
         }
 
-        if (object instanceof Class) {
-            Class<?> maybeFunctionClass = (Class<?>) object;
+        if (object instanceof Class maybeFunctionClass) {
             if (Set.of(maybeFunctionClass.getInterfaces()).contains(PythonLikeFunction.class)) {
                 return new PythonCode((Class<? extends PythonLikeFunction>) maybeFunctionClass);
             }
         }
 
-        if (object instanceof OpaquePythonReference) {
-            return new PythonObjectWrapper((OpaquePythonReference) object);
+        if (object instanceof OpaquePythonReference opaquePythonReference) {
+            return new PythonObjectWrapper(opaquePythonReference);
         }
 
         // Default: return a JavaObjectWrapper
@@ -159,6 +164,10 @@ public class JavaPythonTypeConversionImplementor {
                 || Long.class.equals(javaClass) || BigInteger.class.equals(javaClass) ||
                 PythonInteger.class.equals(javaClass)) {
             return BuiltinTypes.INT_TYPE;
+        }
+
+        if (BigDecimal.class.equals(javaClass) || PythonDecimal.class.equals(javaClass)) {
+            return BuiltinTypes.DECIMAL_TYPE;
         }
 
         if (float.class.equals(javaClass) || double.class.equals(javaClass) ||
@@ -273,7 +282,7 @@ public class JavaPythonTypeConversionImplementor {
             PythonNumber pythonNumber = (PythonNumber) object;
             Number value = pythonNumber.getValue();
 
-            if (type.equals(BigInteger.class)) {
+            if (type.equals(BigInteger.class) || type.equals(BigDecimal.class)) {
                 return (T) value;
             }
 
@@ -355,13 +364,23 @@ public class JavaPythonTypeConversionImplementor {
                 Type.INT_TYPE.equals(returnAsmType) ||
                 Type.LONG_TYPE.equals(returnAsmType) ||
                 Type.FLOAT_TYPE.equals(returnAsmType) ||
-                Type.DOUBLE_TYPE.equals(returnAsmType)) {
+                Type.DOUBLE_TYPE.equals(returnAsmType) ||
+                Type.getType(BigInteger.class).equals(returnAsmType) ||
+                Type.getType(BigDecimal.class).equals(returnAsmType)) {
             methodVisitor.visitTypeInsn(Opcodes.CHECKCAST, Type.getInternalName(PythonNumber.class));
             methodVisitor.visitMethodInsn(Opcodes.INVOKEINTERFACE,
                     Type.getInternalName(PythonNumber.class),
                     "getValue",
                     Type.getMethodDescriptor(Type.getType(Number.class)),
                     true);
+
+            if (Type.getType(BigInteger.class).equals(returnAsmType) ||
+                    Type.getType(BigDecimal.class).equals(returnAsmType)) {
+                methodVisitor.visitTypeInsn(Opcodes.CHECKCAST, returnAsmType.getInternalName());
+                methodVisitor.visitInsn(Opcodes.ARETURN);
+                return;
+            }
+
             String wrapperClassName = null;
             String methodName = null;
             String methodDescriptor = null;

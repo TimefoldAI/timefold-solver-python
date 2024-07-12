@@ -52,10 +52,24 @@ public class PythonFloat extends AbstractPythonLikeObject implements PythonNumbe
                 return new PythonFloat(0.0);
             } else if (positionalArguments.size() == 1) {
                 PythonLikeObject value = positionalArguments.get(0);
-                if (value instanceof PythonInteger) {
-                    return ((PythonInteger) value).asFloat();
+                if (value instanceof PythonInteger integer) {
+                    return integer.asFloat();
                 } else if (value instanceof PythonFloat) {
                     return value;
+                } else if (value instanceof PythonString str) {
+                    try {
+                        var literal = switch (str.value.toLowerCase()) {
+                            case "nan", "+nan" -> "+NaN";
+                            case "-nan" -> "-NaN";
+                            case "inf", "+inf", "infinity" -> "+Infinity";
+                            case "-inf", "-infinity" -> "-Infinity";
+                            default -> str.value;
+                        };
+                        Double.valueOf("2");
+                        return new PythonFloat(Double.parseDouble(literal));
+                    } catch (NumberFormatException e) {
+                        throw new ValueError("invalid literal for float(): %s".formatted(value));
+                    }
                 } else {
                     PythonLikeType valueType = value.$getType();
                     PythonLikeFunction asFloatFunction = (PythonLikeFunction) (valueType.$getAttributeOrError("__float__"));
@@ -224,6 +238,8 @@ public class PythonFloat extends AbstractPythonLikeObject implements PythonNumbe
             return ((PythonFloat) o).value == value;
         } else if (o instanceof PythonInteger) {
             return ((PythonInteger) o).getValue().doubleValue() == value;
+        } else if (o instanceof PythonDecimal other) {
+            return new BigDecimal(value).equals(other.value);
         } else {
             return false;
         }

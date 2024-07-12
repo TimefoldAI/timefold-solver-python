@@ -6,6 +6,7 @@ from timefold.solver.config import *
 import inspect
 import re
 from dataclasses import dataclass, field
+from decimal import Decimal
 from typing import Annotated, List
 from ai.timefold.solver.core.api.score.stream import Joiners as JavaJoiners, \
     ConstraintCollectors as JavaConstraintCollectors, ConstraintFactory as JavaConstraintFactory
@@ -40,10 +41,18 @@ class Solution:
     score: Annotated[SimpleScore, PlanningScore] = field(default=None)
 
 
-def create_score_manager(constraint_provider):
+@planning_solution
+@dataclass
+class DecimalSolution:
+    entity_list: Annotated[List[Entity], PlanningEntityCollectionProperty]
+    value_list: Annotated[List[Value], ProblemFactCollectionProperty, ValueRangeProvider]
+    score: Annotated[SimpleDecimalScore, PlanningScore] = field(default=None)
+
+
+def create_score_manager(constraint_provider, solution_class: type = Solution, entity_classes: list[type] = (Entity,)):
     return SolutionManager.create(SolverFactory.create(
-        SolverConfig(solution_class=Solution,
-                     entity_class_list=[Entity],
+        SolverConfig(solution_class=solution_class,
+                     entity_class_list=entity_classes,
                      score_director_factory_config=ScoreDirectorFactoryConfig(
                          constraint_provider_function=constraint_provider
                      ))))
@@ -720,6 +729,308 @@ def test_long_scores():
     problem = Solution([entity_a, entity_b], [value_1, value_2])
 
     assert score_manager.explain(problem).score == SimpleScore.of(9_000_000_000)
+
+
+def test_sanity():
+    int_impact_functions = [
+        None,
+        lambda a: a.value.number,
+        lambda a, b: a.value.number,
+        lambda a, b, c: a.value.number,
+        lambda a, b, c, d: a.value.number,
+    ]
+
+    i = 0
+
+    def build_stream(constraint_factory: ConstraintFactory,
+                     method: str,
+                     cardinality: int,
+                     has_impact_function: bool) -> Constraint:
+        nonlocal i
+        i += 1
+
+        def expander(x):
+            return None
+
+        expanders = [expander] * (cardinality - 1)
+        current = constraint_factory.for_each(Entity)
+        if expanders:
+            current = current.expand(*expanders)
+
+        impact_method = getattr(current, method)
+
+        if has_impact_function:
+            return (impact_method(SimpleScore.ONE, int_impact_functions[cardinality])
+                    .as_constraint(f'Constraint {i}'))
+        else:
+            return (impact_method(SimpleScore.ONE)
+                    .as_constraint(f'Constraint {i}'))
+
+
+    @constraint_provider
+    def define_constraints(constraint_factory: ConstraintFactory):
+        return [
+            build_stream(constraint_factory, method, cardinality,
+                         use_impact_function)
+            for method in ['penalize', 'reward', 'impact']
+            for cardinality in [1, 2, 3, 4]
+            for use_impact_function in [True, False]
+        ]
+
+    score_manager = create_score_manager(define_constraints)
+    entity_a: Entity = Entity('A')
+    entity_b: Entity = Entity('B')
+
+    value_1 = Value(1)
+
+    entity_a.value = value_1
+    entity_b.value = value_1
+
+    problem = Solution([entity_a, entity_b], [value_1])
+
+    # 3 positive method + 1 negative methods = 2 positive
+    # 4 cardinalities
+    # 1 impact + 1 non-impact = 2
+    # 2 * 4 * 2 = 16
+    assert score_manager.explain(problem).score == SimpleScore.of(16)
+
+
+def test_sanity_decimal():
+    decimal_impact_functions = [
+        None,
+        lambda a: a.value.number,
+        lambda a, b: a.value.number,
+        lambda a, b, c: a.value.number,
+        lambda a, b, c, d: a.value.number,
+    ]
+
+    i = 0
+
+    def build_stream(constraint_factory: ConstraintFactory,
+                     method: str,
+                     cardinality: int,
+                     has_impact_function: bool) -> Constraint:
+        nonlocal i
+        i += 1
+
+        def expander(x):
+            return None
+
+        expanders = [expander] * (cardinality - 1)
+        current = constraint_factory.for_each(Entity)
+        if expanders:
+            current = current.expand(*expanders)
+
+        impact_method = getattr(current, method)
+
+        if has_impact_function:
+            return (impact_method(SimpleDecimalScore.ONE, decimal_impact_functions[cardinality])
+                    .as_constraint(f'Constraint {i}'))
+        else:
+            return (impact_method(SimpleDecimalScore.ONE)
+                    .as_constraint(f'Constraint {i}'))
+
+
+    @constraint_provider
+    def define_constraints(constraint_factory: ConstraintFactory):
+        return [
+            build_stream(constraint_factory, method, cardinality,
+                         use_impact_function)
+            for method in ['penalize_decimal', 'reward_decimal', 'impact_decimal']
+            for cardinality in [1, 2, 3, 4]
+            for use_impact_function in [True, False]
+        ]
+
+    score_manager = create_score_manager(define_constraints, solution_class=DecimalSolution)
+    entity_a: Entity = Entity('A')
+    entity_b: Entity = Entity('B')
+
+    value_1 = Value(Decimal(1))
+
+    entity_a.value = value_1
+    entity_b.value = value_1
+
+    problem = DecimalSolution([entity_a, entity_b], [value_1])
+
+    # 3 positive method + 1 negative methods = 2 positive
+    # 4 cardinalities
+    # 1 impact + 1 non-impact = 2
+    # 2 * 4 * 2 = 16
+    assert score_manager.explain(problem).score == SimpleDecimalScore.of(Decimal(16))
+
+
+def test_sanity_configurable():
+    class ConstraintConfiguration:
+        pass
+
+    for i in range(3 * 4 * 2):
+        weight_name = f'w{i + 1}'
+        weight_annotation = Annotated[SimpleScore, ConstraintWeight(f'Constraint {i + 1}',
+                                                                    constraint_package='pkg')]
+        weight_value = field(default=SimpleScore.ONE)
+        setattr(ConstraintConfiguration, weight_name, weight_value)
+        ConstraintConfiguration.__annotations__[weight_name] = weight_annotation
+
+    ConstraintConfiguration = constraint_configuration(dataclass(ConstraintConfiguration))
+
+    @planning_solution
+    @dataclass
+    class ConfigurationSolution:
+        configuration: Annotated[ConstraintConfiguration, ConstraintConfigurationProvider]
+        entity_list: Annotated[List[Entity], PlanningEntityCollectionProperty]
+        value_list: Annotated[List[Value], ProblemFactCollectionProperty, ValueRangeProvider]
+        score: Annotated[SimpleScore, PlanningScore] = field(default=None)
+
+
+    int_impact_functions = [
+        None,
+        lambda a: a.value.number,
+        lambda a, b: a.value.number,
+        lambda a, b, c: a.value.number,
+        lambda a, b, c, d: a.value.number,
+    ]
+
+    i = 0
+
+    def build_stream(constraint_factory: ConstraintFactory,
+                     method: str,
+                     cardinality: int,
+                     has_impact_function: bool) -> Constraint:
+        nonlocal i
+        i += 1
+
+        def expander(x):
+            return None
+
+        expanders = [expander] * (cardinality - 1)
+        current = constraint_factory.for_each(Entity)
+        if expanders:
+            current = current.expand(*expanders)
+
+        impact_method = getattr(current, method)
+
+        if has_impact_function:
+            return (impact_method(int_impact_functions[cardinality])
+                    .as_constraint('pkg', f'Constraint {i}'))
+        else:
+            return (impact_method()
+                    .as_constraint('pkg', f'Constraint {i}'))
+
+
+    @constraint_provider
+    def define_constraints(constraint_factory: ConstraintFactory):
+        return [
+            build_stream(constraint_factory, method, cardinality,
+                         use_impact_function)
+            for method in ['penalize_configurable', 'reward_configurable', 'impact_configurable']
+            for cardinality in [1, 2, 3, 4]
+            for use_impact_function in [True, False]
+        ]
+
+    score_manager = create_score_manager(define_constraints, solution_class=ConfigurationSolution)
+    entity_a: Entity = Entity('A')
+    entity_b: Entity = Entity('B')
+
+    value_1 = Value(1)
+
+    entity_a.value = value_1
+    entity_b.value = value_1
+
+    problem = ConfigurationSolution(ConstraintConfiguration(), [entity_a, entity_b], [value_1])
+
+    # 3 positive method + 1 negative methods = 2 positive
+    # 4 cardinalities
+    # 1 impact + 1 non-impact = 2
+    # 2 * 4 * 2 = 16
+    assert score_manager.explain(problem).score == SimpleScore.of(16)
+
+
+def test_sanity_configurable_decimal():
+    class ConstraintConfiguration:
+        pass
+
+    for i in range(3 * 4 * 2):
+        weight_name = f'w{i + 1}'
+        weight_annotation = Annotated[SimpleDecimalScore, ConstraintWeight(f'Constraint {i + 1}',
+                                                                           constraint_package='pkg')]
+        weight_value = field(default=SimpleDecimalScore.ONE)
+        setattr(ConstraintConfiguration, weight_name, weight_value)
+        ConstraintConfiguration.__annotations__[weight_name] = weight_annotation
+
+    ConstraintConfiguration = constraint_configuration(dataclass(ConstraintConfiguration))
+
+    @planning_solution
+    @dataclass
+    class ConfigurationSolution:
+        configuration: Annotated[ConstraintConfiguration, ConstraintConfigurationProvider]
+        entity_list: Annotated[List[Entity], PlanningEntityCollectionProperty]
+        value_list: Annotated[List[Value], ProblemFactCollectionProperty, ValueRangeProvider]
+        score: Annotated[SimpleDecimalScore, PlanningScore] = field(default=None)
+
+
+    decimal_impact_functions = [
+        None,
+        lambda a: a.value.number,
+        lambda a, b: a.value.number,
+        lambda a, b, c: a.value.number,
+        lambda a, b, c, d: a.value.number,
+    ]
+
+    i = 0
+
+    def build_stream(constraint_factory: ConstraintFactory,
+                     method: str,
+                     cardinality: int,
+                     has_impact_function: bool) -> Constraint:
+        nonlocal i
+        i += 1
+
+        def expander(x):
+            return None
+
+        expanders = [expander] * (cardinality - 1)
+        current = constraint_factory.for_each(Entity)
+        if expanders:
+            current = current.expand(*expanders)
+
+        impact_method = getattr(current, method)
+
+        if has_impact_function:
+            return (impact_method(decimal_impact_functions[cardinality])
+                    .as_constraint('pkg', f'Constraint {i}'))
+        else:
+            return (impact_method()
+                    .as_constraint('pkg', f'Constraint {i}'))
+
+
+    @constraint_provider
+    def define_constraints(constraint_factory: ConstraintFactory):
+        return [
+            build_stream(constraint_factory, method, cardinality,
+                         use_impact_function)
+            for method in ['penalize_configurable_decimal',
+                           'reward_configurable_decimal',
+                           'impact_configurable_decimal']
+            for cardinality in [1, 2, 3, 4]
+            for use_impact_function in [True, False]
+        ]
+
+    score_manager = create_score_manager(define_constraints, solution_class=ConfigurationSolution)
+    entity_a: Entity = Entity('A')
+    entity_b: Entity = Entity('B')
+
+    value_1 = Value(Decimal(1))
+
+    entity_a.value = value_1
+    entity_b.value = value_1
+
+    problem = ConfigurationSolution(ConstraintConfiguration(), [entity_a, entity_b], [value_1])
+
+    # 3 positive method + 1 negative methods = 2 positive
+    # 4 cardinalities
+    # 1 impact + 1 non-impact = 2
+    # 2 * 4 * 2 = 16
+    assert score_manager.explain(problem).score == SimpleDecimalScore.of(Decimal(16))
 
 
 ignored_python_functions = {

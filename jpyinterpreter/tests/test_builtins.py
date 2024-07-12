@@ -229,11 +229,23 @@ def test_filter():
 
 
 def test_float():
+    import math
+
     def my_function(x: any) -> float:
         return float(x)
 
     verifier = verifier_for(my_function)
     verifier.verify(10, expected_result=10.0)
+    verifier.verify('1.0', expected_result=1.0)
+    verifier.verify_property('nan', predicate=math.isnan)
+    verifier.verify_property('NaN', predicate=math.isnan)
+    verifier.verify_property('-nan', predicate=math.isnan)
+    verifier.verify_property('-NaN', predicate=math.isnan)
+    verifier.verify('inf', expected_result=float('inf'))
+    verifier.verify('INF', expected_result=float('inf'))
+    verifier.verify('-inf', expected_result=float('-inf'))
+    verifier.verify('infinity', expected_result=float('inf'))
+    verifier.verify('-infinity', expected_result=float('-inf'))
 
 
 def test_format():
@@ -324,6 +336,7 @@ def test_int():
     verifier = verifier_for(my_function)
     verifier.verify(1.5, expected_result=1)
     verifier.verify(1.0, expected_result=1)
+    verifier.verify('2', expected_result=2)
 
 
 def test_isinstance():
