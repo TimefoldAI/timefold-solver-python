@@ -301,15 +301,21 @@ def test_as_integer_ratio():
     adjusted_verifier.verify(Decimal('-3.14'), expected_result=(-157, 50))
 
 
-# TODO: Use named tuples
-# def test_as_tuple():
-#     def as_tuple(a: Decimal) -> tuple[int, int, int]:
-#         return a.as_tuple()
-#
-#     as_tuple_verifier = verifier_for(as_tuple)
-#     as_tuple_verifier.verify(Decimal(100), expected_result=(0, (1, 0, 0), 0))
-#     as_tuple_verifier.verify(Decimal(-100), expected_result=(1, (1, 0, 0), 0))
-#     as_tuple_verifier.verify(Decimal('123.45'), expected_result=(0, (1, 2, 3, 4, 5), -2))
+# TODO: Make as_tuple use NamedTuple
+def test_as_tuple():
+    def as_tuple(a: Decimal) -> tuple[int, tuple[int,...], int]:
+        return a.as_tuple()
+
+    def matches_tuple(t: tuple[int, tuple[int,...], int]) -> Callable[[tuple[int, tuple[int,...], int]], bool]:
+        def predicate(tested: tuple[int, tuple[int,...], int]) -> bool:
+            return t == tested
+
+        return predicate
+
+    as_tuple_verifier = verifier_for(as_tuple)
+    as_tuple_verifier.verify_property(Decimal(100), predicate=matches_tuple((0, (1, 0, 0), 0)))
+    as_tuple_verifier.verify_property(Decimal(-100), predicate=matches_tuple((1, (1, 0, 0), 0)))
+    as_tuple_verifier.verify_property(Decimal('123.45'), predicate=matches_tuple((0, (1, 2, 3, 4, 5), -2)))
 
 
 def test_canonical():

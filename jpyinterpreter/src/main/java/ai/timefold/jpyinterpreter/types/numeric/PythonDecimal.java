@@ -346,7 +346,10 @@ public class PythonDecimal extends AbstractPythonLikeObject implements PythonNum
     // Other methods
     // ***************************
     public PythonInteger $method$adjusted() {
-        return PythonInteger.valueOf(getExponent());
+        // scale is the negative exponent that the big int is multiplied by
+        // len(unscaled) - 1 = floor(log_10(unscaled))
+        // floor(log_10(unscaled)) - scale = exponent in engineering notation
+        return PythonInteger.valueOf(value.unscaledValue().toString().length() - 1 - value.scale());
     }
 
     public PythonLikeTuple $method$as_integer_ratio() {
@@ -370,21 +373,14 @@ public class PythonDecimal extends AbstractPythonLikeObject implements PythonNum
                 PythonInteger.valueOf(reducedDenominator));
     }
 
-    private int getExponent() {
-        // scale is the negative exponent that the big int is multiplied by
-        // len(unscaled) - 1 = floor(log_10(unscaled))
-        // floor(log_10(unscaled)) - scale = exponent in engineering notation
-        return value.unscaledValue().toString().length() - 1 - value.scale();
-    }
-
     public PythonLikeTuple $method$as_tuple() {
         // TODO: Use named tuple
-        return PythonLikeTuple.fromItems(PythonInteger.valueOf(value.signum()),
-                value.unscaledValue().toString()
+        return PythonLikeTuple.fromItems(PythonInteger.valueOf(value.signum() >= 0 ? 0 : 1),
+                value.unscaledValue().abs().toString()
                         .chars()
                         .mapToObj(digit -> PythonInteger.valueOf(digit - '0'))
                         .collect(Collectors.toCollection(PythonLikeTuple::new)),
-                PythonInteger.valueOf(getExponent()));
+                PythonInteger.valueOf(-value.scale()));
     }
 
     public PythonDecimal $method$canonical() {
