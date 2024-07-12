@@ -65,7 +65,6 @@ public class PythonFloat extends AbstractPythonLikeObject implements PythonNumbe
                             case "-inf", "-infinity" -> "-Infinity";
                             default -> str.value;
                         };
-                        Double.valueOf("2");
                         return new PythonFloat(Double.parseDouble(literal));
                     } catch (NumberFormatException e) {
                         throw new ValueError("invalid literal for float(): %s".formatted(value));
@@ -232,14 +231,10 @@ public class PythonFloat extends AbstractPythonLikeObject implements PythonNumbe
 
     @Override
     public boolean equals(Object o) {
-        if (o instanceof Number) {
-            return ((Number) o).doubleValue() == value;
-        } else if (o instanceof PythonFloat) {
-            return ((PythonFloat) o).value == value;
-        } else if (o instanceof PythonInteger) {
-            return ((PythonInteger) o).getValue().doubleValue() == value;
-        } else if (o instanceof PythonDecimal other) {
-            return new BigDecimal(value).equals(other.value);
+        if (o instanceof Number number) {
+            return number.doubleValue() == value;
+        } else if (o instanceof PythonNumber number) {
+            return compareTo(number) == 0;
         } else {
             return false;
         }

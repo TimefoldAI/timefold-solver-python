@@ -117,12 +117,8 @@ public class PythonDecimal extends AbstractPythonLikeObject implements PythonNum
     }
 
     public boolean equals(Object o) {
-        if (o instanceof PythonInteger other) {
-            return value.compareTo(new BigDecimal(other.value)) == 0;
-        } else if (o instanceof PythonFloat other) {
-            return value.doubleValue() == other.value;
-        } else if (o instanceof PythonDecimal other) {
-            return value.compareTo(other.value) == 0;
+        if (o instanceof PythonNumber number) {
+            return compareTo(number) == 0;
         } else {
             return false;
         }

@@ -276,14 +276,10 @@ public class PythonInteger extends AbstractPythonLikeObject implements PythonNum
 
     @Override
     public boolean equals(Object o) {
-        if (o instanceof Number) {
-            return value.equals(BigInteger.valueOf(((Number) o).longValue()));
-        } else if (o instanceof PythonInteger other) {
-            return other.value.equals(value);
-        } else if (o instanceof PythonFloat other) {
-            return value.doubleValue() == other.value;
-        } else if (o instanceof PythonDecimal other) {
-            return new BigDecimal(value).equals(other.value);
+        if (o instanceof Number number) {
+            return value.equals(BigInteger.valueOf(number.longValue()));
+        } else if (o instanceof PythonNumber number) {
+            return compareTo(number) == 0;
         } else {
             return false;
         }

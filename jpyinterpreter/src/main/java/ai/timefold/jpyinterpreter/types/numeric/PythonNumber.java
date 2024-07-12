@@ -24,17 +24,18 @@ public interface PythonNumber extends PythonLikeComparable<PythonNumber>,
         if (value instanceof BigInteger self) {
             if (otherValue instanceof BigInteger other) {
                 return self.compareTo(other);
-            } else {
-                return Double.compare(value.longValue(), otherValue.doubleValue());
+            } else if (otherValue instanceof BigDecimal other) {
+                return new BigDecimal(self).compareTo(other);
             }
         }
         if (value instanceof BigDecimal self) {
             if (otherValue instanceof BigDecimal other) {
                 return self.compareTo(other);
-            } else {
-                return Double.compare(value.doubleValue(), otherValue.doubleValue());
+            } else if (otherValue instanceof BigInteger other) {
+                return self.compareTo(new BigDecimal(other));
             }
         }
+        // If comparing against a float, convert both arguments to float
         return Double.compare(value.doubleValue(), otherValue.doubleValue());
     }
 
