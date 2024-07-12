@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
 import java.text.NumberFormat;
+import java.util.List;
 import java.util.Map;
 
 import ai.timefold.jpyinterpreter.PythonBinaryOperator;
@@ -44,40 +45,12 @@ public class PythonInteger extends AbstractPythonLikeObject implements PythonNum
     private static PythonLikeType registerMethods() throws NoSuchMethodException {
         // Constructor
         BuiltinTypes.INT_TYPE.setConstructor((positionalArguments, namedArguments, callerInstance) -> {
-            if (positionalArguments.size() == 0) {
+            if (positionalArguments.isEmpty()) {
                 return PythonInteger.valueOf(0);
             } else if (positionalArguments.size() == 1) {
-                PythonLikeObject value = positionalArguments.get(0);
-                if (value instanceof PythonInteger) {
-                    return value;
-                } else if (value instanceof PythonFloat pythonFloat) {
-                    return pythonFloat.asInteger();
-                } else if (value instanceof PythonString str) {
-                    try {
-                        return new PythonInteger(new BigInteger(str.value));
-                    } catch (NumberFormatException e) {
-                        throw new ValueError("invalid literal for int() with base 10: %s".formatted(value));
-                    }
-                } else {
-                    PythonLikeType valueType = value.$getType();
-                    PythonLikeFunction asIntFunction = (PythonLikeFunction) (valueType.$getAttributeOrError("__int__"));
-                    return asIntFunction.$call(positionalArguments, Map.of(), null);
-                }
+                return PythonInteger.from(positionalArguments.get(0));
             } else if (positionalArguments.size() == 2) {
-                PythonLikeObject value = positionalArguments.get(0);
-                PythonLikeObject base = positionalArguments.get(1);
-                if (value instanceof PythonString str && base instanceof PythonInteger baseInt) {
-                    try {
-                        return new PythonInteger(new BigInteger(str.value, baseInt.value.intValue()));
-                    } catch (NumberFormatException e) {
-                        throw new ValueError(
-                                "invalid literal for int() with base %d: %s".formatted(baseInt.value.intValue(), value));
-                    }
-                } else {
-                    PythonLikeType valueType = value.$getType();
-                    PythonLikeFunction asIntFunction = (PythonLikeFunction) (valueType.$getAttributeOrError("__int__"));
-                    return asIntFunction.$call(positionalArguments, Map.of(), null);
-                }
+                return PythonInteger.fromUsingBase(positionalArguments.get(0), positionalArguments.get(1));
             } else {
                 throw new TypeError("int takes at most 2 arguments, got " + positionalArguments.size());
             }
@@ -250,6 +223,39 @@ public class PythonInteger extends AbstractPythonLikeObject implements PythonNum
     public PythonInteger(BigInteger value) {
         super(BuiltinTypes.INT_TYPE);
         this.value = value;
+    }
+
+    private static PythonInteger from(PythonLikeObject value) {
+        if (value instanceof PythonInteger integer) {
+            return integer;
+        } else if (value instanceof PythonFloat pythonFloat) {
+            return pythonFloat.asInteger();
+        } else if (value instanceof PythonString str) {
+            try {
+                return new PythonInteger(new BigInteger(str.value));
+            } catch (NumberFormatException e) {
+                throw new ValueError("invalid literal for int() with base 10: %s".formatted(value));
+            }
+        } else {
+            PythonLikeType valueType = value.$getType();
+            PythonLikeFunction asIntFunction = (PythonLikeFunction) (valueType.$getAttributeOrError("__int__"));
+            return (PythonInteger) asIntFunction.$call(List.of(value), Map.of(), null);
+        }
+    }
+
+    private static PythonInteger fromUsingBase(PythonLikeObject value, PythonLikeObject base) {
+        if (value instanceof PythonString str && base instanceof PythonInteger baseInt) {
+            try {
+                return new PythonInteger(new BigInteger(str.value, baseInt.value.intValue()));
+            } catch (NumberFormatException e) {
+                throw new ValueError(
+                        "invalid literal for int() with base %d: %s".formatted(baseInt.value.intValue(), value));
+            }
+        } else {
+            PythonLikeType valueType = value.$getType();
+            PythonLikeFunction asIntFunction = (PythonLikeFunction) (valueType.$getAttributeOrError("__int__"));
+            return (PythonInteger) asIntFunction.$call(List.of(value, base), Map.of(), null);
+        }
     }
 
     @Override

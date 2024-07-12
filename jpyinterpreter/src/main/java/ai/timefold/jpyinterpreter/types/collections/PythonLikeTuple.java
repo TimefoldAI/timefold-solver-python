@@ -113,14 +113,14 @@ public class PythonLikeTuple<T extends PythonLikeObject> extends AbstractPythonL
         return new PythonLikeTuple<>();
     }
 
-    public static PythonLikeTuple fromItems(PythonLikeObject... items) {
-        PythonLikeTuple result = new PythonLikeTuple();
+    public static <T extends PythonLikeObject> PythonLikeTuple<T> fromItems(T... items) {
+        PythonLikeTuple<T> result = new PythonLikeTuple<>();
         Collections.addAll(result, items);
         return result;
     }
 
-    public static PythonLikeTuple fromList(List<PythonLikeObject> other) {
-        PythonLikeTuple result = new PythonLikeTuple();
+    public static <T extends PythonLikeObject> PythonLikeTuple<T> fromList(List<T> other) {
+        PythonLikeTuple<T> result = new PythonLikeTuple<>();
         result.addAll(other);
         return result;
     }

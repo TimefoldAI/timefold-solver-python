@@ -34,17 +34,7 @@ public class PythonDecimal extends AbstractPythonLikeObject implements PythonNum
             if (positionalArguments.size() == 0) {
                 return new PythonDecimal(BigDecimal.ZERO);
             } else if (positionalArguments.size() == 1) {
-                PythonLikeObject value = positionalArguments.get(0);
-                if (value instanceof PythonInteger integer) {
-                    return PythonDecimal.valueOf(integer);
-                } else if (value instanceof PythonFloat pythonFloat) {
-                    return PythonDecimal.valueOf(pythonFloat);
-                } else if (value instanceof PythonString str) {
-                    return PythonDecimal.valueOf(str);
-                } else {
-                    throw new TypeError(
-                            "conversion from %s to Decimal is not supported".formatted(value.$getType().getTypeName()));
-                }
+                return PythonDecimal.from(positionalArguments.get(0));
             } else if (positionalArguments.size() == 2) {
                 // TODO: Support context
                 throw new ValueError("context constructor not supported");
@@ -70,6 +60,19 @@ public class PythonDecimal extends AbstractPythonLikeObject implements PythonNum
     public PythonDecimal(BigDecimal value) {
         super(BuiltinTypes.DECIMAL_TYPE);
         this.value = value;
+    }
+
+    public static PythonDecimal from(PythonLikeObject value) {
+        if (value instanceof PythonInteger integer) {
+            return PythonDecimal.valueOf(integer);
+        } else if (value instanceof PythonFloat pythonFloat) {
+            return PythonDecimal.valueOf(pythonFloat);
+        } else if (value instanceof PythonString str) {
+            return PythonDecimal.valueOf(str);
+        } else {
+            throw new TypeError(
+                    "conversion from %s to Decimal is not supported".formatted(value.$getType().getTypeName()));
+        }
     }
 
     public static PythonDecimal $method$from_float(PythonFloat value) {
@@ -129,6 +132,7 @@ public class PythonDecimal extends AbstractPythonLikeObject implements PythonNum
         return $method$__hash__().value.intValue();
     }
 
+    @Override
     public PythonInteger $method$__hash__() {
         var scale = value.scale();
         if (scale <= 0) {
@@ -352,7 +356,7 @@ public class PythonDecimal extends AbstractPythonLikeObject implements PythonNum
         return PythonInteger.valueOf(value.unscaledValue().toString().length() - 1 - value.scale());
     }
 
-    public PythonLikeTuple $method$as_integer_ratio() {
+    public PythonLikeTuple<PythonInteger> $method$as_integer_ratio() {
         var parts = value.divideAndRemainder(BigDecimal.ONE);
         var integralPart = parts[0];
         var fractionPart = parts[1];
@@ -373,7 +377,7 @@ public class PythonDecimal extends AbstractPythonLikeObject implements PythonNum
                 PythonInteger.valueOf(reducedDenominator));
     }
 
-    public PythonLikeTuple $method$as_tuple() {
+    public PythonLikeTuple<PythonLikeObject> $method$as_tuple() {
         // TODO: Use named tuple
         return PythonLikeTuple.fromItems(PythonInteger.valueOf(value.signum() >= 0 ? 0 : 1),
                 value.unscaledValue().abs().toString()
@@ -555,7 +559,7 @@ public class PythonDecimal extends AbstractPythonLikeObject implements PythonNum
     private static PythonDecimal logicalOp(BiPredicate<Boolean, Boolean> op,
             BigDecimal a, BigDecimal b) {
         if (a.scale() < 0 || b.scale() < 0) {
-            throw new ValueError("Invalid Operation");
+            throw new ValueError("Invalid Operation: both operands must be positive integers consisting of 1's and 0's");
         }
         var aText = a.toPlainString();
         var bText = b.toPlainString();
@@ -571,12 +575,14 @@ public class PythonDecimal extends AbstractPythonLikeObject implements PythonNum
             var aBit = switch (aText.charAt(i)) {
                 case '0' -> false;
                 case '1' -> true;
-                default -> throw new ValueError("Invalid Operation");
+                default -> throw new ValueError(("Invalid Operation: first operand (%s) is not a positive integer " +
+                        "consisting of 1's and 0's").formatted(a));
             };
             var bBit = switch (bText.charAt(i)) {
                 case '0' -> false;
                 case '1' -> true;
-                default -> throw new ValueError("Invalid Operation");
+                default -> throw new ValueError(("Invalid Operation: second operand (%s) is not a positive integer " +
+                        "consisting of 1's and 0's").formatted(b));
             };
             result.append(op.test(aBit, bBit) ? '1' : '0');
         }

@@ -38,11 +38,6 @@ public class PythonFloat extends AbstractPythonLikeObject implements PythonNumbe
         PythonOverloadImplementor.deferDispatchesFor(PythonFloat::registerMethods);
     }
 
-    public PythonFloat(double value) {
-        super(BuiltinTypes.FLOAT_TYPE);
-        this.value = value;
-    }
-
     private static PythonLikeType registerMethods() throws NoSuchMethodException {
         PythonLikeComparable.setup(BuiltinTypes.FLOAT_TYPE);
 
@@ -51,29 +46,7 @@ public class PythonFloat extends AbstractPythonLikeObject implements PythonNumbe
             if (positionalArguments.isEmpty()) {
                 return new PythonFloat(0.0);
             } else if (positionalArguments.size() == 1) {
-                PythonLikeObject value = positionalArguments.get(0);
-                if (value instanceof PythonInteger integer) {
-                    return integer.asFloat();
-                } else if (value instanceof PythonFloat) {
-                    return value;
-                } else if (value instanceof PythonString str) {
-                    try {
-                        var literal = switch (str.value.toLowerCase()) {
-                            case "nan", "+nan" -> "+NaN";
-                            case "-nan" -> "-NaN";
-                            case "inf", "+inf", "infinity" -> "+Infinity";
-                            case "-inf", "-infinity" -> "-Infinity";
-                            default -> str.value;
-                        };
-                        return new PythonFloat(Double.parseDouble(literal));
-                    } catch (NumberFormatException e) {
-                        throw new ValueError("invalid literal for float(): %s".formatted(value));
-                    }
-                } else {
-                    PythonLikeType valueType = value.$getType();
-                    PythonLikeFunction asFloatFunction = (PythonLikeFunction) (valueType.$getAttributeOrError("__float__"));
-                    return asFloatFunction.$call(List.of(value), Map.of(), null);
-                }
+                return PythonFloat.from(positionalArguments.get(0));
             } else {
                 throw new ValueError("float takes 0 or 1 arguments, got " + positionalArguments.size());
             }
@@ -183,6 +156,36 @@ public class PythonFloat extends AbstractPythonLikeObject implements PythonNumbe
                 PythonFloat.class.getMethod("$method$__format__", PythonLikeObject.class));
 
         return BuiltinTypes.FLOAT_TYPE;
+    }
+
+    public PythonFloat(double value) {
+        super(BuiltinTypes.FLOAT_TYPE);
+        this.value = value;
+    }
+
+    public static PythonFloat from(PythonLikeObject value) {
+        if (value instanceof PythonInteger integer) {
+            return integer.asFloat();
+        } else if (value instanceof PythonFloat) {
+            return (PythonFloat) value;
+        } else if (value instanceof PythonString str) {
+            try {
+                var literal = switch (str.value.toLowerCase()) {
+                    case "nan", "+nan" -> "+NaN";
+                    case "-nan" -> "-NaN";
+                    case "inf", "+inf", "infinity" -> "+Infinity";
+                    case "-inf", "-infinity" -> "-Infinity";
+                    default -> str.value;
+                };
+                return new PythonFloat(Double.parseDouble(literal));
+            } catch (NumberFormatException e) {
+                throw new ValueError("invalid literal for float(): %s".formatted(value));
+            }
+        } else {
+            PythonLikeType valueType = value.$getType();
+            PythonLikeFunction asFloatFunction = (PythonLikeFunction) (valueType.$getAttributeOrError("__float__"));
+            return (PythonFloat) asFloatFunction.$call(List.of(value), Map.of(), null);
+        }
     }
 
     @Override
