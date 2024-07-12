@@ -78,7 +78,7 @@ def _check_if_type_args_are_python_object_wrappers(type_args):
     return False
 
 
-def function_cast(function, *type_args):
+def function_cast(function, *type_args, return_type=None):
     arg_count = len(inspect.signature(function).parameters)
     if len(type_args) != arg_count:
         raise ValueError(f'Invalid function: expected {len(type_args)} arguments but got {arg_count}')
@@ -90,18 +90,21 @@ def function_cast(function, *type_args):
     from ai.timefold.solver.core.api.function import TriFunction, QuadFunction, PentaFunction
     from ai.timefold.jpyinterpreter import PythonLikeObject
 
+    if return_type is None:
+        return_type = PythonLikeObject
+
     try:
         _check_if_bytecode_translation_possible()
         if arg_count == 1:
-            return translate_python_bytecode_to_java_bytecode(function, Function, *type_args, PythonLikeObject)
+            return translate_python_bytecode_to_java_bytecode(function, Function, *type_args, return_type)
         elif arg_count == 2:
-            return translate_python_bytecode_to_java_bytecode(function, BiFunction, *type_args, PythonLikeObject)
+            return translate_python_bytecode_to_java_bytecode(function, BiFunction, *type_args, return_type)
         elif arg_count == 3:
-            return translate_python_bytecode_to_java_bytecode(function, TriFunction, *type_args, PythonLikeObject)
+            return translate_python_bytecode_to_java_bytecode(function, TriFunction, *type_args, return_type)
         elif arg_count == 4:
-            return translate_python_bytecode_to_java_bytecode(function, QuadFunction, *type_args, PythonLikeObject)
+            return translate_python_bytecode_to_java_bytecode(function, QuadFunction, *type_args, return_type)
         elif arg_count == 5:
-            return translate_python_bytecode_to_java_bytecode(function, PentaFunction, *type_args, PythonLikeObject)
+            return translate_python_bytecode_to_java_bytecode(function, PentaFunction, *type_args, return_type)
     except:  # noqa
         return default_function_cast(function, arg_count)
 

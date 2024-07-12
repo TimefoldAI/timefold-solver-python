@@ -66,8 +66,8 @@ public class PythonClassTranslator {
     // $ is illegal in variables/methods in Python
     public static final String TYPE_FIELD_NAME = "$TYPE";
     public static final String CPYTHON_TYPE_FIELD_NAME = "$CPYTHON_TYPE";
-    private static final String JAVA_METHOD_PREFIX = "$method$";
-    private static final String PYTHON_JAVA_TYPE_MAPPING_PREFIX = "$pythonJavaTypeMapping";
+    public static final String JAVA_METHOD_PREFIX = "$method$";
+    public static final String PYTHON_JAVA_TYPE_MAPPING_PREFIX = "$pythonJavaTypeMapping";
 
     public record PreparedClassInfo(PythonLikeType type, String className, String classInternalName) {
     }

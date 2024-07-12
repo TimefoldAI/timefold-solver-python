@@ -572,7 +572,7 @@ def test_load_balance():
                 lambda entity: entity.value
             ))
             .reward(SimpleScore.ONE,
-                    lambda balance: balance.unfairness().movePointRight(3).intValue())
+                    lambda balance: round(balance.unfairness() * 1000))
             .as_constraint('Balanced value')
         ]
 

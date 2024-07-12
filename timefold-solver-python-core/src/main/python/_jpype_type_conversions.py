@@ -2,6 +2,7 @@ from jpype import JProxy, JImplements, JOverride, JConversion
 from jpype.types import *
 from types import FunctionType
 from typing import TYPE_CHECKING
+from decimal import Decimal
 import timefold.solver._timefold_java_interop as _timefold_java_interop
 
 if TYPE_CHECKING:
@@ -256,6 +257,26 @@ def to_python_score(score) -> 'Score':
         return _timefold_java_interop._python_score_mapping_dict['BendableScore'](score.hardScores(),
                                                                                   score.softScores(),
                                                                                   init_score=score.initScore())
+    elif isinstance(score, _timefold_java_interop._java_score_mapping_dict['SimpleDecimalScore']):
+        return _timefold_java_interop._python_score_mapping_dict['SimpleDecimalScore'](Decimal(score.score().toPlainString()),
+                                                                                       init_score=score.initScore())
+    elif isinstance(score, _timefold_java_interop._java_score_mapping_dict['HardSoftDecimalScore']):
+        return _timefold_java_interop._python_score_mapping_dict['HardSoftDecimalScore'](Decimal(score.hardScore().toPlainString()),
+                                                                                         Decimal(score.softScore().toPlainString()),
+                                                                                         init_score=score.initScore())
+    elif isinstance(score, _timefold_java_interop._java_score_mapping_dict['HardMediumSoftDecimalScore']):
+        return _timefold_java_interop._python_score_mapping_dict['HardMediumSoftDecimalScore'](Decimal(score.hardScore().toPlainString()),
+                                                                                               Decimal(score.mediumScore().toPlainString()),
+                                                                                               Decimal(score.softScore().toPlainString()),
+                                                                                               init_score=score.initScore())
+    elif isinstance(score, _timefold_java_interop._java_score_mapping_dict['BendableDecimalScore']):
+        return _timefold_java_interop._python_score_mapping_dict['BendableDecimalScore']([Decimal(part.toPlainString())
+                                                                                          for part in score.hardScores()
+                                                                                         ],
+                                                                                         [Decimal(part.toPlainString())
+                                                                                          for part in score.softScores()
+                                                                                         ],
+                                                                                         init_score=score.initScore())
     else:
         raise TypeError(f'Unexpected score type: {type(score)}')
 

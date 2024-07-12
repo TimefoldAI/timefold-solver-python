@@ -7,17 +7,19 @@ import java.lang.reflect.InvocationTargetException;
 import ai.timefold.jpyinterpreter.PythonLikeObject;
 import ai.timefold.jpyinterpreter.types.PythonJavaTypeMapping;
 import ai.timefold.jpyinterpreter.types.PythonLikeType;
+import ai.timefold.jpyinterpreter.types.numeric.PythonDecimal;
 import ai.timefold.jpyinterpreter.types.numeric.PythonInteger;
-import ai.timefold.solver.core.api.score.buildin.hardsoftlong.HardSoftLongScore;
+import ai.timefold.solver.core.api.score.buildin.hardsoftbigdecimal.HardSoftBigDecimalScore;
 
-public final class HardSoftScorePythonJavaTypeMapping implements PythonJavaTypeMapping<PythonLikeObject, HardSoftLongScore> {
+public final class HardSoftDecimalScorePythonJavaTypeMapping
+        implements PythonJavaTypeMapping<PythonLikeObject, HardSoftBigDecimalScore> {
     private final PythonLikeType type;
     private final Constructor<?> constructor;
     private final Field initScoreField;
     private final Field hardScoreField;
     private final Field softScoreField;
 
-    public HardSoftScorePythonJavaTypeMapping(PythonLikeType type)
+    public HardSoftDecimalScorePythonJavaTypeMapping(PythonLikeType type)
             throws ClassNotFoundException, NoSuchFieldException, NoSuchMethodException {
         this.type = type;
         Class<?> clazz = type.getJavaClass();
@@ -33,17 +35,17 @@ public final class HardSoftScorePythonJavaTypeMapping implements PythonJavaTypeM
     }
 
     @Override
-    public Class<? extends HardSoftLongScore> getJavaType() {
-        return HardSoftLongScore.class;
+    public Class<? extends HardSoftBigDecimalScore> getJavaType() {
+        return HardSoftBigDecimalScore.class;
     }
 
     @Override
-    public PythonLikeObject toPythonObject(HardSoftLongScore javaObject) {
+    public PythonLikeObject toPythonObject(HardSoftBigDecimalScore javaObject) {
         try {
             var instance = constructor.newInstance();
             initScoreField.set(instance, PythonInteger.valueOf(javaObject.initScore()));
-            hardScoreField.set(instance, PythonInteger.valueOf(javaObject.hardScore()));
-            softScoreField.set(instance, PythonInteger.valueOf(javaObject.softScore()));
+            hardScoreField.set(instance, new PythonDecimal(javaObject.hardScore()));
+            softScoreField.set(instance, new PythonDecimal(javaObject.softScore()));
             return (PythonLikeObject) instance;
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
             throw new IllegalStateException(e);
@@ -51,15 +53,15 @@ public final class HardSoftScorePythonJavaTypeMapping implements PythonJavaTypeM
     }
 
     @Override
-    public HardSoftLongScore toJavaObject(PythonLikeObject pythonObject) {
+    public HardSoftBigDecimalScore toJavaObject(PythonLikeObject pythonObject) {
         try {
             var initScore = ((PythonInteger) initScoreField.get(pythonObject)).value.intValue();
-            var hardScore = ((PythonInteger) hardScoreField.get(pythonObject)).value.longValue();
-            var softScore = ((PythonInteger) softScoreField.get(pythonObject)).value.longValue();
+            var hardScore = ((PythonDecimal) hardScoreField.get(pythonObject)).value;
+            var softScore = ((PythonDecimal) softScoreField.get(pythonObject)).value;
             if (initScore == 0) {
-                return HardSoftLongScore.of(hardScore, softScore);
+                return HardSoftBigDecimalScore.of(hardScore, softScore);
             } else {
-                return HardSoftLongScore.ofUninitialized(initScore, hardScore, softScore);
+                return HardSoftBigDecimalScore.ofUninitialized(initScore, hardScore, softScore);
             }
         } catch (IllegalAccessException e) {
             throw new IllegalStateException(e);

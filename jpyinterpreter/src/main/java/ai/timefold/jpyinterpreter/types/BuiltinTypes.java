@@ -23,6 +23,7 @@ import ai.timefold.jpyinterpreter.types.collections.view.DictKeyView;
 import ai.timefold.jpyinterpreter.types.collections.view.DictValueView;
 import ai.timefold.jpyinterpreter.types.numeric.PythonBoolean;
 import ai.timefold.jpyinterpreter.types.numeric.PythonComplex;
+import ai.timefold.jpyinterpreter.types.numeric.PythonDecimal;
 import ai.timefold.jpyinterpreter.types.numeric.PythonFloat;
 import ai.timefold.jpyinterpreter.types.numeric.PythonInteger;
 import ai.timefold.jpyinterpreter.types.numeric.PythonNumber;
@@ -60,6 +61,7 @@ public class BuiltinTypes {
     public static final PythonLikeType BOOLEAN_TYPE = new PythonLikeType("bool", PythonBoolean.class, List.of(INT_TYPE));
     public static final PythonLikeType FLOAT_TYPE = new PythonLikeType("float", PythonFloat.class, List.of(NUMBER_TYPE));
     public final static PythonLikeType COMPLEX_TYPE = new PythonLikeType("complex", PythonComplex.class, List.of(NUMBER_TYPE));
+    public final static PythonLikeType DECIMAL_TYPE = new PythonLikeType("Decimal", PythonDecimal.class, List.of(NUMBER_TYPE));
 
     public static final PythonLikeType STRING_TYPE = new PythonLikeType("str", PythonString.class, List.of(BASE_TYPE));
     public static final PythonLikeType BYTES_TYPE = new PythonLikeType("bytes", PythonBytes.class, List.of(BASE_TYPE));

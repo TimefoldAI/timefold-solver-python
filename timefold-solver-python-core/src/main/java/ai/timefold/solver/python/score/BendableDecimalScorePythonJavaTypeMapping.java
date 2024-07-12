@@ -3,22 +3,25 @@ package ai.timefold.solver.python.score;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.math.BigDecimal;
 
 import ai.timefold.jpyinterpreter.PythonLikeObject;
 import ai.timefold.jpyinterpreter.types.PythonJavaTypeMapping;
 import ai.timefold.jpyinterpreter.types.PythonLikeType;
 import ai.timefold.jpyinterpreter.types.collections.PythonLikeTuple;
+import ai.timefold.jpyinterpreter.types.numeric.PythonDecimal;
 import ai.timefold.jpyinterpreter.types.numeric.PythonInteger;
-import ai.timefold.solver.core.api.score.buildin.bendablelong.BendableLongScore;
+import ai.timefold.solver.core.api.score.buildin.bendablebigdecimal.BendableBigDecimalScore;
 
-public final class BendableScorePythonJavaTypeMapping implements PythonJavaTypeMapping<PythonLikeObject, BendableLongScore> {
+public final class BendableDecimalScorePythonJavaTypeMapping
+        implements PythonJavaTypeMapping<PythonLikeObject, BendableBigDecimalScore> {
     private final PythonLikeType type;
     private final Constructor<?> constructor;
     private final Field initScoreField;
     private final Field hardScoresField;
     private final Field softScoresField;
 
-    public BendableScorePythonJavaTypeMapping(PythonLikeType type)
+    public BendableDecimalScorePythonJavaTypeMapping(PythonLikeType type)
             throws ClassNotFoundException, NoSuchFieldException, NoSuchMethodException {
         this.type = type;
         Class<?> clazz = type.getJavaClass();
@@ -34,20 +37,20 @@ public final class BendableScorePythonJavaTypeMapping implements PythonJavaTypeM
     }
 
     @Override
-    public Class<? extends BendableLongScore> getJavaType() {
-        return BendableLongScore.class;
+    public Class<? extends BendableBigDecimalScore> getJavaType() {
+        return BendableBigDecimalScore.class;
     }
 
-    private static PythonLikeTuple<PythonInteger> toPythonList(long[] scores) {
-        PythonLikeTuple<PythonInteger> out = new PythonLikeTuple<>();
-        for (long score : scores) {
-            out.add(PythonInteger.valueOf(score));
+    private static PythonLikeTuple<PythonDecimal> toPythonList(BigDecimal[] scores) {
+        PythonLikeTuple<PythonDecimal> out = new PythonLikeTuple<>();
+        for (var score : scores) {
+            out.add(new PythonDecimal(score));
         }
         return out;
     }
 
     @Override
-    public PythonLikeObject toPythonObject(BendableLongScore javaObject) {
+    public PythonLikeObject toPythonObject(BendableBigDecimalScore javaObject) {
         try {
             var instance = constructor.newInstance();
             initScoreField.set(instance, PythonInteger.valueOf(javaObject.initScore()));
@@ -60,23 +63,23 @@ public final class BendableScorePythonJavaTypeMapping implements PythonJavaTypeM
     }
 
     @Override
-    public BendableLongScore toJavaObject(PythonLikeObject pythonObject) {
+    public BendableBigDecimalScore toJavaObject(PythonLikeObject pythonObject) {
         try {
             var initScore = ((PythonInteger) initScoreField.get(pythonObject)).value.intValue();
             var hardScoreTuple = ((PythonLikeTuple) hardScoresField.get(pythonObject));
             var softScoreTuple = ((PythonLikeTuple) softScoresField.get(pythonObject));
-            long[] hardScores = new long[hardScoreTuple.size()];
-            long[] softScores = new long[softScoreTuple.size()];
+            BigDecimal[] hardScores = new BigDecimal[hardScoreTuple.size()];
+            BigDecimal[] softScores = new BigDecimal[softScoreTuple.size()];
             for (int i = 0; i < hardScores.length; i++) {
-                hardScores[i] = ((PythonInteger) hardScoreTuple.get(i)).value.longValue();
+                hardScores[i] = ((PythonDecimal) hardScoreTuple.get(i)).value;
             }
             for (int i = 0; i < softScores.length; i++) {
-                softScores[i] = ((PythonInteger) softScoreTuple.get(i)).value.longValue();
+                softScores[i] = ((PythonDecimal) softScoreTuple.get(i)).value;
             }
             if (initScore == 0) {
-                return BendableLongScore.of(hardScores, softScores);
+                return BendableBigDecimalScore.of(hardScores, softScores);
             } else {
-                return BendableLongScore.ofUninitialized(initScore, hardScores, softScores);
+                return BendableBigDecimalScore.ofUninitialized(initScore, hardScores, softScores);
             }
         } catch (IllegalAccessException e) {
             throw new IllegalStateException(e);

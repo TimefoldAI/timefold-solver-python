@@ -2,6 +2,7 @@ from .._timefold_java_interop import get_class
 import jpype.imports  # noqa
 from jpype import JClass
 from typing import TYPE_CHECKING, Type, Callable, overload, TypeVar, Generic, Any, Union, cast
+from decimal import Decimal
 
 if TYPE_CHECKING:
     from ai.timefold.solver.core.api.score.stream.uni import (UniConstraintCollector,
@@ -537,7 +538,7 @@ class UniConstraintStream(Generic[A]):
         constraint_weight : Score
             the weight of the constraint.
 
-        match_weigher : Callable[[A], int]
+        match_weigher : Callable[[A], int], optional
             a function that computes the weight of a match.
             If absent, each match has weight ``1``.
 
@@ -551,6 +552,36 @@ class UniConstraintStream(Generic[A]):
         else:
             return UniConstraintBuilder(self.delegate.penalizeLong(constraint_weight,
                                                                    to_long_function_cast(match_weigher, self.a_type)),
+                                        self.a_type)
+
+    def penalize_decimal(self, constraint_weight: ScoreType, match_weigher: Callable[[A], Decimal] = None) -> \
+            'UniConstraintBuilder[A, ScoreType]':
+        """
+        Applies a negative Score impact, subtracting the constraint_weight multiplied by the match weight,
+        and returns a builder to apply optional constraint properties.
+
+        Parameters
+        ----------
+        constraint_weight : Score
+            the weight of the constraint.
+
+        match_weigher : Callable[[A], Decimal], optional
+            a function that computes the weight of a match.
+            If absent, each match has weight ``1``.
+
+        Returns
+        -------
+        UniConstraintBuilder
+            a `UniConstraintBuilder`
+        """
+        from java.math import BigDecimal
+        if match_weigher is None:
+            return UniConstraintBuilder(self.delegate.penalizeBigDecimal(constraint_weight), self.a_type)
+        else:
+            return UniConstraintBuilder(self.delegate.penalizeBigDecimal(constraint_weight,
+                                                                         function_cast(match_weigher,
+                                                                                       self.a_type,
+                                                                                       return_type=BigDecimal)),
                                         self.a_type)
 
     def reward(self, constraint_weight: ScoreType, match_weigher: Callable[[A], int] = None) -> \
@@ -578,6 +609,36 @@ class UniConstraintStream(Generic[A]):
         else:
             return UniConstraintBuilder(self.delegate.rewardLong(constraint_weight,
                                                                  to_long_function_cast(match_weigher, self.a_type)),
+                                        self.a_type)
+
+    def reward_decimal(self, constraint_weight: ScoreType, match_weigher: Callable[[A], Decimal] = None) -> \
+            'UniConstraintBuilder[A, ScoreType]':
+        """
+        Applies a positive Score impact, adding the constraint_weight multiplied by the match weight,
+        and returns a builder to apply optional constraint properties.
+
+        Parameters
+        ----------
+        constraint_weight : Score
+            the weight of the constraint.
+
+        match_weigher : Callable[[A], Decimal], optional
+            a function that computes the weight of a match.
+            If absent, each match has weight ``1``.
+
+        Returns
+        -------
+        UniConstraintBuilder
+            a `UniConstraintBuilder`
+        """
+        from java.math import BigDecimal
+        if match_weigher is None:
+            return UniConstraintBuilder(self.delegate.reward(constraint_weight), self.a_type)
+        else:
+            return UniConstraintBuilder(self.delegate.rewardBigDecimal(constraint_weight,
+                                                                       function_cast(match_weigher,
+                                                                                     self.a_type,
+                                                                                     return_type=BigDecimal)),
                                         self.a_type)
 
     def impact(self, constraint_weight: ScoreType, match_weigher: Callable[[A], int] = None) -> \
@@ -609,6 +670,37 @@ class UniConstraintStream(Generic[A]):
                                                                                        self.a_type)),
                                         self.a_type)
 
+    def impact_decimal(self, constraint_weight: ScoreType, match_weigher: Callable[[A], Decimal] = None) -> \
+            'UniConstraintBuilder[A, ScoreType]':
+        """
+        Positively or negatively impacts the `Score` by `constraint_weight` multiplied by match weight for each match
+        and returns a builder to apply optional constraint properties.
+        Use `penalize` or `reward` instead, unless this constraint can both have positive and negative weights.
+
+        Parameters
+        ----------
+        constraint_weight : Score
+            the weight of the constraint.
+
+        match_weigher : Callable[[A], Decimal], optional
+            a function that computes the weight of a match.
+            If absent, each match has weight ``1``.
+
+        Returns
+        -------
+        UniConstraintBuilder
+            a `UniConstraintBuilder`
+        """
+        from java.math import BigDecimal
+        if match_weigher is None:
+            return UniConstraintBuilder(self.delegate.impact(constraint_weight), self.a_type)
+        else:
+            return UniConstraintBuilder(self.delegate.impactBigDecimal(constraint_weight,
+                                                                       function_cast(match_weigher,
+                                                                                     self.a_type,
+                                                                                     return_type=BigDecimal)),
+                                        self.a_type)
+
     def penalize_configurable(self, match_weigher: Callable[[A], int] = None) -> \
             'UniConstraintBuilder[A, ScoreType]':
         """
@@ -637,6 +729,36 @@ class UniConstraintStream(Generic[A]):
                                                                                                      self.a_type)),
                                         self.a_type)
 
+    def penalize_configurable_decimal(self, match_weigher: Callable[[A], Decimal] = None) \
+            -> 'UniConstraintBuilder[A, ScoreType]':
+        """
+        Negatively impacts the Score, subtracting the ConstraintWeight for each match,
+        and returns a builder to apply optional constraint properties.
+        The constraint weight comes from a `ConstraintWeight` annotated member on the `constraint_configuration`,
+        so end users can change the constraint weights dynamically.
+        This constraint may be deactivated if the `ConstraintWeight` is zero.
+        If there is no `constraint_configuration`, use `penalize` instead.
+
+        Parameters
+        ----------
+        match_weigher : Callable[[A], Decimal], optional
+            a function that computes the weight of a match.
+            If absent, each match has weight ``1``.
+
+        Returns
+        -------
+        UniConstraintBuilder
+            a `UniConstraintBuilder`
+        """
+        from java.math import BigDecimal
+        if match_weigher is None:
+            return UniConstraintBuilder(self.delegate.penalizeConfigurable(), self.a_type)
+        else:
+            return UniConstraintBuilder(self.delegate.penalizeConfigurableBigDecimal(function_cast(match_weigher,
+                                                                                                   self.a_type,
+                                                                                                   return_type=BigDecimal)),
+                                        self.a_type)
+
     def reward_configurable(self, match_weigher: Callable[[A], int] = None) -> \
             'UniConstraintBuilder[A, ScoreType]':
         """
@@ -645,7 +767,7 @@ class UniConstraintStream(Generic[A]):
         The constraint weight comes from a `ConstraintWeight` annotated member on the `constraint_configuration`,
         so end users can change the constraint weights dynamically.
         This constraint may be deactivated if the `ConstraintWeight` is zero.
-        If there is no `constraint_configuration`, use `penalize` instead.
+        If there is no `constraint_configuration`, use `reward` instead.
 
         Parameters
         ----------
@@ -665,6 +787,36 @@ class UniConstraintStream(Generic[A]):
                                                                                                    self.a_type)),
                                         self.a_type)
 
+    def reward_configurable_decimal(self, match_weigher: Callable[[A], Decimal] = None) \
+            -> 'UniConstraintBuilder[A, ScoreType]':
+        """
+        Positively impacts the Score, adding the ConstraintWeight for each match,
+        and returns a builder to apply optional constraint properties.
+        The constraint weight comes from a `ConstraintWeight` annotated member on the `constraint_configuration`,
+        so end users can change the constraint weights dynamically.
+        This constraint may be deactivated if the `ConstraintWeight` is zero.
+        If there is no `constraint_configuration`, use `reward` instead.
+
+        Parameters
+        ----------
+        match_weigher : Callable[[A], Decimal], optional
+            a function that computes the weight of a match.
+            If absent, each match has weight ``1``.
+
+        Returns
+        -------
+        UniConstraintBuilder
+            a `UniConstraintBuilder`
+        """
+        from java.math import BigDecimal
+        if match_weigher is None:
+            return UniConstraintBuilder(self.delegate.rewardConfigurable(), self.a_type)
+        else:
+            return UniConstraintBuilder(self.delegate.rewardConfigurableBigDecimal(function_cast(match_weigher,
+                                                                                                 self.a_type,
+                                                                                                 return_type=BigDecimal)),
+                                        self.a_type)
+
     def impact_configurable(self, match_weigher: Callable[[A], int] = None) -> \
             'UniConstraintBuilder[A, ScoreType]':
         """
@@ -673,7 +825,7 @@ class UniConstraintStream(Generic[A]):
         The constraint weight comes from a `ConstraintWeight` annotated member on the `constraint_configuration`,
         so end users can change the constraint weights dynamically.
         This constraint may be deactivated if the `ConstraintWeight` is zero.
-        If there is no `constraint_configuration`, use `penalize` instead.
+        If there is no `constraint_configuration`, use `impact` instead.
 
         Parameters
         ----------
@@ -691,6 +843,37 @@ class UniConstraintStream(Generic[A]):
         else:
             return UniConstraintBuilder(self.delegate.impactConfigurableLong(to_long_function_cast(match_weigher,
                                                                                                    self.a_type)),
+                                        self.a_type)
+
+
+    def impact_configurable_decimal(self, match_weigher: Callable[[A], Decimal] = None) \
+            -> 'UniConstraintBuilder[A, ScoreType]':
+        """
+        Positively or negatively impacts the Score, adding the ConstraintWeight for each match,
+        and returns a builder to apply optional constraint properties.
+        The constraint weight comes from a `ConstraintWeight` annotated member on the `constraint_configuration`,
+        so end users can change the constraint weights dynamically.
+        This constraint may be deactivated if the `ConstraintWeight` is zero.
+        If there is no `constraint_configuration`, use `impact` instead.
+
+        Parameters
+        ----------
+        match_weigher : Callable[[A], Decimal], optional
+            a function that computes the weight of a match.
+            If absent, each match has weight ``1``.
+
+        Returns
+        -------
+        UniConstraintBuilder
+            a `UniConstraintBuilder`
+        """
+        from java.math import BigDecimal
+        if match_weigher is None:
+            return UniConstraintBuilder(self.delegate.impactConfigurable(), self.a_type)
+        else:
+            return UniConstraintBuilder(self.delegate.impactConfigurableBigDecimal(function_cast(match_weigher,
+                                                                                                 self.a_type,
+                                                                                                 return_type=BigDecimal)),
                                         self.a_type)
 
 
@@ -1165,7 +1348,7 @@ class BiConstraintStream(Generic[A, B]):
         padding : Callable[[A], B]
             a function that computes the padding value for the second fact in the new tuple.
         """
-        if None == padding:
+        if None is padding:
             result = self.delegate.complement(get_class(cls))
             return BiConstraintStream(result, self.package, self.a_type, self.b_type)
         java_padding = function_cast(padding, self.a_type)
@@ -1201,6 +1384,38 @@ class BiConstraintStream(Generic[A, B]):
                                                                                         self.b_type)),
                                        self.a_type, self.b_type)
 
+
+    def penalize_decimal(self, constraint_weight: ScoreType, match_weigher: Callable[[A, B], Decimal] = None) -> \
+            'BiConstraintBuilder[A, B, ScoreType]':
+        """
+        Applies a negative Score impact, subtracting the constraint_weight multiplied by the match weight,
+        and returns a builder to apply optional constraint properties.
+
+        Parameters
+        ----------
+        constraint_weight : Score
+            the weight of the constraint.
+
+        match_weigher : Callable[[A, B], Decimal]
+            a function that computes the weight of a match.
+            If absent, each match has weight ``1``.
+
+        Returns
+        -------
+        BiConstraintBuilder
+            a `BiConstraintBuilder`
+        """
+        from java.math import BigDecimal
+        if match_weigher is None:
+            return BiConstraintBuilder(self.delegate.penalize(constraint_weight), self.a_type, self.b_type)
+        else:
+            return BiConstraintBuilder(self.delegate.penalizeBigDecimal(constraint_weight,
+                                                                        function_cast(match_weigher,
+                                                                                      self.a_type,
+                                                                                      self.b_type,
+                                                                                      return_type=BigDecimal)),
+                                       self.a_type, self.b_type)
+
     def reward(self, constraint_weight: ScoreType, match_weigher: Callable[[A, B], int] = None) -> \
             'BiConstraintBuilder[A, B, ScoreType]':
         """
@@ -1228,6 +1443,37 @@ class BiConstraintStream(Generic[A, B]):
                                                                 to_long_function_cast(match_weigher,
                                                                                       self.a_type,
                                                                                       self.b_type)),
+                                       self.a_type, self.b_type)
+
+    def reward_decimal(self, constraint_weight: ScoreType, match_weigher: Callable[[A, B], Decimal] = None) -> \
+            'BiConstraintBuilder[A, B, ScoreType]':
+        """
+        Applies a positive Score impact, adding the constraint_weight multiplied by the match weight,
+        and returns a builder to apply optional constraint properties.
+
+        Parameters
+        ----------
+        constraint_weight : Score
+            the weight of the constraint.
+
+        match_weigher : Callable[[A, B], Decimal]
+            a function that computes the weight of a match.
+            If absent, each match has weight ``1``.
+
+        Returns
+        -------
+        BiConstraintBuilder
+            a `BiConstraintBuilder`
+        """
+        from java.math import BigDecimal
+        if match_weigher is None:
+            return BiConstraintBuilder(self.delegate.reward(constraint_weight), self.a_type, self.b_type)
+        else:
+            return BiConstraintBuilder(self.delegate.rewardBigDecimal(constraint_weight,
+                                                                      function_cast(match_weigher,
+                                                                                    self.a_type,
+                                                                                    self.b_type,
+                                                                                    return_type=BigDecimal)),
                                        self.a_type, self.b_type)
 
     def impact(self, constraint_weight: ScoreType, match_weigher: Callable[[A, B], int] = None) -> \
@@ -1260,6 +1506,39 @@ class BiConstraintStream(Generic[A, B]):
                                                                                       self.b_type)),
                                        self.a_type, self.b_type)
 
+
+    def impact_decimal(self, constraint_weight: ScoreType, match_weigher: Callable[[A, B], Decimal] = None) -> \
+            'BiConstraintBuilder[A, B, ScoreType]':
+        """
+        Positively or negatively impacts the `Score` by `constraint_weight` multiplied by match weight for each match
+        and returns a builder to apply optional constraint properties.
+        Use `penalize` or `reward` instead, unless this constraint can both have positive and negative weights.
+
+        Parameters
+        ----------
+        constraint_weight : Score
+            the weight of the constraint.
+
+        match_weigher : Callable[[A, B], Decimal]
+            a function that computes the weight of a match.
+            If absent, each match has weight ``1``.
+
+        Returns
+        -------
+        BiConstraintBuilder
+            a `BiConstraintBuilder`
+        """
+        from java.math import BigDecimal
+        if match_weigher is None:
+            return BiConstraintBuilder(self.delegate.impact(constraint_weight), self.a_type, self.b_type)
+        else:
+            return BiConstraintBuilder(self.delegate.impactBigDecimal(constraint_weight,
+                                                                      function_cast(match_weigher,
+                                                                                    self.a_type,
+                                                                                    self.b_type,
+                                                                                    return_type=BigDecimal)),
+                                       self.a_type, self.b_type)
+
     def penalize_configurable(self, match_weigher: Callable[[A, B], int] = None) -> \
             'BiConstraintBuilder[A, B, ScoreType]':
         """
@@ -1290,6 +1569,37 @@ class BiConstraintStream(Generic[A, B]):
                                                                                     self.b_type)),
                                        self.a_type, self.b_type)
 
+    def penalize_configurable_decimal(self, match_weigher: Callable[[A, B], Decimal] = None) -> \
+            'BiConstraintBuilder[A, B, ScoreType]':
+        """
+        Negatively impacts the Score, subtracting the ConstraintWeight for each match,
+        and returns a builder to apply optional constraint properties.
+        The constraint weight comes from a `ConstraintWeight` annotated member on the `constraint_configuration`,
+        so end users can change the constraint weights dynamically.
+        This constraint may be deactivated if the `ConstraintWeight` is zero.
+        If there is no `constraint_configuration`, use `penalize` instead.
+
+        Parameters
+        ----------
+        match_weigher : Callable[[A, B], Decimal]
+            a function that computes the weight of a match.
+            If absent, each match has weight ``1``.
+
+        Returns
+        -------
+        BiConstraintBuilder
+            a `BiConstraintBuilder`
+        """
+        from java.math import BigDecimal
+        if match_weigher is None:
+            return BiConstraintBuilder(self.delegate.penalizeConfigurable(), self.a_type, self.b_type)
+        else:
+            return BiConstraintBuilder(self.delegate.penalizeConfigurableBigDecimal(function_cast(match_weigher,
+                                                                                                  self.a_type,
+                                                                                                  self.b_type,
+                                                                                                  return_type=BigDecimal)),
+                                       self.a_type, self.b_type)
+
     def reward_configurable(self, match_weigher: Callable[[A, B], int] = None) -> \
             'BiConstraintBuilder[A, B, ScoreType]':
         """
@@ -1298,7 +1608,7 @@ class BiConstraintStream(Generic[A, B]):
         The constraint weight comes from a `ConstraintWeight` annotated member on the `constraint_configuration`,
         so end users can change the constraint weights dynamically.
         This constraint may be deactivated if the `ConstraintWeight` is zero.
-        If there is no `constraint_configuration`, use `penalize` instead.
+        If there is no `constraint_configuration`, use `reward` instead.
 
         Parameters
         ----------
@@ -1320,6 +1630,37 @@ class BiConstraintStream(Generic[A, B]):
                                                                                   self.b_type)),
                                        self.a_type, self.b_type)
 
+    def reward_configurable_decimal(self, match_weigher: Callable[[A, B], Decimal] = None) -> \
+            'BiConstraintBuilder[A, B, ScoreType]':
+        """
+        Positively impacts the Score, adding the ConstraintWeight for each match,
+        and returns a builder to apply optional constraint properties.
+        The constraint weight comes from a `ConstraintWeight` annotated member on the `constraint_configuration`,
+        so end users can change the constraint weights dynamically.
+        This constraint may be deactivated if the `ConstraintWeight` is zero.
+        If there is no `constraint_configuration`, use `reward` instead.
+
+        Parameters
+        ----------
+        match_weigher : Callable[[A, B], Decimal]
+            a function that computes the weight of a match.
+            If absent, each match has weight ``1``.
+
+        Returns
+        -------
+        BiConstraintBuilder
+            a `BiConstraintBuilder`
+        """
+        from java.math import BigDecimal
+        if match_weigher is None:
+            return BiConstraintBuilder(self.delegate.rewardConfigurable(), self.a_type, self.b_type)
+        else:
+            return BiConstraintBuilder(self.delegate.rewardConfigurableBigDecimal(function_cast(match_weigher,
+                                                                                                self.a_type,
+                                                                                                 self.b_type,
+                                                                                                 return_type=BigDecimal)),
+                                       self.a_type, self.b_type)
+
     def impact_configurable(self, match_weigher: Callable[[A, B], int] = None) -> \
             'BiConstraintBuilder[A, B, ScoreType]':
         """
@@ -1328,7 +1669,7 @@ class BiConstraintStream(Generic[A, B]):
         The constraint weight comes from a `ConstraintWeight` annotated member on the `constraint_configuration`,
         so end users can change the constraint weights dynamically.
         This constraint may be deactivated if the `ConstraintWeight` is zero.
-        If there is no `constraint_configuration`, use `penalize` instead.
+        If there is no `constraint_configuration`, use `impact` instead.
 
         Parameters
         ----------
@@ -1348,6 +1689,37 @@ class BiConstraintStream(Generic[A, B]):
                                                             to_long_function_cast(match_weigher,
                                                                                   self.a_type,
                                                                                   self.b_type)),
+                                       self.a_type, self.b_type)
+
+    def impact_configurable_decimal(self, match_weigher: Callable[[A, B], Decimal] = None) -> \
+            'BiConstraintBuilder[A, B, ScoreType]':
+        """
+        Positively or negatively impacts the Score, adding the ConstraintWeight for each match,
+        and returns a builder to apply optional constraint properties.
+        The constraint weight comes from a `ConstraintWeight` annotated member on the `constraint_configuration`,
+        so end users can change the constraint weights dynamically.
+        This constraint may be deactivated if the `ConstraintWeight` is zero.
+        If there is no `constraint_configuration`, use `impact` instead.
+
+        Parameters
+        ----------
+        match_weigher : Callable[[A, B], Decimal]
+            a function that computes the weight of a match.
+            If absent, each match has weight ``1``.
+
+        Returns
+        -------
+        BiConstraintBuilder
+            a `BiConstraintBuilder`
+        """
+        from java.math import BigDecimal
+        if match_weigher is None:
+            return BiConstraintBuilder(self.delegate.impactConfigurable(), self.a_type, self.b_type)
+        else:
+            return BiConstraintBuilder(self.delegate.impactConfigurableBigDecimal(function_cast(match_weigher,
+                                                                                                self.a_type,
+                                                                                                self.b_type,
+                                                                                                return_type=BigDecimal)),
                                        self.a_type, self.b_type)
 
 
@@ -1864,6 +2236,39 @@ class TriConstraintStream(Generic[A, B, C]):
                                                                                          self.c_type)),
                                         self.a_type, self.b_type, self.c_type)
 
+    def penalize_decimal(self, constraint_weight: ScoreType,
+                         match_weigher: Callable[[A, B, C], Decimal] = None) -> 'TriConstraintBuilder[A, B, C, ScoreType]':
+        """
+        Applies a negative Score impact, subtracting the constraint_weight multiplied by the match weight,
+        and returns a builder to apply optional constraint properties.
+
+        Parameters
+        ----------
+        constraint_weight : Score
+            the weight of the constraint.
+
+        match_weigher : Callable[[A, B, C], Decimal]
+            a function that computes the weight of a match.
+            If absent, each match has weight ``1``.
+
+        Returns
+        -------
+        TriConstraintBuilder
+            a `TriConstraintBuilder`
+        """
+        from java.math import BigDecimal
+        if match_weigher is None:
+            return TriConstraintBuilder(self.delegate.penalize(constraint_weight),
+                                        self.a_type, self.b_type, self.c_type)
+        else:
+            return TriConstraintBuilder(self.delegate.penalizeBigDecimal(constraint_weight,
+                                                                         function_cast(match_weigher,
+                                                                                       self.a_type,
+                                                                                       self.b_type,
+                                                                                       self.c_type,
+                                                                                       return_type=BigDecimal)),
+                                        self.a_type, self.b_type, self.c_type)
+
     def reward(self, constraint_weight: ScoreType, match_weigher: Callable[[A, B, C], int] = None) -> \
             'TriConstraintBuilder[A, B, C, ScoreType]':
         """
@@ -1893,6 +2298,39 @@ class TriConstraintStream(Generic[A, B, C]):
                                                                                        self.a_type,
                                                                                        self.b_type,
                                                                                        self.c_type)),
+                                        self.a_type, self.b_type, self.c_type)
+
+    def reward_decimal(self, constraint_weight: ScoreType,
+                         match_weigher: Callable[[A, B, C], Decimal] = None) -> 'TriConstraintBuilder[A, B, C, ScoreType]':
+        """
+        Applies a positive Score impact, adding the constraint_weight multiplied by the match weight,
+        and returns a builder to apply optional constraint properties.
+
+        Parameters
+        ----------
+        constraint_weight : Score
+            the weight of the constraint.
+
+        match_weigher : Callable[[A, B, C], Decimal]
+            a function that computes the weight of a match.
+            If absent, each match has weight ``1``.
+
+        Returns
+        -------
+        TriConstraintBuilder
+            a `TriConstraintBuilder`
+        """
+        from java.math import BigDecimal
+        if match_weigher is None:
+            return TriConstraintBuilder(self.delegate.reward(constraint_weight),
+                                        self.a_type, self.b_type, self.c_type)
+        else:
+            return TriConstraintBuilder(self.delegate.rewardBigDecimal(constraint_weight,
+                                                                       function_cast(match_weigher,
+                                                                                     self.a_type,
+                                                                                     self.b_type,
+                                                                                     self.c_type,
+                                                                                     return_type=BigDecimal)),
                                         self.a_type, self.b_type, self.c_type)
 
     def impact(self, constraint_weight: ScoreType,
@@ -1927,6 +2365,40 @@ class TriConstraintStream(Generic[A, B, C]):
                                                                                        self.c_type)),
                                         self.a_type, self.b_type, self.c_type)
 
+    def impact_decimal(self, constraint_weight: ScoreType,
+                       match_weigher: Callable[[A, B, C], Decimal] = None) -> 'TriConstraintBuilder[A, B, C, ScoreType]':
+        """
+        Positively or negatively impacts the `Score` by `constraint_weight` multiplied by match weight for each match
+        and returns a builder to apply optional constraint properties.
+        Use `penalize` or `reward` instead, unless this constraint can both have positive and negative weights.
+
+        Parameters
+        ----------
+        constraint_weight : Score
+            the weight of the constraint.
+
+        match_weigher : Callable[[A, B, C], Decimal]
+            a function that computes the weight of a match.
+            If absent, each match has weight ``1``.
+
+        Returns
+        -------
+        TriConstraintBuilder
+            a `TriConstraintBuilder`
+        """
+        from java.math import BigDecimal
+        if match_weigher is None:
+            return TriConstraintBuilder(self.delegate.impact(constraint_weight),
+                                        self.a_type, self.b_type, self.c_type)
+        else:
+            return TriConstraintBuilder(self.delegate.impactBigDecimal(constraint_weight,
+                                                                       function_cast(match_weigher,
+                                                                                     self.a_type,
+                                                                                     self.b_type,
+                                                                                     self.c_type,
+                                                                                     return_type=BigDecimal)),
+                                        self.a_type, self.b_type, self.c_type)
+
     def penalize_configurable(self, match_weigher: Callable[[A, B, C], int] = None) \
             -> 'TriConstraintBuilder[A, B, C, ScoreType]':
         """
@@ -1959,6 +2431,39 @@ class TriConstraintStream(Generic[A, B, C]):
                                                                                      self.c_type)),
                                         self.a_type, self.b_type, self.c_type)
 
+    def penalize_configurable_decimal(self, match_weigher: Callable[[A, B, C], Decimal] = None) -> 'TriConstraintBuilder[A, B, C, ScoreType]':
+        """
+        Negatively impacts the Score, subtracting the ConstraintWeight for each match,
+        and returns a builder to apply optional constraint properties.
+        The constraint weight comes from a `ConstraintWeight` annotated member on the `constraint_configuration`,
+        so end users can change the constraint weights dynamically.
+        This constraint may be deactivated if the `ConstraintWeight` is zero.
+        If there is no `constraint_configuration`, use `penalize` instead.
+
+        Parameters
+        ----------
+        match_weigher : Callable[[A, B, C], Decimal]
+            a function that computes the weight of a match.
+            If absent, each match has weight ``1``.
+
+        Returns
+        -------
+        TriConstraintBuilder
+            a `TriConstraintBuilder`
+        """
+        from java.math import BigDecimal
+        if match_weigher is None:
+            return TriConstraintBuilder(self.delegate.penalizeConfigurable(),
+                                        self.a_type, self.b_type, self.c_type)
+        else:
+            return TriConstraintBuilder(self.delegate.penalizeConfigurableBigDecimal(
+                                                                       function_cast(match_weigher,
+                                                                                     self.a_type,
+                                                                                     self.b_type,
+                                                                                     self.c_type,
+                                                                                     return_type=BigDecimal)),
+                                        self.a_type, self.b_type, self.c_type)
+
     def reward_configurable(self, match_weigher: Callable[[A, B, C], int] = None) -> \
             'TriConstraintBuilder[A, B, C, ScoreType]':
         """
@@ -1967,7 +2472,7 @@ class TriConstraintStream(Generic[A, B, C]):
         The constraint weight comes from a `ConstraintWeight` annotated member on the `constraint_configuration`,
         so end users can change the constraint weights dynamically.
         This constraint may be deactivated if the `ConstraintWeight` is zero.
-        If there is no `constraint_configuration`, use `penalize` instead.
+        If there is no `constraint_configuration`, use `reward` instead.
 
         Parameters
         ----------
@@ -1991,6 +2496,40 @@ class TriConstraintStream(Generic[A, B, C]):
                                                                                    self.c_type)),
                                         self.a_type, self.b_type, self.c_type)
 
+
+    def reward_configurable_decimal(self, match_weigher: Callable[[A, B, C], Decimal] = None) -> 'TriConstraintBuilder[A, B, C, ScoreType]':
+        """
+        Positively impacts the Score, adding the ConstraintWeight for each match,
+        and returns a builder to apply optional constraint properties.
+        The constraint weight comes from a `ConstraintWeight` annotated member on the `constraint_configuration`,
+        so end users can change the constraint weights dynamically.
+        This constraint may be deactivated if the `ConstraintWeight` is zero.
+        If there is no `constraint_configuration`, use `reward` instead.
+
+        Parameters
+        ----------
+        match_weigher : Callable[[A, B, C], Decimal]
+            a function that computes the weight of a match.
+            If absent, each match has weight ``1``.
+
+        Returns
+        -------
+        TriConstraintBuilder
+            a `TriConstraintBuilder`
+        """
+        from java.math import BigDecimal
+        if match_weigher is None:
+            return TriConstraintBuilder(self.delegate.rewardConfigurable(),
+                                        self.a_type, self.b_type, self.c_type)
+        else:
+            return TriConstraintBuilder(self.delegate.rewardConfigurableBigDecimal(
+                function_cast(match_weigher,
+                              self.a_type,
+                              self.b_type,
+                              self.c_type,
+                              return_type=BigDecimal)),
+                self.a_type, self.b_type, self.c_type)
+
     def impact_configurable(self, match_weigher: Callable[[A, B, C], int] = None) \
             -> 'TriConstraintBuilder[A, B, C, ScoreType]':
         """
@@ -1999,7 +2538,7 @@ class TriConstraintStream(Generic[A, B, C]):
         The constraint weight comes from a `ConstraintWeight` annotated member on the `constraint_configuration`,
         so end users can change the constraint weights dynamically.
         This constraint may be deactivated if the `ConstraintWeight` is zero.
-        If there is no `constraint_configuration`, use `penalize` instead.
+        If there is no `constraint_configuration`, use `impact` instead.
 
         Parameters
         ----------
@@ -2022,6 +2561,39 @@ class TriConstraintStream(Generic[A, B, C]):
                                                                                    self.b_type,
                                                                                    self.c_type)),
                                         self.a_type, self.b_type, self.c_type)
+
+    def impact_configurable_decimal(self, match_weigher: Callable[[A, B, C], Decimal] = None) -> 'TriConstraintBuilder[A, B, C, ScoreType]':
+        """
+        Positively or negatively impacts the Score, adding the ConstraintWeight for each match,
+        and returns a builder to apply optional constraint properties.
+        The constraint weight comes from a `ConstraintWeight` annotated member on the `constraint_configuration`,
+        so end users can change the constraint weights dynamically.
+        This constraint may be deactivated if the `ConstraintWeight` is zero.
+        If there is no `constraint_configuration`, use `impact` instead.
+
+        Parameters
+        ----------
+        match_weigher : Callable[[A, B, C], Decimal]
+            a function that computes the weight of a match.
+            If absent, each match has weight ``1``.
+
+        Returns
+        -------
+        TriConstraintBuilder
+            a `TriConstraintBuilder`
+        """
+        from java.math import BigDecimal
+        if match_weigher is None:
+            return TriConstraintBuilder(self.delegate.impactConfigurable(),
+                                        self.a_type, self.b_type, self.c_type)
+        else:
+            return TriConstraintBuilder(self.delegate.impactConfigurableBigDecimal(
+                function_cast(match_weigher,
+                              self.a_type,
+                              self.b_type,
+                              self.c_type,
+                              return_type=BigDecimal)),
+                self.a_type, self.b_type, self.c_type)
 
 
 class QuadConstraintStream(Generic[A, B, C, D]):
@@ -2522,6 +3094,40 @@ class QuadConstraintStream(Generic[A, B, C, D]):
                                                                                           self.d_type)),
                                          self.a_type, self.b_type, self.c_type, self.d_type)
 
+    def penalize_decimal(self, constraint_weight: ScoreType,
+                 match_weigher: Callable[[A, B, C, D], Decimal] = None) -> 'QuadConstraintBuilder[A, B, C, D, ScoreType]':
+        """
+        Applies a negative Score impact, subtracting the constraint_weight multiplied by the match weight,
+        and returns a builder to apply optional constraint properties.
+
+        Parameters
+        ----------
+        constraint_weight : Score
+            the weight of the constraint.
+
+        match_weigher : Callable[[A, B, C, D], Decimal]
+            a function that computes the weight of a match.
+            If absent, each match has weight ``1``.
+
+        Returns
+        -------
+        QuadConstraintBuilder
+            a `QuadConstraintBuilder`
+        """
+        from java.math import BigDecimal
+        if match_weigher is None:
+            return QuadConstraintBuilder(self.delegate.penalize(constraint_weight),
+                                         self.a_type, self.b_type, self.c_type, self.d_type)
+        else:
+            return QuadConstraintBuilder(self.delegate.penalizeBigDecimal(constraint_weight,
+                                                                          function_cast(match_weigher,
+                                                                                          self.a_type,
+                                                                                          self.b_type,
+                                                                                          self.c_type,
+                                                                                          self.d_type,
+                                                                                          return_type=BigDecimal)),
+                                         self.a_type, self.b_type, self.c_type, self.d_type)
+
     def reward(self, constraint_weight: ScoreType,
                match_weigher: Callable[[A, B, C, D], int] = None) -> 'QuadConstraintBuilder[A, B, C, D, ScoreType]':
         """
@@ -2552,6 +3158,40 @@ class QuadConstraintStream(Generic[A, B, C, D]):
                                                                                         self.b_type,
                                                                                         self.c_type,
                                                                                         self.d_type)),
+                                         self.a_type, self.b_type, self.c_type, self.d_type)
+
+    def reward_decimal(self, constraint_weight: ScoreType,
+                       match_weigher: Callable[[A, B, C, D], Decimal] = None) -> 'QuadConstraintBuilder[A, B, C, D, ScoreType]':
+        """
+        Applies a positive Score impact, adding the constraint_weight multiplied by the match weight,
+        and returns a builder to apply optional constraint properties.
+
+        Parameters
+        ----------
+        constraint_weight : Score
+            the weight of the constraint.
+
+        match_weigher : Callable[[A, B, C, D], Decimal]
+            a function that computes the weight of a match.
+            If absent, each match has weight ``1``.
+
+        Returns
+        -------
+        QuadConstraintBuilder
+            a `QuadConstraintBuilder`
+        """
+        from java.math import BigDecimal
+        if match_weigher is None:
+            return QuadConstraintBuilder(self.delegate.reward(constraint_weight),
+                                         self.a_type, self.b_type, self.c_type, self.d_type)
+        else:
+            return QuadConstraintBuilder(self.delegate.rewardBigDecimal(constraint_weight,
+                                                                        function_cast(match_weigher,
+                                                                                      self.a_type,
+                                                                                      self.b_type,
+                                                                                      self.c_type,
+                                                                                      self.d_type,
+                                                                                      return_type=BigDecimal)),
                                          self.a_type, self.b_type, self.c_type, self.d_type)
 
     def impact(self, constraint_weight: ScoreType,
@@ -2587,6 +3227,41 @@ class QuadConstraintStream(Generic[A, B, C, D]):
                                                                                         self.d_type)),
                                          self.a_type, self.b_type, self.c_type, self.d_type)
 
+    def impact_decimal(self, constraint_weight: ScoreType,
+                       match_weigher: Callable[[A, B, C, D], Decimal] = None) -> 'QuadConstraintBuilder[A, B, C, D, ScoreType]':
+        """
+        Positively or negatively impacts the `Score` by `constraint_weight` multiplied by match weight for each match
+        and returns a builder to apply optional constraint properties.
+        Use `penalize` or `reward` instead, unless this constraint can both have positive and negative weights.
+
+        Parameters
+        ----------
+        constraint_weight : Score
+            the weight of the constraint.
+
+        match_weigher : Callable[[A, B, C, D], Decimal]
+            a function that computes the weight of a match.
+            If absent, each match has weight ``1``.
+
+        Returns
+        -------
+        QuadConstraintBuilder
+            a `QuadConstraintBuilder`
+        """
+        from java.math import BigDecimal
+        if match_weigher is None:
+            return QuadConstraintBuilder(self.delegate.impact(constraint_weight),
+                                         self.a_type, self.b_type, self.c_type, self.d_type)
+        else:
+            return QuadConstraintBuilder(self.delegate.impactBigDecimal(constraint_weight,
+                                                                        function_cast(match_weigher,
+                                                                                      self.a_type,
+                                                                                      self.b_type,
+                                                                                      self.c_type,
+                                                                                      self.d_type,
+                                                                                      return_type=BigDecimal)),
+                                         self.a_type, self.b_type, self.c_type, self.d_type)
+
     def penalize_configurable(self, match_weigher: Callable[[A, B, C, D], int] = None) \
             -> 'QuadConstraintBuilder[A, B, C, D, ScoreType]':
         """
@@ -2620,6 +3295,39 @@ class QuadConstraintStream(Generic[A, B, C, D]):
                                                                                       self.d_type)),
                                          self.a_type, self.b_type, self.c_type, self.d_type)
 
+    def penalize_configurable_decimal(self, match_weigher: Callable[[A, B, C, D], Decimal] = None) -> 'QuadConstraintBuilder[A, B, C, D, ScoreType]':
+        """
+        Negatively impacts the Score, subtracting the ConstraintWeight for each match,
+        and returns a builder to apply optional constraint properties.
+        The constraint weight comes from a `ConstraintWeight` annotated member on the `constraint_configuration`,
+        so end users can change the constraint weights dynamically.
+        This constraint may be deactivated if the `ConstraintWeight` is zero.
+        If there is no `constraint_configuration`, use `penalize` instead.
+
+        Parameters
+        ----------
+        match_weigher : Callable[[A, B, C, D], Decimal]
+            a function that computes the weight of a match.
+            If absent, each match has weight ``1``.
+
+        Returns
+        -------
+        QuadConstraintBuilder
+            a `QuadConstraintBuilder`
+        """
+        from java.math import BigDecimal
+        if match_weigher is None:
+            return QuadConstraintBuilder(self.delegate.penalizeConfigurable(),
+                                         self.a_type, self.b_type, self.c_type, self.d_type)
+        else:
+            return QuadConstraintBuilder(self.delegate.penalizeConfigurableBigDecimal(function_cast(match_weigher,
+                                                                                      self.a_type,
+                                                                                      self.b_type,
+                                                                                      self.c_type,
+                                                                                      self.d_type,
+                                                                                      return_type=BigDecimal)),
+                                         self.a_type, self.b_type, self.c_type, self.d_type)
+
     def reward_configurable(self, match_weigher: Callable[[A, B, C, D], int] = None) \
             -> 'QuadConstraintBuilder[A, B, C, D, ScoreType]':
         """
@@ -2628,7 +3336,8 @@ class QuadConstraintStream(Generic[A, B, C, D]):
         The constraint weight comes from a `ConstraintWeight` annotated member on the `constraint_configuration`,
         so end users can change the constraint weights dynamically.
         This constraint may be deactivated if the `ConstraintWeight` is zero.
-        If there is no `constraint_configuration`, use `penalize` instead.
+        If there is no `constraint_configuration`, use `reward` instead.
+
         Parameters
         ----------
         match_weigher : Callable[[A, B, C, D], int]
@@ -2652,6 +3361,39 @@ class QuadConstraintStream(Generic[A, B, C, D]):
                                                                                     self.d_type)),
                                          self.a_type, self.b_type, self.c_type, self.d_type)
 
+    def reward_configurable_decimal(self, match_weigher: Callable[[A, B, C, D], Decimal] = None) -> 'QuadConstraintBuilder[A, B, C, D, ScoreType]':
+        """
+        Positively impacts the Score, adding the ConstraintWeight for each match,
+        and returns a builder to apply optional constraint properties.
+        The constraint weight comes from a `ConstraintWeight` annotated member on the `constraint_configuration`,
+        so end users can change the constraint weights dynamically.
+        This constraint may be deactivated if the `ConstraintWeight` is zero.
+        If there is no `constraint_configuration`, use `reward` instead.
+
+        Parameters
+        ----------
+        match_weigher : Callable[[A, B, C, D], Decimal]
+            a function that computes the weight of a match.
+            If absent, each match has weight ``1``.
+
+        Returns
+        -------
+        QuadConstraintBuilder
+            a `QuadConstraintBuilder`
+        """
+        from java.math import BigDecimal
+        if match_weigher is None:
+            return QuadConstraintBuilder(self.delegate.rewardConfigurable(),
+                                         self.a_type, self.b_type, self.c_type, self.d_type)
+        else:
+            return QuadConstraintBuilder(self.delegate.rewardConfigurableBigDecimal(function_cast(match_weigher,
+                                                                                                  self.a_type,
+                                                                                                  self.b_type,
+                                                                                                  self.c_type,
+                                                                                                  self.d_type,
+                                                                                                  return_type=BigDecimal)),
+                                         self.a_type, self.b_type, self.c_type, self.d_type)
+
     def impact_configurable(self, match_weigher: Callable[[A, B, C, D], int] = None) \
             -> 'QuadConstraintBuilder[A, B, C, D, ScoreType]':
         """
@@ -2660,7 +3402,7 @@ class QuadConstraintStream(Generic[A, B, C, D]):
         The constraint weight comes from a `ConstraintWeight` annotated member on the `constraint_configuration`,
         so end users can change the constraint weights dynamically.
         This constraint may be deactivated if the `ConstraintWeight` is zero.
-        If there is no `constraint_configuration`, use `penalize` instead.
+        If there is no `constraint_configuration`, use `impact` instead.
 
         Parameters
         ----------
@@ -2683,6 +3425,39 @@ class QuadConstraintStream(Generic[A, B, C, D]):
                                                                                     self.b_type,
                                                                                     self.c_type,
                                                                                     self.d_type)),
+                                         self.a_type, self.b_type, self.c_type, self.d_type)
+
+    def impact_configurable_decimal(self, match_weigher: Callable[[A, B, C, D], Decimal] = None) -> 'QuadConstraintBuilder[A, B, C, D, ScoreType]':
+        """
+        Positively or negatively impacts the Score, adding the ConstraintWeight for each match,
+        and returns a builder to apply optional constraint properties.
+        The constraint weight comes from a `ConstraintWeight` annotated member on the `constraint_configuration`,
+        so end users can change the constraint weights dynamically.
+        This constraint may be deactivated if the `ConstraintWeight` is zero.
+        If there is no `constraint_configuration`, use `impact` instead.
+
+        Parameters
+        ----------
+        match_weigher : Callable[[A, B, C, D], Decimal]
+            a function that computes the weight of a match.
+            If absent, each match has weight ``1``.
+
+        Returns
+        -------
+        QuadConstraintBuilder
+            a `QuadConstraintBuilder`
+        """
+        from java.math import BigDecimal
+        if match_weigher is None:
+            return QuadConstraintBuilder(self.delegate.impactConfigurable(),
+                                         self.a_type, self.b_type, self.c_type, self.d_type)
+        else:
+            return QuadConstraintBuilder(self.delegate.impactConfigurableBigDecimal(function_cast(match_weigher,
+                                                                                                  self.a_type,
+                                                                                                  self.b_type,
+                                                                                                  self.c_type,
+                                                                                                  self.d_type,
+                                                                                                  return_type=BigDecimal)),
                                          self.a_type, self.b_type, self.c_type, self.d_type)
 
 
