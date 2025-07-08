@@ -1,4 +1,0 @@
-= PROJECT MOVED
-
-This project has been merged into the https://github.com/TimefoldAI/timefold-solver[Timefold Solver repo].
-All future development will be done there.
