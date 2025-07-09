@@ -1,0 +1,154 @@
+[#solverConfiguration]
+= Configuring Timefold Solver
+:doctype: book
+:sectnums:
+:icons: font
+
+[#solverConfigurationByXML]
+== Solver configuration by XML
+
+Build a `Solver` instance with the ``SolverFactory``.
+Configure the `SolverFactory` with a solver configuration XML file, provided as a classpath resource (as defined by ``ClassLoader.getResource()``):
+
+[tabs]
+====
+
+Python::
++
+[source,python,options="nowrap"]
+----
+solver_factory = SolverFactory.create(SolverConfig.create_from_xml_resource(
+         Path(...) / "solver_config.xml"))
+solver = solver_factory.build_solver()
+----
+====
+
+In a typical project (following the Maven directory structure), that solverConfig XML file would be located at ``$PROJECT_DIR/src/main/resources/org/acme/schooltimetabling/solverConfig.xml``.
+Alternatively, a `SolverFactory` can be created from a ``File`` with ``SolverFactory.createFromXmlFile()``.
+However, for portability reasons, a classpath resource is recommended.
+
+Both a `Solver` and a `SolverFactory` have a generic type called ``Solution_``, which is the class
+representing a xref:using-timefold-solver/modeling-planning-problems.adoc#planningProblemAndPlanningSolution[planning problem and solution].
+
+A solver configuration XML file looks like this:
+
+[source,xml,options="nowrap"]
+----
+<?xml version="1.0" encoding="UTF-8"?>
+<solver xmlns="https://timefold.ai/xsd/solver" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="https://timefold.ai/xsd/solver https://timefold.ai/xsd/solver/solver.xsd">
+  <!-- Define the model -->
+  <solutionClass>org.acme.schooltimetabling.domain.Timetable</solutionClass>
+  <entityClass>org.acme.schooltimetabling.domain.Lesson</entityClass>
+
+  <!-- Define the score function -->
+  <scoreDirectorFactory>
+    <constraintProviderClass>org.acme.schooltimetabling.solver.TimetableConstraintProvider</constraintProviderClass>
+  </scoreDirectorFactory>
+
+  <!-- Configure the optimization algorithms (optional) -->
+  <termination>
+    ...
+  </termination>
+  <constructionHeuristic>
+    ...
+  </constructionHeuristic>
+  <localSearch>
+    ...
+  </localSearch>
+</solver>
+----
+
+[NOTE]
+====
+In Timefold Solver for Python, use https://docs.python.org/3/glossary.html#term-qualified-name[qualified names]
+when referencing functions and classes.
+====
+
+Notice the three parts in it:
+
+* Define the model.
+* Define the score function.
+* Optionally configure the optimization algorithm(s).
+
+These various parts of a configuration are explained further in this manual.
+
+*Timefold Solver makes it relatively easy to switch optimization algorithm(s) just by changing the configuration.* There is even a xref:using-timefold-solver/benchmarking-and-tweaking.adoc#benchmarker[Benchmarker] which allows you to play out different configurations against each other and report the most appropriate configuration for your use case.
+
+[#solverConfigurationAsCode]
+== Solver configuration as code
+
+A solver configuration can also be configured with the `SolverConfig` API.
+This is especially useful to change some values dynamically at runtime.
+For example, to change the running time based on system property, before building the ``Solver``:
+
+[tabs]
+====
+
+Python::
++
+[source,python,options="nowrap"]
+----
+solver_config = SolverConfig.create_from_xml_resource(
+         Path(...) / "solver_config.xml")
+
+termination_config = TerminationConfig(
+    spent_limit=Duration(minutes=user_input)
+)
+solver_config.termination_config = termination_config
+
+solver_factory = SolverFactory.create(solver_config)
+solver = solver_factory.build_solver()
+----
+====
+
+
+[NOTE]
+====
+To configure a `SolverFactory` dynamically for each user request,
+build a template `SolverConfig` during initialization
+and copy it with the copy constructor for each user request:
+
+[tabs]
+======
+
+Python::
++
+[source,python,options="nowrap"]
+----
+import dataclasses
+
+template = SolverConfig.create_from_xml_resource(
+         Path(...) / "solver_config.xml")
+
+termination_config = TerminationConfig()
+template.termination_config = termination_config
+
+# Called concurrently from different threads
+def user_request(..., user_input: int):
+    solver_config = dataclasses.replace(template,
+      termination_config=TerminationConfig(
+        spent_limit=Duration(minutes=user_input)
+    ))
+    solver_factory = SolverFactory.create(solver_config)
+    solver = solver_factory.build_solver()
+    ...
+----
+======
+====
+
+[#annotationAlternatives]
+== Annotation alternatives
+
+Timefold Solver needs to be told which classes in your domain model are planning entities,
+which properties are planning variables, etc.
+There are several ways to deliver this information:
+
+[tabs]
+====
+Python::
+* Add class decorators and annotations on attributes in the domain model (recommended).
+* Add class decorators and annotations on the return type of methods in the domain model.
+====
+
+This manual focuses on the first manner, but every feature supports both, even if it's not explicitly mentioned.

@@ -45,6 +45,7 @@
   <modules>
     <module>jpyinterpreter</module>
     <module>python-core</module>
+    <module>docs</module>
   </modules>
 
 </project>

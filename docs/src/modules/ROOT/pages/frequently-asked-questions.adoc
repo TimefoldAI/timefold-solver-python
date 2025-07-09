@@ -1,0 +1,20 @@
+= FAQ
+:doctype: book
+:icons: font
+
+== How is Timefold Solver Licensed?
+
+Timefold Solver for Python Community Edition is _open source_ software,
+released under http://www.apache.org/licenses/LICENSE-2.0.html[the Apache License 2.0].
+This license is very liberal and allows reuse for commercial purposes.
+Read http://www.apache.org/foundation/licence-FAQ.html#WhatDoesItMEAN[the layman's explanation].
+
+For Java, there is also Timefold Solver Enterprise Edition, which is a commercial product that offers additional features to scale out to very large datasets.
+
+
+== Does Timefold offer pre-built models?
+
+Timefold offers a suite of pre-built PlanningAI models designed to expedite development by addressing complex scheduling and routing challenges across various industries.
+These models are built upon Timefold Solver Enterprise Edition technology and are accessible through a REST API, facilitating seamless integration into your applications.
+
+See all available models on https://app.timefold.ai/[our platform].

@@ -1,0 +1,14 @@
+== Solution source code
+
+Follow the instructions in the next sections to create the application step by step (recommended).
+
+Alternatively, you can also skip right to the completed example:
+
+. Clone the Git repository:
++
+[source,shell,subs=attributes+]
+----
+$ git clone {quickstarts-clone-url}
+----
+
+. Find the solution in the `quickstarts` directory and run it (see its README file).

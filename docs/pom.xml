@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>ai.timefold.solver</groupId>
+    <artifactId>timefold-solver-build-parent</artifactId>
+    <version>1.24.0</version>
+  </parent>
+
+  <artifactId>timefold-solver-python-docs</artifactId>
+  <packaging>pom</packaging>
+
+  <name>Timefold Solver documentation</name>
+  <description>
+    Timefold solves planning problems.
+    This lightweight, embeddable planning engine implements powerful and scalable algorithms
+    to optimize business resource scheduling and planning.
+
+    This module builds the documentation.
+  </description>
+  <url>https://solver.timefold.ai</url>
+
+  <properties>
+    <!--
+    Antora ignores hidden files. The docs website should not incorporate this file as it brings the single-paged docs
+    duplicating the other content.
+    -->
+    <source.document.name>.index.adoc</source.document.name>
+    <docs.target.dir>${project.build.directory}/generated-docs</docs.target.dir>
+  </properties>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.asciidoctor</groupId>
+        <artifactId>asciidoctor-maven-plugin</artifactId>
+        <configuration>
+          <sourceDirectory>${basedir}/src/modules/ROOT/pages</sourceDirectory>
+          <resources>
+            <resource>
+              <directory>${basedir}/src/modules/ROOT/images</directory>
+            </resource>
+          </resources>
+          <attributes>
+            <timefold-solver-version>${project.version}</timefold-solver-version>
+            <java-version>${maven.compiler.release}</java-version>
+            <maven-version>${maven.min.version}</maven-version>
+            <quarkus-version>${version.io.quarkus}</quarkus-version>
+            <spring-boot-version>${version.org.springframework.boot}</spring-boot-version>
+            <html-googleAnalyticsId>G-PTFS6MCV7J</html-googleAnalyticsId>
+          </attributes>
+        </configuration>
+        <executions>
+          <execution>
+            <id>generate-pdf</id>
+            <phase>generate-resources</phase>
+            <goals>
+              <goal>process-asciidoc</goal>
+            </goals>
+            <configuration>
+              <!-- Needs to be duplicated to avoid rendering each adoc separately -->
+              <sourceDocumentName>${source.document.name}</sourceDocumentName>
+              <backend>pdf</backend>
+              <outputDirectory>${docs.target.dir}/pdf</outputDirectory>
+              <outputFile>timefold-solver-docs.pdf</outputFile>
+              <attributes>
+                <imagesdir>${basedir}/src/modules/ROOT/images</imagesdir>
+                <source-highlighter>coderay</source-highlighter>
+              </attributes>
+              <logHandler>
+                <failIf>
+                  <severity>WARN</severity>
+                </failIf>
+              </logHandler>
+            </configuration>
+          </execution>
+          <execution>
+            <id>generate-html</id>
+            <phase>generate-resources</phase>
+            <goals>
+              <goal>process-asciidoc</goal>
+            </goals>
+            <configuration>
+              <!-- Needs to be duplicated to avoid rendering each adoc separately -->
+              <sourceDocumentName>${source.document.name}</sourceDocumentName>
+              <outputDirectory>${docs.target.dir}/html</outputDirectory>
+              <outputFile>timefold-solver-docs.html</outputFile>
+              <attributes>
+                <imagesdir>${basedir}/src/modules/ROOT/images</imagesdir>
+                <source-highlighter>coderay</source-highlighter>
+                <toc>left</toc>
+                <icons>font</icons>
+              </attributes>
+              <logHandler>
+                <failIf>
+                  <severity>WARN</severity>
+                </failIf>
+              </logHandler>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-resources-plugin</artifactId>
+        <executions>
+          <!-- Substitutes properties in antora-template.yml that is copied to src/antora.yml during a release. -->
+          <execution>
+            <id>generate-antora-yml</id>
+            <goals>
+              <goal>resources</goal>
+            </goals>
+            <phase>process-resources</phase>
+            <configuration>
+              <resources>
+                <resource>
+                  <directory>${project.basedir}/src</directory>
+                  <targetPath>${project.build.directory}</targetPath>
+                  <includes>
+                    <include>antora-template.yml</include>
+                  </includes>
+                  <filtering>true</filtering>
+                </resource>
+              </resources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>

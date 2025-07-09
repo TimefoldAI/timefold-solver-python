@@ -1,0 +1,1926 @@
+[#scoreCalculation]
+= Score calculation
+:page-aliases: constraint-streams/constraint-streams.adoc
+:doctype: book
+:sectnums:
+:icons: font
+
+We could implement an xref:constraints-and-score/score-calculation.adoc#easyScoreCalculation[easy score calculator]
+that uses a functional approach:
+
+[tabs]
+====
+
+Python::
++
+[source,python,options="nowrap"]
+----
+def do_not_assign_ann() -> int:
+    return sum(-1 for shift in schedule.shifts if shift.employee == 'Ann');
+----
+====
+
+However, that scales poorly because it doesn't do an xref:constraints-and-score/performance.adoc#incrementalScoreCalculationPerformance[incremental calculation]:
+When the planning variable of a single `Shift` changes, to recalculate the score,
+the normal Streams API has to execute the entire stream from scratch.
+
+[#constraintStreams]
+== Introducing Constraint Streams
+
+Constraint streams are a functional programming form of incremental score calculation
+that is easy to read, write and debug.
+The API should feel familiar if you're familiar with SQL.
+
+The Constraint Streams API enables you to write similar code in a language of your choice,
+while reaping the performance benefits of incremental score calculation.
+This is an example of the same code we've shown above,
+only using the Constraint Streams API:
+
+[tabs]
+====
+
+Python::
++
+[source,python,options="nowrap"]
+----
+def do_not_assign_ann(factory: ConstraintFactory) -> Constraint:
+    return (factory.for_each(Shift)
+                .filter(lambda shift: shift.employee == 'Ann')
+                .penalize(HardSoftScore.ONE_SOFT)
+                .as_constraint("Don't assign Ann")
+    )
+----
+====
+
+This constraint stream iterates over all instances of class `Shift` in the xref:using-timefold-solver/modeling-planning-problems.adoc#problemFacts[problem facts] and
+xref:using-timefold-solver/modeling-planning-problems.adoc#planningEntity[planning entities]
+in the xref:using-timefold-solver/modeling-planning-problems.adoc#planningProblemAndPlanningSolution[planning problem].
+It finds every `Shift` which is assigned to employee `Ann` and for every such instance (also called a match), it adds a
+soft penalty of `1` to the overall xref:constraints-and-score/overview.adoc#calculateTheScore[score].
+The following figure illustrates this process on a problem with 4 different shifts:
+
+image::constraints-and-score/score-calculation/constraintStreamIntroduction.png[align="center"]
+
+If any of the instances change during solving, the constraint stream automatically detects the change
+and only recalculates the minimum necessary portion of the problem that is affected by the change.
+The following figure illustrates this xref:constraints-and-score/performance.adoc#incrementalScoreCalculationPerformance[incremental score calculation]:
+
+image::constraints-and-score/score-calculation/constraintStreamIncrementalCalculation.png[align="center"]
+
+Constraint Streams API also has advanced support for xref:constraints-and-score/understanding-the-score.adoc[score explanation]
+through xref:constraintStreamsCustomizingJustificationsAndIndictments[custom justifications and indictments].
+
+image::constraints-and-score/score-calculation/constraintStreamJustification.png[align="center"]
+
+
+[#constraintStreamsConfiguration]
+== Creating a constraint stream
+
+To use the Constraint Streams API in your project, first write a `ConstraintProvider` implementation similar
+to the following example.
+
+[tabs]
+====
+
+Python::
++
+[source,python,options="nowrap"]
+----
+@constraint_provider
+def my_constraint_provider(factory: ConstraintFactory) -> list[Constraint]:
+    return [
+        penalize_every_shift(factory)
+    ]
+
+
+def penalize_every_shift(factory: ConstraintFactory) -> Constraint:
+    return (factory.for_each(Shift)
+                .penalize(HardSoftScore.ONE_SOFT)
+                .as_constraint("Penalize a shift")
+    )
+----
+====
+
+[NOTE]
+====
+This example contains one constraint, `penalizeEveryShift(...)`.
+However, you can include as many as you require.
+====
+
+Add the following code to your solver configuration:
+
+[source,xml,options="nowrap"]
+----
+    <solver xmlns="https://timefold.ai/xsd/solver" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="https://timefold.ai/xsd/solver https://timefold.ai/xsd/solver/solver.xsd">
+      <scoreDirectorFactory>
+        <constraintProviderClass>org.acme.schooltimetabling.solver.TimetableConstraintProvider</constraintProviderClass>
+      </scoreDirectorFactory>
+      ...
+    </solver>
+----
+
+
+[#constraintStreamsCardinality]
+== Constraint stream cardinality
+
+Constraint stream cardinality is a measure of how many objects a single constraint match consists of.
+The simplest constraint stream has a cardinality of 1, meaning each constraint match only consists of 1 object.
+Therefore, it is called a `UniConstraintStream`:
+
+[tabs]
+====
+
+Python::
++
+[source,python,options="nowrap"]
+----
+def do_not_assign_ann(factory: ConstraintFactory) -> Constraint:
+    return (
+        factory.for_each(Shift)  # Returns UniStream[Shift].
+            ...
+    )
+----
+====
+
+Some constraint stream <<constraintStreamsBuildingBlocks,building blocks>> can increase stream cardinality, such as
+<<constraintStreamsJoin,join>> or <<constraintStreamsGroupingAndCollectors,groupBy>>:
+
+[tabs]
+====
+
+Python::
++
+[source,python,options="nowrap"]
+----
+def do_not_assign_ann(factory: ConstraintFactory) -> Constraint:
+        return (factory.for_each(Shift)  # Returns Uni[Shift].
+                .join(Employee)        # Returns Bi[Shift, Employee].
+                .join(DayOff)          # Returns Tri[Shift, Employee, DayOff].
+                .join(Country)         # Returns Quad[Shift, Employee, DayOff, Country].
+                ...
+    )
+----
+====
+
+The latter can also decrease stream cardinality:
+
+[tabs]
+====
+
+Python::
++
+[source,python,options="nowrap"]
+----
+def do_not_assign_ann(factory: ConstraintFactory) -> Constraint:
+    return (factory.for_each(Shift)                          # Returns UniStream[Shift].
+                .join(Employee)                              # Returns BiStream[Shift, Employee].
+                .group_by(lambda shift, employee: employee)  # Returns UniStream[Employee].
+                ...
+    )
+----
+
+====
+
+The following constraint stream cardinalities are currently supported:
+
+[cols="1,1,2"]
+|===
+|Cardinality|Prefix|Defining interface
+|1          |   Uni|`UniConstraintStream<A>`
+|2          |    Bi|`BiConstraintStream<A, B>`
+|3          |   Tri|`TriConstraintStream<A, B, C>`
+|4          |  Quad|`QuadConstraintStream<A, B, C, D>`
+|===
+
+[#constraintStreamsHigherCardinalities]
+=== Achieving higher cardinalities
+
+Timefold Solver currently does not support constraint stream cardinalities higher than 4.
+However, with <<constraintStreamsMappingTuples,tuple mapping>> effectively infinite cardinality is possible:
+
+[tabs]
+====
+
+Python::
++
+[source,python,options="nowrap"]
+----
+def penta_stream_example(factory: ConstraintFactory ) -> Constraint
+    return (factory.for_each(Shift)                # UniConstraintStream[Shift]
+            .join(Shift)                           # BiConstraintStream[Shift, Shift]
+            .join(Shift)                           # TriConstraintStream[Shift, Shift, Shift]
+            .join(Shift)                           # QuadConstraintStream[Shift, Shift, Shift, Shift]
+            .map(lambda a, b, c, d: (a, b, c, d))  # UniConstraintStream[tuple[Shift, Shift, Shift, Shift]]
+            .join(Shift)                           # BiConstraintStream[tuple[Shift, Shift, Shift, Shift], Shift]
+            ...                                    # This BiConstraintStream carries 5 Shift elements.
+    )
+----
+====
+
+[NOTE]
+====
+Timefold Solver does not provide any tuple implementations out of the box.
+It's recommended to use one of the freely available 3rd party implementations.
+Should a custom implementation be necessary, see <<constraintStreamsDesigningMappingFunction,guidelines for mapping functions>>.
+====
+
+[#constraintStreamsBuildingBlocks]
+== Building blocks
+
+Constraint streams are chains of different operations, called building blocks.
+Each constraint stream starts with a `forEach(...)` building block and is terminated by either a penalty or a reward.
+The following example shows the simplest possible constraint stream:
+
+[tabs]
+====
+
+Python::
++
+[source,python,options="nowrap"]
+----
+def penalize_initialized_shifts(factory: ConstraintFactory) -> Constraint:
+    return (factory.for_each(Shift)
+                   .penalize(HardSoftScore.ONE_SOFT)
+                   .as_constraint("Initialized shift")
+    )
+----
+====
+
+This constraint stream penalizes each known and initialized instance of `Shift`.
+
+[#constraintStreamsFrom]
+[#constraintStreamsForEach]
+=== ForEach
+
+The `.forEach(T)` building block selects every `T` instance that
+is in a xref:using-timefold-solver/modeling-planning-problems.adoc#problemFacts[problem fact collection]
+or a xref:using-timefold-solver/modeling-planning-problems.adoc#planningEntitiesOfASolution[planning entity collection]
+and has no `None` genuine planning variables.
+
+To include instances with a `None` xref:using-timefold-solver/modeling-planning-problems.adoc#planningVariable[genuine planning variable],
+or planning values
+not assigned to any xref:using-timefold-solver/modeling-planning-problems.adoc#planningListVariable[planning list variable],
+replace the `forEach()` building block by `forEachIncludingUnassigned()`:
+
+[tabs]
+====
+
+Python::
++
+[source,python,options="nowrap"]
+----
+def penalize_all_shifts(factory: ConstraintFactory) -> Constraint:
+    return (factory.for_each_including_unassigned(Shift)
+                   .penalize(HardSoftScore.ONE_SOFT)
+                   .as_constraint("A shift")
+    )
+----
+====
+
+In cases utilizing the xref:using-timefold-solver/modeling-planning-problems.adoc#planningListVariable[planning list variable],
+you may want
+to include an xref:using-timefold-solver/modeling-planning-problems.adoc#listVariableShadowVariablesInverseRelation[inverse relation shadow variable]
+to maximize performance of your constraints.
+
+[NOTE]
+====
+The `forEach()` building block has a legacy counterpart, `from()`.
+This alternative approach included instances based on the initialization status of their genuine planning variables.
+As an unwanted consequence,
+`from()`
+behaves unexpectedly for xref:using-timefold-solver/modeling-planning-problems.adoc#planningVariableAllowingUnassigned[variables with unassigned values].
+These are considered initialized even when `None`,
+and therefore this legacy method could still return entities with `None` variables.
+`from()`, `fromUnfiltered()` and `fromUniquePair()` are now deprecated and will be removed in a future major version of Timefold Solver.
+====
+
+[#constraintStreamsPenaltiesRewards]
+=== Penalties and rewards
+
+The purpose of constraint streams is to build up a xref:constraints-and-score/overview.adoc#whatIsAScore[score] for a xref:using-timefold-solver/modeling-planning-problems.adoc#planningProblemAndPlanningSolution[solution].
+To do this, every constraint stream must contain a call to either a `penalize()` or a `reward()`
+building block.
+The `penalize()` building block makes the score worse and the `reward()` building block improves the score.
+
+Each constraint stream is then terminated by calling `asConstraint()` method, which finally builds the constraint.
+Constraints have several components:
+
+- Constraint name is the human-readable descriptive name for the constraint,
+which must be unique within the entire `ConstraintProvider` implementation.
+- Constraint weight is a constant score value indicating how much every breach of the constraint affects the score.
+Valid examples include `SimpleScore.ONE`, `HardSoftScore.ONE_HARD` and `HardMediumSoftScore.of(1, 2, 3)`.
+- Constraint match weigher is an optional function indicating how many times the constraint weight should be applied in
+the score.
+The penalty or reward score impact is the constraint weight multiplied by the match weight.
+The default value is `1`.
+
+[NOTE]
+====
+Constraints with zero constraint weight are automatically disabled and do not impose any performance penalty.
+====
+
+[NOTE]
+====
+The constraint has another component: a constraint package.
+It has no practical impact on the solver and it has been deprecated.
+We recommend you don't use constraint packages; the solver will choose a suitable default value.
+====
+
+The Constraint Streams API supports many different types of penalties.
+Browse the API in your IDE for the full list of method overloads.
+Here are some examples:
+
+- Simple penalty (`penalize(SimpleScore.ONE)`) makes the score worse by `1` per every match in the
+constraint stream.
+The score type must be the same type as used on the `PlanningScore` annotated member on the planning solution.
+- Dynamic penalty (`penalize(SimpleScore.ONE, Shift::getHours)`) makes the score worse by the number
+of hours in every matching `Shift` in the constraint stream.
+This is an example of using a constraint match weigher.
+- Configurable penalty (`penalizeConfigurable()`) makes the score worse using constraint weights
+defined in xref:constraints-and-score/constraint-configuration.adoc#constraintConfiguration[constraint configuration].
+- Configurable dynamic penalty(`penalizeConfigurable(Shift::getHours)`) makes the score worse using
+constraint weights defined in xref:constraints-and-score/constraint-configuration.adoc#constraintConfiguration[constraint configuration], multiplied by the number of hours in
+every matching `Shift` in the constraint stream.
+
+By replacing the keyword `penalize` by `reward` in the name of these building blocks, you get operations that
+affect score in the opposite direction.
+
+
+[#constraintStreamsCustomizingJustificationsAndIndictments]
+==== Customizing justifications and indictments
+
+One of important Timefold Solver features is its ability to xref:constraints-and-score/understanding-the-score.adoc[explain the score] of solutions it produced
+through the use of justifications and indictments.
+By default, each constraint is justified with `ai.timefold.solver.core.api.score.stream.DefaultConstraintJustification`,
+and the final tuple makes up the indicted objects.
+For example, in the following constraint, the indicted objects will be of type `Vehicle` and an `Integer`:
+
+[tabs]
+====
+
+Python::
++
+[source,python,options="nowrap"]
+----
+def vehicle_capacity(factory: ConstraintFactory) -> Constraint:
+    return (factory.for_each(Customer)
+                   .filter(lambda customer: customer.vehicle is not None)
+                   .group_by(lambda customer: customer.vehicle, ConstraintCollectors.sum(lambda customer: customer.demand))
+                   .filter(lambda vehicle, demand: -> demand > vehicle.capacity)
+                   .penalize(HardSoftScore.ONE_HARD,
+                             lambda vehicle, demand: demand - vehicle.capacity)
+                   .as_constraint("vehicle_capacity")
+    )
+----
+====
+
+For the purposes of creating a xref:constraints-and-score/understanding-the-score.adoc#indictmentHeatMap[heat map], the `Vehicle` is very important, but the naked `Integer` carries no semantics.
+We can remove it by providing the `indictWith(...)` method with a custom indictment mapping:
+
+[tabs]
+====
+
+Python::
++
+[source,python,options="nowrap"]
+----
+def vehicle_capacity(factory: ConstraintFactory) -> Constraint:
+    return (factory.for_each(Customer)
+                   .filter(lambda customer: customer.vehicle is not None)
+                   .group_by(lambda customer: customer.vehicle, ConstraintCollectors.sum(lambda customer: customer.demand))
+                   .filter(lambda vehicle, demand: -> demand > vehicle.capacity)
+                   .penalize(HardSoftScore.ONE_HARD,
+                             lambda vehicle, demand: demand - vehicle.capacity)
+                   .indict_with((vehicle, demand) -> [vehicle])
+                   .as_constraint("vehicle_capacity")
+)
+----
+====
+
+The same mechanism can also be used to transform any of the indicted objects to any other object.
+To present the constraint matches to the user or to send them over the wire where they can be further processed,
+use the `justify_with(...)` method to provide a custom constraint justification:
+
+[tabs]
+====
+
+Python::
++
+[source,python,options="nowrap"]
+----
+def vehicle_capacity(factory: ConstraintFactory) -> Constraint:
+    return (factory.for_each(Customer)
+                   .filter(lambda customer: customer.vehicle is not None)
+                   .group_by(lambda customer: customer.vehicle, ConstraintCollectors.sum(lambda customer: customer.demand))
+                   .filter(lambda vehicle, demand: -> demand > vehicle.capacity)
+                   .penalize(HardSoftScore.ONE_HARD,
+                             lambda vehicle, demand: demand - vehicle.capacity)
+                   .justify_with(lambda vehicle, demand, score: VehicleDemandOveruse(vehicle, demand, score))
+                   .indict_with(lambda vehicle, demand: -> [vehicle])
+                   .as_constraint("vehicle_capacity");
+    }
+----
+====
+
+`VehicleDemandOveruse` is a custom type you have to implement.
+You have complete control over the type, its name or methods exposed.
+If you choose to decorate it with the proper annotations,
+you will be able to send it over HTTP or store it in a database.
+The only limitation is that it must implement the `ai.timefold.solver.core.api.score.stream.ConstraintJustification` marker interface.
+
+
+[#constraintStreamsFilter]
+=== Filtering
+
+Filtering enables you to reduce the number of constraint matches in your stream.
+It first enumerates all constraint matches and then applies a predicate to filter some matches out.
+The predicate is a function that only returns `true` if the match is to continue in the stream.
+The following constraint stream removes all of Beth's shifts from all `Shift` matches:
+
+[tabs]
+====
+
+Python::
++
+[source,python,options="nowrap"]
+----
+def penalize_ann_shifts(factory: ConstraintFactory) -> Constraint:
+    return (factory.for_each(Shift)
+                   .filter(shift -> shift.employee.name == "Ann")
+                   .penalize(SimpleScore.ONE)
+                   .as_constraint("Ann's shift")
+    )
+----
+====
+
+The following example retrieves a list of shifts where an employee has asked for a day off from a bi-constraint match
+of `Shift` and `DayOff`:
+
+[tabs]
+====
+
+Python::
++
+[source,python,options="nowrap"]
+----
+def penalize_shifts_on_off_days(factory: ConstraintFactory) -> Constraint:
+    return (factory.for_each(Shift)
+                   .join(DayOff)
+                   .filter(lambda shift, day_off: shift.date == day_off.date and shift.employee == day_off.employee)
+                   .penalize(SimpleScore.ONE)
+                   .as_constraint("Shift on an off-day");
+    )
+----
+====
+
+The following figure illustrates both these examples:
+
+image::constraints-and-score/score-calculation/constraintStreamFilter.png[align="center"]
+
+[NOTE]
+====
+For performance reasons, using the <<constraintStreamsJoin,join>> building block with the appropriate `Joiner` is
+preferrable when possible.
+Using a `Joiner` creates only the constraint matches that are necessary, while filtered join creates all possible
+constraint matches and only then filters some of them out.
+====
+
+The following functions are required for filtering constraint streams of different cardinality:
+
+[cols="1,3"]
+|===
+|Cardinality|Filtering Predicate
+|1          |`Callable[[A], bool]`
+|2          |`Callable[[A, B], bool]`
+|3          |`Callable[[A, B, C], bool]`
+|4          |`Callable[[A, B, C, D], bool]`
+|===
+
+
+[#constraintStreamsJoin]
+=== Joining
+
+Joining is a way to increase <<constraintStreamsCardinality,stream cardinality>> and it is similar to the inner join
+operation in SQL. As the following figure illustrates,
+a `join()` creates a cartesian product of the streams being joined:
+
+image::constraints-and-score/score-calculation/constraintStreamJoinWithoutJoiners.png[align="center"]
+
+Doing this is inefficient if the resulting stream contains a lot of constraint matches
+that need to be filtered out immediately.
+
+Instead, use a `Joiner` condition to restrict the joined matches only to those that are interesting:
+
+image::constraints-and-score/score-calculation/constraintStreamJoinWithJoiners.png[align="center"]
+
+For example:
+
+[tabs]
+====
+
+Python::
++
+[source,python,options="nowrap"]
+----
+from timefold.solver.score import Joiners;
+
+...
+
+def shift_on_day_off(factory: ConstraintFactory) -> Constraint {
+    return (factory.for_each(Shift)
+                   .join(DayOff,
+                         Joiners.equal(lambda shift: shift.date, lambda day_off: day_off.date),
+                         Joiners.equal(lambda shift: shift.employee, lambda day_off: day_off.employee))
+                   .penalize(HardSoftScore.ONE_HARD)
+                   .as_constraint("Shift on an off-day");
+    )
+----
+====
+
+Through the `Joiners` class, the following `Joiner` conditions are supported to join two streams,
+pairing a match from each side:
+
+- `equal()`: the paired matches have a property that are `equals()`. This relies on `hashCode()`.
+- `greaterThan()`, `greaterThanOrEqual()`, `lessThan()` and `lessThanOrEqual()`:
+the paired matches have a `Comparable` property following the prescribed ordering.
+- `overlapping()`: the paired matches have two properties (a _start_ and an _end_ property) of the same `Comparable` type
+that both represent an interval which overlap.
+
+All `Joiners` methods have an overloaded method to use the same property of the same class on both stream sides.
+For example, calling `equal(Shift::getEmployee)` is the same as calling `equal(Shift::getEmployee, Shift::getEmployee)`.
+
+[NOTE]
+====
+If the other stream might match multiple times, but it must only impact the score once (for each element of the original
+stream), use <<constraintStreamsConditionalPropagation,ifExists>> instead.
+It does not create cartesian products and therefore generally performs better.
+====
+
+==== Evaluation of multiple joiners
+
+When using multiple joiners, there are some important considerations to keep in mind.
+Consider the following example:
+
+[tabs]
+====
+
+Python::
++
+[source,python,options="nowrap"]
+----
+factory.for_each(VehicleShift)
+       .join(Visit,
+             Joiners.equal(lambda vehicle_shift: vehicle_shift, lambda visit: visit.vehicle_shift), # Visit's VehicleShift is not None...
+             Joiners.less_than(
+                 lambda vehicle_shift: vehicle_shift.max_travel_time,
+                 lambda visit: visit.vehicle_shift.max_travel_time # ... yet NPE may be thrown here.
+        ))
+----
+====
+
+When indexing joiners (such as `equal()` and `lessThan()`) check their indexes,
+they take the input tuple and create a set of keys that will enter the index.
+These keys are different for the left and right side of the joiner.
+
+In the above example, from the left side,
+the key is `[VehicleShift instance && result of calling VehicleShift.getMaxTravelTime()]`.
+(Using the first mapping function of each joiner.)
+From the right side,
+the key is `[the result of calling Visit.getVehicleShift() && result of calling Visit.getVehicleShift().getMaxTravelTime()]`.
+(Using the second mapping function of each joiner.)
+
+However, both of the key mapping functions are calculated independently of the other,
+and therefore the `lessThan()` joiner's mapping functions will be executed even in cases
+when the `equal()` joiner would not match.
+This leads to a `NullPointerException` being thrown in the example above,
+where the `lessThan()` joiner's mapping functions are executed on a `Visit` instance
+that has a `None` `vehicleShift` property which wasn't (yet) filtered out by the `equal()` joiner.
+The filtering only happens inside the joiner's indexes and to access them,
+we need these keys to be generated first.
+
+To avoid these issues,
+do not assume that subsequent joiners' mapping functions only apply after the previous joiners have matched.
+Alternatively (and possibly at the cost of reduced performance) use the filtering joiner,
+which is processed differently and does not suffer from this issue:
+
+[tabs]
+====
+
+Python::
++
+[source,python,options="nowrap"]
+----
+factory.for_each(VehicleShift)
+       .join(Visit,
+             Joiners.equal(lambda vehicle_shift: vehicle_shift, lambda visit: visit.vehicle_shift), # Visit's VehicleShift is not None...
+             Joiners.filtering(
+                 lambda vehicle_shift, visit: vehicle_shift.max_travel_time < visit.vehicle_shift.max_travel_time))
+----
+====
+
+[#constraintStreamsGroupingAndCollectors]
+=== Grouping and collectors
+
+Grouping collects items in a stream according to user-provider criteria (also called "group key"), similar to what a
+`GROUP BY` SQL clause does. Additionally, some grouping operations also accept one or more `Collector` instances, which
+provide various aggregation functions. The following figure illustrates a simple `groupBy()` operation:
+
+image::constraints-and-score/score-calculation/constraintStreamGroupBy.png[align="center"]
+
+[NOTE]
+====
+Objects used as group key must obey the https://docs.python.org/3/reference/datamodel.html#object.\__hash__[general contract of `\__hash__`].
+Most importantly, "...key's hash value is immutable".
+
+For this reason, it is not recommended to use mutable objects (especially mutable collections) as group keys.
+If planning entities are used as group keys, their `\__hash__` must not be computed off of planning variables.
+Failure to follow this recommendation may result in runtime exceptions being thrown.
+====
+
+For example, the following code snippet first groups all visits by the vehicle that will be used,
+counts them using the `ConstraintCollectors.count(...)` collector,
+and finally penalizes every vehicle which makes more than 10 visits:
+
+[tabs]
+====
+
+Python::
++
+[source,python,options="nowrap"]
+----
+from timefold.solver.score import ConstraintCollectors
+
+...
+
+def too_many_visits(factory: ConstraintFactory) -> Constraint:
+    return (factory.for_each(Visit)
+                   .group_by(lambda visit: visit.vehicle, ConstraintCollectors.count())
+                   .filter(lambda vehicle, visit_count:  visit_count > 10)
+                   .penalize(HardSoftScore.ONE_HARD,
+                             lambda vehicle, visit_count:  visit_count - 10)
+                   .as_constraint("too_many_visits");
+    )
+----
+====
+
+[NOTE]
+====
+Information might be lost during grouping.
+In the previous example,
+`filter()` and all later operations no longer have direct access to the original `Visit` instance.
+====
+
+There are many collectors available out of the box.
+You can also provide your own collectors by implementing the
+`ai.timefold.solver.core.api.score.stream.uni.UniConstraintCollector` interface,
+or its `Bi...`, `Tri...` and `Quad...` counterparts.
+
+
+[#collectorsCount]
+==== `count()` collector
+
+The `ConstraintCollectors.count(...)` counts all elements per group. For example, the following use of the collector
+gives a number of items for two separate groups - one where the talks have unavailable speakers, and one where they
+don't.
+
+[tabs]
+====
+
+Python::
++
+[source,python,options="nowrap"]
+----
+def speaker_availability(factory: ConstraintFactory) -> Constraint:
+    return (factory.for_each(Talk)
+                   .group_by(lambda talk: talk.has_any_unavailable_speaker(), ConstraintCollectors.count())
+                   .penalize(HardSoftScore.ONE_HARD,
+                             lambda has_unavailable_speaker, count: ...)
+                   .as_constraint("speaker_availability")
+    )
+----
+====
+
+The count is collected in an `int`.
+
+To count a bi, tri or quad stream, use `count_bi()`, `count_tri()` or `count_quad()` respectively,
+because - unlike the other built-in collectors - they aren't overloaded methods due to generics erasure.
+
+
+[#collectorsCountDistinct]
+==== `countDistinct()` collector
+
+The `ConstraintCollectors.countDistinct(...)` counts any element per group once, regardless of how many times it
+occurs. For example, the following use of the collector gives a number of talks in each unique room.
+
+[tabs]
+====
+
+Python::
++
+[source,python,options="nowrap"]
+----
+def room_count(factory: ConstraintFactory) -> Constraint:
+    return (factory.for_each(Talk)
+                   .group_by(lambda talk: talk.room, ConstraintCollectors.count_distinct())
+                   .penalize(HardSoftScore.ONE_SOFT,
+                             lambda room, count:  ...)
+                   .as_constraint("roomCount")
+    )
+----
+====
+
+The distinct count is collected in an `int`.
+
+
+[#collectorsSum]
+==== `sum()` collector
+
+To sum the values of a particular property of all elements per group,
+use the `ConstraintCollectors.sum(...)` collector.
+The following code snippet first groups all visits by the vehicle that will be used,
+and sums up all the service durations using the `ConstraintCollectors.sum(...)` collector.
+
+[tabs]
+====
+
+Python::
++
+[source,python,options="nowrap"]
+----
+def total_service_duration(factory: ConstraintFactory) -> Constraint:
+    return (factory.for_each(Visit)
+                   .group_by(lambda visit: visit.vehicle, ConstraintCollector.sum(lambda visit.service_duration))
+                   .penalize(HardSoftScore.ONE_SOFT,
+                             lambda vehicle, total_service_duration: total_service_duration)
+                   .as_constraint("total_service_duration")
+    )
+----
+====
+
+The sum is collected in an `int`.
+
+[#collectorsAverage]
+==== `average()` collector
+
+To calculate the average of a particular property of all elements per group, use the `ConstraintCollectors.average(...)`
+collector.
+The following code snippet first groups all visits by the vehicle that will be used,
+and averages all the service durations using the `ConstraintCollectors.average(...)` collector.
+
+[tabs]
+====
+
+Python::
++
+[source,python,options="nowrap"]
+----
+def average_service_duration(factory: ConstraintFactory) -> Constraint:
+    return (factory.for_each(Visit)
+                   .group_by(lambda visit: visit.vehicle, ConstraintCollectors.average(lambda visit: visit.service_duration))
+                   .penalize(HardSoftScore.ONE_SOFT,
+                             lambda vehicle, average_service_duration: round(average_service_duration))
+                   .as_constraint("average_service_duration")
+    )
+----
+====
+
+The average is collected as a `float`, and the average of no elements is `None`.
+
+
+[#collectorsMinMax]
+==== `min()` and `max()` collectors
+
+To extract the minimum or maximum per group, use the `ConstraintCollectors.min(...)` and
+`ConstraintCollectors.max(...)` collectors respectively.
+
+These collectors operate on values of properties which are `Comparable` (such as `Integer`, `String` or `Duration`),
+although there are also variants of these collectors which allow you to provide your own `Comparator`.
+
+The following code snippet first groups all visits by the vehicle that will be used,
+and finds the maximum in the group using the `ConstraintCollectors.max(...)` collector.
+
+[tabs]
+====
+
+Python::
++
+[source,python,options="nowrap"]
+----
+def max_service_duration(factory: ConstraintFactory) -> Constraint:
+    return (factory.for_each(Visit)
+                   .group_by(lambda visit: visit.vehicle, ConstraintCollectors.max(lambda visit: visit.service_duration))
+                   .penalize(HardSoftScore.ONE_SOFT,
+                             lambda vehicle, max_service_duration: max_service_duration)
+                   .as_constraint("max_service_duration")
+    )
+----
+====
+
+[NOTE]
+====
+`Comparator` and `Comparable` implementations used with `min(...)` and `max(...)` constraint collectors are expected to
+be consistent with `\__eq__`.
+====
+
+
+[#collectorsCollection]
+==== `toList()`, `toSet()` and `toMap()` collectors
+
+To extract all elements per group into a collection, use the `ConstraintCollectors.toList(...)`.
+
+The following example retrieves all visits for a given vehicle in a `List`:
+
+[tabs]
+====
+
+Python::
++
+[source,python,options="nowrap"]
+----
+def vehicle_and_its_visits(factory: ConstraintFactory) -> Constraint:
+    return (factory.for_each(Visit)
+                   .group_by(lambda visit: visit.vehicle, ConstraintCollectors.to_list())
+                   .penalize(HardSoftScore.ONE_HARD,
+                             (vehicle, visitList) -> ...)
+                   .as_constraint("vehicle_and_its_visits")
+    )
+----
+====
+
+Variants of this collector:
+
+* `toList()` collects a `List` value.
+* `toSet()` collects a `Set` value.
+* `toSortedSet()` collects a `SortedSet` value.
+* `toMap()` collects a `Map` value.
+* `toSortedMap()` collects a `SortedMap` value.
+
+[NOTE]
+====
+The iteration order of elements in the resulting collection is not guaranteed to be stable,
+unless it is a sorted collector such as `toSortedSet` or `toSortedMap`.
+====
+
+[NOTE]
+====
+Collecting elements into a `Collection` negates benefits of
+xref:constraints-and-score/performance.adoc#incrementalScoreCalculationPerformance[incremental score calculation],
+as all operations on the resulting `Collection` will no longer be incremental.
+If performance is a concern, avoid these collectors.
+====
+
+
+[#collectorsConsecutive]
+==== Consecutive collectors
+
+Certain constraints, such as maximum consecutive working days for an employee
+or the number of matches played at home in a sports league,
+require ordering those shifts or matches in sequences and penalizing sequences exceeding a certain threshold.
+If those sequences can be of arbitrary length unknown at the time of writing the constraints,
+you can implement this pattern using the `ConstraintCollectors.toConsecutiveSequences(...)` collector:
+
+[tabs]
+====
+
+Python::
++
+[source,python,options="nowrap"]
+----
+def multiple_consecutive_home_matches(factory: ConstraintFactory) -> Constraint:
+    return (factory.for_each(Match)
+                   .group_by(lambda match,
+                             ConstraintCollectors.to_consecutive_sequences(lambda match: match.home_team, lambda match: match.round_id))
+                   .flatten_last(lambda chain: chain.getConsecutiveSequences())
+                   .filter(lambda team, matches: matches.getCount() >= MAX_CONSECUTIVE_MATCHES)
+                   .penalize(HardSoftScore.ONE_HARD, lambda team, matches: matches.getCount())
+                   .as_constraint("4 or more consecutive home matches")
+    )
+----
+====
+
+image::constraints-and-score/score-calculation/constraintStreamConsecutiveSequences.png[align="center"]
+
+Let's take a closer look at the crucial part of this constraint:
+
+[tabs]
+====
+
+Python::
++
+[source,python,options="nowrap"]
+----
+.group_by(lambda match,
+         ConstraintCollectors.to_consecutive_sequences(lambda match: match.home_team, lambda match: match.round_id))
+.flatten_last(lambda chain: chain.getConsecutiveSequences())
+.filter(lambda team, matches: matches.getCount() >= MAX_CONSECUTIVE_MATCHES)
+----
+====
+
+The `groupBy()` building block groups all matches by team,
+and for every such pair it creates a `SequenceChain` instance.
+The matches will be put into sequence by round date,
+and the round index will be used to identify consecutive sequences and breaks between them.
+Imagine the collector putting each match on a number line,
+where the number is the round day index of the match.
+
+The `SequenceChain` then has several useful methods to not only get the list of matches,
+but also to get any and all breaks between those matches.
+In this case, we are only interested in the sequences of matches themselves,
+and we use <<constraintStreamsFlattening,flattening>> to convert each to its own tuple.
+
+image::constraints-and-score/score-calculation/constraintStreamConsecutiveSequencesFlatten.png[align="center"]
+
+Finally, if a league requires that a team can play at most 5 consecutive matches (`MAX_CONSECUTIVE_MATCHES`) in home,
+and `matches` contains 6 matches, then the `weight` penalty will be `6`.
+If the number of consecutive matches is `4`,
+then the sequence is not violating the league requirement, and we can filter it out.
+
+[#collectorsConnectedRanges]
+==== Connected ranges collectors
+
+Certain constraints require tracking properties of connected ranges.
+For instance, to ensure equipment allocated to several timeslots across the same connected range is not allocated over its capacity.
+This can be achieved using the `ConstraintCollectors.toConnectedTemporalRanges(...)` or `ConstraintCollectors.toConnectedRanges(...)` (for non-temporal cases) collectors:
+
+[tabs]
+====
+
+Python::
++
+[source,python,options="nowrap"]
+----
+def do_not_over_assign_equipment(factory: ConstraintFactory) -> Constraint:
+    return (factory.for_each(Job)
+                   .group_by(lambda job: job.equipment,
+                            ConstraintCollectors.to_connected_temporal_ranges(
+                                lambda job: job.start_time,
+                                lambda job: job.end_time)
+                            )
+                   .flatten_last(lambda chain: chain.getConnectedRanges())
+                   .filter(lambda equipment, connected_range: connected_range.getMaximumOverlap() > equipment.capacity)
+                   .penalize(HardSoftScore.ONE_HARD, lambda equipment, connected_range: connected_range.getMaximumOverlap() - equipment.capacity)
+                   .as_constraint("Concurrent equipment usage over capacity")
+    )
+----
+====
+
+image::constraints-and-score/score-calculation/constraintStreamConnectedRanges.png[align="center"]
+
+Let's take a closer look at the crucial part of this constraint:
+
+[tabs]
+====
+
+Python::
++
+[source,python,options="nowrap"]
+----
+.group_by(lambda job: job.equipment,
+        ConstraintCollectors.to_connected_temporal_ranges(
+              lambda job: job.start_time,
+              lambda job: job.end_time
+        )
+)
+.flatten_last(lambda chain: chain.getConnectedRanges())
+.filter(lambda equipment, connected_range: connected_range.getMaximumOverlap() > equipment.capacity)
+----
+====
+
+The `groupBy()` building block groups all jobs by required equipment, and for every such pair it creates a `ConnectedRangeChain` instance.
+Any overlapping jobs will be put into the same `ConnectedRange` cluster.
+
+The `ConnectedRangeChain` then has several useful methods to not only get the list of resource usage, but also to get any and all gaps between resource usage.
+In this case, we are only interested in the resource usage, and we use <<constraintStreamsFlattening,flattening>> to convert each to its own tuple.
+
+Finally, we use <<constraintStreamsMappingTuples,mapping>> to calculate the violation amount for each concurrent usage.
+For example, if the equipment has a `capacity` of `3`, and the `maximumOverlap` of the `resource` is `5`, then `violationAmount` will be `2`.
+If the amount is `0`, then the equipment is not being used over its capacity and we can filter the tuple out.
+
+In case no temporal data is available, it's still possible to create connected ranges using the `ConstraintCollectors.toConnectedRanges(...)` collector.
+In this case the start and end of a range needs to be provided as well as a function to calculate the difference between the two.
+
+[tabs]
+====
+Python::
++
+[source,python,options="nowrap"]
+----
+.group_by(lambda job: job.equipment,
+          ConstraintCollectors.to_connected_ranges(
+                lambda job: job.start,
+                lambda job: job.end,
+                lambda a, b: b - a)  # Difference calculator
+)
+----
+====
+
+[#collectorsLoadBalance]
+==== Load balancing collectors
+
+Certain constraints require resource usage to be balanced across the solution.
+For example, employees should have a similar number of shifts.
+This can be achieved using the `ConstraintCollectors.loadBalance(...)` collector.
+
+For more, see xref:constraints-and-score/load-balancing-and-fairness.adoc#loadBalancingAndFairness[Load balancing and fairness].
+
+[#collectorsConditional]
+==== Conditional collectors
+
+The constraint collector framework enables you to create constraint collectors which will only collect in certain circumstances.
+This is achieved using the `ConstraintCollectors.conditionally(...)` constraint collector.
+
+This collector accepts a predicate, and another collector to which it will delegate if the predicate is true.
+The following example returns a count of long-running visits with assigned to a given vehicle,
+where the customer asked for evening delivery:
+
+[tabs]
+====
+
+Python::
++
+[source,python,options="nowrap"]
+----
+def visit_with_evening_delivery(factory: ConstraintFactory) -> Constraint:
+    return (factory.for_each(Visit)
+                   .group_by(lambda visit: visitt.vehicle,
+                             ConstraintCollectors.conditionally(lambda visit: visit.is_evening_delivery,
+                                                                ConstraintCollectors.count()
+                   ))
+                   .penalize(HardSoftScore.ONE_HARD,
+                             lambda vehicle, evening_delivery_count: ...)
+                   .as_constraint("visit_with_evening_delivery")
+    )
+----
+====
+
+This is useful in situations where multiple collectors are used and only some of them need to be restricted.
+If all of them needed to be restricted in the same way,
+then applying a <<constraintStreamsFilter,`filter()`>> before the grouping is preferable.
+
+
+[#collectorsComposition]
+==== Composing collectors
+
+The constraint collector framework enables you to create complex collectors utilizing simpler ones.
+This is achieved using the `ConstraintCollectors.compose(...)` constraint collector.
+
+This collector accepts 2 to 4 other constraint collectors,
+and a function to merge their results into one.
+The following example builds an <<collectorsAverage,`average()` constraint collector>>
+using the <<collectorsCount,`count` constraint collector>> and <<collectorsSum,`sum()` constraint collector>>:
+
+[tabs]
+====
+
+Python::
++
+[source,python,options="nowrap"]
+----
+from timefold.solver.score import ConstraintCollectors
+from typing import Callable, TypeVar
+
+A = TypeVar('A')
+
+def average(group_value_mapping: Callable[[A], int]):
+    return ConstraintCollectors.compose(
+               ConstraintCollectors.count(),
+               ConstraintCollectors.sum(group_value_mapping),
+               lambda count, total_sum: (
+                   total_sum / count
+                   if count > 0
+                   else None
+               )
+    )
+----
+====
+
+Similarly, the `compose()` collector enables you to work around the limitation of <<constraintStreamsCardinality,Constraint Stream cardinality>>
+and use as many as 4 collectors in your <<constraintStreamsGroupingAndCollectors,`groupBy()` statements>>:
+
+[tabs]
+====
+
+Python::
++
+[source,python,options="nowrap"]
+----
+from timefold.solver.score import ConstraintCollectors
+
+collector = ConstraintCollectors.compose(
+                ConstraintCollectors.count(),
+                ConstraintCollectors.min(),
+                ConstraintCollectors.max(),
+                lambda count, min_value, max_value: (count, min_value, max_value))
+----
+====
+
+Such a composite collector returns a `Triple` instance which allows you to access
+each of the sub collectors individually.
+
+[NOTE]
+====
+Timefold Solver does not provide any `Pair`, `Triple` or `Quadruple` implementation out of the box.
+====
+
+
+[#collectorsAdjusting]
+==== Adjusting results
+
+In some cases, you may want to adjust the result that a constraint collector produces.
+Consider the <<collectorsAverage,`average()` constraint collector>>:
+
+[source,python,options="nowrap"]
+----
+ConstraintCollectors.average(...)
+----
+
+This collector returns `double` values, which may not be suitable for your use case.
+For example, you may want to round the result to the nearest integer.
+To do this, you can use the `ConstraintCollectors.collectAndThen(...)` collector:
+
+[tabs]
+====
+
+Python::
++
+[source,python,options="nowrap"]
+----
+ConstraintCollectors.collect_and_then(
+    ConstraintCollectors.average(...),
+    lambda float_value: round(float_value))
+----
+====
+
+
+[#constraintStreamsConditionalPropagation]
+=== Conditional propagation
+
+Conditional propagation enables you to exclude constraint matches from the constraint stream based on the presence or
+absence of some other object.
+
+image::constraints-and-score/score-calculation/constraintStreamIfExists.png[align="center"]
+
+The following example penalizes vehicles which have at least one visit:
+
+[tabs]
+====
+
+Python::
++
+[source,python,options="nowrap"]
+----
+def deployed_vehicle(factory: ConstraintFactory) -> Constraint:
+    return (factory.for_each(Vehicle)
+                   .if_exists(Visit, Joiners.equal(lambda vehicle: vehicle, lambda visit: visit.vehicle))
+                   .penalize(HardSoftScore.ONE_SOFT,
+                             lambda vehicle: ...)
+                   .as_constraint("deployed_vehicle")
+    )
+----
+====
+
+Note the use of the `ifExists()` building block.
+On `UniConstraintStream`, the `ifExistsOther()` building block is also available which is useful in situations where the
+`forEach()` constraint match type is the same as the `ifExists()` type.
+
+Conversely, if the `ifNotExists()` building block is used (as well as the `ifNotExistsOther()` building block on
+`UniConstraintStream`) you can achieve the opposite effect:
+
+[tabs]
+====
+
+Python::
++
+[source,python,options="nowrap"]
+----
+def idle_vehicle(factory: ConstraintFactory) -> Constraint:
+    return (factory.for_each(Vehicle)
+                   .if_not_exists(Visit, Joiners.equal(lambda vehicle: vehicle, lambda visit: visit.vehicle))
+                   .penalize(HardSoftScore.ONE_SOFT,
+                             lambda vehicle: ...)
+                   .as_constraint("idle_vehicle")
+    )
+----
+====
+
+Here, only the vehicles without any visits are penalized.
+
+Also note the use of the `Joiner` class to limit the constraint matches.
+For a description of available joiners, see <<constraintStreamsJoin,joining>>.
+Conditional propagation operates much like joining,
+but it does not increase <<constraintStreamsCardinality,stream cardinality>>.
+Matches from these building blocks are not available further down the stream.
+
+[NOTE]
+====
+For performance reasons, using conditional propagation with the appropriate `Joiner` instance is preferable to joining.
+While using `join()` creates a cartesian product of the facts being joined, with conditional propagation, the resulting
+stream only has at most the original number of constraint matches in it.
+Joining should only be used in cases where the other fact is actually required for another operation further down
+the stream.
+====
+
+[#constraintStreamsMappingTuples]
+=== Mapping tuples
+
+Mapping enables you to transform each tuple in a constraint stream by applying a mapping function to it.
+The result of such mapping is another constraint stream of the mapped tuples.
+
+[tabs]
+====
+
+Python::
++
+[source,python,options="nowrap"]
+----
+def visits(factory: ConstraintFactory) -> Constraint:
+    return (factory.for_each(Visit)                # UniConstraintStream[Visit]
+                   .map(lambda visit: visit.name)  # UniConstraintStream[str]
+                   ...
+    )
+----
+====
+
+[NOTE]
+====
+In the example above, the mapping function produces duplicate tuples if two different ``Visit``s share a name.
+That is, such visit name appears in the resulting constraint stream twice.
+See <<constraintStreamsDealingWithDuplicateTuplesUsingDistinct,`distinct()`>> for how to deal with duplicate tuples.
+====
+
+Mapping can be used to transform streams of all cardinalities,
+and even between cardinalities.
+The following example maps a pair of `Visit` instances to a pair of their names:
+
+[tabs]
+====
+
+Python::
++
+[source,python,options="nowrap"]
+----
+def visits(factory: ConstraintFactory) -> Constraint:
+    return (factory.for_each_unique_pair(Visit)                             # BiConstraintStream[Visit, Visit]
+                   .map(lambda visit1, visit2: (visit1.name, visit2.name))  # UniConstraintStream[Tuple[str, str]]
+                   ...
+    )
+----
+====
+
+[#constraintStreamsDesigningMappingFunction]
+==== Designing the mapping function
+
+When designing the mapping function, follow these guidelines for optimal performance:
+
+* Keep the function pure.
+The mapping function should only depend on its input.
+That is, given the same input, it always returns the same output.
+* Keep the function bijective.
+No two input tuples should map to the same output tuple, or to tuples that are equal.
+Not following this recommendation creates a constraint stream with duplicate tuples,
+and may force you to use <<constraintStreamsDealingWithDuplicateTuplesUsingDistinct,`distinct()`>> later.
+* Use immutable data carriers.
+The tuples returned by the mapping function should be immutable and identified by their contents and nothing else.
+If two tuples carry objects which equal one another,
+those two tuples should likewise equal and preferably be the same instance.
+
+[#constraintStreamsDealingWithDuplicateTuplesUsingDistinct]
+==== Dealing with duplicate tuples using `distinct()`
+
+As a general rule, tuples in constraint streams are distinct.
+That is, no two tuples that equal one another.
+However, certain operations such as <<constraintStreamsMappingTuples,tuple mapping>> may produce constraint streams
+where that is not true.
+
+If a constraint stream produces duplicate tuples, you can use the `distinct()` building block
+to have the duplicate copies eliminated.
+
+[tabs]
+====
+
+Python::
++
+[source,python,options="nowrap"]
+----
+def visits(factory: ConstraintFactory) -> Constraint:
+    return (factory.for_each(Visit)                # UniConstraintStream[Visit]
+                   .map(lambda visit: visit.name)  # UniConstraintStream[str]
+                   .distinct()                     # The same, each name just once.
+                   ...
+    )
+----
+====
+
+[NOTE]
+====
+There is a performance cost to `distinct()`.
+For optimal performance, don't use constraint stream operations that produce duplicate tuples, to avoid the need to call `distinct()`.
+====
+
+[#constraintStreamsExpandingTuples]
+==== Expanding tuples
+
+Tuple expansion is a special case of <<constraintStreamsMappingTuples,tuple mapping>>
+which only increases stream cardinality and can not introduce duplicate tuples.
+It enables you to add extra facts to each tuple in a constraint stream by applying a mapping function to it.
+This is useful in situations where an expensive computations needs to be cached for use later in the stream.
+
+In the following example,
+the method `Talk.prevailingSpeakerUndesiredTimeslotTagCount()` internally iterates over collections to find overlapping tags
+and returns the number of such tags.
+It is expensive and it is called for each `Talk` in the stream,
+possibly being called many thousands of times per second.
+Importantly, it is first called to filter out talks that have zero overlap,
+and then again to penalize overlap on talks which suffer from it.
+
+[tabs]
+====
+
+Python::
++
+[source,python,options="nowrap"]
+----
+def speaker_undesired_timeslot_tags(factory: ConstraintFactory) -> Constraint:
+    return (factory.for_each(Talk)
+                   .filter(lambda talk: talk.prevailing_speaker_undesired_timeslot_tag_count() > 0)
+                   .penalize(HardSoftScore.ONE_SOFT, lambda talk: talk.prevailing_speaker_undesired_timeslot_tag_count() * talk.duration_in_minutes)
+                   .as_constraint(SPEAKER_UNDESIRED_TIMESLOT_TAGS)
+    )
+----
+====
+
+We can improve this by using tuple expansion to cache the result of the expensive computation,
+possibly significantly reducing the number of times it is called.
+
+[tabs]
+====
+
+Python::
++
+[source,python,options="nowrap"]
+----
+def speaker_undesired_timeslot_tags(factory: ConstraintFactory) -> Constraint:
+    return (factory.for_each(Talk)
+                   .expand(lambda talk: talk.prevailing_speaker_undesired_timeslot_tag_count())
+                   .filter(lambda talk, undesired_tag_count: -> undesired_tag_count > 0)
+                   .penalize(HardSoftScore.ONE_SOFT, lambda talk, undesired_tag_count: undesired_tag_count * talk.duration_in_minutes)
+                   .as_constraint(SPEAKER_UNDESIRED_TIMESLOT_TAGS)
+    )
+----
+====
+
+Once the tuple for a `Talk` has been created and passed through the filter,
+the expensive computation will not be reevaluated again unless the `Talk` itself changes.
+
+[NOTE]
+====
+There is a performance cost to `expand()`.
+Always check your solver's move evaluation speed to see if the cost is offset by the gains.
+====
+
+[#constraintStreamsFlattening]
+=== Flattening
+
+Flattening enables you to transform any  Python `Iterable` (such as `List` or `Set`)
+into a set of tuples, which are sent downstream.
+(Similar to Python's `itertools.chain(...)`.)
+This is done by applying a mapping function to the final element in the source tuple.
+
+[tabs]
+====
+
+Python::
++
+[source,python,options="nowrap"]
+----
+def required_job_roles(factory: ConstraintFactory) -> Constraint:
+    return (factory.for_each(Person)                                                      # UniConstraintStream[Person]
+                   .join(Job,
+                         Joiners.equal(lambda person: person, lambda job: job.assignee))  # BiConstraintStream[Person, Job]
+                   .flatten_last(lambda job: job.required_roles)                          # BiConstraintStream[Person, Role]
+                   .filter(lambda person, required_role: ...)
+                   ...
+    )
+----
+====
+
+[NOTE]
+====
+In the example above, the mapping function produces duplicate tuples
+if `Job.getRequiredRoles()` contains duplicate values.
+Assuming that the function returns `[USER, USER, ADMIN]`,
+the tuple `(SomePerson, USER)` is sent downstream twice.
+See <<constraintStreamsDealingWithDuplicateTuplesUsingDistinct,`distinct()`>> for how to deal with duplicate tuples.
+====
+
+[#constraintStreamsConcat]
+=== Concatenation
+
+The `concat` building block allows you to create a constraint stream containing tuples
+of two other constraint streams.
+If <<constraintStreamsJoin,join>> acts like a cartesian product of two lists,
+`concat` acts like a concatenation of two lists.
+Unlike union of sets, concatenation of lists repeats duplicated elements.
+If the two constraint concatenating streams share tuples, which happens eg.
+when they come from the same source of data,
+the tuples will be repeated downstream.
+If this is undesired, use the <<constraintStreamsDealingWithDuplicateTuplesUsingDistinct,`distinct` building block>>.
+
+image::constraints-and-score/score-calculation/constraintStreamConcat.png[align="center"]
+
+For example, to ensure each employee has a minimum number of assigned shifts:
+
+[tabs]
+====
+
+Python::
++
+[source,python,options="nowrap"]
+----
+def ensure_each_employee_has_at_least_two_shifts(factory: ConstraintFactory) -> Constraint:
+    return (factory.for_each(Employee)
+                   .join(Shift, Joiners.equal(lambda employee: employee, lambda shift: shift.employee))
+                   .concat(
+                           factory.for_each(Employee)
+                                  .if_not_exists(Shift, Joiners.equal(lambda employee: employee, lambda shift: shift.employee))
+                   )
+                   .group_by(lambda employee, shift: employee,
+                           ConstraintCollectors.conditionally(lambda employee, shift: shift is not None,
+                                                              ConstraintCollectors.count_bi())
+                   )
+                   .filter(lambda employee, shift_count:  shift_count < employee.minimum_assigned_shifts)
+                   .penalize(HardSoftScore.ONE_SOFT, lambda employee, shift_count: employee.minimum_assigned_shifts - shift_count)
+                   .as_constraint("Minimum number of assigned shifts")
+    )
+----
+====
+
+This correctly counts the number of shifts each Employee has, *even when the Employee has no shifts*.
+
+[NOTE]
+====
+<<constraintStreamsComplement>> shares many of the same use cases as `concat`, including the one above.
+====
+
+Consider the following naive implementation without `concat`:
+
+[tabs]
+====
+
+Python::
++
+[source,python,options="nowrap"]
+----
+def incorrect_ensure_each_employee_has_at_least_two_shifts(factory: ConstraintFactory) -> Constraint:
+    return (factory.for_each(Employee)
+                   .join(Shift, Joiners.equal(lambda employee: employee, lambda shift: shift.employee))
+                   .group_by(lambda employee, shift: employee,
+                             ConstraintCollectors.count_bi()
+                   )
+                   .filter(lambda employee, shift_count:  shift_count < employee.minimum_assigned_shifts)
+                   .penalize(HardSoftScore.ONE_SOFT, lambda employee, shift_count: employee.minimum_assigned_shifts - shift_count)
+                   .as_constraint("Minimum number of assigned shifts (incorrect)")
+    )
+----
+====
+
+An employee with no assigned shifts _wouldn't have been penalized_
+because no tuples were passed to the `groupBy` building block.
+
+[#constraintStreamsConcatPadding]
+==== Padding values
+
+Consider two constraint streams of different cardinalities, for instance:
+
+[tabs]
+====
+
+Python::
++
+[source,python,options="nowrap"]
+----
+# All employees.
+uni_stream = constraint_factory.for_each(Employee)
+# Employees with a count of their shifts; some employees may have no shifts, therefore are not included.
+bi_stream = (constraint_factory.for_each(Employee)
+                               .join(Shift, Joiners.equal(lambda employee: employee, lambda shift: shift.employee))
+                               .group_by(lambda employee, shift: employee, ConstraintCollectors.count_bi())
+)
+----
+====
+
+By default, when concatenating these streams,
+the stream of lower cardinality will be padded with `None` values:
+
+[tabs]
+====
+
+Python::
++
+[source,python,options="nowrap"]
+----
+# Employees from uni_stream will have None as their shift count.
+concat_stream = uni_stream.concat(bi_stream)
+----
+====
+
+Instead of using `None` default,
+you can specify a padding value to use when padding the lower cardinality stream:
+
+[tabs]
+====
+
+Python::
++
+[source,python,options="nowrap"]
+----
+# Employees from uni_stream will have a zero as their shift count.
+concat_stream = uni_stream.concat(bi_stream, lambda employee: 0)
+----
+====
+
+[#constraintStreamsComplement]
+=== Complementing a stream
+
+The <<constraintStreamsJoin,join building block>> provided by Constraint Streams is technically an inner join.
+This means only the matches that are present in both streams are considered.
+For example, if you have a stream of `Employee` instances and a stream of `Shift` instances,
+joining `Shift` instances with `Employee` instances will only return shifts that are assigned to an employee.
+Employees without shifts will not be considered.
+
+In cases such as xref:constraints-and-score/load-balancing-and-fairness.adoc#loadBalancingAndFairness[load balancing], a similar situation happens where the `Shift` instances only reference the `Employee` instances assigned to them.
+For a properly balanced solution, you also need to include `Employee` instances that are not assigned to any shifts.
+
+This is where you can use the `complement` block as shown in the following example:
+
+[tabs]
+====
+
+Python::
++
+[source,python,options="nowrap"]
+----
+(factory.for_each(Shift)
+        .group_by(lambda shift: shift.employee, ConstraintCollectors.count())
+        .complement(Employee, lambda employee: 0)
+        .group_by(ConstraintCollectors.load_balance(...))
+)
+----
+====
+
+After the <<constraintStreamsGroupingAndCollectors,`groupBy` building block>>,
+the stream contains only employees with at least one shift assigned,
+and each carries a count of shifts assigned.
+The type of the stream is `BiConstraintStream<Employee, Integer>`.
+
+To add all the `Employee` instances that do not have any shifts assigned,
+the `complement` building block is used.
+It looks at all the `Employee` instances already in the stream,
+and adds all known `Employee` instances that are not present to the stream.
+For each of them, it assigns a value of `0` as the number of shifts assigned to that employee.
+The type of the stream is still `BiConstraintStream<Employee, Integer>`.
+
+This stream now contains all `Employee` instances, both with and without shifts assigned,
+and can be passed to the <<collectorsLoadBalance,load balancing constraint collector>>,
+which will compute the unfairness metric.
+
+
+[#constraintStreamsTesting]
+== Testing a constraint stream
+
+We recommend that you test your constraints to ensure that they behave as expected.
+Constraint streams include the Constraint Verifier unit testing harness.
+To use it, first add a test scoped dependency to the `timefold-solver-test` JAR.
+
+[NOTE]
+====
+In Python, `timefold-solver-test` JAR is automatically included.
+====
+
+
+[#constraintStreamsTestingIsolatedConstraints]
+=== Testing constraints in isolation
+
+Consider the following constraint stream:
+
+[tabs]
+====
+
+Python::
++
+[source,python,options="nowrap"]
+----
+def vehicle_capacity(factory: ConstraintFactory) -> Constraint:
+    return (factory.for_each(Vehicle)
+                   .filter(lambda vehicle: vehicle.total_demand > vehicle.capacity)
+                   .penalize(HardSoftScore.ONE_HARD,
+                             lambda vehicle: vehicle.total_demand - vehicle.capacity)
+                   .as_constraint(VEHICLE_CAPACITY)
+    )
+----
+====
+
+The following example uses the Constraint Verifier API to create a simple unit test for the preceding constraint stream:
+
+[tabs]
+====
+
+Python::
++
+[source,python,options="nowrap"]
+----
+from timefold.solver.test import ConstraintVerifier
+from datetime import datetime, date, time, timedelta
+from .constraints import vehicle_routing_constraints, vehicle_capacity
+
+constraint_verifier = ConstraintVerifier.build(vehicle_routing_constraints, VehicleRoutePlan, Vehicle, Visit)
+
+TOMORROW = date.today() + timedelta(days=1)
+
+def test_vehicle_capacity():
+    tomorrow_07_00 = datetime.combine(TOMORROW, time(7, 0))
+    tomorrow_08_00 = datetime.combine(TOMORROW, time(8, 0))
+    tomorrow_10_00 = datetime.combine(TOMORROW, time(10, 0))
+
+    vehicleA = Vehicle("1", 100, LOCATION_1, tomorrow_07_00)
+    visit1 = Visit("2", "John", LOCATION_2, 80, tomorrow_08_00, tomorrow_10_00, timedelta(minutes=30))
+    vehicleA.visits.append(visit1)
+    visit2 = Visit("3", "Paul", LOCATION_3, 40, tomorrow_08_00, tomorrow_10_00, timedelta(minutes=30))
+    vehicleA.visits.append(visit2)
+
+    (constraint_verifier.verify_that(vehicle_capacity)
+                        .given(vehicleA, visit1, visit2)
+                        .penalizes_by(20))
+----
+====
+
+This test ensures that, if a vehicle capacity is exceeded, that the constraint penalizes accordingly.
+The following line creates a shared `ConstraintVerifier` instance and initializes the instance with the
+`VehicleRoutingConstraintProvider`:
+
+[tabs]
+====
+
+Python::
++
+[source,python,options="nowrap"]
+----
+constraint_verifier = ConstraintVerifier.build(vehicle_routing_constraints, VehicleRoutePlan, Vehicle, Visit)
+----
+====
+
+Constraint Verifier works with testing frameworks popular in your ecosystem, including PyTest.
+
+The first part of the test prepares the test data.
+In this case, the test data includes a vehicle and a visit:
+
+[tabs]
+====
+
+Python::
++
+[source,python,options="nowrap"]
+----
+    vehicleA = Vehicle("1", 100, LOCATION_1, tomorrow_07_00)
+    visit1 = Visit("2", "John", LOCATION_2, 80, tomorrow_08_00, tomorrow_10_00, timedelta(minutes=30))
+    vehicleA.visits.append(visit1)
+    visit2 = Visit("3", "Paul", LOCATION_3, 40, tomorrow_08_00, tomorrow_10_00, timedelta(minutes=30))
+    vehicleA.visits.append(visit2)
+----
+====
+
+Further down, the following code tests the constraint:
+
+[tabs]
+====
+
+Python::
++
+[source,python,options="nowrap"]
+----
+    (constraint_verifier.verify_that(vehicle_capacity)
+                        .given(vehicleA, visit1, visit2)
+                        .penalizes_by(20))
+----
+====
+
+The `verify_that(...)` call is used to specify a function which is being tested.
+
+The `given(...)` call is used to enumerate all the facts that the constraint stream operates on.
+In this case, the `given(...)` call takes the `vehicleA`, `visit1` and `visit2` instances previously created.
+Alternatively, you can use a `given_solution(...)` method here and provide a planning solution instead.
+
+It's important to understand
+that calling `given_solution(...)` does not update any xref:using-timefold-solver/modeling-planning-problems.adoc#shadowVariable[shadow variables].
+
+[NOTE]
+====
+You can also use methods `justifies_with(...)`, `justifies_with_exactly(...)`, `indicts_with(...)` and `indicts_with_exactly(...)`
+to validate the expected constraint justifications and indictments mapped by the constraint definition.
+====
+
+Finally, the `penalizes_by(...)` call completes the test,
+making sure that the given constraint under the given conditions penalizes by the `20`.
+This number is a product of multiplying the match weight, as defined in the constraint stream, by the number of matches.
+
+Alternatively, you can use a `rewards_with(...)` call to check for rewards instead of penalties.
+The method to use here depends on whether the constraint stream in question is terminated with a `penalize` or a
+`reward` building block.
+
+[NOTE]
+====
+`ConstraintVerifier` does not trigger variable listeners.
+It will neither set nor update shadow variables.
+If the tested constraints depend on shadow variables,
+it is your responsibility to assign the correct values beforehand.
+
+When executing `justifies_with(...)`, `justifies_with_exactly(...)`, `indicts_with(...)` and `indicts_with_exactly(...)`,
+comparisons are made using the standard method `equals` on the fact problem instances.
+====
+
+[#constraintStreamsTestingAllConstraints]
+=== Testing all constraints together
+
+In addition to testing individual constraints, you can test the entire `ConstraintProvider` instance.
+Consider the following test:
+
+[tabs]
+====
+
+Python::
++
+[source,python,options="nowrap"]
+----
+def test_given_facts_multiple_constraints():
+    tomorrow_07_00 = datetime.combine(TOMORROW, time(7, 0))
+    tomorrow_08_00 = datetime.combine(TOMORROW, time(8, 0))
+    tomorrow_10_00 = datetime.combine(TOMORROW, time(10, 0))
+
+    vehicleA = Vehicle("1", 100, LOCATION_1, tomorrow_07_00)
+    visit1 = Visit("2", "John", LOCATION_2, 80, tomorrow_08_00, tomorrow_10_00, timedelta(minutes=30))
+    vehicleA.visits.append(visit1)
+    visit2 = Visit("3", "Paul", LOCATION_3, 40, tomorrow_08_00, tomorrow_10_00, timedelta(minutes=30))
+    vehicleA.visits.append(visit2)
+
+    (constraint_verifier.verify_that()
+            .given(vehicleA, visit1, visit2)
+            .scores(HardSoftScore.of_soft(20)))
+----
+====
+
+There are only two notable differences to the previous example.
+
+- The `verifyThat()` call takes no argument here, signifying that the entire `ConstraintProvider` instance is
+being tested.
+(But for the sake of simplicity, we will assume it still only contains the one constraint we've seen previously.)
+- Instead of either a `penalizes_by()` or `rewards_with()` call, the `scores(...)` method is used.
+This runs the `ConstraintProvider` on the given facts and returns a sum of ``Score``s of all constraint matches resulting
+from the given facts.
+
+Using this method, you ensure that the constraint provider does not miss any constraints and that the scoring function
+remains consistent as your code base evolves.
+It is therefore necessary for the `given(...)` method to list all planning entities and problem facts,
+or provide the entire planning solution instead.
+
+To test all constraints while updating all xref:using-timefold-solver/modeling-planning-problems.adoc#shadowVariable[shadow variables],
+call `giveSolution(...)` and `settingAllShadowVariables()`.
+This approach ensures that the shadow variable listeners are triggered,
+and the constraints that depend on the related variables are evaluated accordingly.
+
+[tabs]
+====
+====
+
+[NOTE]
+====
+`ConstraintVerifier` does not trigger variable listeners.
+It will neither set nor update shadow variables.
+If the tested constraints depend on shadow variables,
+it is your responsibility to assign the correct values beforehand.
+====
+
+
+[#otherTypesOfScoreCalculation]
+== Other types of score calculation
+
+Timefold Solver supports two other types of score calculation.
+
+[#easyScoreCalculation]
+=== Easy score calculation
+
+An easy way to implement your score calculation as imperative code:
+
+* Advantages:
+** No learning curve; use the language you're already familiar with.
+** Opportunity to delegate score calculation to an existing code base or legacy system.
+** Useful for prototyping.
+* Disadvantages:
+** Slower, typically not suitable for production.
+** Does not scale because there is no xref:constraints-and-score/performance.adoc#incrementalScoreCalculationPerformance[incremental score calculation].
+** Can not xref:constraints-and-score/understanding-the-score.adoc[explain the score].
+
+To start using an Easy score calculator, implement the one method of the interface ``EasyScoreCalculator``:
+
+[tabs]
+====
+
+Python::
++
+[source,python,options="nowrap"]
+----
+from timefold.solver.score import easy_score_calculator, HardSoftScore
+
+@easy_score_calculator
+def my_easy_score_calculator(solution: Solution) -> HardSoftScore:
+    ...
+----
+====
+
+Configure it in the solver configuration:
+
+[source,xml,options="nowrap"]
+----
+  <scoreDirectorFactory>
+    <easyScoreCalculatorClass>...MyEasyScoreCalculator</easyScoreCalculatorClass>
+  </scoreDirectorFactory>
+----
+
+
+[#incrementalScoreCalculation]
+=== Incremental score calculation
+
+A way to implement your score calculation incrementally in a supported programming language.
+
+* Advantages:
+** Very fast and scalable; currently the fastest if implemented correctly.
+* Disadvantages:
+** Hard to write
+*** A scalable implementation heavily uses maps, indexes etc.
+You have to learn, design, write and improve all these performance optimizations yourself.
+Why not have <<constraintStreams,constraint streams>> do the hard work for you?
+** Hard to read
+*** Regular score constraint changes can lead to high maintenance costs.
+
+To start using an Incremental score calculator,
+implement all the methods of the interface `IncrementalScoreCalculator`:
+
+[tabs]
+====
+
+Python::
++
+[source,python,options="nowrap"]
+----
+class IncrementalScoreCalculator(ABC):
+    @abstractmethod
+    def after_entity_added(self, entity) -> None:
+        ...
+
+    @abstractmethod
+    def after_entity_removed(self, entity) -> None:
+        ...
+
+    @abstractmethod
+    def after_variable_changed(self, entity, variable_name: str) -> None:
+        ...
+
+    @abstractmethod
+    def before_entity_added(self, entity) -> None:
+        ...
+
+    @abstractmethod
+    def before_entity_removed(self, entity) -> None:
+        ...
+
+    @abstractmethod
+    def before_variable_changed(self, entity, variable_name: str) -> None:
+        ...
+
+    @abstractmethod
+    def calculate_score(self):
+        ...
+
+    @abstractmethod
+    def reset_working_solution(self, solution) -> None:
+        ...
+----
+====
+
+image::constraints-and-score/score-calculation/incrementalScoreCalculatorSequenceDiagram.png[align="center"]
+
+Configure it in the solver configuration:
+
+[source,xml,options="nowrap"]
+----
+  <scoreDirectorFactory>
+    <incrementalScoreCalculatorClass>...MyIncrementalScoreCalculator</incrementalScoreCalculatorClass>
+  </scoreDirectorFactory>
+----
+
+[IMPORTANT]
+====
+Incremental score calculator code can be difficult to write and to review.
+xref:constraints-and-score/overview.adoc#invalidScoreDetection[Assert its correctness] by using an ``EasyScoreCalculator`` to fulfill
+the assertions triggered by the ``environmentMode``.
+====

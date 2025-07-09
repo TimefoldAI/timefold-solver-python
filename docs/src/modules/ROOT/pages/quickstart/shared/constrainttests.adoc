@@ -1,0 +1,15 @@
+Then create the test itself:
+
+[tabs]
+====
+====
+
+This test verifies that the constraint `TimetableConstraintProvider::roomConflict`,
+when given three lessons in the same room, where two lessons have the same timeslot,
+it penalizes with a match weight of `1`.
+So with a constraint weight of `10hard` it would reduce the score by `-10hard`.
+
+Notice how `ConstraintVerifier` ignores the constraint weight during testing - even
+if those constraint weights are hard coded in the `ConstraintProvider` - because
+constraints weights change regularly before going into production.
+This way, constraint weight tweaking does not break the unit tests.

@@ -1,0 +1,28 @@
+[#quickStartOverview]
+= Overview
+:page-aliases: quickstart/quickstart.adoc, \
+    development/development.adoc, \
+    use-cases-and-examples/use-cases-and-examples.adoc, \
+    overview-quickstarts.adoc
+:imagesdir: ../..
+
+[TIP]
+====
+This documentation covers our Open Source solver to build a model from scratch.
+We also provide off-the-shelf models to solve common planning problems. https://docs.timefold.ai/[These can be found here.]
+====
+
+Each _quick start guide_ gets you up and running with Timefold Solver quickly.
+Pick one that aligns with your requirements:
+
+* xref:quickstart/hello-world/hello-world-quickstart.adoc#helloWorldQuickStart[*Hello World*]
+** Build a simple Python application that uses Timefold Solver to optimize a school timetable for students and teachers.
+
+All three quick starts use Timefold Solver to optimize a school timetable for student and teachers:
+
+IMPORTANT: The https://github.com/TimefoldAI/timefold-solver-python[Timefold Solver for Python's] repository contains the source code for all these guides and more.
+
+image::quickstart/school-timetabling/schoolTimetablingInputOutput.png[]
+
+For other use cases,
+take a look at https://github.com/TimefoldAI/timefold-solver-python[the quickstarts in Timefold Solver for Python's Github repository].
