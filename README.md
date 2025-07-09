@@ -3,16 +3,9 @@
 _Planning optimization made easy._  
 [timefold.ai](https://timefold.ai)
 
-[![GitHub Discussions](https://img.shields.io/github/discussions/TimefoldAI/timefold-solver?style=for-the-badge&logo=github)](https://github.com/TimefoldAI/timefold-solver/discussions)
 [![PyPI](https://img.shields.io/pypi/v/timefold?style=for-the-badge& "PyPI")](https://pypi.org/project/timefold/) 
 [![Python support](https://img.shields.io/badge/Python-3.10+-brightgreen.svg?style=for-the-badge)](https://www.python.org/downloads)
 [![License](https://img.shields.io/github/license/TimefoldAI/timefold-solver?style=for-the-badge&logo=apache)](https://www.apache.org/licenses/LICENSE-2.0)
-
-[![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=ai.timefold:timefold-solver&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=ai.timefold:timefold-solver)
-[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=ai.timefold:timefold-solver&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=ai.timefold:timefold-solver)
-[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=ai.timefold:timefold-solver&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=ai.timefold:timefold-solver)
-[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=ai.timefold:timefold-solver&metric=coverage)](https://sonarcloud.io/summary/new_code?id=ai.timefold:timefold-solver)
-
 
 Timefold Solver is an AI constraint solver you can use to optimize
 the Vehicle Routing Problem, Employee Rostering, Maintenance Scheduling, Task Assignment, School Timetabling,
@@ -27,7 +20,7 @@ than using [Timefold Solver for Java](https://github.com/TimefoldAI/timefold-sol
 
 ## Requirements
 
-- [Install Python 3.10 or later.](https://www.python.org)
+- [Install Python 3.10, 3.11 or 3.12.](https://www.python.org)
 - [Install JDK 17 or later](https://adoptium.net) with the environment variable `JAVA_HOME` configured to the JDK installation directory.
   For example, with [Sdkman](https://sdkman.io/):
   ```shell
