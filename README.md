@@ -16,7 +16,9 @@ than using [Timefold Solver for Java](https://github.com/TimefoldAI/timefold-sol
 
 ## Get started with Timefold Solver in Python
 
-* [Clone the Quickstarts repository](https://github.com/TimefoldAI/timefold-solver-python)
+* [Clone Timefold Solver for Python repository](https://github.com/TimefoldAI/timefold-solver-python): `git clone https://github.com/TimefoldAI/timefold-solver-python.git`
+
+* Navigate to the `quickstarts` directory and choose a quickstart: `cd timefold-solver-python/quickstarts/hello-world`
 
 ## Requirements
 
