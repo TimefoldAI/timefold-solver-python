@@ -1,2 +1,0 @@
-// Attributes derived from the maven build, typically versions, are defined in the pom.xml and antora-template.yml.
-:hello-world-python-quickstart-url: https://github.com/TimefoldAI/timefold-solver-python/tree/main/quickstarts/hello-world
