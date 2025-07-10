@@ -1,0 +1,1978 @@
+{
+  "people": [
+    {
+      "id": "0",
+      "fullName": "Flo Green"
+    },
+    {
+      "id": "1",
+      "fullName": "Jay Carr"
+    },
+    {
+      "id": "2",
+      "fullName": "Amy Smith"
+    },
+    {
+      "id": "3",
+      "fullName": "Jay Green"
+    },
+    {
+      "id": "4",
+      "fullName": "Avis Carr"
+    },
+    {
+      "id": "5",
+      "fullName": "Lino Howe"
+    },
+    {
+      "id": "6",
+      "fullName": "Lino Cole"
+    },
+    {
+      "id": "7",
+      "fullName": "Hugo Howe"
+    },
+    {
+      "id": "8",
+      "fullName": "Russ Wise"
+    },
+    {
+      "id": "9",
+      "fullName": "Hugo Jones"
+    },
+    {
+      "id": "10",
+      "fullName": "Dino Green"
+    },
+    {
+      "id": "11",
+      "fullName": "Lyle Poe"
+    },
+    {
+      "id": "12",
+      "fullName": "Nick Li"
+    },
+    {
+      "id": "13",
+      "fullName": "Josh Clay"
+    },
+    {
+      "id": "14",
+      "fullName": "Josh Smith"
+    },
+    {
+      "id": "15",
+      "fullName": "Flo Cole"
+    },
+    {
+      "id": "16",
+      "fullName": "Lino Green"
+    },
+    {
+      "id": "17",
+      "fullName": "Flo Poe"
+    },
+    {
+      "id": "18",
+      "fullName": "Josh Jones"
+    },
+    {
+      "id": "19",
+      "fullName": "Beth Horn"
+    }
+  ],
+  "timeGrains": [
+    {
+      "id": "1",
+      "grainIndex": 1,
+      "dayOfYear": 175,
+      "startingMinuteOfDay": 480
+    },
+    {
+      "id": "2",
+      "grainIndex": 2,
+      "dayOfYear": 175,
+      "startingMinuteOfDay": 495
+    },
+    {
+      "id": "3",
+      "grainIndex": 3,
+      "dayOfYear": 175,
+      "startingMinuteOfDay": 510
+    },
+    {
+      "id": "4",
+      "grainIndex": 4,
+      "dayOfYear": 175,
+      "startingMinuteOfDay": 525
+    },
+    {
+      "id": "5",
+      "grainIndex": 5,
+      "dayOfYear": 175,
+      "startingMinuteOfDay": 540
+    },
+    {
+      "id": "6",
+      "grainIndex": 6,
+      "dayOfYear": 175,
+      "startingMinuteOfDay": 555
+    },
+    {
+      "id": "7",
+      "grainIndex": 7,
+      "dayOfYear": 175,
+      "startingMinuteOfDay": 570
+    },
+    {
+      "id": "8",
+      "grainIndex": 8,
+      "dayOfYear": 175,
+      "startingMinuteOfDay": 585
+    },
+    {
+      "id": "9",
+      "grainIndex": 9,
+      "dayOfYear": 175,
+      "startingMinuteOfDay": 600
+    },
+    {
+      "id": "10",
+      "grainIndex": 10,
+      "dayOfYear": 175,
+      "startingMinuteOfDay": 615
+    },
+    {
+      "id": "11",
+      "grainIndex": 11,
+      "dayOfYear": 175,
+      "startingMinuteOfDay": 630
+    },
+    {
+      "id": "12",
+      "grainIndex": 12,
+      "dayOfYear": 175,
+      "startingMinuteOfDay": 645
+    },
+    {
+      "id": "13",
+      "grainIndex": 13,
+      "dayOfYear": 175,
+      "startingMinuteOfDay": 660
+    },
+    {
+      "id": "14",
+      "grainIndex": 14,
+      "dayOfYear": 175,
+      "startingMinuteOfDay": 675
+    },
+    {
+      "id": "15",
+      "grainIndex": 15,
+      "dayOfYear": 175,
+      "startingMinuteOfDay": 690
+    },
+    {
+      "id": "16",
+      "grainIndex": 16,
+      "dayOfYear": 175,
+      "startingMinuteOfDay": 705
+    },
+    {
+      "id": "17",
+      "grainIndex": 17,
+      "dayOfYear": 175,
+      "startingMinuteOfDay": 720
+    },
+    {
+      "id": "18",
+      "grainIndex": 18,
+      "dayOfYear": 175,
+      "startingMinuteOfDay": 735
+    },
+    {
+      "id": "19",
+      "grainIndex": 19,
+      "dayOfYear": 175,
+      "startingMinuteOfDay": 750
+    },
+    {
+      "id": "20",
+      "grainIndex": 20,
+      "dayOfYear": 175,
+      "startingMinuteOfDay": 765
+    },
+    {
+      "id": "21",
+      "grainIndex": 21,
+      "dayOfYear": 175,
+      "startingMinuteOfDay": 780
+    },
+    {
+      "id": "22",
+      "grainIndex": 22,
+      "dayOfYear": 175,
+      "startingMinuteOfDay": 795
+    },
+    {
+      "id": "23",
+      "grainIndex": 23,
+      "dayOfYear": 175,
+      "startingMinuteOfDay": 810
+    },
+    {
+      "id": "24",
+      "grainIndex": 24,
+      "dayOfYear": 175,
+      "startingMinuteOfDay": 825
+    },
+    {
+      "id": "25",
+      "grainIndex": 25,
+      "dayOfYear": 175,
+      "startingMinuteOfDay": 840
+    },
+    {
+      "id": "26",
+      "grainIndex": 26,
+      "dayOfYear": 175,
+      "startingMinuteOfDay": 855
+    },
+    {
+      "id": "27",
+      "grainIndex": 27,
+      "dayOfYear": 175,
+      "startingMinuteOfDay": 870
+    },
+    {
+      "id": "28",
+      "grainIndex": 28,
+      "dayOfYear": 175,
+      "startingMinuteOfDay": 885
+    },
+    {
+      "id": "29",
+      "grainIndex": 29,
+      "dayOfYear": 175,
+      "startingMinuteOfDay": 900
+    },
+    {
+      "id": "30",
+      "grainIndex": 30,
+      "dayOfYear": 175,
+      "startingMinuteOfDay": 915
+    },
+    {
+      "id": "31",
+      "grainIndex": 31,
+      "dayOfYear": 175,
+      "startingMinuteOfDay": 930
+    },
+    {
+      "id": "32",
+      "grainIndex": 32,
+      "dayOfYear": 175,
+      "startingMinuteOfDay": 945
+    },
+    {
+      "id": "33",
+      "grainIndex": 33,
+      "dayOfYear": 175,
+      "startingMinuteOfDay": 960
+    },
+    {
+      "id": "34",
+      "grainIndex": 34,
+      "dayOfYear": 175,
+      "startingMinuteOfDay": 975
+    },
+    {
+      "id": "35",
+      "grainIndex": 35,
+      "dayOfYear": 175,
+      "startingMinuteOfDay": 990
+    },
+    {
+      "id": "36",
+      "grainIndex": 36,
+      "dayOfYear": 175,
+      "startingMinuteOfDay": 1005
+    },
+    {
+      "id": "37",
+      "grainIndex": 37,
+      "dayOfYear": 175,
+      "startingMinuteOfDay": 1020
+    },
+    {
+      "id": "38",
+      "grainIndex": 38,
+      "dayOfYear": 175,
+      "startingMinuteOfDay": 1035
+    },
+    {
+      "id": "39",
+      "grainIndex": 39,
+      "dayOfYear": 175,
+      "startingMinuteOfDay": 1050
+    },
+    {
+      "id": "40",
+      "grainIndex": 40,
+      "dayOfYear": 175,
+      "startingMinuteOfDay": 1065
+    },
+    {
+      "id": "41",
+      "grainIndex": 41,
+      "dayOfYear": 176,
+      "startingMinuteOfDay": 480
+    },
+    {
+      "id": "42",
+      "grainIndex": 42,
+      "dayOfYear": 176,
+      "startingMinuteOfDay": 495
+    },
+    {
+      "id": "43",
+      "grainIndex": 43,
+      "dayOfYear": 176,
+      "startingMinuteOfDay": 510
+    },
+    {
+      "id": "44",
+      "grainIndex": 44,
+      "dayOfYear": 176,
+      "startingMinuteOfDay": 525
+    },
+    {
+      "id": "45",
+      "grainIndex": 45,
+      "dayOfYear": 176,
+      "startingMinuteOfDay": 540
+    },
+    {
+      "id": "46",
+      "grainIndex": 46,
+      "dayOfYear": 176,
+      "startingMinuteOfDay": 555
+    },
+    {
+      "id": "47",
+      "grainIndex": 47,
+      "dayOfYear": 176,
+      "startingMinuteOfDay": 570
+    },
+    {
+      "id": "48",
+      "grainIndex": 48,
+      "dayOfYear": 176,
+      "startingMinuteOfDay": 585
+    },
+    {
+      "id": "49",
+      "grainIndex": 49,
+      "dayOfYear": 176,
+      "startingMinuteOfDay": 600
+    },
+    {
+      "id": "50",
+      "grainIndex": 50,
+      "dayOfYear": 176,
+      "startingMinuteOfDay": 615
+    },
+    {
+      "id": "51",
+      "grainIndex": 51,
+      "dayOfYear": 176,
+      "startingMinuteOfDay": 630
+    },
+    {
+      "id": "52",
+      "grainIndex": 52,
+      "dayOfYear": 176,
+      "startingMinuteOfDay": 645
+    },
+    {
+      "id": "53",
+      "grainIndex": 53,
+      "dayOfYear": 176,
+      "startingMinuteOfDay": 660
+    },
+    {
+      "id": "54",
+      "grainIndex": 54,
+      "dayOfYear": 176,
+      "startingMinuteOfDay": 675
+    },
+    {
+      "id": "55",
+      "grainIndex": 55,
+      "dayOfYear": 176,
+      "startingMinuteOfDay": 690
+    },
+    {
+      "id": "56",
+      "grainIndex": 56,
+      "dayOfYear": 176,
+      "startingMinuteOfDay": 705
+    },
+    {
+      "id": "57",
+      "grainIndex": 57,
+      "dayOfYear": 176,
+      "startingMinuteOfDay": 720
+    },
+    {
+      "id": "58",
+      "grainIndex": 58,
+      "dayOfYear": 176,
+      "startingMinuteOfDay": 735
+    },
+    {
+      "id": "59",
+      "grainIndex": 59,
+      "dayOfYear": 176,
+      "startingMinuteOfDay": 750
+    },
+    {
+      "id": "60",
+      "grainIndex": 60,
+      "dayOfYear": 176,
+      "startingMinuteOfDay": 765
+    },
+    {
+      "id": "61",
+      "grainIndex": 61,
+      "dayOfYear": 176,
+      "startingMinuteOfDay": 780
+    },
+    {
+      "id": "62",
+      "grainIndex": 62,
+      "dayOfYear": 176,
+      "startingMinuteOfDay": 795
+    },
+    {
+      "id": "63",
+      "grainIndex": 63,
+      "dayOfYear": 176,
+      "startingMinuteOfDay": 810
+    },
+    {
+      "id": "64",
+      "grainIndex": 64,
+      "dayOfYear": 176,
+      "startingMinuteOfDay": 825
+    },
+    {
+      "id": "65",
+      "grainIndex": 65,
+      "dayOfYear": 176,
+      "startingMinuteOfDay": 840
+    },
+    {
+      "id": "66",
+      "grainIndex": 66,
+      "dayOfYear": 176,
+      "startingMinuteOfDay": 855
+    },
+    {
+      "id": "67",
+      "grainIndex": 67,
+      "dayOfYear": 176,
+      "startingMinuteOfDay": 870
+    },
+    {
+      "id": "68",
+      "grainIndex": 68,
+      "dayOfYear": 176,
+      "startingMinuteOfDay": 885
+    },
+    {
+      "id": "69",
+      "grainIndex": 69,
+      "dayOfYear": 176,
+      "startingMinuteOfDay": 900
+    },
+    {
+      "id": "70",
+      "grainIndex": 70,
+      "dayOfYear": 176,
+      "startingMinuteOfDay": 915
+    },
+    {
+      "id": "71",
+      "grainIndex": 71,
+      "dayOfYear": 176,
+      "startingMinuteOfDay": 930
+    },
+    {
+      "id": "72",
+      "grainIndex": 72,
+      "dayOfYear": 176,
+      "startingMinuteOfDay": 945
+    },
+    {
+      "id": "73",
+      "grainIndex": 73,
+      "dayOfYear": 176,
+      "startingMinuteOfDay": 960
+    },
+    {
+      "id": "74",
+      "grainIndex": 74,
+      "dayOfYear": 176,
+      "startingMinuteOfDay": 975
+    },
+    {
+      "id": "75",
+      "grainIndex": 75,
+      "dayOfYear": 176,
+      "startingMinuteOfDay": 990
+    },
+    {
+      "id": "76",
+      "grainIndex": 76,
+      "dayOfYear": 176,
+      "startingMinuteOfDay": 1005
+    },
+    {
+      "id": "77",
+      "grainIndex": 77,
+      "dayOfYear": 176,
+      "startingMinuteOfDay": 1020
+    },
+    {
+      "id": "78",
+      "grainIndex": 78,
+      "dayOfYear": 176,
+      "startingMinuteOfDay": 1035
+    },
+    {
+      "id": "79",
+      "grainIndex": 79,
+      "dayOfYear": 176,
+      "startingMinuteOfDay": 1050
+    },
+    {
+      "id": "80",
+      "grainIndex": 80,
+      "dayOfYear": 176,
+      "startingMinuteOfDay": 1065
+    },
+    {
+      "id": "81",
+      "grainIndex": 81,
+      "dayOfYear": 177,
+      "startingMinuteOfDay": 480
+    },
+    {
+      "id": "82",
+      "grainIndex": 82,
+      "dayOfYear": 177,
+      "startingMinuteOfDay": 495
+    },
+    {
+      "id": "83",
+      "grainIndex": 83,
+      "dayOfYear": 177,
+      "startingMinuteOfDay": 510
+    },
+    {
+      "id": "84",
+      "grainIndex": 84,
+      "dayOfYear": 177,
+      "startingMinuteOfDay": 525
+    },
+    {
+      "id": "85",
+      "grainIndex": 85,
+      "dayOfYear": 177,
+      "startingMinuteOfDay": 540
+    },
+    {
+      "id": "86",
+      "grainIndex": 86,
+      "dayOfYear": 177,
+      "startingMinuteOfDay": 555
+    },
+    {
+      "id": "87",
+      "grainIndex": 87,
+      "dayOfYear": 177,
+      "startingMinuteOfDay": 570
+    },
+    {
+      "id": "88",
+      "grainIndex": 88,
+      "dayOfYear": 177,
+      "startingMinuteOfDay": 585
+    },
+    {
+      "id": "89",
+      "grainIndex": 89,
+      "dayOfYear": 177,
+      "startingMinuteOfDay": 600
+    },
+    {
+      "id": "90",
+      "grainIndex": 90,
+      "dayOfYear": 177,
+      "startingMinuteOfDay": 615
+    },
+    {
+      "id": "91",
+      "grainIndex": 91,
+      "dayOfYear": 177,
+      "startingMinuteOfDay": 630
+    },
+    {
+      "id": "92",
+      "grainIndex": 92,
+      "dayOfYear": 177,
+      "startingMinuteOfDay": 645
+    },
+    {
+      "id": "93",
+      "grainIndex": 93,
+      "dayOfYear": 177,
+      "startingMinuteOfDay": 660
+    },
+    {
+      "id": "94",
+      "grainIndex": 94,
+      "dayOfYear": 177,
+      "startingMinuteOfDay": 675
+    },
+    {
+      "id": "95",
+      "grainIndex": 95,
+      "dayOfYear": 177,
+      "startingMinuteOfDay": 690
+    },
+    {
+      "id": "96",
+      "grainIndex": 96,
+      "dayOfYear": 177,
+      "startingMinuteOfDay": 705
+    },
+    {
+      "id": "97",
+      "grainIndex": 97,
+      "dayOfYear": 177,
+      "startingMinuteOfDay": 720
+    },
+    {
+      "id": "98",
+      "grainIndex": 98,
+      "dayOfYear": 177,
+      "startingMinuteOfDay": 735
+    },
+    {
+      "id": "99",
+      "grainIndex": 99,
+      "dayOfYear": 177,
+      "startingMinuteOfDay": 750
+    },
+    {
+      "id": "100",
+      "grainIndex": 100,
+      "dayOfYear": 177,
+      "startingMinuteOfDay": 765
+    },
+    {
+      "id": "101",
+      "grainIndex": 101,
+      "dayOfYear": 177,
+      "startingMinuteOfDay": 780
+    },
+    {
+      "id": "102",
+      "grainIndex": 102,
+      "dayOfYear": 177,
+      "startingMinuteOfDay": 795
+    },
+    {
+      "id": "103",
+      "grainIndex": 103,
+      "dayOfYear": 177,
+      "startingMinuteOfDay": 810
+    },
+    {
+      "id": "104",
+      "grainIndex": 104,
+      "dayOfYear": 177,
+      "startingMinuteOfDay": 825
+    },
+    {
+      "id": "105",
+      "grainIndex": 105,
+      "dayOfYear": 177,
+      "startingMinuteOfDay": 840
+    },
+    {
+      "id": "106",
+      "grainIndex": 106,
+      "dayOfYear": 177,
+      "startingMinuteOfDay": 855
+    },
+    {
+      "id": "107",
+      "grainIndex": 107,
+      "dayOfYear": 177,
+      "startingMinuteOfDay": 870
+    },
+    {
+      "id": "108",
+      "grainIndex": 108,
+      "dayOfYear": 177,
+      "startingMinuteOfDay": 885
+    },
+    {
+      "id": "109",
+      "grainIndex": 109,
+      "dayOfYear": 177,
+      "startingMinuteOfDay": 900
+    },
+    {
+      "id": "110",
+      "grainIndex": 110,
+      "dayOfYear": 177,
+      "startingMinuteOfDay": 915
+    },
+    {
+      "id": "111",
+      "grainIndex": 111,
+      "dayOfYear": 177,
+      "startingMinuteOfDay": 930
+    },
+    {
+      "id": "112",
+      "grainIndex": 112,
+      "dayOfYear": 177,
+      "startingMinuteOfDay": 945
+    },
+    {
+      "id": "113",
+      "grainIndex": 113,
+      "dayOfYear": 177,
+      "startingMinuteOfDay": 960
+    },
+    {
+      "id": "114",
+      "grainIndex": 114,
+      "dayOfYear": 177,
+      "startingMinuteOfDay": 975
+    },
+    {
+      "id": "115",
+      "grainIndex": 115,
+      "dayOfYear": 177,
+      "startingMinuteOfDay": 990
+    },
+    {
+      "id": "116",
+      "grainIndex": 116,
+      "dayOfYear": 177,
+      "startingMinuteOfDay": 1005
+    },
+    {
+      "id": "117",
+      "grainIndex": 117,
+      "dayOfYear": 177,
+      "startingMinuteOfDay": 1020
+    },
+    {
+      "id": "118",
+      "grainIndex": 118,
+      "dayOfYear": 177,
+      "startingMinuteOfDay": 1035
+    },
+    {
+      "id": "119",
+      "grainIndex": 119,
+      "dayOfYear": 177,
+      "startingMinuteOfDay": 1050
+    },
+    {
+      "id": "120",
+      "grainIndex": 120,
+      "dayOfYear": 177,
+      "startingMinuteOfDay": 1065
+    },
+    {
+      "id": "121",
+      "grainIndex": 121,
+      "dayOfYear": 178,
+      "startingMinuteOfDay": 480
+    },
+    {
+      "id": "122",
+      "grainIndex": 122,
+      "dayOfYear": 178,
+      "startingMinuteOfDay": 495
+    },
+    {
+      "id": "123",
+      "grainIndex": 123,
+      "dayOfYear": 178,
+      "startingMinuteOfDay": 510
+    },
+    {
+      "id": "124",
+      "grainIndex": 124,
+      "dayOfYear": 178,
+      "startingMinuteOfDay": 525
+    },
+    {
+      "id": "125",
+      "grainIndex": 125,
+      "dayOfYear": 178,
+      "startingMinuteOfDay": 540
+    },
+    {
+      "id": "126",
+      "grainIndex": 126,
+      "dayOfYear": 178,
+      "startingMinuteOfDay": 555
+    },
+    {
+      "id": "127",
+      "grainIndex": 127,
+      "dayOfYear": 178,
+      "startingMinuteOfDay": 570
+    },
+    {
+      "id": "128",
+      "grainIndex": 128,
+      "dayOfYear": 178,
+      "startingMinuteOfDay": 585
+    },
+    {
+      "id": "129",
+      "grainIndex": 129,
+      "dayOfYear": 178,
+      "startingMinuteOfDay": 600
+    },
+    {
+      "id": "130",
+      "grainIndex": 130,
+      "dayOfYear": 178,
+      "startingMinuteOfDay": 615
+    },
+    {
+      "id": "131",
+      "grainIndex": 131,
+      "dayOfYear": 178,
+      "startingMinuteOfDay": 630
+    },
+    {
+      "id": "132",
+      "grainIndex": 132,
+      "dayOfYear": 178,
+      "startingMinuteOfDay": 645
+    },
+    {
+      "id": "133",
+      "grainIndex": 133,
+      "dayOfYear": 178,
+      "startingMinuteOfDay": 660
+    },
+    {
+      "id": "134",
+      "grainIndex": 134,
+      "dayOfYear": 178,
+      "startingMinuteOfDay": 675
+    },
+    {
+      "id": "135",
+      "grainIndex": 135,
+      "dayOfYear": 178,
+      "startingMinuteOfDay": 690
+    },
+    {
+      "id": "136",
+      "grainIndex": 136,
+      "dayOfYear": 178,
+      "startingMinuteOfDay": 705
+    },
+    {
+      "id": "137",
+      "grainIndex": 137,
+      "dayOfYear": 178,
+      "startingMinuteOfDay": 720
+    },
+    {
+      "id": "138",
+      "grainIndex": 138,
+      "dayOfYear": 178,
+      "startingMinuteOfDay": 735
+    },
+    {
+      "id": "139",
+      "grainIndex": 139,
+      "dayOfYear": 178,
+      "startingMinuteOfDay": 750
+    },
+    {
+      "id": "140",
+      "grainIndex": 140,
+      "dayOfYear": 178,
+      "startingMinuteOfDay": 765
+    },
+    {
+      "id": "141",
+      "grainIndex": 141,
+      "dayOfYear": 178,
+      "startingMinuteOfDay": 780
+    },
+    {
+      "id": "142",
+      "grainIndex": 142,
+      "dayOfYear": 178,
+      "startingMinuteOfDay": 795
+    },
+    {
+      "id": "143",
+      "grainIndex": 143,
+      "dayOfYear": 178,
+      "startingMinuteOfDay": 810
+    },
+    {
+      "id": "144",
+      "grainIndex": 144,
+      "dayOfYear": 178,
+      "startingMinuteOfDay": 825
+    },
+    {
+      "id": "145",
+      "grainIndex": 145,
+      "dayOfYear": 178,
+      "startingMinuteOfDay": 840
+    },
+    {
+      "id": "146",
+      "grainIndex": 146,
+      "dayOfYear": 178,
+      "startingMinuteOfDay": 855
+    },
+    {
+      "id": "147",
+      "grainIndex": 147,
+      "dayOfYear": 178,
+      "startingMinuteOfDay": 870
+    },
+    {
+      "id": "148",
+      "grainIndex": 148,
+      "dayOfYear": 178,
+      "startingMinuteOfDay": 885
+    },
+    {
+      "id": "149",
+      "grainIndex": 149,
+      "dayOfYear": 178,
+      "startingMinuteOfDay": 900
+    },
+    {
+      "id": "150",
+      "grainIndex": 150,
+      "dayOfYear": 178,
+      "startingMinuteOfDay": 915
+    },
+    {
+      "id": "151",
+      "grainIndex": 151,
+      "dayOfYear": 178,
+      "startingMinuteOfDay": 930
+    },
+    {
+      "id": "152",
+      "grainIndex": 152,
+      "dayOfYear": 178,
+      "startingMinuteOfDay": 945
+    },
+    {
+      "id": "153",
+      "grainIndex": 153,
+      "dayOfYear": 178,
+      "startingMinuteOfDay": 960
+    },
+    {
+      "id": "154",
+      "grainIndex": 154,
+      "dayOfYear": 178,
+      "startingMinuteOfDay": 975
+    },
+    {
+      "id": "155",
+      "grainIndex": 155,
+      "dayOfYear": 178,
+      "startingMinuteOfDay": 990
+    },
+    {
+      "id": "156",
+      "grainIndex": 156,
+      "dayOfYear": 178,
+      "startingMinuteOfDay": 1005
+    },
+    {
+      "id": "157",
+      "grainIndex": 157,
+      "dayOfYear": 178,
+      "startingMinuteOfDay": 1020
+    },
+    {
+      "id": "158",
+      "grainIndex": 158,
+      "dayOfYear": 178,
+      "startingMinuteOfDay": 1035
+    },
+    {
+      "id": "159",
+      "grainIndex": 159,
+      "dayOfYear": 178,
+      "startingMinuteOfDay": 1050
+    },
+    {
+      "id": "160",
+      "grainIndex": 160,
+      "dayOfYear": 178,
+      "startingMinuteOfDay": 1065
+    }
+  ],
+  "rooms": [
+    {
+      "id": "R1",
+      "name": "Room 1",
+      "capacity": 30
+    },
+    {
+      "id": "R2",
+      "name": "Room 2",
+      "capacity": 20
+    },
+    {
+      "id": "R3",
+      "name": "Room 3",
+      "capacity": 16
+    }
+  ],
+  "meetings": [
+    {
+      "id": "0",
+      "topic": "Strategize B2B",
+      "speakers": [],
+      "content": "",
+      "entireGroupMeeting": false,
+      "durationInGrains": 8,
+      "requiredAttendances": [
+        {
+          "id": "0-1",
+          "person": "14",
+          "meeting": "0"
+        },
+        {
+          "id": "0-2",
+          "person": "19",
+          "meeting": "0"
+        }
+      ],
+      "preferredAttendances": []
+    },
+    {
+      "id": "1",
+      "topic": "Fast track e-business",
+      "speakers": [],
+      "content": "",
+      "entireGroupMeeting": false,
+      "durationInGrains": 16,
+      "requiredAttendances": [
+        {
+          "id": "1-1",
+          "person": "15",
+          "meeting": "1"
+        },
+        {
+          "id": "1-2",
+          "person": "17",
+          "meeting": "1"
+        },
+        {
+          "id": "1-3",
+          "person": "16",
+          "meeting": "1"
+        },
+        {
+          "id": "1-4",
+          "person": "6",
+          "meeting": "1"
+        },
+        {
+          "id": "1-5",
+          "person": "4",
+          "meeting": "1"
+        },
+        {
+          "id": "1-6",
+          "person": "11",
+          "meeting": "1"
+        },
+        {
+          "id": "1-7",
+          "person": "10",
+          "meeting": "1"
+        }
+      ],
+      "preferredAttendances": [
+        {
+          "id": "1-8",
+          "person": "3",
+          "meeting": "1"
+        },
+        {
+          "id": "1-9",
+          "person": "8",
+          "meeting": "1"
+        },
+        {
+          "id": "1-10",
+          "person": "1",
+          "meeting": "1"
+        }
+      ]
+    },
+    {
+      "id": "2",
+      "topic": "Cross sell virtualization",
+      "speakers": [],
+      "content": "",
+      "entireGroupMeeting": false,
+      "durationInGrains": 8,
+      "requiredAttendances": [
+        {
+          "id": "2-1",
+          "person": "3",
+          "meeting": "2"
+        },
+        {
+          "id": "2-2",
+          "person": "2",
+          "meeting": "2"
+        },
+        {
+          "id": "2-3",
+          "person": "15",
+          "meeting": "2"
+        },
+        {
+          "id": "2-4",
+          "person": "8",
+          "meeting": "2"
+        },
+        {
+          "id": "2-5",
+          "person": "1",
+          "meeting": "2"
+        }
+      ],
+      "preferredAttendances": []
+    },
+    {
+      "id": "3",
+      "topic": "Profitize multitasking",
+      "speakers": [],
+      "content": "",
+      "entireGroupMeeting": false,
+      "durationInGrains": 16,
+      "requiredAttendances": [
+        {
+          "id": "3-1",
+          "person": "0",
+          "meeting": "3"
+        },
+        {
+          "id": "3-2",
+          "person": "18",
+          "meeting": "3"
+        }
+      ],
+      "preferredAttendances": [
+        {
+          "id": "3-3",
+          "person": "12",
+          "meeting": "3"
+        },
+        {
+          "id": "3-4",
+          "person": "19",
+          "meeting": "3"
+        }
+      ]
+    },
+    {
+      "id": "4",
+      "topic": "Transform one stop shop",
+      "speakers": [],
+      "content": "",
+      "entireGroupMeeting": false,
+      "durationInGrains": 12,
+      "requiredAttendances": [
+        {
+          "id": "4-1",
+          "person": "19",
+          "meeting": "4"
+        },
+        {
+          "id": "4-2",
+          "person": "18",
+          "meeting": "4"
+        },
+        {
+          "id": "4-3",
+          "person": "11",
+          "meeting": "4"
+        },
+        {
+          "id": "4-4",
+          "person": "0",
+          "meeting": "4"
+        },
+        {
+          "id": "4-5",
+          "person": "9",
+          "meeting": "4"
+        },
+        {
+          "id": "4-6",
+          "person": "17",
+          "meeting": "4"
+        }
+      ],
+      "preferredAttendances": []
+    },
+    {
+      "id": "5",
+      "topic": "Engage braindumps",
+      "speakers": [],
+      "content": "",
+      "entireGroupMeeting": false,
+      "durationInGrains": 12,
+      "requiredAttendances": [],
+      "preferredAttendances": []
+    },
+    {
+      "id": "6",
+      "topic": "Downsize data mining",
+      "speakers": [],
+      "content": "",
+      "entireGroupMeeting": false,
+      "durationInGrains": 8,
+      "requiredAttendances": [
+        {
+          "id": "6-1",
+          "person": "15",
+          "meeting": "6"
+        },
+        {
+          "id": "6-2",
+          "person": "4",
+          "meeting": "6"
+        }
+      ],
+      "preferredAttendances": [
+        {
+          "id": "6-3",
+          "person": "6",
+          "meeting": "6"
+        },
+        {
+          "id": "6-4",
+          "person": "14",
+          "meeting": "6"
+        },
+        {
+          "id": "6-5",
+          "person": "16",
+          "meeting": "6"
+        }
+      ]
+    },
+    {
+      "id": "7",
+      "topic": "Ramp up policies",
+      "speakers": [],
+      "content": "",
+      "entireGroupMeeting": false,
+      "durationInGrains": 16,
+      "requiredAttendances": [
+        {
+          "id": "7-1",
+          "person": "0",
+          "meeting": "7"
+        },
+        {
+          "id": "7-2",
+          "person": "14",
+          "meeting": "7"
+        },
+        {
+          "id": "7-3",
+          "person": "7",
+          "meeting": "7"
+        },
+        {
+          "id": "7-4",
+          "person": "3",
+          "meeting": "7"
+        },
+        {
+          "id": "7-5",
+          "person": "6",
+          "meeting": "7"
+        },
+        {
+          "id": "7-6",
+          "person": "12",
+          "meeting": "7"
+        },
+        {
+          "id": "7-7",
+          "person": "4",
+          "meeting": "7"
+        },
+        {
+          "id": "7-8",
+          "person": "18",
+          "meeting": "7"
+        }
+      ],
+      "preferredAttendances": []
+    },
+    {
+      "id": "8",
+      "topic": "On board synergies",
+      "speakers": [],
+      "content": "",
+      "entireGroupMeeting": false,
+      "durationInGrains": 12,
+      "requiredAttendances": [],
+      "preferredAttendances": [
+        {
+          "id": "8-1",
+          "person": "1",
+          "meeting": "8"
+        },
+        {
+          "id": "8-2",
+          "person": "2",
+          "meeting": "8"
+        },
+        {
+          "id": "8-3",
+          "person": "6",
+          "meeting": "8"
+        },
+        {
+          "id": "8-4",
+          "person": "18",
+          "meeting": "8"
+        }
+      ]
+    },
+    {
+      "id": "9",
+      "topic": "Reinvigorate user experience",
+      "speakers": [],
+      "content": "",
+      "entireGroupMeeting": false,
+      "durationInGrains": 16,
+      "requiredAttendances": [],
+      "preferredAttendances": [
+        {
+          "id": "9-1",
+          "person": "14",
+          "meeting": "9"
+        },
+        {
+          "id": "9-2",
+          "person": "9",
+          "meeting": "9"
+        },
+        {
+          "id": "9-3",
+          "person": "18",
+          "meeting": "9"
+        }
+      ]
+    },
+    {
+      "id": "10",
+      "topic": "Strategize e-business",
+      "speakers": [],
+      "content": "",
+      "entireGroupMeeting": false,
+      "durationInGrains": 16,
+      "requiredAttendances": [],
+      "preferredAttendances": [
+        {
+          "id": "10-1",
+          "person": "17",
+          "meeting": "10"
+        },
+        {
+          "id": "10-2",
+          "person": "13",
+          "meeting": "10"
+        }
+      ]
+    },
+    {
+      "id": "11",
+      "topic": "Fast track virtualization",
+      "speakers": [],
+      "content": "",
+      "entireGroupMeeting": false,
+      "durationInGrains": 12,
+      "requiredAttendances": [],
+      "preferredAttendances": [
+        {
+          "id": "11-1",
+          "person": "15",
+          "meeting": "11"
+        },
+        {
+          "id": "11-2",
+          "person": "6",
+          "meeting": "11"
+        },
+        {
+          "id": "11-3",
+          "person": "2",
+          "meeting": "11"
+        },
+        {
+          "id": "11-4",
+          "person": "9",
+          "meeting": "11"
+        },
+        {
+          "id": "11-5",
+          "person": "7",
+          "meeting": "11"
+        },
+        {
+          "id": "11-6",
+          "person": "8",
+          "meeting": "11"
+        },
+        {
+          "id": "11-7",
+          "person": "11",
+          "meeting": "11"
+        },
+        {
+          "id": "11-8",
+          "person": "0",
+          "meeting": "11"
+        },
+        {
+          "id": "11-9",
+          "person": "13",
+          "meeting": "11"
+        }
+      ]
+    },
+    {
+      "id": "12",
+      "topic": "Cross sell multitasking",
+      "speakers": [],
+      "content": "",
+      "entireGroupMeeting": false,
+      "durationInGrains": 16,
+      "requiredAttendances": [
+        {
+          "id": "12-1",
+          "person": "12",
+          "meeting": "12"
+        },
+        {
+          "id": "12-2",
+          "person": "11",
+          "meeting": "12"
+        }
+      ],
+      "preferredAttendances": [
+        {
+          "id": "12-3",
+          "person": "9",
+          "meeting": "12"
+        },
+        {
+          "id": "12-4",
+          "person": "2",
+          "meeting": "12"
+        }
+      ]
+    },
+    {
+      "id": "13",
+      "topic": "Profitize one stop shop",
+      "speakers": [],
+      "content": "",
+      "entireGroupMeeting": false,
+      "durationInGrains": 12,
+      "requiredAttendances": [],
+      "preferredAttendances": [
+        {
+          "id": "13-1",
+          "person": "16",
+          "meeting": "13"
+        },
+        {
+          "id": "13-2",
+          "person": "0",
+          "meeting": "13"
+        }
+      ]
+    },
+    {
+      "id": "14",
+      "topic": "Transform braindumps",
+      "speakers": [],
+      "content": "",
+      "entireGroupMeeting": false,
+      "durationInGrains": 16,
+      "requiredAttendances": [
+        {
+          "id": "14-1",
+          "person": "4",
+          "meeting": "14"
+        },
+        {
+          "id": "14-2",
+          "person": "17",
+          "meeting": "14"
+        }
+      ],
+      "preferredAttendances": []
+    },
+    {
+      "id": "15",
+      "topic": "Engage data mining",
+      "speakers": [],
+      "content": "",
+      "entireGroupMeeting": false,
+      "durationInGrains": 8,
+      "requiredAttendances": [
+        {
+          "id": "15-1",
+          "person": "6",
+          "meeting": "15"
+        },
+        {
+          "id": "15-2",
+          "person": "18",
+          "meeting": "15"
+        }
+      ],
+      "preferredAttendances": [
+        {
+          "id": "15-3",
+          "person": "7",
+          "meeting": "15"
+        }
+      ]
+    },
+    {
+      "id": "16",
+      "topic": "Downsize policies",
+      "speakers": [],
+      "content": "",
+      "entireGroupMeeting": false,
+      "durationInGrains": 8,
+      "requiredAttendances": [],
+      "preferredAttendances": []
+    },
+    {
+      "id": "17",
+      "topic": "Ramp up synergies",
+      "speakers": [],
+      "content": "",
+      "entireGroupMeeting": false,
+      "durationInGrains": 8,
+      "requiredAttendances": [
+        {
+          "id": "17-1",
+          "person": "6",
+          "meeting": "17"
+        },
+        {
+          "id": "17-2",
+          "person": "11",
+          "meeting": "17"
+        }
+      ],
+      "preferredAttendances": []
+    },
+    {
+      "id": "18",
+      "topic": "On board user experience",
+      "speakers": [],
+      "content": "",
+      "entireGroupMeeting": false,
+      "durationInGrains": 12,
+      "requiredAttendances": [
+        {
+          "id": "18-1",
+          "person": "11",
+          "meeting": "18"
+        },
+        {
+          "id": "18-2",
+          "person": "6",
+          "meeting": "18"
+        }
+      ],
+      "preferredAttendances": []
+    },
+    {
+      "id": "19",
+      "topic": "Reinvigorate B2B",
+      "speakers": [],
+      "content": "",
+      "entireGroupMeeting": false,
+      "durationInGrains": 8,
+      "requiredAttendances": [],
+      "preferredAttendances": [
+        {
+          "id": "19-1",
+          "person": "12",
+          "meeting": "19"
+        },
+        {
+          "id": "19-2",
+          "person": "16",
+          "meeting": "19"
+        },
+        {
+          "id": "19-3",
+          "person": "18",
+          "meeting": "19"
+        }
+      ]
+    },
+    {
+      "id": "20",
+      "topic": "Strategize virtualization",
+      "speakers": [],
+      "content": "",
+      "entireGroupMeeting": false,
+      "durationInGrains": 8,
+      "requiredAttendances": [],
+      "preferredAttendances": []
+    },
+    {
+      "id": "21",
+      "topic": "Fast track multitasking",
+      "speakers": [],
+      "content": "",
+      "entireGroupMeeting": false,
+      "durationInGrains": 12,
+      "requiredAttendances": [
+        {
+          "id": "21-1",
+          "person": "5",
+          "meeting": "21"
+        },
+        {
+          "id": "21-2",
+          "person": "4",
+          "meeting": "21"
+        },
+        {
+          "id": "21-3",
+          "person": "17",
+          "meeting": "21"
+        }
+      ],
+      "preferredAttendances": []
+    },
+    {
+      "id": "22",
+      "topic": "Cross sell one stop shop",
+      "speakers": [],
+      "content": "",
+      "entireGroupMeeting": false,
+      "durationInGrains": 8,
+      "requiredAttendances": [
+        {
+          "id": "22-1",
+          "person": "3",
+          "meeting": "22"
+        },
+        {
+          "id": "22-2",
+          "person": "8",
+          "meeting": "22"
+        },
+        {
+          "id": "22-3",
+          "person": "1",
+          "meeting": "22"
+        },
+        {
+          "id": "22-4",
+          "person": "0",
+          "meeting": "22"
+        },
+        {
+          "id": "22-5",
+          "person": "6",
+          "meeting": "22"
+        },
+        {
+          "id": "22-6",
+          "person": "14",
+          "meeting": "22"
+        },
+        {
+          "id": "22-7",
+          "person": "13",
+          "meeting": "22"
+        },
+        {
+          "id": "22-8",
+          "person": "2",
+          "meeting": "22"
+        },
+        {
+          "id": "22-9",
+          "person": "16",
+          "meeting": "22"
+        },
+        {
+          "id": "22-10",
+          "person": "18",
+          "meeting": "22"
+        }
+      ],
+      "preferredAttendances": []
+    },
+    {
+      "id": "23",
+      "topic": "Reinvigorate multitasking",
+      "speakers": [],
+      "content": "",
+      "entireGroupMeeting": false,
+      "durationInGrains": 8,
+      "requiredAttendances": [
+        {
+          "id": "23-1",
+          "person": "16",
+          "meeting": "23"
+        },
+        {
+          "id": "23-2",
+          "person": "12",
+          "meeting": "23"
+        },
+        {
+          "id": "23-3",
+          "person": "3",
+          "meeting": "23"
+        },
+        {
+          "id": "23-4",
+          "person": "13",
+          "meeting": "23"
+        },
+        {
+          "id": "23-5",
+          "person": "18",
+          "meeting": "23"
+        },
+        {
+          "id": "23-6",
+          "person": "10",
+          "meeting": "23"
+        }
+      ],
+      "preferredAttendances": []
+    }
+  ],
+  "meetingAssignments": [
+    {
+      "id": "0",
+      "meeting": "0",
+      "pinned": false,
+      "startingTimeGrain": null,
+      "room": null
+    },
+    {
+      "id": "1",
+      "meeting": "1",
+      "pinned": false,
+      "startingTimeGrain": null,
+      "room": null
+    },
+    {
+      "id": "2",
+      "meeting": "2",
+      "pinned": false,
+      "startingTimeGrain": null,
+      "room": null
+    },
+    {
+      "id": "3",
+      "meeting": "3",
+      "pinned": false,
+      "startingTimeGrain": null,
+      "room": null
+    },
+    {
+      "id": "4",
+      "meeting": "4",
+      "pinned": false,
+      "startingTimeGrain": null,
+      "room": null
+    },
+    {
+      "id": "5",
+      "meeting": "5",
+      "pinned": false,
+      "startingTimeGrain": null,
+      "room": null
+    },
+    {
+      "id": "6",
+      "meeting": "6",
+      "pinned": false,
+      "startingTimeGrain": null,
+      "room": null
+    },
+    {
+      "id": "7",
+      "meeting": "7",
+      "pinned": false,
+      "startingTimeGrain": null,
+      "room": null
+    },
+    {
+      "id": "8",
+      "meeting": "8",
+      "pinned": false,
+      "startingTimeGrain": null,
+      "room": null
+    },
+    {
+      "id": "9",
+      "meeting": "9",
+      "pinned": false,
+      "startingTimeGrain": null,
+      "room": null
+    },
+    {
+      "id": "10",
+      "meeting": "10",
+      "pinned": false,
+      "startingTimeGrain": null,
+      "room": null
+    },
+    {
+      "id": "11",
+      "meeting": "11",
+      "pinned": false,
+      "startingTimeGrain": null,
+      "room": null
+    },
+    {
+      "id": "12",
+      "meeting": "12",
+      "pinned": false,
+      "startingTimeGrain": null,
+      "room": null
+    },
+    {
+      "id": "13",
+      "meeting": "13",
+      "pinned": false,
+      "startingTimeGrain": null,
+      "room": null
+    },
+    {
+      "id": "14",
+      "meeting": "14",
+      "pinned": false,
+      "startingTimeGrain": null,
+      "room": null
+    },
+    {
+      "id": "15",
+      "meeting": "15",
+      "pinned": false,
+      "startingTimeGrain": null,
+      "room": null
+    },
+    {
+      "id": "16",
+      "meeting": "16",
+      "pinned": false,
+      "startingTimeGrain": null,
+      "room": null
+    },
+    {
+      "id": "17",
+      "meeting": "17",
+      "pinned": false,
+      "startingTimeGrain": null,
+      "room": null
+    },
+    {
+      "id": "18",
+      "meeting": "18",
+      "pinned": false,
+      "startingTimeGrain": null,
+      "room": null
+    },
+    {
+      "id": "19",
+      "meeting": "19",
+      "pinned": false,
+      "startingTimeGrain": null,
+      "room": null
+    },
+    {
+      "id": "20",
+      "meeting": "20",
+      "pinned": false,
+      "startingTimeGrain": null,
+      "room": null
+    },
+    {
+      "id": "21",
+      "meeting": "21",
+      "pinned": false,
+      "startingTimeGrain": null,
+      "room": null
+    },
+    {
+      "id": "22",
+      "meeting": "22",
+      "pinned": false,
+      "startingTimeGrain": null,
+      "room": null
+    },
+    {
+      "id": "23",
+      "meeting": "23",
+      "pinned": false,
+      "startingTimeGrain": null,
+      "room": null
+    }
+  ],
+  "score": null,
+  "solverStatus": null
+}

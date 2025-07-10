@@ -5,6 +5,7 @@ __pycache__
 /**/dist
 /**/*.egg-info
 /**/*-stubs
+.venv
 
 # Eclipse, Netbeans and IntelliJ files
 /.*
