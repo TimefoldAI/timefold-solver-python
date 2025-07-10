@@ -11,7 +11,7 @@ image::./school-timetabling-screenshot.png[]
 [[prerequisites]]
 == Prerequisites
 
-. Install https://www.python.org/downloads/[Python 3.11+]
+. Install https://www.python.org/downloads/[Python 3.11 or 3.12]
 
 . Install JDK 17+, for example with https://sdkman.io[Sdkman]:
 +

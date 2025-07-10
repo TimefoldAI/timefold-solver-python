@@ -13,7 +13,7 @@ Schedule shifts to employees, accounting for employee availability and shift ski
 
 ## Prerequisites
 
-1. Install [Python 3.11+](https://www.python.org/downloads/).
+1. Install [Python 3.11 or 3.12](https://www.python.org/downloads/).
 
 2. Install JDK 17+, for example with [Sdkman](https://sdkman.io):
 
