@@ -23,7 +23,7 @@ than using [Timefold Solver for Java](https://github.com/TimefoldAI/timefold-sol
 ## Requirements
 
 - [Install Python 3.10, 3.11 or 3.12.](https://www.python.org)
-- [Install JDK 17 or later](https://adoptium.net) with the environment variable `JAVA_HOME` configured to the JDK installation directory.
+- [Install JDK 21 or later](https://adoptium.net) with the environment variable `JAVA_HOME` configured to the JDK installation directory.
   For example, with [Sdkman](https://sdkman.io/):
   ```shell
   $ sdk install java

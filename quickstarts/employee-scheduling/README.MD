@@ -15,7 +15,7 @@ Schedule shifts to employees, accounting for employee availability and shift ski
 
 1. Install [Python 3.11 or 3.12](https://www.python.org/downloads/).
 
-2. Install JDK 17+, for example with [Sdkman](https://sdkman.io):
+2. Install JDK 21+, for example with [Sdkman](https://sdkman.io):
 
    ```sh
    $ sdk install java

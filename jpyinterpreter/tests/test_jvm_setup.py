@@ -2,6 +2,13 @@ import pytest
 import jpyinterpreter
 import jpype
 
+class Java21Runtime:
+    def version(self):
+        class Version:
+            def feature(self):
+                return 21
+        return Version()
+
 class Java17Runtime:
     def version(self):
         class Version:
@@ -27,13 +34,15 @@ class Java8Runtime:
     pass
 
 def test_jvm_setup():
-    jpyinterpreter.ensure_valid_jvm(Java17Runtime())
+    jpyinterpreter.ensure_valid_jvm(Java21Runtime())
     with pytest.raises(jpyinterpreter.InvalidJVMVersionError):
         jpyinterpreter.ensure_valid_jvm(Java8Runtime())
     with pytest.raises(jpyinterpreter.InvalidJVMVersionError):
         jpyinterpreter.ensure_valid_jvm(Java9Runtime())
     with pytest.raises(jpyinterpreter.InvalidJVMVersionError):
         jpyinterpreter.ensure_valid_jvm(Java10Runtime())
+    with pytest.raises(jpyinterpreter.InvalidJVMVersionError):
+        jpyinterpreter.ensure_valid_jvm(Java17Runtime())
 
 def jvm_not_found():
     raise jpype.JVMNotFoundException()

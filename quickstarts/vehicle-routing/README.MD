@@ -15,7 +15,7 @@ Find the most efficient routes for a fleet of vehicles.
 
 1. Install [Python 3.10, 3.11 or 3.12](https://www.python.org/downloads/).
 
-2. Install JDK 17+, for example with [Sdkman](https://sdkman.io):
+2. Install JDK 21+, for example with [Sdkman](https://sdkman.io):
     ```sh
     $ sdk install java
 
